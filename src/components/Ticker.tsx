@@ -27,8 +27,8 @@ const tickerItems: TickerItem[] = [
 export default function Ticker() {
   const controls = useAnimation();
   const [isPaused, setIsPaused] = useState(false);
-  const [desktopSpeed, setDesktopSpeed] = useState(75);
-  const [mobileSpeed, setMobileSpeed] = useState(20);
+  const desktopSpeed = 25;
+  const mobileSpeed = 30;
   const [animationDuration, setAnimationDuration] = useState(desktopSpeed);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function Ticker() {
     updateDuration();
     window.addEventListener("resize", updateDuration);
     return () => window.removeEventListener("resize", updateDuration);
-  }, [desktopSpeed, mobileSpeed]);
+  }, []);
 
   useEffect(() => {
     if (!isPaused) {

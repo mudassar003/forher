@@ -42,7 +42,7 @@ export default function RotatingHeadlineSection() {
       </div>
       
       {/* Main Supporting Text */}
-      <h2 className="text-black text-3xl md:text-6xl lg:text-8xl mt-4">
+      <h2 className="w-full text-left text-4xl mt-[-1px] md:w-auto md:text-6xl lg:text-8xl md:mt-4">
         personalized to you
       </h2>
 

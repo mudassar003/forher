@@ -62,7 +62,7 @@ export default function Ticker() {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="relative z-10 bg-[#EBF3ED] px-4 font-semibold whitespace-nowrap text-black">Why Direct2Her?</div>
+      <div className="relative z-10 bg-[#EBF3ED] px-4  whitespace-nowrap text-black">Why Direct2Her?</div>
       <div className="w-full overflow-hidden relative">
         <motion.div
           className="flex space-x-8"

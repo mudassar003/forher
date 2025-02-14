@@ -25,11 +25,11 @@ export default function RotatingHeadlineSection() {
   return (
     <section className="flex flex-col items-start justify-center min-h-[60vh] px-6 md:px-12 lg:px-24 mt-[-40px]">
       {/* Rotating Heading */}
-      <div className="relative h-auto overflow-hidden w-full mb-2">
+      <div className="relative h-auto overflow-visible w-full mb-2">
         <AnimatePresence mode="wait">
           <motion.h1
             key={headlines[index].text}
-            className="text-8xl font-normal leading-tight"
+            className="text-5xl md:text-7xl lg:text-8xl  leading-light font-normal"
             style={{ color: headlines[index].color, whiteSpace: 'nowrap' }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -42,12 +42,12 @@ export default function RotatingHeadlineSection() {
       </div>
       
       {/* Main Supporting Text */}
-      <h2 className="text-black text-8xl mt-2">
+      <h2 className="text-black text-3xl md:text-6xl lg:text-8xl mt-4">
         personalized to you
       </h2>
 
       {/* Subtext */}
-      <p className="text-gray-600 text-2xl mt-8">
+      <p className="text-gray-600 text-lg md:text-2xl mt-5">
         Customized care starts here
       </p>
     </section>

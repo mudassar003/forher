@@ -52,55 +52,113 @@ export default function HoverEffectButtons() {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-8 lg:px-16 mt-12">
-      {buttonData.map((item, index) => {
-        const words = item.text.split(" ");
-        return (
-          <div
-            key={index}
-            className={`relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
-              hoverIndex === index ? item.hoverColor : item.color
-            }`}
-            onMouseEnter={() => setHoverIndex(index)}
-            onMouseLeave={() => setHoverIndex(null)}
-          >
-            <span
-              className={`text-xl font-semibold transition-all duration-300 flex items-center gap-1 ${
-                hoverIndex === index
-                  ? "bg-clip-text text-white mix-blend-overlay"
-                  : "text-black"
-              }`}
-            >
-              {words.slice(0, -1).join(" ")} {/* First words */}{" "}
-              <span
-                className={`transition-all duration-300 ${
-                  hoverIndex === index ? "text-white" : item.textColor
-                }`}
-              >
-                {words[words.length - 1]} {/* Last word */}
-              </span>
-            </span>
-            <div className="flex items-center gap-4">
-              <Image
-                src={item.image}
-                alt={item.text}
-                width={100}
-                height={100}
-                className={`transition-transform duration-300 ${
-                  hoverIndex === index ? "rotate-[-15deg] scale-110" : "rotate-0 scale-100"
-                }`}
-              />
+    <>
+      {/* Mobile: Horizontally Scrollable Categories with Three Items Per Row */}
+      <div className="sm:hidden overflow-x-auto px-4 py-4 scroll-smooth scrollbar-hide no-scrollbar">
+        <div className="grid grid-cols-3 gap-2 w-[1024px]">
+          {buttonData.map((item, index) => {
+            const words = item.text.split(" ");
+            return (
               <div
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
-                  hoverIndex === index ? "bg-white text-black" : "bg-black text-white"
+                key={index}
+                className={`relative flex items-center justify-between w-[300px] h-[75px] p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+                  hoverIndex === index ? item.hoverColor : item.color
+                } snap-start`}
+                onMouseEnter={() => setHoverIndex(index)}
+                onMouseLeave={() => setHoverIndex(null)}
+              >
+                <span
+                  className={`text-lg font-semibold flex items-center gap-1 transition-all duration-300 whitespace-nowrap ${
+                    hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
+                  }`}
+                >
+                  <span>{words.slice(0, -1).join(" ")}</span>{" "}
+                  <span
+                    className={`transition-all duration-300 ${
+                      hoverIndex === index ? "text-white" : item.textColor
+                    }`}
+                  >
+                    {words[words.length - 1]}
+                  </span>
+                </span>
+                
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={item.image}
+                    alt={item.text}
+                    width={50}
+                    height={50}
+                    className={`transition-transform duration-300 ${
+                      hoverIndex === index ? "rotate-[-30deg] scale-110" : "rotate-0 scale-100"
+                    }`}
+                  />
+                  {/* Ensure Arrow is Visible */}
+                  <div
+                    className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
+                      hoverIndex === index ? "bg-white text-black" : "bg-black text-white"
+                    }`}
+                  >
+                    ➝
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop: Grid Layout (Unchanged) */}
+      <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-8 lg:px-16 mt-12">
+        {buttonData.map((item, index) => {
+          const words = item.text.split(" ");
+          return (
+            <div
+              key={index}
+              className={`relative flex items-center justify-between w-[300px] h-[75px] p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+                hoverIndex === index ? item.hoverColor : item.color
+              }`}
+              onMouseEnter={() => setHoverIndex(index)}
+              onMouseLeave={() => setHoverIndex(null)}
+            >
+              {/* Ensure Text Stays in One Line */}
+              <span
+                className={`text-lg font-semibold flex items-center gap-1 transition-all duration-300 whitespace-nowrap ${
+                  hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
                 }`}
               >
-                ➝
+                <span>{words.slice(0, -1).join(" ")}</span>{" "}
+                <span
+                  className={`transition-all duration-300 ${
+                    hoverIndex === index ? "text-white" : item.textColor
+                  }`}
+                >
+                  {words[words.length - 1]}
+                </span>
+              </span>
+              
+              <div className="flex items-center gap-4">
+                <Image
+                  src={item.image}
+                  alt={item.text}
+                  width={100}
+                  height={100}
+                  className={`transition-transform duration-300 ${
+                    hoverIndex === index ? "rotate-[-30deg] scale-110" : "rotate-0 scale-100"
+                  }`}
+                />
+                {/* Ensure Arrow is Always Visible */}
+                <div
+                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
+                    hoverIndex === index ? "bg-white text-black" : "bg-black text-white"
+                  }`}
+                >
+                  ➝
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </>
   );
 }

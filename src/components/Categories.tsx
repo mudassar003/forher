@@ -54,21 +54,22 @@ export default function HoverEffectButtons() {
   return (
     <>
       {/* Mobile: Horizontally Scrollable Categories with Three Items Per Row */}
-      <div className="sm:hidden overflow-x-auto px-4 py-4 scroll-smooth scrollbar-hide no-scrollbar">
-        <div className="grid grid-cols-3 gap-2 w-[1024px]">
+      <div className="sm:hidden overflow-x-auto px-4 py-4 scroll-smooth snap-x">
+        <div className="grid grid-cols-3 gap-2 w-[950px]">
           {buttonData.map((item, index) => {
             const words = item.text.split(" ");
             return (
               <div
                 key={index}
-                className={`relative flex items-center justify-between w-[300px] h-[75px] p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+                className={`relative flex items-center justify-between w-[290px] h-[75px] p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                   hoverIndex === index ? item.hoverColor : item.color
                 } snap-start`}
                 onMouseEnter={() => setHoverIndex(index)}
                 onMouseLeave={() => setHoverIndex(null)}
               >
+                {/* Ensure First Part is Black and Last Word is Colored */}
                 <span
-                  className={`text-lg font-semibold flex items-center gap-1 transition-all duration-300 whitespace-nowrap ${
+                  className={`text-xl font-semibold flex items-center gap-1 transition-all duration-300 ${
                     hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
                   }`}
                 >
@@ -114,15 +115,15 @@ export default function HoverEffectButtons() {
           return (
             <div
               key={index}
-              className={`relative flex items-center justify-between w-[300px] h-[75px] p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+              className={`relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                 hoverIndex === index ? item.hoverColor : item.color
               }`}
               onMouseEnter={() => setHoverIndex(index)}
               onMouseLeave={() => setHoverIndex(null)}
             >
-              {/* Ensure Text Stays in One Line */}
+              {/* Restore Text Style on Desktop */}
               <span
-                className={`text-lg font-semibold flex items-center gap-1 transition-all duration-300 whitespace-nowrap ${
+                className={`text-xl font-semibold flex items-center gap-1 transition-all duration-300 ${
                   hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
                 }`}
               >

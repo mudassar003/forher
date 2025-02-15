@@ -55,13 +55,13 @@ export default function HoverEffectButtons() {
     <>
       {/* Mobile: Horizontally Scrollable Categories with Three Items Per Row */}
       <div className="sm:hidden overflow-x-auto px-4 py-4 scroll-smooth snap-x">
-        <div className="grid grid-cols-3 gap-2 w-[950px]">
+        <div className="grid grid-cols-3 gap-2 w-[900px]">
           {buttonData.map((item, index) => {
             const words = item.text.split(" ");
             return (
               <div
                 key={index}
-                className={`relative flex items-center justify-between w-[290px] h-[75px] p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+                className={`relative flex items-center justify-between w-[280px] h-[75px] p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                   hoverIndex === index ? item.hoverColor : item.color
                 } snap-start`}
                 onMouseEnter={() => setHoverIndex(index)}
@@ -69,7 +69,7 @@ export default function HoverEffectButtons() {
               >
                 {/* Ensure First Part is Black and Last Word is Colored */}
                 <span
-                  className={`text-xl font-semibold flex items-center gap-1 transition-all duration-300 ${
+                  className={`text-lg font-semibold flex items-center gap-1 transition-all duration-300 ${
                     hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
                   }`}
                 >

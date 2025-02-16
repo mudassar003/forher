@@ -49,7 +49,7 @@ export default function HeroSection() {
           Get started
         </button>
         <button className="w-1/2 py-3 bg-gray-400 text-white rounded-full font-semibold shadow-md transition text-xs md:text-sm">
-          See if I'm eligible
+          See if I&apos;m eligible
         </button>
       </div>
     </section>

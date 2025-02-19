@@ -86,7 +86,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, JSX } from "react";
 import { FaMobileAlt, FaStar, FaHeart, FaCog, FaComments, FaShieldAlt, FaBox } from "react-icons/fa";
 
 type TickerItem = {

@@ -4,13 +4,12 @@ const HairRegrowCard = () => {
   return (
     <div className="flex flex-col justify-center items-center bg-[#729693] min-h-screen p-6 space-y-8">
       {/* First Section */}
-      <div className="relative w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-md p-6 shadow-lg">
+      <div className="relative w-full max-w-md h-[400px] rounded-2xl bg-white/10 backdrop-blur-md shadow-lg overflow-hidden">
         <Image
           src="/images/Regrow_Hair.webp"
           alt="Regrow Hair"
-          width={400}
-          height={300}
-          className="rounded-lg"
+          layout="fill"
+          objectFit="cover"
         />
         <div className="absolute top-6 left-6 text-white font-semibold text-lg max-w-[60%]">
           <p>Regrow hair in</p>
@@ -22,29 +21,34 @@ const HairRegrowCard = () => {
         </button>
       </div>
 
-      {/* Second Section */}
-      <div className="relative w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-md p-6 shadow-lg">
+      {/* Second Section with Full Background Image */}
+      <div className="relative w-full max-w-md h-[400px] rounded-2xl shadow-lg overflow-hidden">
+        {/* Background Image */}
         <Image
           src="/images/hair_goals.webp"
           alt="Hair Goals"
-          width={400}
-          height={300}
-          className="rounded-lg"
+          layout="fill"
+          objectFit="cover"
         />
+        
+        {/* Overlay for better text visibility */}
+        <div className="absolute inset-0 bg-black/20"></div>
+
+        {/* Text */}
         <div className="absolute top-6 left-6 text-white font-semibold text-lg">
           <p>What are your</p>
           <p>hair goals?</p>
         </div>
 
-        {/* Buttons */}
-        <div className="absolute bottom-6 left-6 space-y-2">
-          <button className="bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md w-full">
+        {/* Buttons in bottom-right */}
+        <div className="absolute bottom-6 right-6 flex flex-col space-y-2">
+          <button className="bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md">
             Stop thinning or shedding
           </button>
-          <button className="bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md w-full">
+          <button className="bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md">
             Regrow thicker, fuller hair
           </button>
-          <button className="bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md w-full">
+          <button className="bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md">
             All the above
           </button>
         </div>

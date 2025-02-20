@@ -5,6 +5,7 @@ import RotatingSection from "@/components/RotatingSection";
 import VideoSection from "@/components/VideoSection";
 import HairLoss from "@/components/HairLoss";
 import HairRegrowCard from "@/components/HairRegrowCard";
+import FaqAccordion from "@/components/FaqAccordion";
 
 
 
@@ -18,6 +19,7 @@ export default function HomePage() {
       <VideoSection />
       <HairLoss />
       <HairRegrowCard />
+      <FaqAccordion />
 
       {/* Other sections of the homepage */}
     </div>

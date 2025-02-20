@@ -14,7 +14,7 @@ export default function VideoSection() {
         </h2>
 
         {/* Video Container */}
-        <div className="relative w-full max-w-[280px] md:max-w-[380px] h-[480px] md:h-[620px] -mt-2 md:-mt-10">
+        <div className="relative w-full max-w-[280px] md:max-w-[380px] h-[480px] md:h-[620px] -mt-2 md:-mt-2">
           <video
             className="w-full h-full rounded-2xl object-cover"
             autoPlay

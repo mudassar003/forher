@@ -40,7 +40,7 @@ const HairRegrowCard = () => {
         {/* Left Column - First Two Sections */}
         <div className="flex flex-col space-y-8">
           {/* First Section */}
-          <div className="relative w-full h-[400px] rounded-2xl bg-white/10 backdrop-blur-md shadow-lg overflow-hidden">
+          <div className="relative w-96 h-[400px] rounded-2xl bg-white/10 backdrop-blur-md shadow-lg overflow-hidden">
             <Image
               src="/images/Regrow_Hair.webp"
               alt="Regrow Hair"
@@ -58,7 +58,7 @@ const HairRegrowCard = () => {
           </div>
 
           {/* Second Section */}
-          <div className="relative w-full h-[400px] rounded-2xl shadow-lg overflow-hidden">
+          <div className="relative w-96 h-[400px] rounded-2xl shadow-lg overflow-hidden">
             <Image
               src="/images/hair_goals.webp"
               alt="Hair Goals"

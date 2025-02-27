@@ -11,7 +11,7 @@ const buttonData = [
     hoverColor: "from-[#3A5226] to-[#5A6E3F]",
     textColor: "text-[#5A6E3F]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/wm/intro-transition", // Define the URL here
+    url: "/c/wm/introduction", // Define the URL here
   },
   {
     text: "Find relief for anxiety",

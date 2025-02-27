@@ -3,7 +3,6 @@
 
 import { sanityClient } from '@/sanity/lib/client';
 import { useEffect, useState } from 'react';
-import Image from 'next/image'; // Add this import
 
 interface Product {
   _id: string;
@@ -34,16 +33,12 @@ export default function ProductsPage() {
       <h1 className="text-2xl font-bold mb-4">Products</h1>
       <div className="grid grid-cols-4 gap-6">
         {products.map((product) => (
-          <div key={product._id} className="border p-4 rounded-lg relative group">
-            <div className="relative h-40 w-full mb-2">
-              <Image
-                src={product.image?.asset?.url}
-                alt={product.title || 'Product image'}
-                fill
-                className="object-cover rounded-t-lg"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
-            </div>
+          <div key={product._id} className="border p-4 rounded-lg">
+            <img
+              src={product.image?.asset?.url}
+              alt={product.title}
+              className="w-full h-40 object-cover mb-2"
+            />
             <h2 className="text-lg font-semibold">{product.title}</h2>
             <p className="text-gray-700">${product.price}</p>
           </div>

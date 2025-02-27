@@ -1,4 +1,4 @@
-// src/app/products/page.tsx
+ // src/app/products/page.tsx
 'use client';
 
 import { sanityClient } from '@/sanity/lib/client';

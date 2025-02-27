@@ -7,13 +7,15 @@
 import { defineConfig } from 'sanity';
 import { deskTool } from 'sanity/desk';
 import { visionTool } from '@sanity/vision';
+import { structure } from './src/sanity/structure';
+
 
 // Import environment variables
 import { apiVersion, dataset, projectId } from './src/sanity/env';
 
 // Import schemas and custom desk structure
 import { schema } from './src/sanity/schemaTypes';
-import structure from './src/sanity/structure';
+
 
 export default defineConfig({
   basePath: '/studio', // URL path for embedded Sanity Studio

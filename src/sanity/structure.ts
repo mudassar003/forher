@@ -1,6 +1,6 @@
 // src/sanity/structure.ts
 import { StructureResolver } from 'sanity/structure';
-import S from 'sanity/desk';
+import S from '@sanity/desk-tool/structure-builder'; // ✅ Correct import
 
 export const structure: StructureResolver = () =>
   S.list()

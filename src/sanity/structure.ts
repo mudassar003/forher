@@ -1,7 +1,7 @@
 // src/sanity/structure.ts
 import { StructureResolver } from 'sanity/desk';
 
-export const structure: StructureResolver = (S, context) =>
+export const structure: StructureResolver = (S) =>
   S.list()
     .title('E-commerce Dashboard')
     .items([

@@ -32,31 +32,3 @@ export default function HomePage() {
   );
 }
 
-
-// export default function HomePage() {
-//   return (
-//     <main>
-//       <HomeHeader />
-
-//       <div data-component="HomeHero" className="h-screen">
-//         <HomeHero />
-//       </div>
-      
-//       <div data-component="HairRegrowCard" className="h-screen">
-//         <HairRegrowCard />
-//       </div>
-
-//       <div data-component="FaqAccordion" className="h-screen">
-//         <FaqAccordion />
-//       </div>
-
-//       <div data-component="TestimonialSection" className="h-screen">
-//         <TestimonialSection />
-//       </div>
-
-//       <div data-component="RotatingSection" className="h-screen">
-//         <RotatingSection />
-//       </div>
-//     </main>
-//   );
-// }

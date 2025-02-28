@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FiShoppingCart } from "react-icons/fi";
+import Link from "next/link";
 
 // Define the component-to-color mapping, including the new RotatingSection
 const componentColorMap: { [key: string]: string } = {
@@ -61,16 +62,24 @@ const HomeHeader = () => {
           <a href="#" className="text-lg font-normal text-gray-800 hover:text-black">
             Hair Regrowth
           </a>
-          <a href="#" className="text-lg font-normal text-gray-800 hover:text-black">
-            More
+          <a href="/products" className="text-lg font-normal text-gray-800 hover:text-black">
+            Products
+          </a>
+          <a href="/dashboard" className="text-lg font-normal text-gray-800 hover:text-black">
+            Dashboard
           </a>
         </nav>
 
         {/* Login Button and Cart Icon */}
         <div className="flex items-center space-x-4">
-          <button className="hidden md:flex items-center bg-white text-black border border-gray-200 px-6 py-2 rounded-full shadow-sm hover:shadow-md transition">
-            LOGIN
-          </button>
+          {/* ✅ LOGIN button wrapped with Next.js Link */}
+          <Link href="/login">
+            <button className="hidden md:flex items-center bg-white text-black border border-gray-200 px-6 py-2 rounded-full shadow-sm hover:shadow-md transition">
+              LOGIN
+            </button>
+          </Link>
+
+          {/* ✅ Shopping Cart Icon */}
           <FiShoppingCart className="text-2xl text-black cursor-pointer" />
         </div>
       </div>

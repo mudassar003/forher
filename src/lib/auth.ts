@@ -1,0 +1,65 @@
+import { supabase } from "./supabase";
+
+/**
+ * Sign in with Google OAuth
+ */
+export const signInWithGoogle = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/`,
+    },
+  });
+
+  if (error) {
+    console.error("Google Sign-In Error:", error.message);
+    return { error: error.message };
+  }
+
+  return { user: data };
+};
+
+/**
+ * Sign up with Email & Password
+ */
+export const signUpWithEmail = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+
+  if (error) {
+    console.error("Sign-Up Error:", error.message);
+    return { error: error.message };
+  }
+
+  return { user: data };
+};
+
+/**
+ * Sign in with Email & Password
+ */
+export const signInWithEmail = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    console.error("Sign-In Error:", error.message);
+    return { error: error.message };
+  }
+
+  return { user: data };
+};
+
+/**
+ * Sign out user
+ */
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.error("Sign-Out Error:", error.message);
+    return { error: error.message };
+  }
+
+  return { message: "Signed out successfully" };
+};

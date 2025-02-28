@@ -13,7 +13,7 @@ export default function YourGoal() {
     { label: "Not sure, I just need to lose weight", value: "weight" },
   ];
 
-  // Default selection to first option
+  // Default selection to first options
   const [selectedGoal, setSelectedGoal] = useState<string>(options[0].value);
 
   useEffect(() => {

@@ -10,7 +10,7 @@ export default function ProgressBar({ progress }: ProgressBarProps) {
       <div className="w-full max-w-lg bg-gray-300 h-2 rounded-full">
         <div
           className="  h-2 rounded-full transition-all duration-300"
-          style={{ width: `${progress}%`, backgroundColor: "#538989" }} 
+          style={{ width: `${progress}%`, backgroundColor: "#fe92b5" }} 
         />
       </div>
     </div>

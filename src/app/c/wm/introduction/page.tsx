@@ -7,7 +7,7 @@ export default function StepOne() {
   const router = useRouter();
 
   const nextStep = () => {
-    router.push("/c/wm/step2"); // Navigate to the next step
+    router.push("/c/wm/your-goal"); // Navigate to the next step
   };
 
   return (
@@ -17,7 +17,7 @@ export default function StepOne() {
 
       {/* Centered Content */}
       <div className="max-w-lg text-center mt-10">
-        <h2 className="text-3xl font-semibold text-[#538989]">Start your weight loss journey.</h2>
+        <h2 className="text-3xl font-semibold text-[#fe92b5]">Start your weight loss journey.</h2>
         <p className="text-xl font-medium text-black mt-3">
           Learn about treatment options based on your goals, habits, and health history.
         </p>

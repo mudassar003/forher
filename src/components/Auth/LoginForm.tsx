@@ -1,11 +1,11 @@
 "use client";
 
-import { useAuthStore } from "@/store/authStore";
+import { useAuthFormStore } from "@/store/authFormStore"; // ✅ Use the correct form store
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
 
 const LoginForm = () => {
   const { email, password, loading, error, setEmail, setPassword, setLoading, setError, resetForm } =
-    useAuthStore();
+    useAuthFormStore(); // ✅ Now using the correct form store
 
   const handleEmailLogin = async () => {
     setLoading(true);

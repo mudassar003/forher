@@ -8,7 +8,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     checkSession();
-  }, []);
+  }, [checkSession]);
 
   return <>{children}</>;
 };

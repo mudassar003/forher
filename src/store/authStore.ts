@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js"; // ✅ Import the correct User type
 
 interface AuthState {
-  user: any | null;
+  user: User | null; // ✅ Use Supabase's User type instead of 'any'
   loading: boolean;
-  setUser: (user: any | null) => void;
+  setUser: (user: User | null) => void;
   checkSession: () => Promise<void>;
   signOutUser: () => Promise<void>;
 }

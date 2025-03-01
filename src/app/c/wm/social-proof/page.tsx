@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import ProgressBar from "@/app/c/wm/components/ProgressBar"; // Import ProgressBar
+// import ProgressBar from "@/app/c/wm/components/ProgressBar"; // Import ProgressBar
 
 export default function SocialProof() {
   const router = useRouter();

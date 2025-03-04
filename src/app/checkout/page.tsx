@@ -349,7 +349,6 @@ export default function CheckoutPage() {
                     </div>
                     <div className="ml-4 flex-grow">
                       <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-sm text-gray-600">Select Size: {item.size || 'M'}</p>
                     </div>
                     <div className="font-medium">Rs {(item.price).toFixed(2)}</div>
                   </div>

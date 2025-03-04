@@ -4,6 +4,7 @@ import { useCartStore } from "@/store/cartStore";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { countries } from "countries-list";
 
 export default function CheckoutPage() {
   const { cart, clearCart } = useCartStore();
@@ -15,7 +16,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState("Pakistan");
+  const [country, setCountry] = useState("United States");
   const [postalCode, setPostalCode] = useState("");
   const [phone, setPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
@@ -23,6 +24,8 @@ export default function CheckoutPage() {
   const [giftCard, setGiftCard] = useState("");
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [billingAddressType, setBillingAddressType] = useState("same");
+
+  const countryList = Object.values(countries).map((c) => c.name);
 
   // Calculate subtotal
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -131,19 +134,20 @@ export default function CheckoutPage() {
             {/* Delivery Information */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Delivery</h2>
-              
-              <div className="mb-4">
-                <select 
+               <div className="mb-4">
+                <select
                   className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
                 >
-                  <option value="Pakistan">Pakistan</option>
-                  <option value="United Arab Emirates">United Arab Emirates</option>
-                  <option value="Saudi Arabia">Saudi Arabia</option>
-                  <option value="Qatar">Qatar</option>
+                  {countryList.map((countryName) => (
+                    <option key={countryName} value={countryName}>
+                      {countryName}
+                    </option>
+                  ))}
                 </select>
               </div>
+            
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <input 
@@ -236,7 +240,7 @@ export default function CheckoutPage() {
                     />
                     <label htmlFor="standardShipping">Standard Delievery</label>
                   </div>
-                  <div>Rs 150.00</div>
+                  
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useCartStore } from "@/store/cartStore";
 import { useState } from "react";
@@ -96,7 +96,7 @@ export default function CheckoutPage() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-          {/* Left Side - Checkout Form (3 columns) - Scrollable with hidden scrollbar */}
+          {/* Left Side - Checkout Form */}
           <div className="col-span-3 overflow-y-auto max-h-[calc(100vh-100px)] hide-scrollbar">
             {/* Contact Information */}
             <div className="mb-8">
@@ -328,7 +328,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Right Side - Order Summary (2 columns) - Fixed */}
+          {/* Right Side - Order Summary */}
           <div className="col-span-2 bg-gray-50 p-6 rounded-md sticky top-6 h-fit">
             {/* Cart Items */}
             <div className="mb-6">
@@ -336,7 +336,13 @@ export default function CheckoutPage() {
                 cart.map((item, index) => (
                   <div key={index} className="flex items-center mb-4">
                     <div className="relative w-20 h-20 rounded-md overflow-hidden">
-                      <Image src={item.image} alt={item.name} fill className="object-cover" />
+                      <Image
+                        // Provide a fallback image if item.image is undefined
+                        src={item.image ?? '/placeholder.png'}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
                       <div className="absolute -top-1 -right-1 bg-gray-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                         {item.quantity}
                       </div>

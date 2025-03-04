@@ -1,3 +1,4 @@
+//src/app/products/[slug]/page.tsx
 import { groq } from 'next-sanity'
 import { client } from '@/sanity/lib/client'
 import { notFound } from 'next/navigation'
@@ -31,12 +32,7 @@ async function getProduct(slug: string) {
   )
 }
 
-// Define a correct type for Next.js PageProps
-interface ProductPageProps {
-  params: { slug: string }
-}
-
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product: Product | null = await getProduct(params.slug)
   
   if (!product) {

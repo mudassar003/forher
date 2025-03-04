@@ -134,8 +134,12 @@ export default function CheckoutPage() {
             {/* Delivery Information */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Delivery</h2>
-               <div className="mb-4">
+              <div className="mb-4">
+                <label htmlFor="country-select" className="block text-sm font-medium text-gray-700 mb-2">
+                Select Country
+                </label>
                 <select
+                  id="country-select"
                   className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}

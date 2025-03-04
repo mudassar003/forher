@@ -98,6 +98,9 @@ const HomeHeader = () => {
           <Link href="/products" className="text-lg font-normal text-gray-800 hover:text-black">
             Products
           </Link>
+          <Link href="/studio" className="text-lg font-normal text-gray-800 hover:text-black">
+            Studio
+          </Link>
         </nav>
 
         {/* Login Button and Cart Icon */}

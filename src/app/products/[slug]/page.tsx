@@ -1,4 +1,4 @@
-//src/app/products/[slug]/page.tsx
+// src/app/products/[slug]/page.tsx
 import { groq } from 'next-sanity'
 import { client } from '@/sanity/lib/client'
 import { notFound } from 'next/navigation'
@@ -32,8 +32,11 @@ async function getProduct(slug: string) {
   )
 }
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const product: Product | null = await getProduct(params.slug)
+// Note the updated type: params is now a Promise resolving to an object with a slug property.
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Await the params promise to extract the slug.
+  const { slug } = await params
+  const product: Product | null = await getProduct(slug)
   
   if (!product) {
     notFound()

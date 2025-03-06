@@ -88,8 +88,58 @@ export default function CheckoutPage() {
     if (isSubmitting) return;
     if (!validateForm()) return;
     setIsSubmitting(true);
-
-    // ... keep your existing handlePlaceOrder logic ...
+    try {
+      // Create order data object to match API expectations
+      const orderData = {
+        email,
+        firstName,
+        lastName,
+        address,
+        apartment,
+        city,
+        country,
+        postalCode,
+        phone,
+        paymentMethod,
+        shippingMethod,
+        billingAddressType,
+        cart: cart.map(item => ({
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image
+        }))
+      };
+      // Send order to API
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+      const result = await response.json();
+      if (result.success) {
+        // Store order ID in localStorage for the confirmation page to access
+        localStorage.setItem("lastOrderId", result.orderId);
+        
+        // Clear the cart
+        clearCart();
+        
+        // Redirect to confirmation page
+        window.location.href = '/checkout/order-confirmation';
+      } else {
+        // Handle API error
+        console.error("Order placement failed:", result.error);
+        alert(`Order placement failed: ${result.error}`);
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("An error occurred while placing your order. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   const handleBlur = (field: string) => validateForm();

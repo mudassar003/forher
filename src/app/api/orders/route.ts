@@ -25,6 +25,7 @@ interface OrderData {
   shippingMethod: string;
   billingAddressType: string;
   cart: CartItem[];
+  [key: string]: any; 
 }
 
 interface SanityOrder extends SanityDocumentStub {

@@ -32,9 +32,12 @@ async function getProduct(slug: string) {
   )
 }
 
-// Fix: params is not a Promise, it's a plain object
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  // No need to await params
+// Define the correct interface for the page props
+interface ProductPageProps {
+  params: { slug: string }
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = params
   const product: Product | null = await getProduct(slug)
   

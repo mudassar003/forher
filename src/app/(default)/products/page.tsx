@@ -27,8 +27,16 @@ interface Product {
   categories?: Category[]
 }
 
+interface CategoryProducts {
+  categories: Category[]
+  productsByCategory: Record<string, Product[]>
+  uncategorizedProducts: Product[]
+  allProducts: Product[]
+  error?: string
+}
+
 // A more robust function to fetch products and organize by category
-async function getCategoriesWithProducts() {
+async function getCategoriesWithProducts(): Promise<CategoryProducts> {
   try {
     // First fetch all products - this is guaranteed to work if your original page worked
     const products: Product[] = await client.fetch(
@@ -193,10 +201,10 @@ export default async function ProductsPage() {
       
       {/* Display products by category */}
       {categories.map(category => {
-        const categoryProducts = productsByCategory[category._id]
+        const categoryProducts = productsByCategory[category._id] || []
         
         // Only render category section if it has products
-        if (!categoryProducts || categoryProducts.length === 0) return null
+        if (categoryProducts.length === 0) return null
         
         return (
           <div key={category._id} className="mb-12">

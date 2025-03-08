@@ -2,6 +2,12 @@
 import { NextResponse } from "next/server";
 import { client } from "@/sanity/lib/client";
 import type { SanityDocumentStub } from "@sanity/client";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface CartItem {
   productId: string;
@@ -51,6 +57,33 @@ interface SanityOrder extends SanityDocumentStub {
   total: number;
   subtotal: number;
   shippingCost: number;
+}
+
+interface SupabaseOrder {
+  email: string;
+  customer_name: string;
+  address: string;
+  apartment?: string;
+  city: string;
+  country: string;
+  postal_code?: string;
+  phone: string;
+  payment_method: string;
+  shipping_method: string;
+  status: string;
+  total: number;
+  subtotal: number;
+  shipping_cost: number;
+  sanity_id?: string;
+}
+
+interface SupabaseOrderItem {
+  order_id: string;
+  product_id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  image?: string;
 }
 
 export async function POST(req: Request) {
@@ -112,14 +145,72 @@ export async function POST(req: Request) {
     };
 
     // Create document in Sanity
-    const response = await client.create(order);
+    const sanityResponse = await client.create(order);
+    const sanityId = sanityResponse._id;
+
+    // Prepare Supabase order data
+    const supabaseOrder: SupabaseOrder = {
+      email: data.email,
+      customer_name: `${data.firstName} ${data.lastName}`.trim(),
+      address: data.address,
+      apartment: data.apartment,
+      city: data.city,
+      country: data.country,
+      postal_code: data.postalCode,
+      phone: data.phone,
+      payment_method: data.paymentMethod,
+      shipping_method: data.shippingMethod,
+      status: "pending",
+      total,
+      subtotal,
+      shipping_cost: shippingCost,
+      sanity_id: sanityId
+    };
+
+    // Insert into Supabase using a transaction approach
+    const { data: supabaseOrderData, error: orderError } = await supabase
+      .from('orders')
+      .insert(supabaseOrder)
+      .select('id')
+      .single();
+
+    if (orderError) {
+      console.error("Supabase order creation error:", orderError);
+      throw new Error(`Failed to create order in Supabase: ${orderError.message}`);
+    }
+
+    // Get the order ID from Supabase
+    const orderId = supabaseOrderData.id;
+
+    // Prepare order items for Supabase
+    const orderItems: SupabaseOrderItem[] = data.cart.map(item => ({
+      order_id: orderId,
+      product_id: item.productId,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      image: item.image
+    }));
+
+    // Insert order items
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error("Supabase order items creation error:", itemsError);
+      // Attempt to clean up the order since items failed
+      await supabase.from('orders').delete().eq('id', orderId);
+      throw new Error(`Failed to create order items in Supabase: ${itemsError.message}`);
+    }
 
     return NextResponse.json(
       { 
         success: true, 
-        orderId: response._id,
-        sanityId: response._id,
-        createdAt: response._createdAt
+        orderId: sanityId, // For backward compatibility
+        sanityId: sanityId,
+        supabaseId: orderId,
+        createdAt: sanityResponse._createdAt
       }, 
       { status: 201 }
     );

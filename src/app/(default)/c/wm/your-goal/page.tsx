@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import ProgressBar from "@/app/c/wm/components/ProgressBar"; // Import ProgressBar
+import ProgressBar from "@/app/(default)/c/wm/components/ProgressBar"; // Import ProgressBar
 
 export default function YourGoal() {
   const router = useRouter();

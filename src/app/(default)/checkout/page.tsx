@@ -214,11 +214,13 @@ export default function CheckoutPage() {
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Delivery</h2>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Country</label>
+                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">Select Country</label>
                 <select
+                  id="country"
                   className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
+                  title="Select your country"
                 >
                   {countryList.map((countryName) => (
                     <option key={countryName} value={countryName}>{countryName}</option>

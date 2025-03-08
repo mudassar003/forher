@@ -32,12 +32,8 @@ async function getProduct(slug: string) {
   )
 }
 
-// Define the correct interface for the page props
-interface ProductPageProps {
-  params: { slug: string }
-}
-
-export default async function ProductPage({ params }: ProductPageProps) {
+// Solution: Use a more minimal approach without explicitly typing everything
+export default async function ProductPage({ params }: any) {
   const { slug } = params
   const product: Product | null = await getProduct(slug)
   
@@ -59,4 +55,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
       }} 
     />
   )
+}
+
+// Add generateStaticParams to help Next.js understand the params structure
+export async function generateStaticParams() {
+  const products: { slug: { current: string } }[] = await client.fetch(
+    groq`*[_type == "product"]{ "slug": slug.current }`
+  )
+  
+  return products.map((product) => ({
+    slug: product.slug.current,
+  }))
 }

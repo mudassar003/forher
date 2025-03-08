@@ -32,10 +32,10 @@ async function getProduct(slug: string) {
   )
 }
 
-// Note the updated type: params is now a Promise resolving to an object with a slug property.
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  // Await the params promise to extract the slug.
-  const { slug } = await params
+// Fix: params is not a Promise, it's a plain object
+export default async function ProductPage({ params }: { params: { slug: string } }) {
+  // No need to await params
+  const { slug } = params
   const product: Product | null = await getProduct(slug)
   
   if (!product) {

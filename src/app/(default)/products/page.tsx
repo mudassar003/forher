@@ -1,3 +1,4 @@
+// src/app/(default)/products/page.tsx
 import Image from 'next/image'
 import Link from 'next/link'
 import { groq } from 'next-sanity'
@@ -85,7 +86,7 @@ async function getCategoriesWithProducts() {
       uncategorizedProducts,
       allProducts: products, // Return this for fallback
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching data:", error)
     // Return empty data rather than failing completely
     return {
@@ -93,7 +94,7 @@ async function getCategoriesWithProducts() {
       productsByCategory: {},
       uncategorizedProducts: [],
       allProducts: [], 
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     }
   }
 }

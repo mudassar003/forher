@@ -75,7 +75,7 @@ export default function SelectState() {
         </button>
       </div>
 
-      {/* Documentation for Future API Integration */}
+      {/* Documentation for Future API Integration
       <div className="mt-8 p-4 bg-gray-100 text-gray-600 text-sm rounded-lg w-full max-w-lg mb-24">
         <h3 className="font-semibold text-black mb-2">How to Replace Hardcoded States with API Data</h3>
         <ol className="list-decimal pl-5">
@@ -85,7 +85,7 @@ export default function SelectState() {
           <li>Remove the hardcoded states and enable dynamic state fetching.</li>
         </ol>
         <p className="mt-2">Once the API key is available, update this component accordingly.</p>
-      </div>
+      </div> */}
     </div>
   );
 }

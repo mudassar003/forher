@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
+import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
 export default function SelectState() {
   const router = useRouter();
@@ -22,9 +23,15 @@ export default function SelectState() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white px-6">
-      <div className="max-w-lg w-full text-center">
-        <h2 className="text-2xl font-semibold text-black mb-4">Select the state you live in:</h2>
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
+      {/* Progress Bar */}
+      <ProgressBar progress={98} />
+
+      <div className="max-w-lg w-full text-center mt-10">
+        {/* Custom Logo Text */}
+        <h1 className="text-3xl font-bold text-[#fe92b5]">Direct2Her</h1>
+        
+        <h2 className="text-2xl font-semibold text-black mt-6 mb-4">Select the state you live in:</h2>
         <p className="text-gray-600 mb-6">This state is where your medication will be shipped to, if prescribed.</p>
 
         {/* State Dropdown */}
@@ -53,19 +60,23 @@ export default function SelectState() {
             <a href="#" className="text-blue-500"> Privacy Policy</a>.
           </label>
         </div>
+      </div>
 
-        {/* Continue Button */}
+      {/* Fixed Button at Bottom */}
+      <div className="fixed bottom-6 w-full flex justify-center">
         <button
           onClick={handleContinue}
           disabled={!selectedState || !isChecked}
-          className={`w-full p-3 text-white font-medium rounded-lg ${selectedState && isChecked ? "bg-black" : "bg-gray-400 cursor-not-allowed"}`}
+          className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-lg ${
+            selectedState && isChecked ? "bg-black" : "bg-gray-400 cursor-not-allowed"
+          }`}
         >
           Continue
         </button>
       </div>
 
       {/* Documentation for Future API Integration */}
-      <div className="mt-8 p-4 bg-gray-100 text-gray-600 text-sm rounded-lg w-full max-w-lg">
+      <div className="mt-8 p-4 bg-gray-100 text-gray-600 text-sm rounded-lg w-full max-w-lg mb-24">
         <h3 className="font-semibold text-black mb-2">How to Replace Hardcoded States with API Data</h3>
         <ol className="list-decimal pl-5">
           <li>Replace the `states` array with an API call inside `useEffect`.</li>

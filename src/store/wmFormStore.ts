@@ -9,6 +9,7 @@ interface WMFormData {
   formData: {
     weightLossGoal: string | null;
     treatmentApproach: string | null;
+    dateOfBirth: string | null;
     // Add other form fields as needed
   };
 }
@@ -19,6 +20,7 @@ interface WMFormState extends WMFormData {
   markStepCompleted: (step: string) => void;
   setWeightLossGoal: (goal: string) => void;
   setTreatmentApproach: (approach: string) => void;
+  setDateOfBirth: (dob: string) => void;
   resetForm: () => void;
   // You can add more setters for additional form fields
 }
@@ -31,8 +33,9 @@ export const WM_FORM_STEPS = [
   "/c/wm/treatment-approach",
   "/c/wm/treatment-paths",
   "/c/wm/wayfind-build-profile",
-   "/c/wm/select-state",
-   "/c/wm/submit"
+  "/c/wm/select-state",
+  "/c/wm/date-of-birth",
+  "/c/wm/submit"
 ];
 
 // Create the Zustand store with persistence
@@ -45,6 +48,7 @@ export const useWMFormStore = create(
       formData: {
         weightLossGoal: null,
         treatmentApproach: null,
+        dateOfBirth: null,
       },
 
       // Actions
@@ -65,6 +69,11 @@ export const useWMFormStore = create(
           formData: { ...state.formData, treatmentApproach: approach }
         })),
       
+      setDateOfBirth: (dob) => 
+        set((state) => ({
+          formData: { ...state.formData, dateOfBirth: dob }
+        })),
+      
       resetForm: () => 
         set({
           currentStep: WM_FORM_STEPS[0],
@@ -72,6 +81,7 @@ export const useWMFormStore = create(
           formData: {
             weightLossGoal: null,
             treatmentApproach: null,
+            dateOfBirth: null,
           }
         }),
     }),

@@ -13,6 +13,7 @@ export default function SubmitStep() {
   const { formData, resetForm, markStepCompleted } = useWMFormStore();
   const weightLossGoal = formData.weightLossGoal || "Not specified";
   const treatmentApproach = formData.treatmentApproach || "Not specified";
+  const dateOfBirth = formData.dateOfBirth || "Not specified";
 
   // Format the treatment approach for display
   const formatTreatmentApproach = () => {
@@ -64,6 +65,9 @@ export default function SubmitStep() {
           </li>
           <li className="p-4 bg-gray-100 rounded-lg">
             <span className="font-medium">Treatment approach:</span> {formatTreatmentApproach()}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Date of birth:</span> {dateOfBirth}
           </li>
           {/* Add more form fields here as they're added to your store */}
         </ul>

@@ -18,7 +18,7 @@ export default function SelectState() {
   const handleContinue = () => {
     if (selectedState && isChecked) {
       markStepCompleted("/c/wm/select-state");
-      router.push("/c/wm/submit");
+      router.push("/c/wm/date-of-birth");
     }
   };
 

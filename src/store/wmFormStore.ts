@@ -9,6 +9,7 @@ interface WMFormData {
   formData: {
     weightLossGoal: string | null;
     treatmentApproach: string | null;
+    numberOfProgramsTried: string | null;
     dateOfBirth: string | null;
     // Add other form fields as needed
   };
@@ -20,6 +21,7 @@ interface WMFormState extends WMFormData {
   markStepCompleted: (step: string) => void;
   setWeightLossGoal: (goal: string) => void;
   setTreatmentApproach: (approach: string) => void;
+  setNumberOfProgramsTried: (count: string) => void;
   setDateOfBirth: (dob: string) => void;
   resetForm: () => void;
   // You can add more setters for additional form fields
@@ -35,6 +37,7 @@ export const WM_FORM_STEPS = [
   "/c/wm/wayfind-build-profile",
   "/c/wm/select-state",
   "/c/wm/date-of-birth",
+  "/c/wm/number-of-programs-tried",
   "/c/wm/submit"
 ];
 
@@ -48,6 +51,7 @@ export const useWMFormStore = create(
       formData: {
         weightLossGoal: null,
         treatmentApproach: null,
+        numberOfProgramsTried: null,
         dateOfBirth: null,
       },
 
@@ -69,6 +73,11 @@ export const useWMFormStore = create(
           formData: { ...state.formData, treatmentApproach: approach }
         })),
       
+      setNumberOfProgramsTried: (count) => 
+        set((state) => ({
+          formData: { ...state.formData, numberOfProgramsTried: count }
+        })),
+      
       setDateOfBirth: (dob) => 
         set((state) => ({
           formData: { ...state.formData, dateOfBirth: dob }
@@ -81,6 +90,7 @@ export const useWMFormStore = create(
           formData: {
             weightLossGoal: null,
             treatmentApproach: null,
+            numberOfProgramsTried: null,
             dateOfBirth: null,
           }
         }),

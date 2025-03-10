@@ -1,3 +1,4 @@
+//src/app/c/wm/date-of-birth/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -30,7 +31,7 @@ export default function DateOfBirth() {
       markStepCompleted("/c/wm/date-of-birth");
       
       // Navigate to the next step
-      router.push("/c/wm/submit");
+      router.push("/c/wm/number-of-programs-tried");
     }
   };
 

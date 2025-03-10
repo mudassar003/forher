@@ -13,6 +13,7 @@ export default function SubmitStep() {
   const { formData, resetForm, markStepCompleted } = useWMFormStore();
   const weightLossGoal = formData.weightLossGoal || "Not specified";
   const treatmentApproach = formData.treatmentApproach || "Not specified";
+  const numberOfProgramsTried = formData.numberOfProgramsTried || "Not specified";
   const dateOfBirth = formData.dateOfBirth || "Not specified";
 
   // Format the treatment approach for display
@@ -23,6 +24,22 @@ export default function SubmitStep() {
       return "Have specific medication in mind";
     }
     return treatmentApproach;
+  };
+
+  // Format the number of programs tried for display
+  const formatNumberOfProgramsTried = () => {
+    switch (numberOfProgramsTried) {
+      case "none":
+        return "None, this is my first time trying";
+      case "1-5":
+        return "1-5 programs";
+      case "6-10":
+        return "6-10 programs";
+      case "many":
+        return "More than I can remember";
+      default:
+        return numberOfProgramsTried;
+    }
   };
 
   // Handle the form submission
@@ -66,8 +83,12 @@ export default function SubmitStep() {
           <li className="p-4 bg-gray-100 rounded-lg">
             <span className="font-medium">Treatment approach:</span> {formatTreatmentApproach()}
           </li>
+          
           <li className="p-4 bg-gray-100 rounded-lg">
             <span className="font-medium">Date of birth:</span> {dateOfBirth}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Previous weight loss programs:</span> {formatNumberOfProgramsTried()}
           </li>
           {/* Add more form fields here as they're added to your store */}
         </ul>

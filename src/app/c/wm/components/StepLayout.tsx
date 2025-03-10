@@ -1,10 +1,10 @@
 //src/app/c/wm/components/StepLayout.tsx
 "use client";
 
+import { useEffect } from "react";
 import ProgressBar from "./ProgressBar";
 import { useRouter, usePathname } from "next/navigation";
-
-const steps = ["/c/wm/step1", "/c/wm/step2", "/c/wm/step3"]; // Define steps & order
+import { useWMFormStore, WM_FORM_STEPS, getNextStep } from "@/store/wmFormStore";
 
 interface StepLayoutProps {
   children: React.ReactNode;
@@ -13,18 +13,42 @@ interface StepLayoutProps {
 export default function StepLayout({ children }: StepLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const currentStepIndex = steps.indexOf(pathname);
-  const progressPercentage = ((currentStepIndex + 1) / steps.length) * 100;
+  
+  // Get states and actions from the store
+  const { 
+    currentStep, 
+    completedSteps, 
+    setCurrentStep, 
+    markStepCompleted 
+  } = useWMFormStore();
+
+  // Calculate progress
+  const currentStepIndex = WM_FORM_STEPS.indexOf(pathname);
+  const progressPercentage = ((currentStepIndex + 1) / WM_FORM_STEPS.length) * 100;
+
+  // Update current step in the store when pathname changes
+  useEffect(() => {
+    if (pathname && WM_FORM_STEPS.includes(pathname)) {
+      setCurrentStep(pathname);
+    }
+  }, [pathname, setCurrentStep]);
 
   const nextStep = () => {
-    if (currentStepIndex < steps.length - 1) {
-      router.push(steps[currentStepIndex + 1]);
+    // Mark current step as completed
+    if (pathname) {
+      markStepCompleted(pathname);
+    }
+
+    // Navigate to next step
+    const next = getNextStep(pathname || "");
+    if (next) {
+      router.push(next);
     }
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
-      {/* Progress Bar (Now Reusable) */}
+      {/* Progress Bar */}
       <ProgressBar progress={progressPercentage} />
 
       {/* Step Content */}

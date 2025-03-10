@@ -1,41 +1,62 @@
 //src/app/c/wm/submit/page.tsx
 "use client";
 
-import SubmitButton from "@/app/c/wm/components/SubmitButton"; // Import SubmitButton
-import { useRouter } from "next/navigation"; // Import useRouter for redirection
+import SubmitButton from "@/app/c/wm/components/SubmitButton";
+import { useRouter } from "next/navigation";
+import { useWMFormStore } from "@/store/wmFormStore";
+import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
 export default function SubmitStep() {
-  const router = useRouter(); // Initialize router for navigation
+  const router = useRouter();
+  
+  // Get form data from the store
+  const { formData, resetForm, markStepCompleted } = useWMFormStore();
+  const weightLossGoal = formData.weightLossGoal || "Not specified";
 
   // Handle the form submission
   const handleSubmit = () => {
-    // Submit the form or handle data submission (e.g., saving data to Supabase or OpenAI)
-    console.log("Form submitted!");
+    // Mark this step as completed
+    markStepCompleted("/c/wm/submit");
+    
+    // Here you would typically send the data to your backend
+    console.log("Form submitted with data:", formData);
 
-    // After submission, redirect to the homepage
-    router.push("/"); // Redirect to the homepage
+    // You could call an API endpoint here
+    // Example: await fetch('/api/submit-wm-form', { method: 'POST', body: JSON.stringify(formData) });
+    
+    // Reset the form data after successful submission (optional)
+    // resetForm();
+    
+    // After submission, redirect to the homepage or a success page
+    router.push("/"); 
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
+      {/* Progress Bar - 100% complete */}
+      <ProgressBar progress={100} />
+      
       <h2 className="text-3xl font-semibold text-[#fe92b5]">
         Review Your Weight Loss Journey
       </h2>
+      
       <p className="text-xl font-medium text-black mt-3">
-        You’ve made it to the final step. Please review your selections before submitting.
+        You've made it to the final step. Please review your selections before submitting.
       </p>
 
-      {/* Additional content or summary can be displayed here */}
-      <div className="mt-10">
+      {/* Summary of selections from the store */}
+      <div className="mt-10 w-full max-w-lg">
         <p className="text-lg font-semibold">Summary of your selections:</p>
-        <ul className="mt-4">
-          <li>Your goal: Lose 16-50 lbs</li>
-          {/* Display other selected options here */}
+        <ul className="mt-4 space-y-3 text-left">
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Your goal:</span> Lose {weightLossGoal}
+          </li>
+          {/* Add more form fields here as they're added to your store */}
         </ul>
       </div>
 
       {/* Use SubmitButton component */}
-      <SubmitButton onSubmit={handleSubmit} /> {/* SubmitButton triggers handleSubmit */}
+      <SubmitButton onSubmit={handleSubmit} />
     </div>
   );
 }

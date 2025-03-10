@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import ProgressBar from "@/app/c/wm/components/ProgressBar"; // Import ProgressBar
+import ProgressBar from "@/app/c/wm/components/ProgressBar";
+import { useWMFormStore } from "@/store/wmFormStore";
 
 export default function YourGoal() {
   const router = useRouter();
@@ -14,19 +15,39 @@ export default function YourGoal() {
     { label: "Not sure, I just need to lose weight", value: "weight" },
   ];
 
-  // Default selection to first options
-  const [selectedGoal, setSelectedGoal] = useState<string>(options[0].value);
+  // Get states and actions from the store
+  const { 
+    formData, 
+    setWeightLossGoal, 
+    markStepCompleted 
+  } = useWMFormStore();
 
+  // Use the value from the store, or default to first option
+  const [selectedGoal, setSelectedGoal] = useState<string>(
+    formData.weightLossGoal || options[0].value
+  );
+
+  // Update local state when store changes
   useEffect(() => {
-    // Save to localStorage when selectedGoal changes
-    localStorage.setItem("selectedGoal", selectedGoal);
-  }, [selectedGoal]);
+    if (formData.weightLossGoal) {
+      setSelectedGoal(formData.weightLossGoal);
+    }
+  }, [formData.weightLossGoal]);
+
+  // Update store when selection changes
+  useEffect(() => {
+    setWeightLossGoal(selectedGoal);
+  }, [selectedGoal, setWeightLossGoal]);
 
   const nextStep = () => {
+    // Mark this step as completed
+    markStepCompleted("/c/wm/your-goal");
+    
+    // Choose the next step based on the selection
     if (selectedGoal === "51+ lbs.") {
       router.push("/c/wm/social-proof"); // Navigate to social-proof step
     } else {
-      router.push("/c/wm/your-goal-transition"); // Navigate to the next step
+      router.push("/c/wm/your-goal-transition"); // Navigate to the transition step
     }
   };
 
@@ -41,7 +62,7 @@ export default function YourGoal() {
         <h1 className="text-3xl font-bold text-[#fe92b5]">Direct2Her</h1>
 
         {/* Main Question */}
-        <h2 className="text-2xl font-semibold text-black mt-3">What’s your weight loss goal?</h2>
+        <h2 className="text-2xl font-semibold text-black mt-3">What's your weight loss goal?</h2>
 
         {/* Selection Options */}
         <div className="mt-6 space-y-4">

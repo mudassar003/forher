@@ -1,15 +1,25 @@
 //src/app/c/wm/your-goal-transition/page.tsx
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import ProgressBar from "@/app/c/wm/components/ProgressBar"; // Import ProgressBar
+import ProgressBar from "@/app/c/wm/components/ProgressBar";
+import { useWMFormStore } from "@/store/wmFormStore";
 
 export default function YourGoalTransition() {
   const router = useRouter();
+  
+  // Get states and actions from the store
+  const { formData, markStepCompleted } = useWMFormStore();
+  const selectedGoal = formData.weightLossGoal || "16-50 lbs."; // Default if not set
 
   // Function to navigate to the next step
   const nextStep = () => {
-    router.push("/c/wm/submit"); // Navigate to the next step
+    // Mark this step as completed
+    markStepCompleted("/c/wm/your-goal-transition");
+    
+    // Navigate to next step
+    router.push("/c/wm/submit");
   };
 
   return (
@@ -23,11 +33,11 @@ export default function YourGoalTransition() {
         <h1 className="text-3xl mt-2 font-bold text-[#fe92b5]">Direct2Her</h1>
 
         <p className="text-3xl text-black mt-4">
-          Your goal to lose <span className="text-[#fe92b5] font-semibold">16-50 lbs.</span> is closer than you think — and it doesn’t involve restrictive diets.
+          Your goal to lose <span className="text-[#fe92b5] font-semibold">{selectedGoal}</span> is closer than you think — and it doesn't involve restrictive diets.
         </p>
 
         <p className="text-3xl text-black mt-4">
-          To find a custom plan for you, we’ll need to build your Weight Loss Profile first.
+          To find a custom plan for you, we'll need to build your Weight Loss Profile first.
         </p>
 
         <p className="text-2xl text-black mt-4 font-semibold">

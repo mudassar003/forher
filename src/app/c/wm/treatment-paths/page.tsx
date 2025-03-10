@@ -17,8 +17,8 @@ export default function TreatmentPaths() {
     // Mark this step as completed
     markStepCompleted("/c/wm/treatment-paths");
     
-    // Navigate to next step
-    router.push("/c/wm/submit");
+    // Navigate to next step - now going to wayfind-build-profile instead of submit
+    router.push("/c/wm/wayfind-build-profile");
   };
 
   // Dynamic content based on the selected approach

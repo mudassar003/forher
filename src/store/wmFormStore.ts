@@ -30,6 +30,7 @@ export const WM_FORM_STEPS = [
   "/c/wm/your-goal-transition",
   "/c/wm/treatment-approach",
   "/c/wm/treatment-paths",
+  "/c/wm/wayfind-build-profile", // New step added here
   "/c/wm/submit"
 ];
 

@@ -12,6 +12,17 @@ export default function SubmitStep() {
   // Get form data from the store
   const { formData, resetForm, markStepCompleted } = useWMFormStore();
   const weightLossGoal = formData.weightLossGoal || "Not specified";
+  const treatmentApproach = formData.treatmentApproach || "Not specified";
+
+  // Format the treatment approach for display
+  const formatTreatmentApproach = () => {
+    if (treatmentApproach === "recommendation") {
+      return "Looking for recommendations";
+    } else if (treatmentApproach === "specific") {
+      return "Have specific medication in mind";
+    }
+    return treatmentApproach;
+  };
 
   // Handle the form submission
   const handleSubmit = () => {
@@ -50,6 +61,9 @@ export default function SubmitStep() {
         <ul className="mt-4 space-y-3 text-left">
           <li className="p-4 bg-gray-100 rounded-lg">
             <span className="font-medium">Your goal:</span> Lose {weightLossGoal}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Treatment approach:</span> {formatTreatmentApproach()}
           </li>
           {/* Add more form fields here as they're added to your store */}
         </ul>

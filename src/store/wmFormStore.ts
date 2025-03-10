@@ -8,6 +8,7 @@ interface WMFormData {
   completedSteps: string[];
   formData: {
     weightLossGoal: string | null;
+    treatmentApproach: string | null;
     // Add other form fields as needed
   };
 }
@@ -17,6 +18,7 @@ interface WMFormState extends WMFormData {
   setCurrentStep: (step: string) => void;
   markStepCompleted: (step: string) => void;
   setWeightLossGoal: (goal: string) => void;
+  setTreatmentApproach: (approach: string) => void;
   resetForm: () => void;
   // You can add more setters for additional form fields
 }
@@ -26,6 +28,8 @@ export const WM_FORM_STEPS = [
   "/c/wm/introduction",
   "/c/wm/your-goal",
   "/c/wm/your-goal-transition",
+  "/c/wm/treatment-approach",
+  "/c/wm/treatment-paths",
   "/c/wm/submit"
 ];
 
@@ -38,6 +42,7 @@ export const useWMFormStore = create(
       completedSteps: [],
       formData: {
         weightLossGoal: null,
+        treatmentApproach: null,
       },
 
       // Actions
@@ -53,12 +58,18 @@ export const useWMFormStore = create(
           formData: { ...state.formData, weightLossGoal: goal }
         })),
       
+      setTreatmentApproach: (approach) => 
+        set((state) => ({
+          formData: { ...state.formData, treatmentApproach: approach }
+        })),
+      
       resetForm: () => 
         set({
           currentStep: WM_FORM_STEPS[0],
           completedSteps: [],
           formData: {
             weightLossGoal: null,
+            treatmentApproach: null,
           }
         }),
     }),

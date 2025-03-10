@@ -18,14 +18,14 @@ export default function YourGoalTransition() {
     // Mark this step as completed
     markStepCompleted("/c/wm/your-goal-transition");
     
-    // Navigate to next step
-    router.push("/c/wm/submit");
+    // Navigate to next step (now treatment-approach instead of submit)
+    router.push("/c/wm/treatment-approach");
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
-      {/* Progress Bar */}
-      <ProgressBar progress={60} /> {/* Updated progress for step 3 */}
+      {/* Progress Bar - adjusted for additional steps */}
+      <ProgressBar progress={50} /> 
 
       {/* Centered Content */}
       <div className="max-w-lg text-left mt-5">

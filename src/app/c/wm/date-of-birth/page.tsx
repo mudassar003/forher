@@ -7,7 +7,7 @@ import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
 export default function DateOfBirth() {
   const router = useRouter();
-  const { markStepCompleted, setDateOfBirth } = useWMFormStore();
+  const { markStepCompleted, setDateOfBirth: storeDateOfBirth } = useWMFormStore();
   
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [isValid, setIsValid] = useState(false);
@@ -26,7 +26,7 @@ export default function DateOfBirth() {
   const handleContinue = () => {
     if (isValid) {
       // Store the date of birth in the form store
-      // This requires adding a new field in your store
+      storeDateOfBirth(dateOfBirth);
       markStepCompleted("/c/wm/date-of-birth");
       
       // Navigate to the next step

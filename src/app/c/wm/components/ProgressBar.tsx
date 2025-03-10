@@ -1,3 +1,4 @@
+//src/app/c/wm/components/ProgressBar.tsx
 "use client";
 
 interface ProgressBarProps {

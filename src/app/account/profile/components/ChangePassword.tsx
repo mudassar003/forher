@@ -1,3 +1,4 @@
+//src/app/account/profile/components/ChangePassword.tsx
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import ProgressBar from "@/c/wm/components/ProgressBar"; // Import ProgressBar
+import ProgressBar from "@/app/c/wm/components/ProgressBar"; // Import ProgressBar
 
 export default function StepThree() {
   const router = useRouter();

@@ -3,6 +3,7 @@ import PersonalDetails from "./components/PersonalDetails";
 import PaymentMethod from "./components/PaymentMethod";
 import ShippingAddress from "./components/ShippingAddress";
 import ChangePassword from "./components/ChangePassword";
+import Logout from "./components/Logout";
 
 
 export default function ProfilePage() {
@@ -16,7 +17,8 @@ export default function ProfilePage() {
           <PersonalDetails />
           <PaymentMethod />
           <ShippingAddress />
-          <ChangePassword   />
+          <ChangePassword />
+          <Logout />
     </div>
   );
 }

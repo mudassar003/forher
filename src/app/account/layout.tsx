@@ -1,3 +1,4 @@
+//src/app/account/layout.tsx
 "use client";
 
 import { ReactNode } from "react";
@@ -6,11 +7,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect } from "react";
 import GlobalFooter from "@/components/GlobalFooter";
+import { signOut } from "@/lib/auth";
 
 // AccountHeader component for all account pages
 const AccountHeader = () => {
-  const { user } = useAuthStore();
-  
+  const { user, setUser } = useAuthStore(); // Ensure setUser is available in Zustand store
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut();
+    setUser(null); // Clear user state in Zustand
+    router.push("/login"); // Redirect to login after logout
+  };
+
   return (
     <header className="bg-indigo-600 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -32,7 +41,10 @@ const AccountHeader = () => {
             <Link href="/" className="hover:text-indigo-200 font-medium">
               Back to Home
             </Link>
-            <button className="bg-white text-indigo-600 px-3 py-1 rounded-md font-medium hover:bg-indigo-100">
+            <button
+              onClick={handleLogout}
+              className="bg-white text-indigo-600 px-3 py-1 rounded-md font-medium hover:bg-indigo-100 transition"
+            >
               Logout
             </button>
           </nav>
@@ -54,9 +66,9 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
   }, [user, loading, router]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  
+
   if (!user) return null; // Don't render anything while redirecting
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AccountHeader />

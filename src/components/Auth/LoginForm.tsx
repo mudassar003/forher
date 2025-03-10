@@ -72,7 +72,7 @@
 // };
 
 // export default LoginForm;
-
+//src/components/Auth/LoginForm.tsx
 "use client";
 
 import { useAuthFormStore } from "@/store/authFormStore";
@@ -119,7 +119,7 @@ const LoginForm = () => {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Welcome back</h2>
+      
 
       {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 

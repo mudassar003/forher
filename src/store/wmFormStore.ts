@@ -11,6 +11,11 @@ interface WMFormData {
     treatmentApproach: string | null;
     numberOfProgramsTried: string | null;
     dateOfBirth: string | null;
+    familyWithWeightStruggle: string | null;
+    dailyLifeStressLevel: string | null;
+    qualitySleep: string | null;
+    weightHoldSites: string | null;
+    cravings: string | null;
     // Add other form fields as needed
   };
 }
@@ -23,6 +28,11 @@ interface WMFormState extends WMFormData {
   setTreatmentApproach: (approach: string) => void;
   setNumberOfProgramsTried: (count: string) => void;
   setDateOfBirth: (dob: string) => void;
+  setFamilyWithWeightStruggle: (value: string) => void;
+  setDailyLifeStressLevel: (level: string) => void;
+  setQualitySleep: (sleep: string) => void;
+  setWeightHoldSites: (sites: string) => void;
+  setCravings: (cravings: string) => void;
   resetForm: () => void;
   // You can add more setters for additional form fields
 }
@@ -38,6 +48,11 @@ export const WM_FORM_STEPS = [
   "/c/wm/select-state",
   "/c/wm/date-of-birth",
   "/c/wm/number-of-programs-tried",
+  "/c/wm/any-family-with-weight-struggle",
+  "/c/wm/daily-life-stress-level",
+  "/c/wm/quality-sleep",
+  "/c/wm/weight-hold-sites",
+  "/c/wm/cravings",
   "/c/wm/submit"
 ];
 
@@ -53,6 +68,11 @@ export const useWMFormStore = create(
         treatmentApproach: null,
         numberOfProgramsTried: null,
         dateOfBirth: null,
+        familyWithWeightStruggle: null,
+        dailyLifeStressLevel: null,
+        qualitySleep: null,
+        weightHoldSites: null,
+        cravings: null,
       },
 
       // Actions
@@ -82,6 +102,31 @@ export const useWMFormStore = create(
         set((state) => ({
           formData: { ...state.formData, dateOfBirth: dob }
         })),
+        
+      setFamilyWithWeightStruggle: (value) => 
+        set((state) => ({
+          formData: { ...state.formData, familyWithWeightStruggle: value }
+        })),
+        
+      setDailyLifeStressLevel: (level) => 
+        set((state) => ({
+          formData: { ...state.formData, dailyLifeStressLevel: level }
+        })),
+        
+      setQualitySleep: (sleep) => 
+        set((state) => ({
+          formData: { ...state.formData, qualitySleep: sleep }
+        })),
+        
+      setWeightHoldSites: (sites) => 
+        set((state) => ({
+          formData: { ...state.formData, weightHoldSites: sites }
+        })),
+        
+      setCravings: (cravings) => 
+        set((state) => ({
+          formData: { ...state.formData, cravings: cravings }
+        })),
       
       resetForm: () => 
         set({
@@ -92,6 +137,11 @@ export const useWMFormStore = create(
             treatmentApproach: null,
             numberOfProgramsTried: null,
             dateOfBirth: null,
+            familyWithWeightStruggle: null,
+            dailyLifeStressLevel: null,
+            qualitySleep: null,
+            weightHoldSites: null,
+            cravings: null,
           }
         }),
     }),

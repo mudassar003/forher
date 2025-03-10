@@ -15,6 +15,11 @@ export default function SubmitStep() {
   const treatmentApproach = formData.treatmentApproach || "Not specified";
   const numberOfProgramsTried = formData.numberOfProgramsTried || "Not specified";
   const dateOfBirth = formData.dateOfBirth || "Not specified";
+  const familyWithWeightStruggle = formData.familyWithWeightStruggle || "Not specified";
+  const dailyLifeStressLevel = formData.dailyLifeStressLevel || "Not specified";
+  const qualitySleep = formData.qualitySleep || "Not specified";
+  const weightHoldSites = formData.weightHoldSites || "Not specified";
+  const cravings = formData.cravings || "Not specified";
 
   // Format the treatment approach for display
   const formatTreatmentApproach = () => {
@@ -90,6 +95,27 @@ export default function SubmitStep() {
           <li className="p-4 bg-gray-100 rounded-lg">
             <span className="font-medium">Previous weight loss programs:</span> {formatNumberOfProgramsTried()}
           </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Family with weight struggle:</span> {familyWithWeightStruggle}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Daily life stress level:</span> {dailyLifeStressLevel}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Quality of sleep:</span> {qualitySleep}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Weight hold sites:</span> {weightHoldSites}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Cravings:</span> {cravings}
+          </li>
+          
+
+
+
+
+
           {/* Add more form fields here as they're added to your store */}
         </ul>
       </div>

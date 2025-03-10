@@ -1,4 +1,4 @@
-//scr/app/c/wm/number-of-programs-tried/page.tsx
+//src/app/c/wm/cravings/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,17 +6,17 @@ import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
-export default function NumberOfProgramsTried() {
+export default function Cravings() {
   const router = useRouter();
-  const { markStepCompleted, setNumberOfProgramsTried } = useWMFormStore();
+  const { markStepCompleted, setCravings } = useWMFormStore();
   
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const options = [
-    { id: "none", label: "None, this is my first time trying" },
-    { id: "1-5", label: "1-5" },
-    { id: "6-10", label: "6-10" },
-    { id: "many", label: "More than I can remember" }
+    { id: "sweet", label: "Sweet" },
+    { id: "salty", label: "Salty" },
+    { id: "both", label: "Both" },
+    { id: "none", label: "I don't have cravings" }
   ];
 
   const handleOptionSelect = (optionId: string) => {
@@ -26,22 +26,22 @@ export default function NumberOfProgramsTried() {
   const handleContinue = () => {
     if (selectedOption) {
       // Store the selection in the form store
-      setNumberOfProgramsTried(selectedOption);
-      markStepCompleted("/c/wm/number-of-programs-tried");
+      setCravings(selectedOption);
+      markStepCompleted("/c/wm/cravings");
       
-      // Navigate to the next step (family with weight struggle)
-      router.push("/c/wm/any-family-with-weight-struggle");
+      // Navigate to the next step
+      router.push("/c/wm/submit");
     }
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
-      {/* Progress Bar - Adjust the progress value as needed */}
-      <ProgressBar progress={50} />
+      {/* Progress Bar */}
+      <ProgressBar progress={95} />
 
       <div className="max-w-lg w-full text-center mt-10">
         <h2 className="text-2xl font-semibold text-black mb-8">
-          How many different weight loss programs have you tried in the past?
+          When it comes to cravings, what type of food do you usually go for?
         </h2>
         
         {/* Options */}

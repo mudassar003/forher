@@ -1,4 +1,4 @@
-//scr/app/c/wm/number-of-programs-tried/page.tsx
+//src/app/c/wm/quality-sleep/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,17 +6,17 @@ import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
-export default function NumberOfProgramsTried() {
+export default function QualitySleep() {
   const router = useRouter();
-  const { markStepCompleted, setNumberOfProgramsTried } = useWMFormStore();
+  const { markStepCompleted, setQualitySleep } = useWMFormStore();
   
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const options = [
-    { id: "none", label: "None, this is my first time trying" },
-    { id: "1-5", label: "1-5" },
-    { id: "6-10", label: "6-10" },
-    { id: "many", label: "More than I can remember" }
+    { id: "more-than-9", label: "More than 9 hours" },
+    { id: "7-9", label: "7 - 9 hours" },
+    { id: "less-than-7", label: "Less than 7 hours" },
+    { id: "varies", label: "It varies/I have trouble sleeping" }
   ];
 
   const handleOptionSelect = (optionId: string) => {
@@ -26,22 +26,22 @@ export default function NumberOfProgramsTried() {
   const handleContinue = () => {
     if (selectedOption) {
       // Store the selection in the form store
-      setNumberOfProgramsTried(selectedOption);
-      markStepCompleted("/c/wm/number-of-programs-tried");
+      setQualitySleep(selectedOption);
+      markStepCompleted("/c/wm/quality-sleep");
       
-      // Navigate to the next step (family with weight struggle)
-      router.push("/c/wm/any-family-with-weight-struggle");
+      // Navigate to the next step
+      router.push("/c/wm/weight-hold-sites");
     }
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
-      {/* Progress Bar - Adjust the progress value as needed */}
-      <ProgressBar progress={50} />
+      {/* Progress Bar */}
+      <ProgressBar progress={75} />
 
       <div className="max-w-lg w-full text-center mt-10">
         <h2 className="text-2xl font-semibold text-black mb-8">
-          How many different weight loss programs have you tried in the past?
+          On average, how much sleep do you get a night?
         </h2>
         
         {/* Options */}

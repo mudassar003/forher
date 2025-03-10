@@ -17,7 +17,7 @@ export default function WayfindBuildProfile() {
     markStepCompleted("/c/wm/wayfind-build-profile");
     
     // Navigate to next step
-    router.push("/c/wm/submit");
+    router.push("/c/wm/select-state");
   };
 
   return (

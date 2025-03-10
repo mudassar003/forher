@@ -16,6 +16,9 @@ interface WMFormData {
     qualitySleep: string | null;
     weightHoldSites: string | null;
     cravings: string | null;
+    eatingPatterns: string[] | null;
+    programSupport: string[] | null;
+    goalMeaning: string[] | null;
     // Add other form fields as needed
   };
 }
@@ -33,6 +36,9 @@ interface WMFormState extends WMFormData {
   setQualitySleep: (sleep: string) => void;
   setWeightHoldSites: (sites: string) => void;
   setCravings: (cravings: string) => void;
+  setEatingPatterns: (patterns: string[]) => void;
+  setProgramSupport: (support: string[]) => void;
+  setGoalMeaning: (meaning: string[]) => void;
   resetForm: () => void;
   // You can add more setters for additional form fields
 }
@@ -53,6 +59,9 @@ export const WM_FORM_STEPS = [
   "/c/wm/quality-sleep",
   "/c/wm/weight-hold-sites",
   "/c/wm/cravings",
+  "/c/wm/eating-patterns",
+  "/c/wm/eating-pattern-program-support",
+  "/c/wm/eating-pattern-goal",
   "/c/wm/submit"
 ];
 
@@ -73,6 +82,9 @@ export const useWMFormStore = create(
         qualitySleep: null,
         weightHoldSites: null,
         cravings: null,
+        eatingPatterns: null,
+        programSupport: null,
+        goalMeaning: null,
       },
 
       // Actions
@@ -127,6 +139,21 @@ export const useWMFormStore = create(
         set((state) => ({
           formData: { ...state.formData, cravings: cravings }
         })),
+
+      setEatingPatterns: (patterns) => 
+        set((state) => ({
+          formData: { ...state.formData, eatingPatterns: patterns }
+        })),
+
+      setProgramSupport: (support) => 
+        set((state) => ({
+          formData: { ...state.formData, programSupport: support }
+        })),
+
+      setGoalMeaning: (meaning) => 
+        set((state) => ({
+          formData: { ...state.formData, goalMeaning: meaning }
+        })),
       
       resetForm: () => 
         set({
@@ -142,6 +169,9 @@ export const useWMFormStore = create(
             qualitySleep: null,
             weightHoldSites: null,
             cravings: null,
+            eatingPatterns: null,
+            programSupport: null,
+            goalMeaning: null,
           }
         }),
     }),

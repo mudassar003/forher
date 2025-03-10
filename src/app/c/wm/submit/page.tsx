@@ -20,6 +20,9 @@ export default function SubmitStep() {
   const qualitySleep = formData.qualitySleep || "Not specified";
   const weightHoldSites = formData.weightHoldSites || "Not specified";
   const cravings = formData.cravings || "Not specified";
+  const eatingPatterns = formData.eatingPatterns || [];
+  const programSupport = formData.programSupport || [];
+  const goalMeaning = formData.goalMeaning || [];
 
   // Format the treatment approach for display
   const formatTreatmentApproach = () => {
@@ -110,6 +113,16 @@ export default function SubmitStep() {
           <li className="p-4 bg-gray-100 rounded-lg">
             <span className="font-medium">Cravings:</span> {cravings}
           </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Eating patterns:</span> {eatingPatterns.join(", ")}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Program support:</span> {programSupport.join(", ")}
+          </li>
+          <li className="p-4 bg-gray-100 rounded-lg">
+            <span className="font-medium">Goal meaning:</span> {goalMeaning.join(", ")}
+          </li>
+          
           
 
 

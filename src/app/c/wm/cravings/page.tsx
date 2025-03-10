@@ -29,15 +29,15 @@ export default function Cravings() {
       setCravings(selectedOption);
       markStepCompleted("/c/wm/cravings");
       
-      // Navigate to the next step
-      router.push("/c/wm/submit");
+      // Navigate to the next step (eating-patterns instead of submit)
+      router.push("/c/wm/eating-patterns");
     }
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
       {/* Progress Bar */}
-      <ProgressBar progress={95} />
+      <ProgressBar progress={80} />
 
       <div className="max-w-lg w-full text-center mt-10">
         <h2 className="text-2xl font-semibold text-black mb-8">

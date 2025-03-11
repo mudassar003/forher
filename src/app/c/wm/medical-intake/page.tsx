@@ -20,7 +20,10 @@ interface MedicalFormData {
   eatingDisorderDiagnosis?: string[] | null;
   eatingDisorderRemission?: string | null;
   purgedInLastYear?: string | null;
-  medicationAllergies?: string[] | null;
+    medicationAllergies?: string[] | null;
+    mentalHealthCondition?: string | null;
+    desireToHarmSelf?: string | null;
+    mentalHealthDiagnoses?: string[] | null;
   [key: string]: any; // To allow for other form data properties
 }
 
@@ -214,7 +217,51 @@ const medicalQuestions: MedicalQuestion[] = [
         { id: "acknowledged", label: "I understand, continue" }
         ],
         multiSelect: false
-    }
+    },
+
+        // offset 15
+        {
+        question: "Have you been diagnosed with a mental health condition?",
+        description: "",
+        options: [
+            { id: "no", label: "No" },
+            { id: "yes", label: "Yes" }
+        ],
+        multiSelect: false
+        },
+        // offset 16 (conditional based on mental health condition)
+        {
+        question: "Do you currently have any desire to harm yourself or others?",
+        description: "",
+        options: [
+            { id: "no", label: "No" },
+            { id: "yes", label: "Yes" }
+        ],
+        multiSelect: false,
+        conditionalDisplay: (formData: MedicalFormData) => {
+            return formData.mentalHealthCondition === "no";
+        }
+        },
+        // offset 16 (alternative for yes response)
+        {
+        question: "Have you been diagnosed with any of the following?",
+        description: "Select all that apply",
+        options: [
+            { id: "depression", label: "Depression" },
+            { id: "generalized-anxiety", label: "Generalized anxiety" },
+            { id: "bipolar", label: "Bipolar disease (manic depression)" },
+            { id: "panic-attack", label: "Panic attack" },
+            { id: "psychiatric-hospitalization", label: "Psychiatric hospitalization within the last 3 months" },
+            { id: "borderline", label: "Borderline personality disorder" },
+            { id: "psychosis", label: "Psychosis" },
+            { id: "schizophrenia", label: "Schizophrenia or schizoaffective disorder" },
+            { id: "other", label: "Other" }
+        ],
+        multiSelect: true,
+        conditionalDisplay: (formData: MedicalFormData) => {
+            return formData.mentalHealthCondition === "yes";
+        }
+    },
   
   
 ];
@@ -257,6 +304,9 @@ function MedicalIntakeForm() {
     setMedicationAllergies,
     setPurgeFrequency,
     setPurgingRiskAcknowledgment,
+   setMentalHealthCondition,
+   setDesireToHarmSelf,
+   setMentalHealthDiagnoses,
     setStepOffset
   } = useWMFormStore();
   
@@ -336,6 +386,16 @@ function MedicalIntakeForm() {
             break;
      case 14:
         if (formData.purgingRiskAcknowledgment) setSelectedOptions([formData.purgingRiskAcknowledgment]);
+            break;
+     case 15:
+        if (formData.mentalHealthCondition) setSelectedOptions([formData.mentalHealthCondition]);
+        break;
+     case 16:
+        if (formData.mentalHealthCondition === "no") {
+            if (formData.desireToHarmSelf) setSelectedOptions([formData.desireToHarmSelf]);
+            } else if (formData.mentalHealthCondition === "yes") {
+                if (formData.mentalHealthDiagnoses) setSelectedOptions(formData.mentalHealthDiagnoses);
+            }
         break;
     }
   }, [offset, formData]);
@@ -456,7 +516,19 @@ function MedicalIntakeForm() {
        case 14:
       // Store purging risk acknowledgment
       setPurgingRiskAcknowledgment(selectedOptions[0] || "");
-      break;
+            break;
+        case 15:
+  // Store mental health condition
+      setMentalHealthCondition(selectedOptions[0] || "");
+            break;
+        case 16:
+        // Store based on which question was shown
+            if (formData.mentalHealthCondition === "no") {
+                setDesireToHarmSelf(selectedOptions[0] || "");
+            } else {
+                setMentalHealthDiagnoses(selectedOptions);
+            }
+        break;
     }
     
     // Store the current offset

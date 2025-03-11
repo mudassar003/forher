@@ -21,6 +21,7 @@ interface WMFormData {
     goalMeaning: string[] | null;
     height: string | null;
     weight: string | null;
+
     
     // Medical intake fields (offset 0-12)
     ethnicity: string[] | null;
@@ -38,6 +39,9 @@ interface WMFormData {
     medicationAllergies: string[] | null;
     purgeFrequency: string | null;
     purgingRiskAcknowledgment: string | null;
+    mentalHealthCondition: string | null;
+    desireToHarmSelf: string | null;
+    mentalHealthDiagnoses: string[] | null;
     
     // Track offsets for each step
     stepOffsets: Record<string, number>;
@@ -79,6 +83,9 @@ interface WMFormState extends WMFormData {
   setMedicationAllergies: (allergies: string[]) => void;
   setPurgeFrequency: (frequency: string) => void;
   setPurgingRiskAcknowledgment: (acknowledged: string) => void;
+  setMentalHealthCondition: (value: string) => void;
+  setDesireToHarmSelf: (value: string) => void;
+  setMentalHealthDiagnoses: (diagnoses: string[]) => void;
   
   
   // Offset tracking
@@ -149,6 +156,9 @@ export const useWMFormStore = create(
         medicationAllergies: null,
         purgeFrequency: null,
         purgingRiskAcknowledgment: null,
+        mentalHealthCondition: null,
+        desireToHarmSelf: null,
+        mentalHealthDiagnoses: null,
         
         
         stepOffsets: {}, // Track offsets for each step
@@ -308,6 +318,21 @@ export const useWMFormStore = create(
         formData: { ...state.formData, purgingRiskAcknowledgment: acknowledged }
       })),
 
+      setMentalHealthCondition: (value) => 
+      set((state) => ({
+        formData: { ...state.formData, mentalHealthCondition: value }
+      })),
+
+    setDesireToHarmSelf: (value) => 
+      set((state) => ({
+        formData: { ...state.formData, desireToHarmSelf: value }
+      })),
+
+    setMentalHealthDiagnoses: (diagnoses) => 
+      set((state) => ({
+        formData: { ...state.formData, mentalHealthDiagnoses: diagnoses }
+      })),
+
       // Set the offset for a specific step
       setStepOffset: (step, offset) => 
         set((state) => ({
@@ -356,6 +381,10 @@ export const useWMFormStore = create(
             medicationAllergies: null,
             purgeFrequency: null,
             purgingRiskAcknowledgment: null,
+            mentalHealthCondition: null,
+            desireToHarmSelf: null,
+            mentalHealthDiagnoses: null,
+            
             
             stepOffsets: {},
           }

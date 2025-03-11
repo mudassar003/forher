@@ -8,6 +8,7 @@ import HairRegrowCard from "@/components/HairRegrowCard";
 import FaqAccordion from "@/components/FaqAccordion";
 // import HomeHeader from "@/components/HomeHeader";
 import SubscribeSection from "@/components/SubscribeSection";
+import AuthCallback from "@/components/Auth/AuthCallback";
 
 
 
@@ -16,6 +17,7 @@ export default function HomePage() {
   return (
     <main>
       <div>
+        <AuthCallback />
         <RotatingHeadline />
         <Categories />
         <RotatingSection />

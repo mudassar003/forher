@@ -4,11 +4,13 @@ import { supabase } from "./supabase";
 /**
  * Sign in with Google OAuth
  */
-export const signInWithGoogle = async () => {
+export const signInWithGoogle = async (returnUrl?: string) => {
+  const redirectPath = returnUrl ? `/?returnUrl=${encodeURIComponent(returnUrl)}` : '/';
+  
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${window.location.origin}/`,
+      redirectTo: `${window.location.origin}${redirectPath}`,
     },
   });
 
@@ -95,4 +97,3 @@ export const updatePassword = async (newPassword: string) => {
 
   return { message: "Password updated successfully" };
 };
-

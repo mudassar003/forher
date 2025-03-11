@@ -1,3 +1,4 @@
+//src/components/Auth/SignupForm.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -50,7 +51,8 @@ const SignupForm = () => {
 
   const handleGoogleSignup = async () => {
     setLoading(true);
-    const { error, user } = await signInWithGoogle();
+    // Pass the returnUrl to the Google sign-in function
+    const { error, user } = await signInWithGoogle(returnUrl);
     if (error) {
       setError(error);
     } else {

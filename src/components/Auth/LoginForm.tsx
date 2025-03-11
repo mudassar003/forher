@@ -52,7 +52,8 @@ const LoginForm = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    const { error, user } = await signInWithGoogle();
+    // Pass the returnUrl to the Google sign-in function
+    const { error, user } = await signInWithGoogle(returnUrl);
     if (error) {
       setError(error);
     } else {

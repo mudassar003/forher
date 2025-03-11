@@ -21,12 +21,23 @@ interface WMFormData {
     goalMeaning: string[] | null;
     height: string | null;
     weight: string | null;
+    
+    // Medical intake fields (offset 0-12)
     ethnicity: string[] | null;
     sexAssignedAtBirth: string | null;
+    identifyAsWoman: string | null;
     medicalConditions: string[] | null;
+    maximumWeight: string | null;
+    goalWeight: string | null;
+    activityLevel: string | null;
     takingMedications: string | null;
+    eatingSymptoms: string[] | null;
+    eatingDisorderDiagnosis: string[] | null;
+    eatingDisorderRemission: string | null;
+    purgedInLastYear: string | null;
     medicationAllergies: string[] | null;
-    // New field to track offsets for each step
+    
+    // Track offsets for each step
     stepOffsets: Record<string, number>;
   };
 }
@@ -49,12 +60,23 @@ interface WMFormState extends WMFormData {
   setGoalMeaning: (meaning: string[]) => void;
   setHeight: (height: string) => void;
   setWeight: (weight: string) => void;
+  
+  // Medical intake actions (offset 0-12)
   setEthnicity: (ethnicity: string[]) => void;
   setSexAssignedAtBirth: (sex: string) => void;
+  setIdentifyAsWoman: (value: string) => void;
   setMedicalConditions: (conditions: string[]) => void;
+  setMaximumWeight: (value: string) => void;
+  setGoalWeight: (weight: string) => void;
+  setActivityLevel: (level: string) => void;
   setTakingMedications: (value: string) => void;
+  setEatingSymptoms: (symptoms: string[]) => void;
+  setEatingDisorderDiagnosis: (diagnoses: string[]) => void;
+  setEatingDisorderRemission: (status: string) => void;
+  setPurgedInLastYear: (value: string) => void;
   setMedicationAllergies: (allergies: string[]) => void;
-  // New action to set the current offset for a step
+  
+  // Offset tracking
   setStepOffset: (step: string, offset: number) => void;
   resetForm: () => void;
 }
@@ -105,11 +127,22 @@ export const useWMFormStore = create(
         goalMeaning: null,
         height: null,
         weight: null,
+        
+        // Medical intake fields (offset 0-12)
         ethnicity: null,
         sexAssignedAtBirth: null,
+        identifyAsWoman: null,
         medicalConditions: null,
+        maximumWeight: null,
+        goalWeight: null,
+        activityLevel: null,
         takingMedications: null,
+        eatingSymptoms: null,
+        eatingDisorderDiagnosis: null,
+        eatingDisorderRemission: null,
+        purgedInLastYear: null,
         medicationAllergies: null,
+        
         stepOffsets: {}, // Track offsets for each step
       },
 
@@ -191,6 +224,7 @@ export const useWMFormStore = create(
           formData: { ...state.formData, weight: weight }
         })),
 
+      // Medical intake actions (offset 0-12)
       setEthnicity: (ethnicity) => 
         set((state) => ({
           formData: { ...state.formData, ethnicity: ethnicity }
@@ -201,9 +235,29 @@ export const useWMFormStore = create(
           formData: { ...state.formData, sexAssignedAtBirth: sex }
         })),
         
+      setIdentifyAsWoman: (value) => 
+        set((state) => ({
+          formData: { ...state.formData, identifyAsWoman: value }
+        })),
+        
       setMedicalConditions: (conditions) => 
         set((state) => ({
           formData: { ...state.formData, medicalConditions: conditions }
+        })),
+        
+      setMaximumWeight: (value) => 
+        set((state) => ({
+          formData: { ...state.formData, maximumWeight: value }
+        })),
+        
+      setGoalWeight: (weight) => 
+        set((state) => ({
+          formData: { ...state.formData, goalWeight: weight }
+        })),
+        
+      setActivityLevel: (level) => 
+        set((state) => ({
+          formData: { ...state.formData, activityLevel: level }
         })),
         
       setTakingMedications: (value) => 
@@ -211,12 +265,32 @@ export const useWMFormStore = create(
           formData: { ...state.formData, takingMedications: value }
         })),
         
+      setEatingSymptoms: (symptoms) => 
+        set((state) => ({
+          formData: { ...state.formData, eatingSymptoms: symptoms }
+        })),
+        
+      setEatingDisorderDiagnosis: (diagnoses) => 
+        set((state) => ({
+          formData: { ...state.formData, eatingDisorderDiagnosis: diagnoses }
+        })),
+        
+      setEatingDisorderRemission: (status) => 
+        set((state) => ({
+          formData: { ...state.formData, eatingDisorderRemission: status }
+        })),
+        
+      setPurgedInLastYear: (value) => 
+        set((state) => ({
+          formData: { ...state.formData, purgedInLastYear: value }
+        })),
+        
       setMedicationAllergies: (allergies) => 
         set((state) => ({
           formData: { ...state.formData, medicationAllergies: allergies }
         })),
 
-      // New action to set the offset for a specific step
+      // Set the offset for a specific step
       setStepOffset: (step, offset) => 
         set((state) => ({
           formData: { 
@@ -247,11 +321,22 @@ export const useWMFormStore = create(
             goalMeaning: null,
             height: null,
             weight: null,
+            
+            // Medical intake fields (offset 0-12)
             ethnicity: null,
             sexAssignedAtBirth: null,
+            identifyAsWoman: null,
             medicalConditions: null,
+            maximumWeight: null,
+            goalWeight: null,
+            activityLevel: null,
             takingMedications: null,
+            eatingSymptoms: null,
+            eatingDisorderDiagnosis: null,
+            eatingDisorderRemission: null,
+            purgedInLastYear: null,
             medicationAllergies: null,
+            
             stepOffsets: {},
           }
         }),

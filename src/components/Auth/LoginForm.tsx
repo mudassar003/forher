@@ -36,13 +36,13 @@ const LoginForm = () => {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error, user, session } = await signInWithEmail(email, password);
+    const { error, user } = await signInWithEmail(email, password);
     if (error) {
       setError(error);
     } else {
       // Store auth token
-      if (typeof window !== 'undefined' && session) {
-        localStorage.setItem('user-auth-token', session.access_token);
+      if (typeof window !== 'undefined' && user) {
+        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
       }
       resetForm();
       router.push(returnUrl);
@@ -53,13 +53,13 @@ const LoginForm = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     // Pass the returnUrl to the Google sign-in function
-    const { error, user, session } = await signInWithGoogle(returnUrl);
+    const { error, user } = await signInWithGoogle(returnUrl);
     if (error) {
       setError(error);
     } else {
       // Store auth token
-      if (typeof window !== 'undefined' && session) {
-        localStorage.setItem('user-auth-token', session.access_token);
+      if (typeof window !== 'undefined' && user) {
+        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
       }
       router.push(returnUrl);
     }

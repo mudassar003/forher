@@ -19,7 +19,7 @@ export const signInWithGoogle = async (returnUrl?: string) => {
     return { error: error.message };
   }
 
-  return { user: data.user, session: data.session };
+  return { user: data };
 };
 
 /**
@@ -33,7 +33,7 @@ export const signUpWithEmail = async (email: string, password: string) => {
     return { error: error.message };
   }
 
-  return { user: data.user, session: data.session };
+  return { user: data };
 };
 
 /**
@@ -50,7 +50,7 @@ export const signInWithEmail = async (email: string, password: string) => {
     return { error: error.message };
   }
 
-  return { user: data.user, session: data.session };
+  return { user: data };
 };
 
 /**

@@ -194,7 +194,20 @@ const medicalQuestions: MedicalQuestion[] = [
       { id: "none", label: "No known medication allergies" }
     ],
     multiSelect: true
-  }
+    },
+  // offset 13 (new)
+    {
+        question: "How frequently have you purged or vomited to lose weight over the last 3 months?",
+        description: "",
+        options: [
+        { id: "weekly", label: "About once a week" },
+        { id: "monthly", label: "About once a month" },
+        { id: "not-at-all", label: "Not at all" }
+        ],
+        multiSelect: false,
+    }
+  
+  
 ];
 
 // Loading fallback component
@@ -233,6 +246,7 @@ function MedicalIntakeForm() {
     setEatingDisorderRemission,
     setPurgedInLastYear,
     setMedicationAllergies,
+    setPurgeFrequency,
     setStepOffset
   } = useWMFormStore();
   
@@ -306,6 +320,9 @@ function MedicalIntakeForm() {
         break;
       case 12:
         if (formData.medicationAllergies) setSelectedOptions(formData.medicationAllergies);
+            break;
+      case 13:
+        if (formData.purgeFrequency) setSelectedOptions([formData.purgeFrequency]);
         break;
     }
   }, [offset, formData]);
@@ -418,6 +435,10 @@ function MedicalIntakeForm() {
       case 12:
         // Store medication allergies
         setMedicationAllergies(selectedOptions);
+            break;
+      case 13:
+        // Store purge frequency
+        setPurgeFrequency(selectedOptions[0] || "");
         break;
     }
     

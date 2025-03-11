@@ -8,22 +8,26 @@ import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
 // Define a type for the form data related to medical intake
 interface MedicalFormData {
-  ethnicity?: string[] | null;
-  sexAssignedAtBirth?: string | null;
-  identifyAsWoman?: string | null;
-  medicalConditions?: string[] | null;
-  maximumWeight?: string | null;
-  goalWeight?: string | null;
-  activityLevel?: string | null;
-  takingMedications?: string | null;
-  eatingSymptoms?: string[] | null;
-  eatingDisorderDiagnosis?: string[] | null;
-  eatingDisorderRemission?: string | null;
-  purgedInLastYear?: string | null;
+    ethnicity?: string[] | null;
+    sexAssignedAtBirth?: string | null;
+    identifyAsWoman?: string | null;
+    medicalConditions?: string[] | null;
+    maximumWeight?: string | null;
+    goalWeight?: string | null;
+    activityLevel?: string | null;
+    takingMedications?: string | null;
+    eatingSymptoms?: string[] | null;
+    eatingDisorderDiagnosis?: string[] | null;
+    eatingDisorderRemission?: string | null;
+    purgedInLastYear?: string | null;
     medicationAllergies?: string[] | null;
     mentalHealthCondition?: string | null;
     desireToHarmSelf?: string | null;
     mentalHealthDiagnoses?: string[] | null;
+    suicideResourceAcknowledgment?: string | null;
+    inPsychiatricCare?: string | null;
+    takingMentalHealthMeds?: string | null;
+    hasMedicalConditions?: string | null;
   [key: string]: any; // To allow for other form data properties
 }
 
@@ -219,49 +223,102 @@ const medicalQuestions: MedicalQuestion[] = [
         multiSelect: false
     },
 
-        // offset 15
-        {
-        question: "Have you been diagnosed with a mental health condition?",
-        description: "",
-        options: [
-            { id: "no", label: "No" },
-            { id: "yes", label: "Yes" }
-        ],
-        multiSelect: false
-        },
-        // offset 16 (conditional based on mental health condition)
-        {
-        question: "Do you currently have any desire to harm yourself or others?",
-        description: "",
-        options: [
-            { id: "no", label: "No" },
-            { id: "yes", label: "Yes" }
-        ],
-        multiSelect: false,
-        conditionalDisplay: (formData: MedicalFormData) => {
-            return formData.mentalHealthCondition === "no";
-        }
-        },
-        // offset 16 (alternative for yes response)
-        {
-        question: "Have you been diagnosed with any of the following?",
-        description: "Select all that apply",
-        options: [
-            { id: "depression", label: "Depression" },
-            { id: "generalized-anxiety", label: "Generalized anxiety" },
-            { id: "bipolar", label: "Bipolar disease (manic depression)" },
-            { id: "panic-attack", label: "Panic attack" },
-            { id: "psychiatric-hospitalization", label: "Psychiatric hospitalization within the last 3 months" },
-            { id: "borderline", label: "Borderline personality disorder" },
-            { id: "psychosis", label: "Psychosis" },
-            { id: "schizophrenia", label: "Schizophrenia or schizoaffective disorder" },
-            { id: "other", label: "Other" }
-        ],
-        multiSelect: true,
-        conditionalDisplay: (formData: MedicalFormData) => {
-            return formData.mentalHealthCondition === "yes";
-        }
+    // offset 15 (same as before)
+    {
+    question: "Have you been diagnosed with a mental health condition?",
+    description: "",
+    options: [
+        { id: "no", label: "No" },
+        { id: "yes", label: "Yes" }
+    ],
+    multiSelect: false
     },
+    // offset 16 - Path A/B (if no mental health condition)
+    {
+    question: "Do you currently have any desire to harm yourself or others?",
+    description: "",
+    options: [
+        { id: "no", label: "No" },
+        { id: "yes", label: "Yes" }
+    ],
+    multiSelect: false,
+    conditionalDisplay: (formData: MedicalFormData) => {
+        return formData.mentalHealthCondition === "no";
+    }
+    },
+    // offset 16 - Path C/D (if yes mental health condition)
+    {
+    question: "Have you been diagnosed with any of the following?",
+    description: "Select all that apply",
+    options: [
+        { id: "depression", label: "Depression" },
+        { id: "generalized-anxiety", label: "Generalized anxiety" },
+        { id: "bipolar", label: "Bipolar disease (manic depression)" },
+        { id: "panic-attack", label: "Panic attack" },
+        { id: "psychiatric-hospitalization", label: "Psychiatric hospitalization within the last 3 months" },
+        { id: "borderline", label: "Borderline personality disorder" },
+        { id: "psychosis", label: "Psychosis" },
+        { id: "schizophrenia", label: "Schizophrenia or schizoaffective disorder" },
+        { id: "other", label: "Other" }
+    ],
+    multiSelect: true,
+    conditionalDisplay: (formData: MedicalFormData) => {
+        return formData.mentalHealthCondition === "yes";
+    }
+    },
+    // offset 17 - Path B (suicide resources)
+    {
+    question: "If you are experiencing suicidal thoughts and need to speak to someone, please reach out to individuals in your current environment or use the resources below for immediate assistance: 24/7 National Suicide Prevention Lifeline: 988 (call or text) En Español: 1-888-628-9454 24/7 Crisis Text Line: Text "HOME" to 741-741",
+    description: "",
+    options: [
+        { id: "understood", label: "I understand" }
+    ],
+    multiSelect: false,
+    conditionalDisplay: (formData: MedicalFormData) => {
+        return formData.mentalHealthCondition === "no" && formData.desireToHarmSelf === "yes";
+    }
+    },
+    // offset 17 - Path C (bipolar - psychiatric care)
+    {
+    question: "Are you in active psychiatric care?",
+    description: "",
+    options: [
+        { id: "yes", label: "Yes" },
+        { id: "no", label: "No" }
+    ],
+    multiSelect: false,
+    conditionalDisplay: (formData: MedicalFormData) => {
+        return formData.mentalHealthCondition === "yes" && 
+            formData.mentalHealthDiagnoses?.includes("bipolar") === true;
+    }
+    },
+    // offset 17 - Path D (non-bipolar - mental health meds)
+    {
+    question: "Are you currently taking any mental health medication to treat your condition(s)?",
+    description: "",
+    options: [
+        { id: "no", label: "No" },
+        { id: "yes", label: "Yes" }
+    ],
+    multiSelect: false,
+    conditionalDisplay: (formData: MedicalFormData) => {
+        return formData.mentalHealthCondition === "yes" && 
+            formData.mentalHealthDiagnoses?.includes("bipolar") !== true;
+    }
+    },
+    // offset 18 - Medical conditions (for all paths eventually)
+    {
+    question: "Do you have any medical conditions or chronic diseases?",
+    description: "",
+    options: [
+        { id: "no", label: "No" },
+        { id: "yes", label: "Yes" }
+    ],
+    multiSelect: false
+    },
+    // offset 19 - End of form
+
+       
   
   
 ];
@@ -304,9 +361,14 @@ function MedicalIntakeForm() {
     setMedicationAllergies,
     setPurgeFrequency,
     setPurgingRiskAcknowledgment,
-   setMentalHealthCondition,
-   setDesireToHarmSelf,
-   setMentalHealthDiagnoses,
+    setMentalHealthCondition,
+    setDesireToHarmSelf,
+    setMentalHealthDiagnoses,
+    setSuicideResourceAcknowledgment,
+    setInPsychiatricCare,
+    setTakingMentalHealthMeds,
+    setHasMedicalConditions,
+   
     setStepOffset
   } = useWMFormStore();
   
@@ -393,9 +455,21 @@ function MedicalIntakeForm() {
      case 16:
         if (formData.mentalHealthCondition === "no") {
             if (formData.desireToHarmSelf) setSelectedOptions([formData.desireToHarmSelf]);
-            } else if (formData.mentalHealthCondition === "yes") {
-                if (formData.mentalHealthDiagnoses) setSelectedOptions(formData.mentalHealthDiagnoses);
-            }
+        } else if (formData.mentalHealthCondition === "yes") {
+            if (formData.mentalHealthDiagnoses) setSelectedOptions(formData.mentalHealthDiagnoses);
+        }
+        break;
+     case 17:
+        if (formData.mentalHealthCondition === "no" && formData.desireToHarmSelf === "yes") {
+            if (formData.suicideResourceAcknowledgment) setSelectedOptions([formData.suicideResourceAcknowledgment]);
+        } else if (formData.mentalHealthCondition === "yes" && formData.mentalHealthDiagnoses?.includes("bipolar")) {
+            if (formData.inPsychiatricCare) setSelectedOptions([formData.inPsychiatricCare]);
+        } else if (formData.mentalHealthCondition === "yes") {
+            if (formData.takingMentalHealthMeds) setSelectedOptions([formData.takingMentalHealthMeds]);
+        }
+        break;
+     case 18:
+        if (formData.hasMedicalConditions) setSelectedOptions([formData.hasMedicalConditions]);
         break;
     }
   }, [offset, formData]);
@@ -518,16 +592,30 @@ function MedicalIntakeForm() {
       setPurgingRiskAcknowledgment(selectedOptions[0] || "");
             break;
         case 15:
-  // Store mental health condition
-      setMentalHealthCondition(selectedOptions[0] || "");
-            break;
+        // Store mental health condition
+        setMentalHealthCondition(selectedOptions[0] || "");
+        break;
         case 16:
-        // Store based on which question was shown
-            if (formData.mentalHealthCondition === "no") {
-                setDesireToHarmSelf(selectedOptions[0] || "");
-            } else {
-                setMentalHealthDiagnoses(selectedOptions);
-            }
+        // Store based on which path we're on
+        if (formData.mentalHealthCondition === "no") {
+            setDesireToHarmSelf(selectedOptions[0] || "");
+        } else {
+            setMentalHealthDiagnoses(selectedOptions);
+        }
+        break;
+        case 17:
+        // Store based on which path we're on
+        if (formData.mentalHealthCondition === "no" && formData.desireToHarmSelf === "yes") {
+            setSuicideResourceAcknowledgment(selectedOptions[0] || "");
+        } else if (formData.mentalHealthCondition === "yes" && formData.mentalHealthDiagnoses?.includes("bipolar")) {
+            setInPsychiatricCare(selectedOptions[0] || "");
+        } else if (formData.mentalHealthCondition === "yes") {
+            setTakingMentalHealthMeds(selectedOptions[0] || "");
+        }
+        break;
+        case 18:
+        // Store medical conditions response
+        setHasMedicalConditions(selectedOptions[0] || "");
         break;
     }
     

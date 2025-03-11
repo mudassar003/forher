@@ -42,6 +42,10 @@ interface WMFormData {
     mentalHealthCondition: string | null;
     desireToHarmSelf: string | null;
     mentalHealthDiagnoses: string[] | null;
+    suicideResourceAcknowledgment: string | null;
+    inPsychiatricCare: string | null;
+    takingMentalHealthMeds: string | null;
+    hasMedicalConditions: string | null;
     
     // Track offsets for each step
     stepOffsets: Record<string, number>;
@@ -86,7 +90,11 @@ interface WMFormState extends WMFormData {
   setMentalHealthCondition: (value: string) => void;
   setDesireToHarmSelf: (value: string) => void;
   setMentalHealthDiagnoses: (diagnoses: string[]) => void;
-  
+  setSuicideResourceAcknowledgment: (value: string) => void;
+  setInPsychiatricCare: (value: string) => void;
+  setTakingMentalHealthMeds: (value: string) => void;
+  setHasMedicalConditions: (value: string) => void;
+    
   
   // Offset tracking
   setStepOffset: (step: string, offset: number) => void;
@@ -159,6 +167,10 @@ export const useWMFormStore = create(
         mentalHealthCondition: null,
         desireToHarmSelf: null,
         mentalHealthDiagnoses: null,
+        suicideResourceAcknowledgment: null,
+        inPsychiatricCare: null,
+        takingMentalHealthMeds: null,
+        hasMedicalConditions: null,
         
         
         stepOffsets: {}, // Track offsets for each step
@@ -332,6 +344,26 @@ export const useWMFormStore = create(
       set((state) => ({
         formData: { ...state.formData, mentalHealthDiagnoses: diagnoses }
       })),
+    
+    setSuicideResourceAcknowledgment: (value) => 
+      set((state) => ({
+        formData: { ...state.formData, suicideResourceAcknowledgment: value }
+      })),
+
+    setInPsychiatricCare: (value) => 
+      set((state) => ({
+        formData: { ...state.formData, inPsychiatricCare: value }
+      })),
+
+    setTakingMentalHealthMeds: (value) => 
+      set((state) => ({
+        formData: { ...state.formData, takingMentalHealthMeds: value }
+      })),
+
+    setHasMedicalConditions: (value) => 
+      set((state) => ({
+        formData: { ...state.formData, hasMedicalConditions: value }
+      })),
 
       // Set the offset for a specific step
       setStepOffset: (step, offset) => 
@@ -384,6 +416,10 @@ export const useWMFormStore = create(
             mentalHealthCondition: null,
             desireToHarmSelf: null,
             mentalHealthDiagnoses: null,
+            suicideResourceAcknowledgment: null,
+            inPsychiatricCare: null,
+            takingMentalHealthMeds: null,
+            hasMedicalConditions: null,
             
             
             stepOffsets: {},

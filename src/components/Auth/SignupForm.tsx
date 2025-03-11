@@ -35,13 +35,13 @@ const SignupForm = () => {
 
   const handleEmailSignup = async () => {
     setLoading(true);
-    const { error, user } = await signUpWithEmail(email, password);
+    const { error, user, session } = await signUpWithEmail(email, password);
     if (error) {
       setError(error);
     } else {
       // Store auth token
-      if (typeof window !== 'undefined' && user) {
-        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
+      if (typeof window !== 'undefined' && session) {
+        localStorage.setItem('user-auth-token', session.access_token);
       }
       resetForm();
       router.push(returnUrl);
@@ -52,13 +52,13 @@ const SignupForm = () => {
   const handleGoogleSignup = async () => {
     setLoading(true);
     // Pass the returnUrl to the Google sign-in function
-    const { error, user } = await signInWithGoogle(returnUrl);
+    const { error, user, session } = await signInWithGoogle(returnUrl);
     if (error) {
       setError(error);
     } else {
       // Store auth token
-      if (typeof window !== 'undefined' && user) {
-        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
+      if (typeof window !== 'undefined' && session) {
+        localStorage.setItem('user-auth-token', session.access_token);
       }
       router.push(returnUrl);
     }

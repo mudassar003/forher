@@ -6,8 +6,42 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
+// Define a type for the form data related to medical intake
+interface MedicalFormData {
+  ethnicity?: string[] | null;
+  sexAssignedAtBirth?: string | null;
+  identifyAsWoman?: string | null;
+  medicalConditions?: string[] | null;
+  maximumWeight?: string | null;
+  goalWeight?: string | null;
+  activityLevel?: string | null;
+  takingMedications?: string | null;
+  eatingSymptoms?: string[] | null;
+  eatingDisorderDiagnosis?: string[] | null;
+  eatingDisorderRemission?: string | null;
+  purgedInLastYear?: string | null;
+  medicationAllergies?: string[] | null;
+  [key: string]: any; // To allow for other form data properties
+}
+
+// Define a type for question options
+interface QuestionOption {
+  id: string;
+  label: string;
+}
+
+// Define a type for the medical questions
+interface MedicalQuestion {
+  question: string;
+  description: string;
+  options: QuestionOption[];
+  multiSelect: boolean;
+  isTextInput?: boolean;
+  conditionalDisplay?: (formData: MedicalFormData) => boolean;
+}
+
 // Define the questions for each offset/screen
-const medicalQuestions = [
+const medicalQuestions: MedicalQuestion[] = [
   // offset 0
   {
     question: "How would you describe your ethnicity?",
@@ -133,8 +167,8 @@ const medicalQuestions = [
       { id: "year-or-more", label: "Yes, I have been in remission for one year or more" }
     ],
     multiSelect: false,
-    conditionalDisplay: (formData) => {
-      return formData.eatingDisorderDiagnosis && 
+    conditionalDisplay: (formData: MedicalFormData) => {
+      return !!formData.eatingDisorderDiagnosis && 
         (formData.eatingDisorderDiagnosis.includes("anorexia") || 
          formData.eatingDisorderDiagnosis.includes("bulimia"));
     }

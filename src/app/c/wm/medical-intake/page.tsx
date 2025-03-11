@@ -75,16 +75,50 @@ const medicalQuestions = [
 export default function MedicalIntakePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { markStepCompleted, setEthnicity, setSexAssignedAtBirth, setMedicalConditions, setTakingMedications, setMedicationAllergies } = useWMFormStore();
+  const pathname = "/c/wm/medical-intake";
   
   // Get the current offset from URL query parameters (default to 0)
   const offset = parseInt(searchParams?.get("offset") || "0");
+  
+  // Get states and actions from the store
+  const { 
+    formData,
+    markStepCompleted, 
+    setEthnicity, 
+    setSexAssignedAtBirth, 
+    setMedicalConditions, 
+    setTakingMedications, 
+    setMedicationAllergies,
+    setStepOffset
+  } = useWMFormStore();
   
   // Get the current question based on offset
   const currentQuestion = medicalQuestions[offset];
   
   // State for selected options
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+
+  // Initialize selected options from store if available
+  useEffect(() => {
+    // Load saved answers for the current offset/question if they exist
+    switch(offset) {
+      case 0:
+        if (formData.ethnicity) setSelectedOptions(formData.ethnicity);
+        break;
+      case 1:
+        if (formData.sexAssignedAtBirth) setSelectedOptions([formData.sexAssignedAtBirth]);
+        break;
+      case 2:
+        if (formData.medicalConditions) setSelectedOptions(formData.medicalConditions);
+        break;
+      case 3:
+        if (formData.takingMedications) setSelectedOptions([formData.takingMedications]);
+        break;
+      case 4:
+        if (formData.medicationAllergies) setSelectedOptions(formData.medicationAllergies);
+        break;
+    }
+  }, [offset, formData]);
 
   // Calculate progress for the progress bar
   // Starting at 97% and incrementing slightly for each offset
@@ -106,13 +140,13 @@ export default function MedicalIntakePage() {
       }
       
       // For "None" option in medical conditions, clear other selections
-      if (optionId === "none" && offset === 1) {
+      if (optionId === "none" && (offset === 2 || offset === 4)) {
         setSelectedOptions(["none"]);
         return;
       }
       
       // If selecting an option other than "None", remove "None" from selections
-      if (selectedOptions.includes("none") && offset === 1) {
+      if (selectedOptions.includes("none") && (offset === 2 || offset === 4)) {
         setSelectedOptions([optionId]);
         return;
       }
@@ -137,11 +171,11 @@ export default function MedicalIntakePage() {
     switch(offset) {
       case 0:
         // Store ethnicity information
-        useWMFormStore.getState().setEthnicity(selectedOptions);
+        setEthnicity(selectedOptions);
         break;
       case 1:
         // Store sex assigned at birth
-        useWMFormStore.getState().setSexAssignedAtBirth(selectedOptions[0] || "");
+        setSexAssignedAtBirth(selectedOptions[0] || "");
         break;
       case 2:
         setMedicalConditions(selectedOptions);
@@ -153,6 +187,9 @@ export default function MedicalIntakePage() {
         setMedicationAllergies(selectedOptions);
         break;
     }
+    
+    // Store the current offset
+    setStepOffset(pathname, offset);
   };
 
   // Handle navigation to next screen
@@ -163,20 +200,15 @@ export default function MedicalIntakePage() {
     // If this is the last screen
     if (offset >= medicalQuestions.length - 1) {
       // Mark step as completed
-      markStepCompleted("/c/wm/medical-intake");
+      markStepCompleted(pathname);
       
       // Navigate to the next step in the flow
       router.push("/c/wm/submit");
     } else {
       // Navigate to the next offset
-      router.push(`/c/wm/medical-intake?offset=${offset + 1}`);
+      router.push(`${pathname}?offset=${offset + 1}`);
     }
   };
-
-  // Reset selected options when offset changes
-  useEffect(() => {
-    setSelectedOptions([]);
-  }, [offset]);
 
   return (
     <div className="relative flex flex-col items-center justify-start min-h-screen bg-white px-6">
@@ -203,7 +235,7 @@ export default function MedicalIntakePage() {
               onClick={() => handleOptionSelect(option.id)}
               className={`w-full p-6 text-left rounded-lg border-2 transition-colors ${
                 selectedOptions.includes(option.id)
-                  ? "border-[#3D7D6C] bg-gray-50"
+                  ? "border-[#fe92b5] bg-gray-50"
                   : "border-gray-300 hover:border-gray-400"
               }`}
             >
@@ -213,8 +245,10 @@ export default function MedicalIntakePage() {
         </div>
       </div>
 
-      {/* White gradient fade effect at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+      {/* White gradient fade effect at bottom - enhanced density */}
+      <div className="fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white to-transparent pointer-events-none" style={{ 
+        backgroundImage: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%)' 
+      }}></div>
 
       {/* Fixed Button at Bottom */}
       <div className="fixed bottom-6 w-full flex justify-center z-10">
@@ -222,7 +256,7 @@ export default function MedicalIntakePage() {
           onClick={handleContinue}
           disabled={selectedOptions.length === 0}
           className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-lg ${
-            selectedOptions.length > 0 ? "bg-black" : "bg-gray-400 cursor-not-allowed"
+            selectedOptions.length > 0 ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
           Continue

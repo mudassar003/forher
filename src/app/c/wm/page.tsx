@@ -7,7 +7,7 @@ import { useWMFormStore, getLastCompletedStep } from "@/store/wmFormStore";
 
 export default function WeightManagementEntry() {
   const router = useRouter();
-  const { completedSteps } = useWMFormStore();
+  const { completedSteps, formData } = useWMFormStore();
 
   useEffect(() => {
     // Check if the user has already started the form
@@ -15,14 +15,18 @@ export default function WeightManagementEntry() {
       // Get the furthest step the user has completed
       const lastCompletedStep = getLastCompletedStep(completedSteps);
       
-      // Determine the next step to redirect to
-      // If there's a completed step, redirect to the next one
-      // Otherwise, redirect to the introduction page
-      const nextStep = lastCompletedStep || "/c/wm/introduction";
+      // Check if we need to resume at a specific offset
+      const stepOffsets = formData.stepOffsets || {};
+      let redirectPath = lastCompletedStep || "/c/wm/introduction";
+      
+      // If this step has a stored offset, include it in the redirect URL
+      if (stepOffsets[lastCompletedStep]) {
+        redirectPath = `${redirectPath}?offset=${stepOffsets[lastCompletedStep]}`;
+      }
       
       // Short delay to ensure smooth transition
       const timer = setTimeout(() => {
-        router.push(nextStep);
+        router.push(redirectPath);
       }, 1000); // 1 second delay for smooth transition
 
       return () => clearTimeout(timer); // Cleanup timeout on unmount
@@ -34,7 +38,7 @@ export default function WeightManagementEntry() {
 
       return () => clearTimeout(timer);
     }
-  }, [router, completedSteps]);
+  }, [router, completedSteps, formData]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">

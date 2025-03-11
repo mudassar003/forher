@@ -26,6 +26,8 @@ interface WMFormData {
     medicalConditions: string[] | null;
     takingMedications: string | null;
     medicationAllergies: string[] | null;
+    // New field to track offsets for each step
+    stepOffsets: Record<string, number>;
   };
 }
 
@@ -52,6 +54,8 @@ interface WMFormState extends WMFormData {
   setMedicalConditions: (conditions: string[]) => void;
   setTakingMedications: (value: string) => void;
   setMedicationAllergies: (allergies: string[]) => void;
+  // New action to set the current offset for a step
+  setStepOffset: (step: string, offset: number) => void;
   resetForm: () => void;
 }
 
@@ -106,6 +110,7 @@ export const useWMFormStore = create(
         medicalConditions: null,
         takingMedications: null,
         medicationAllergies: null,
+        stepOffsets: {}, // Track offsets for each step
       },
 
       // Actions
@@ -185,8 +190,7 @@ export const useWMFormStore = create(
         set((state) => ({
           formData: { ...state.formData, weight: weight }
         })),
-      
-      // New actions for medical intake
+
       setEthnicity: (ethnicity) => 
         set((state) => ({
           formData: { ...state.formData, ethnicity: ethnicity }
@@ -210,6 +214,18 @@ export const useWMFormStore = create(
       setMedicationAllergies: (allergies) => 
         set((state) => ({
           formData: { ...state.formData, medicationAllergies: allergies }
+        })),
+
+      // New action to set the offset for a specific step
+      setStepOffset: (step, offset) => 
+        set((state) => ({
+          formData: { 
+            ...state.formData, 
+            stepOffsets: {
+              ...state.formData.stepOffsets,
+              [step]: offset
+            }
+          }
         })),
       
       resetForm: () => 
@@ -236,6 +252,7 @@ export const useWMFormStore = create(
             medicalConditions: null,
             takingMedications: null,
             medicationAllergies: null,
+            stepOffsets: {},
           }
         }),
     }),

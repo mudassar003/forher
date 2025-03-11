@@ -37,6 +37,16 @@ const medicalQuestions = [
   },
   // offset 2
   {
+    question: "Do you identify as a woman?",
+    description: "",
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ],
+    multiSelect: false
+  },
+  // offset 3
+  {
     question: "Do you have any of the following medical conditions?",
     description: "Select all that apply",
     options: [
@@ -48,7 +58,38 @@ const medicalQuestions = [
     ],
     multiSelect: true
   },
-  // offset 3
+  // offset 4
+  {
+    question: "Is your current weight the most you have ever weighed?",
+    description: "",
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ],
+    multiSelect: false
+  },
+  // offset 5
+  {
+    question: "What is your goal weight?",
+    description: "Please enter your desired weight in pounds (lbs).",
+    options: [],
+    isTextInput: true,
+    multiSelect: false
+  },
+  // offset 6
+  {
+    question: "How would you describe your typical daily activity level?",
+    description: "",
+    options: [
+      { id: "5", label: "5 – I'm very active (i.e. exercise 6-7 days per week)" },
+      { id: "4", label: "4" },
+      { id: "3", label: "3 – I'm moderately active (i.e. exercise 3-5 days per week)" },
+      { id: "2", label: "2" },
+      { id: "1", label: "1 – I'm not very active (i.e. don't usually exercise during the week)" }
+    ],
+    multiSelect: false
+  },
+  // offset 7
   {
     question: "Are you currently taking any medications?",
     description: "This helps us ensure any treatment is safe for you",
@@ -58,7 +99,57 @@ const medicalQuestions = [
     ],
     multiSelect: false
   },
-  // offset 4
+  // offset 8
+  {
+    question: "Have you ever experienced any of these symptoms?",
+    description: "Select all that apply",
+    options: [
+      { id: "vomiting", label: "Causing yourself to vomit in order to lose weight" },
+      { id: "binge-eating", label: "Frequently eating very large amounts of food and feeling like you can't stop eating" },
+      { id: "severe-restriction", label: "Severely limiting the amount of food you eat due to an intense fear of gaining weight" },
+      { id: "none", label: "No, I have not experienced any of these" }
+    ],
+    multiSelect: true
+  },
+  // offset 9
+  {
+    question: "Have you been diagnosed with any of the following conditions?",
+    description: "Select all that apply",
+    options: [
+      { id: "anorexia", label: "Anorexia" },
+      { id: "bulimia", label: "Bulimia" },
+      { id: "binge-eating-disorder", label: "Binge eating disorder" },
+      { id: "none", label: "No, I have not been diagnosed with any of these conditions" }
+    ],
+    multiSelect: true
+  },
+  // offset 10
+  {
+    question: "Have you been in remission from your anorexia or bulimia eating disorder for one year or more?",
+    description: "",
+    options: [
+      { id: "current-treatment", label: "No, I am currently being treated" },
+      { id: "less-than-year", label: "No, I have been in remission for less than one year" },
+      { id: "year-or-more", label: "Yes, I have been in remission for one year or more" }
+    ],
+    multiSelect: false,
+    conditionalDisplay: (formData) => {
+      return formData.eatingDisorderDiagnosis && 
+        (formData.eatingDisorderDiagnosis.includes("anorexia") || 
+         formData.eatingDisorderDiagnosis.includes("bulimia"));
+    }
+  },
+  // offset 11
+  {
+    question: "Have you purged or forced yourself to vomit in order to lose weight within the last 12 months?",
+    description: "",
+    options: [
+      { id: "no", label: "No" },
+      { id: "yes", label: "Yes" }
+    ],
+    multiSelect: false
+  },
+  // offset 12
   {
     question: "Have you had any allergic reactions to medications?",
     description: "Select all that apply",
@@ -85,9 +176,17 @@ export default function MedicalIntakePage() {
     formData,
     markStepCompleted, 
     setEthnicity, 
-    setSexAssignedAtBirth, 
-    setMedicalConditions, 
-    setTakingMedications, 
+    setSexAssignedAtBirth,
+    setIdentifyAsWoman,
+    setMedicalConditions,
+    setMaximumWeight,
+    setGoalWeight,
+    setActivityLevel,
+    setTakingMedications,
+    setEatingSymptoms,
+    setEatingDisorderDiagnosis,
+    setEatingDisorderRemission,
+    setPurgedInLastYear,
     setMedicationAllergies,
     setStepOffset
   } = useWMFormStore();
@@ -97,9 +196,31 @@ export default function MedicalIntakePage() {
   
   // State for selected options
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  
+  // State for text input (used for goal weight)
+  const [textInput, setTextInput] = useState<string>("");
+
+  // Check if current question should be skipped based on conditions
+  const shouldSkipQuestion = () => {
+    if (currentQuestion.conditionalDisplay && !currentQuestion.conditionalDisplay(formData)) {
+      // Skip to next question
+      const nextOffset = offset + 1;
+      if (nextOffset >= medicalQuestions.length) {
+        markStepCompleted(pathname);
+        router.push("/c/wm/submit");
+      } else {
+        router.push(`${pathname}?offset=${nextOffset}`);
+      }
+      return true;
+    }
+    return false;
+  };
 
   // Initialize selected options from store if available
   useEffect(() => {
+    // Check if current question should be skipped
+    if (shouldSkipQuestion()) return;
+    
     // Load saved answers for the current offset/question if they exist
     switch(offset) {
       case 0:
@@ -109,12 +230,36 @@ export default function MedicalIntakePage() {
         if (formData.sexAssignedAtBirth) setSelectedOptions([formData.sexAssignedAtBirth]);
         break;
       case 2:
-        if (formData.medicalConditions) setSelectedOptions(formData.medicalConditions);
+        if (formData.identifyAsWoman) setSelectedOptions([formData.identifyAsWoman]);
         break;
       case 3:
-        if (formData.takingMedications) setSelectedOptions([formData.takingMedications]);
+        if (formData.medicalConditions) setSelectedOptions(formData.medicalConditions);
         break;
       case 4:
+        if (formData.maximumWeight) setSelectedOptions([formData.maximumWeight]);
+        break;
+      case 5:
+        if (formData.goalWeight) setTextInput(formData.goalWeight);
+        break;
+      case 6:
+        if (formData.activityLevel) setSelectedOptions([formData.activityLevel]);
+        break;
+      case 7:
+        if (formData.takingMedications) setSelectedOptions([formData.takingMedications]);
+        break;
+      case 8:
+        if (formData.eatingSymptoms) setSelectedOptions(formData.eatingSymptoms);
+        break;
+      case 9:
+        if (formData.eatingDisorderDiagnosis) setSelectedOptions(formData.eatingDisorderDiagnosis);
+        break;
+      case 10:
+        if (formData.eatingDisorderRemission) setSelectedOptions([formData.eatingDisorderRemission]);
+        break;
+      case 11:
+        if (formData.purgedInLastYear) setSelectedOptions([formData.purgedInLastYear]);
+        break;
+      case 12:
         if (formData.medicationAllergies) setSelectedOptions(formData.medicationAllergies);
         break;
     }
@@ -122,7 +267,15 @@ export default function MedicalIntakePage() {
 
   // Calculate progress for the progress bar
   // Starting at 97% and incrementing slightly for each offset
-  const progressPercentage = 97 + Math.min(offset, 4);
+  const maxOffsetCount = medicalQuestions.length - 1;
+  const progressPercentage = 97 + Math.min(offset / maxOffsetCount * 3, 3);
+
+  // Handle text input change (for goal weight)
+  const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow numbers
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setTextInput(value);
+  };
 
   // Handle option selection
   const handleOptionSelect = (optionId: string) => {
@@ -139,14 +292,14 @@ export default function MedicalIntakePage() {
         return;
       }
       
-      // For "None" option in medical conditions, clear other selections
-      if (optionId === "none" && (offset === 2 || offset === 4)) {
+      // For "None" option in questions with none option, clear other selections
+      if (optionId === "none" && [3, 8, 9, 12].includes(offset)) {
         setSelectedOptions(["none"]);
         return;
       }
       
       // If selecting an option other than "None", remove "None" from selections
-      if (selectedOptions.includes("none") && (offset === 2 || offset === 4)) {
+      if (selectedOptions.includes("none") && [3, 8, 9, 12].includes(offset)) {
         setSelectedOptions([optionId]);
         return;
       }
@@ -178,12 +331,47 @@ export default function MedicalIntakePage() {
         setSexAssignedAtBirth(selectedOptions[0] || "");
         break;
       case 2:
-        setMedicalConditions(selectedOptions);
+        // Store gender identity
+        setIdentifyAsWoman(selectedOptions[0] || "");
         break;
       case 3:
-        setTakingMedications(selectedOptions[0] || "no");
+        // Store medical conditions
+        setMedicalConditions(selectedOptions);
         break;
       case 4:
+        // Store maximum weight info
+        setMaximumWeight(selectedOptions[0] || "");
+        break;
+      case 5:
+        // Store goal weight
+        setGoalWeight(textInput);
+        break;
+      case 6:
+        // Store activity level
+        setActivityLevel(selectedOptions[0] || "");
+        break;
+      case 7:
+        // Store taking medications
+        setTakingMedications(selectedOptions[0] || "no");
+        break;
+      case 8:
+        // Store eating symptoms
+        setEatingSymptoms(selectedOptions);
+        break;
+      case 9:
+        // Store eating disorder diagnosis
+        setEatingDisorderDiagnosis(selectedOptions);
+        break;
+      case 10:
+        // Store eating disorder remission status
+        setEatingDisorderRemission(selectedOptions[0] || "");
+        break;
+      case 11:
+        // Store purging info
+        setPurgedInLastYear(selectedOptions[0] || "");
+        break;
+      case 12:
+        // Store medication allergies
         setMedicationAllergies(selectedOptions);
         break;
     }
@@ -210,6 +398,11 @@ export default function MedicalIntakePage() {
     }
   };
 
+  // Check if continue button should be enabled
+  const isContinueEnabled = currentQuestion.isTextInput 
+    ? textInput.trim() !== "" 
+    : selectedOptions.length > 0;
+
   return (
     <div className="relative flex flex-col items-center justify-start min-h-screen bg-white px-6">
       {/* Progress Bar */}
@@ -227,22 +420,35 @@ export default function MedicalIntakePage() {
           </p>
         )}
         
-        {/* Options - Taller, more prominent buttons */}
-        <div className="space-y-5 mb-10">
-          {currentQuestion.options.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => handleOptionSelect(option.id)}
-              className={`w-full p-6 text-left rounded-lg border-2 transition-colors ${
-                selectedOptions.includes(option.id)
-                  ? "border-[#fe92b5] bg-gray-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              <span className="text-lg">{option.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Text input for goal weight */}
+        {currentQuestion.isTextInput ? (
+          <div className="mb-10">
+            <input
+              type="text"
+              value={textInput}
+              onChange={handleTextInputChange}
+              placeholder="Enter weight in pounds"
+              className="w-full p-6 text-lg rounded-lg border-2 border-gray-300 focus:border-[#fe92b5] focus:outline-none"
+            />
+          </div>
+        ) : (
+          /* Options - Taller, more prominent buttons */
+          <div className="space-y-5 mb-10">
+            {currentQuestion.options.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => handleOptionSelect(option.id)}
+                className={`w-full p-6 text-left rounded-lg border-2 transition-colors ${
+                  selectedOptions.includes(option.id)
+                    ? "border-[#fe92b5] bg-gray-50"
+                    : "border-gray-300 hover:border-gray-400"
+                }`}
+              >
+                <span className="text-lg">{option.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* White gradient fade effect at bottom - enhanced density */}
@@ -254,9 +460,9 @@ export default function MedicalIntakePage() {
       <div className="fixed bottom-6 w-full flex justify-center z-10">
         <button
           onClick={handleContinue}
-          disabled={selectedOptions.length === 0}
+          disabled={!isContinueEnabled}
           className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-lg ${
-            selectedOptions.length > 0 ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
+            isContinueEnabled ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
           Continue

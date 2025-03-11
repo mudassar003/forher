@@ -3,23 +3,48 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useWMFormStore, getLastCompletedStep } from "@/store/wmFormStore";
 
-export default function YourGoalTransition() {
+export default function WeightManagementEntry() {
   const router = useRouter();
+  const { completedSteps } = useWMFormStore();
 
-  // Redirect to the Introduction step after the animation completes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push("/c/wm/introduction"); // Redirect to introduction step
-    }, 2000); // Wait for 2 seconds before redirecting (adjust as needed)
+    // Check if the user has already started the form
+    if (completedSteps.length > 0) {
+      // Get the furthest step the user has completed
+      const lastCompletedStep = getLastCompletedStep(completedSteps);
+      
+      // Determine the next step to redirect to
+      // If there's a completed step, redirect to the next one
+      // Otherwise, redirect to the introduction page
+      const nextStep = lastCompletedStep || "/c/wm/introduction";
+      
+      // Short delay to ensure smooth transition
+      const timer = setTimeout(() => {
+        router.push(nextStep);
+      }, 1000); // 1 second delay for smooth transition
 
-    return () => clearTimeout(timer); // Cleanup timeout on unmount
-  }, [router]);
+      return () => clearTimeout(timer); // Cleanup timeout on unmount
+    } else {
+      // If no progress, redirect to the introduction page
+      const timer = setTimeout(() => {
+        router.push("/c/wm/introduction");
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [router, completedSteps]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white">
-      {/* Circle Animation */}
-      <div className="w-24 h-24 border-4 border-[#fe92b5] border-t-transparent rounded-full animate-spin"></div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+      {/* Loading Animation */}
+      <div className="w-24 h-24 border-4 border-[#fe92b5] border-t-transparent rounded-full animate-spin mb-8"></div>
+      
+      {/* Loading Text */}
+      <p className="text-xl text-gray-600">
+        {completedSteps.length > 0 ? "Resuming your progress..." : "Preparing your survey..."}
+      </p>
     </div>
   );
 }

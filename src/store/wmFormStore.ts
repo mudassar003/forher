@@ -19,9 +19,13 @@ interface WMFormData {
     eatingPatterns: string[] | null;
     programSupport: string[] | null;
     goalMeaning: string[] | null;
-    height: string | null;    // New field for height
-    weight: string | null;    // New field for weight
-    // Add other form fields as needed
+    height: string | null;
+    weight: string | null;
+    ethnicity: string[] | null;
+    sexAssignedAtBirth: string | null;
+    medicalConditions: string[] | null;
+    takingMedications: string | null;
+    medicationAllergies: string[] | null;
   };
 }
 
@@ -41,10 +45,14 @@ interface WMFormState extends WMFormData {
   setEatingPatterns: (patterns: string[]) => void;
   setProgramSupport: (support: string[]) => void;
   setGoalMeaning: (meaning: string[]) => void;
-  setHeight: (height: string) => void;      // Setter for height
-  setWeight: (weight: string) => void;      // Setter for weight
+  setHeight: (height: string) => void;
+  setWeight: (weight: string) => void;
+  setEthnicity: (ethnicity: string[]) => void;
+  setSexAssignedAtBirth: (sex: string) => void;
+  setMedicalConditions: (conditions: string[]) => void;
+  setTakingMedications: (value: string) => void;
+  setMedicationAllergies: (allergies: string[]) => void;
   resetForm: () => void;
-  // You can add more setters for additional form fields
 }
 
 // Define the form steps in order
@@ -67,6 +75,7 @@ export const WM_FORM_STEPS = [
   "/c/wm/eating-pattern-program-support",
   "/c/wm/eating-pattern-goal",
   "/c/wm/intake-height-weight",
+  "/c/wm/medical-intake", // Added medical intake step
   "/c/wm/submit"
 ];
 
@@ -92,6 +101,11 @@ export const useWMFormStore = create(
         goalMeaning: null,
         height: null,
         weight: null,
+        ethnicity: null,
+        sexAssignedAtBirth: null,
+        medicalConditions: null,
+        takingMedications: null,
+        medicationAllergies: null,
       },
 
       // Actions
@@ -172,7 +186,31 @@ export const useWMFormStore = create(
           formData: { ...state.formData, weight: weight }
         })),
       
-
+      // New actions for medical intake
+      setEthnicity: (ethnicity) => 
+        set((state) => ({
+          formData: { ...state.formData, ethnicity: ethnicity }
+        })),
+        
+      setSexAssignedAtBirth: (sex) => 
+        set((state) => ({
+          formData: { ...state.formData, sexAssignedAtBirth: sex }
+        })),
+        
+      setMedicalConditions: (conditions) => 
+        set((state) => ({
+          formData: { ...state.formData, medicalConditions: conditions }
+        })),
+        
+      setTakingMedications: (value) => 
+        set((state) => ({
+          formData: { ...state.formData, takingMedications: value }
+        })),
+        
+      setMedicationAllergies: (allergies) => 
+        set((state) => ({
+          formData: { ...state.formData, medicationAllergies: allergies }
+        })),
       
       resetForm: () => 
         set({
@@ -193,6 +231,11 @@ export const useWMFormStore = create(
             goalMeaning: null,
             height: null,
             weight: null,
+            ethnicity: null,
+            sexAssignedAtBirth: null,
+            medicalConditions: null,
+            takingMedications: null,
+            medicationAllergies: null,
           }
         }),
     }),

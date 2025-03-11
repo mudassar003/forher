@@ -53,7 +53,7 @@ export default function IntakeHeightWeight() {
       markStepCompleted("/c/wm/intake-height-weight");
       
       // Navigate to the next step (this would be submit or another step)
-      router.push("/c/wm/submit");
+      router.push("/c/wm/medical-intake");
     }
   };
 

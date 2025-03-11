@@ -37,6 +37,7 @@ interface WMFormData {
     purgedInLastYear: string | null;
     medicationAllergies: string[] | null;
     purgeFrequency: string | null;
+    purgingRiskAcknowledgment: string | null;
     
     // Track offsets for each step
     stepOffsets: Record<string, number>;
@@ -77,6 +78,7 @@ interface WMFormState extends WMFormData {
   setPurgedInLastYear: (value: string) => void;
   setMedicationAllergies: (allergies: string[]) => void;
   setPurgeFrequency: (frequency: string) => void;
+  setPurgingRiskAcknowledgment: (acknowledged: string) => void;
   
   
   // Offset tracking
@@ -146,6 +148,7 @@ export const useWMFormStore = create(
         purgedInLastYear: null,
         medicationAllergies: null,
         purgeFrequency: null,
+        purgingRiskAcknowledgment: null,
         
         
         stepOffsets: {}, // Track offsets for each step
@@ -300,6 +303,11 @@ export const useWMFormStore = create(
         formData: { ...state.formData, purgeFrequency: frequency }
       })),
 
+      setPurgingRiskAcknowledgment: (acknowledged) => 
+      set((state) => ({
+        formData: { ...state.formData, purgingRiskAcknowledgment: acknowledged }
+      })),
+
       // Set the offset for a specific step
       setStepOffset: (step, offset) => 
         set((state) => ({
@@ -347,6 +355,7 @@ export const useWMFormStore = create(
             purgedInLastYear: null,
             medicationAllergies: null,
             purgeFrequency: null,
+            purgingRiskAcknowledgment: null,
             
             stepOffsets: {},
           }

@@ -205,6 +205,15 @@ const medicalQuestions: MedicalQuestion[] = [
         { id: "not-at-all", label: "Not at all" }
         ],
         multiSelect: false,
+    },
+    // offset 14
+    {
+        question: "Please be aware that purging (self-induced vomiting with or without the use of laxatives or diuretics/water pills), severely restricting your calories, or falling below a BMI of 18.5 (underweight) at any time while using a weight loss medication can increase your risk of electrolyte imbalance and potential for seizures. If you begin purging or severely restricting at any time while on treatment, please alert our Care Team and your primary care provider so that appropriate modifications to your treatment plan can be made to ensure your safety and continued success on your weight loss journey.",
+        description: "",
+        options: [
+        { id: "acknowledged", label: "I understand, continue" }
+        ],
+        multiSelect: false
     }
   
   
@@ -247,6 +256,7 @@ function MedicalIntakeForm() {
     setPurgedInLastYear,
     setMedicationAllergies,
     setPurgeFrequency,
+    setPurgingRiskAcknowledgment,
     setStepOffset
   } = useWMFormStore();
   
@@ -323,6 +333,9 @@ function MedicalIntakeForm() {
             break;
       case 13:
         if (formData.purgeFrequency) setSelectedOptions([formData.purgeFrequency]);
+            break;
+     case 14:
+        if (formData.purgingRiskAcknowledgment) setSelectedOptions([formData.purgingRiskAcknowledgment]);
         break;
     }
   }, [offset, formData]);
@@ -439,7 +452,11 @@ function MedicalIntakeForm() {
       case 13:
         // Store purge frequency
         setPurgeFrequency(selectedOptions[0] || "");
-        break;
+            break;
+       case 14:
+      // Store purging risk acknowledgment
+      setPurgingRiskAcknowledgment(selectedOptions[0] || "");
+      break;
     }
     
     // Store the current offset

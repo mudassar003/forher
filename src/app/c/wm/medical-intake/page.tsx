@@ -213,6 +213,7 @@ const medicalQuestions: MedicalQuestion[] = [
         ],
         multiSelect: false,
     },
+
     // offset 14
     {
         question: "Please be aware that purging (self-induced vomiting with or without the use of laxatives or diuretics/water pills), severely restricting your calories, or falling below a BMI of 18.5 (underweight) at any time while using a weight loss medication can increase your risk of electrolyte imbalance and potential for seizures. If you begin purging or severely restricting at any time while on treatment, please alert our Care Team and your primary care provider so that appropriate modifications to your treatment plan can be made to ensure your safety and continued success on your weight loss journey.",
@@ -233,6 +234,7 @@ const medicalQuestions: MedicalQuestion[] = [
     ],
     multiSelect: false
     },
+
     // offset 16 - Path A/B (if no mental health condition)
     {
     question: "Do you currently have any desire to harm yourself or others?",
@@ -246,6 +248,7 @@ const medicalQuestions: MedicalQuestion[] = [
         return formData.mentalHealthCondition === "no";
     }
     },
+
     // offset 16 - Path C/D (if yes mental health condition)
     {
     question: "Have you been diagnosed with any of the following?",
@@ -261,14 +264,15 @@ const medicalQuestions: MedicalQuestion[] = [
         { id: "schizophrenia", label: "Schizophrenia or schizoaffective disorder" },
         { id: "other", label: "Other" }
     ],
-    multiSelect: true,
-    conditionalDisplay: (formData: MedicalFormData) => {
-        return formData.mentalHealthCondition === "yes";
-    }
+        multiSelect: true,
+        conditionalDisplay: (formData: MedicalFormData) => {
+            return formData.mentalHealthCondition === "yes";
+        }
     },
+
     // offset 17 - Path B (suicide resources)
     {
-    question: "If you are experiencing suicidal thoughts and need to speak to someone, please reach out to individuals in your current environment or use the resources below for immediate assistance: 24/7 National Suicide Prevention Lifeline: 988 (call or text) En Español: 1-888-628-9454 24/7 Crisis Text Line: Text "HOME" to 741-741",
+    question: "If you are experiencing suicidal thoughts and need to speak to someone, please reach out to individuals in your current environment or use the resources below for immediate assistance: 24/7 National Suicide Prevention Lifeline: 988 (call or text) En Español: 1-888-628-9454 24/7 Crisis Text Line: Text 'HOME to 741-741",
     description: "",
     options: [
         { id: "understood", label: "I understand" }
@@ -316,11 +320,7 @@ const medicalQuestions: MedicalQuestion[] = [
     ],
     multiSelect: false
     },
-    // offset 19 - End of form
-
-       
-  
-  
+    // offset 19 - End of for
 ];
 
 // Loading fallback component

@@ -1,4 +1,5 @@
-// import Ticker from "../components/Ticker";
+// src/app/(default)/page.tsx
+import { Suspense } from "react";
 import RotatingHeadline from "@/components/RotatingHeadline";
 import Categories from "@/components/Categories";
 import RotatingSection from "@/components/RotatingSection";
@@ -6,18 +7,21 @@ import VideoSection from "@/components/VideoSection";
 import HairLoss from "@/components/HairLoss";
 import HairRegrowCard from "@/components/HairRegrowCard";
 import FaqAccordion from "@/components/FaqAccordion";
-// import HomeHeader from "@/components/HomeHeader";
 import SubscribeSection from "@/components/SubscribeSection";
 import AuthCallback from "@/components/Auth/AuthCallback";
 
-
-
+// Simple loading fallback for AuthCallback
+const AuthCallbackLoading = () => <div className="hidden">Loading auth callback...</div>;
 
 export default function HomePage() {
   return (
     <main>
       <div>
-        <AuthCallback />
+        {/* Wrap AuthCallback with Suspense */}
+        <Suspense fallback={<AuthCallbackLoading />}>
+          <AuthCallback />
+        </Suspense>
+        
         <RotatingHeadline />
         <Categories />
         <RotatingSection />
@@ -32,4 +36,3 @@ export default function HomePage() {
     </main>
   );
 }
-

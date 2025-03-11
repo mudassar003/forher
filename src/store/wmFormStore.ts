@@ -174,12 +174,22 @@ export const useWMFormStore = create(
           formData: { ...state.formData, weight: weight }
         })),
       
-      // Check if user is authenticated - this would typically check a session or token
+      // // Check if user is authenticated - this would typically check a session or token
+      // isAuthenticated: () => {
+      //   // This is a simplified check - you would typically check a token or session
+      //   // For now, we'll assume if we're in a browser, we can check localStorage
+      //   if (typeof window !== 'undefined') {
+      //     return localStorage.getItem('user-auth-token') !== null;
+      //   }
+      //   return false;
+      // },
+
+      // Check if user is authenticated
       isAuthenticated: () => {
-        // This is a simplified check - you would typically check a token or session
-        // For now, we'll assume if we're in a browser, we can check localStorage
+        // This checks if we're in a browser environment
         if (typeof window !== 'undefined') {
-          return localStorage.getItem('user-auth-token') !== null;
+          const token = localStorage.getItem('user-auth-token');
+          return !!token; // Convert to boolean - true if token exists, false otherwise
         }
         return false;
       },

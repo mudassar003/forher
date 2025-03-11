@@ -21,6 +21,11 @@ export default function AuthRequired() {
     }
   }, [markStepCompleted, isAuthenticated, router]);
 
+  // Create return URL for login/signup
+  const returnUrl = "/c/wm/intake-height-weight";
+  const loginUrl = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+  const signupUrl = `/signup?returnUrl=${encodeURIComponent(returnUrl)}`;
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
       {/* Progress Bar */}
@@ -36,7 +41,7 @@ export default function AuthRequired() {
         </p>
         
         <div className="space-y-4 mb-10">
-          <Link href="/login">
+          <Link href={loginUrl}>
             <button className="w-full p-4 text-center rounded-lg bg-black text-white hover:opacity-90">
               Log In
             </button>
@@ -44,7 +49,7 @@ export default function AuthRequired() {
           
           <p className="text-gray-500 my-2">or</p>
           
-          <Link href="/signup">
+          <Link href={signupUrl}>
             <button className="w-full p-4 text-center rounded-lg border-2 border-black text-black hover:bg-gray-100">
               Create Account
             </button>

@@ -36,13 +36,13 @@ const LoginForm = () => {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error, user } = await signInWithEmail(email, password);
+    const { error, data } = await signInWithEmail(email, password);
     if (error) {
       setError(error);
     } else {
-      // Store auth token
-      if (typeof window !== 'undefined' && user) {
-        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
+      // Store auth token - using session token if available
+      if (typeof window !== 'undefined' && data && data.session) {
+        localStorage.setItem('user-auth-token', data.session.access_token || 'token-placeholder');
       }
       resetForm();
       router.push(returnUrl);
@@ -53,14 +53,12 @@ const LoginForm = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     // Pass the returnUrl to the Google sign-in function
-    const { error, user } = await signInWithGoogle(returnUrl);
+    const { error, data } = await signInWithGoogle(returnUrl);
     if (error) {
       setError(error);
     } else {
-      // Store auth token
-      if (typeof window !== 'undefined' && user) {
-        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
-      }
+      // For OAuth redirect flow, the token will be set upon return from provider
+      // We don't need to set the token here as it'll be handled by the checkSession function
       router.push(returnUrl);
     }
     setLoading(false);

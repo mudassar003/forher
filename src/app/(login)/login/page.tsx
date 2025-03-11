@@ -1,4 +1,4 @@
-//src/app/%28login%29/login/page.tsx
+//src/app/(login)/login/page.tsx
 "use client";
 
 import AuthLayout from "@/components/Auth/AuthLayout";

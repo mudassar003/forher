@@ -1,3 +1,4 @@
+//src/app/(login)/signup/page.tsx
 "use client";
 
 import AuthLayout from "@/components/Auth/AuthLayout";

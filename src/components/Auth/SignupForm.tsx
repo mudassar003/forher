@@ -1,10 +1,10 @@
 //src/components/Auth/SignupForm.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
 import { signUpWithEmail, signInWithGoogle } from "@/lib/auth";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc"; // Google icon
 import { FaApple } from "react-icons/fa"; // Apple icon
 
@@ -22,16 +22,6 @@ const SignupForm = () => {
   } = useAuthFormStore();
 
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [returnUrl, setReturnUrl] = useState<string>("/dashboard");
-
-  // Extract the returnUrl parameter if present
-  useEffect(() => {
-    const returnUrlParam = searchParams?.get("returnUrl");
-    if (returnUrlParam) {
-      setReturnUrl(returnUrlParam);
-    }
-  }, [searchParams]);
 
   const handleEmailSignup = async () => {
     setLoading(true);
@@ -44,20 +34,19 @@ const SignupForm = () => {
         localStorage.setItem('user-auth-token', data.session.access_token || 'token-placeholder');
       }
       resetForm();
-      router.push(returnUrl);
+      router.push("/dashboard");
     }
     setLoading(false);
   };
 
   const handleGoogleSignup = async () => {
     setLoading(true);
-    // Pass the returnUrl to the Google sign-in function
-    const { error, data } = await signInWithGoogle(returnUrl);
+    const { error, data } = await signInWithGoogle();
     if (error) {
       setError(error);
     } else {
       // For OAuth redirect flow, the token will be set upon return from provider
-      router.push(returnUrl);
+      router.push("/dashboard");
     }
     setLoading(false);
   };
@@ -128,7 +117,7 @@ const SignupForm = () => {
 
       <p className="text-center text-sm mt-6 text-gray-500">
         Already have an account?{" "}
-        <a href={`/login${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} className="text-blue-600 hover:underline">
+        <a href="/login" className="text-blue-600 hover:underline">
           Log in
         </a>
       </p>

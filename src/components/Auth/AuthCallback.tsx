@@ -1,7 +1,4 @@
-//src/components/Auth/AuthCallback.tsx
-
-
-
+// src/components/Auth/AuthCallback.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -15,35 +12,27 @@ const AuthCallback = () => {
   useEffect(() => {
     // Handle the OAuth callback
     const handleAuthCallback = async () => {
-      // Check for access_token in the URL - this indicates an OAuth callback
-      const accessToken = searchParams?.get("access_token");
-      const refreshToken = searchParams?.get("refresh_token");
-      
-      // This is a protection against running the callback logic on every page load
-      if (!accessToken && !refreshToken) {
-        return;
-      }
-
       try {
-        // If there's a returnUrl in the query params, extract it for redirection
-        const returnUrl = searchParams?.get("returnUrl");
-        
-        // Get the current session
+        // Get the session to check if we have an authenticated user
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
           // Store the access token in localStorage
           localStorage.setItem('user-auth-token', session.access_token);
           
-          // Redirect to the return URL if available, otherwise to dashboard
-          if (returnUrl) {
-            router.push(decodeURIComponent(returnUrl));
-          } else {
-            router.push("/dashboard");
-          }
+          // Look for returnUrl in URL or use default
+          const returnUrl = searchParams?.get("returnUrl") || "/dashboard";
+          
+          // Redirect to the return URL
+          router.push(decodeURIComponent(returnUrl));
+        } else {
+          // If no session found but we're on the callback page,
+          // redirect to login with a message
+          router.push("/login?error=authFailed");
         }
       } catch (error) {
         console.error("Error in auth callback:", error);
+        router.push("/login?error=authError");
       }
     };
 

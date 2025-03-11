@@ -1,10 +1,10 @@
 //src/components/Auth/LoginForm.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc"; // Google icon
 import { FaApple } from "react-icons/fa"; // Apple icon
 
@@ -22,16 +22,6 @@ const LoginForm = () => {
   } = useAuthFormStore();
 
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [returnUrl, setReturnUrl] = useState<string>("/dashboard");
-
-  // Extract the returnUrl parameter if present
-  useEffect(() => {
-    const returnUrlParam = searchParams?.get("returnUrl");
-    if (returnUrlParam) {
-      setReturnUrl(returnUrlParam);
-    }
-  }, [searchParams]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,21 +35,20 @@ const LoginForm = () => {
         localStorage.setItem('user-auth-token', data.session.access_token || 'token-placeholder');
       }
       resetForm();
-      router.push(returnUrl);
+      router.push("/dashboard");
     }
     setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    // Pass the returnUrl to the Google sign-in function
-    const { error, data } = await signInWithGoogle(returnUrl);
+    const { error, data } = await signInWithGoogle();
     if (error) {
       setError(error);
     } else {
       // For OAuth redirect flow, the token will be set upon return from provider
       // We don't need to set the token here as it'll be handled by the checkSession function
-      router.push(returnUrl);
+      router.push("/dashboard");
     }
     setLoading(false);
   };
@@ -127,7 +116,7 @@ const LoginForm = () => {
 
       <p className="text-center text-sm mt-6 text-gray-500">
         First time here?{" "}
-        <a href={`/signup${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} className="text-blue-600 hover:underline">
+        <a href="/signup" className="text-blue-600 hover:underline">
           Create an account
         </a>
       </p>

@@ -17,10 +17,7 @@ export default function HomePage() {
   return (
     <main>
       <div>
-        {/* Wrap AuthCallback with Suspense */}
-        <Suspense fallback={<AuthCallbackLoading />}>
-          <AuthCallback />
-        </Suspense>
+      
         
         <RotatingHeadline />
         <Categories />

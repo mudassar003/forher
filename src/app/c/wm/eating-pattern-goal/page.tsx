@@ -38,7 +38,7 @@ export default function GoalMeaning() {
       markStepCompleted("/c/wm/eating-pattern-goal");
       
       // Navigate to the auth required step (changed from submit)
-      router.push("/login?returnUrl=/c/wm/intake-height-weight");
+      router.push("intake-height-weight");
     }
   };
 

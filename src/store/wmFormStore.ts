@@ -41,10 +41,9 @@ interface WMFormState extends WMFormData {
   setEatingPatterns: (patterns: string[]) => void;
   setProgramSupport: (support: string[]) => void;
   setGoalMeaning: (meaning: string[]) => void;
-  setHeight: (height: string) => void;      // New setter for height
-  setWeight: (weight: string) => void;      // New setter for weight
+  setHeight: (height: string) => void;      // Setter for height
+  setWeight: (weight: string) => void;      // Setter for weight
   resetForm: () => void;
-  isAuthenticated: () => boolean;           // New method to check authentication status
   // You can add more setters for additional form fields
 }
 
@@ -67,8 +66,7 @@ export const WM_FORM_STEPS = [
   "/c/wm/eating-patterns",
   "/c/wm/eating-pattern-program-support",
   "/c/wm/eating-pattern-goal",
-  "/c/wm/auth-required",          // New step for authentication
-  "/c/wm/intake-height-weight",   // New step for height/weight
+  "/c/wm/intake-height-weight",
   "/c/wm/submit"
 ];
 
@@ -174,25 +172,7 @@ export const useWMFormStore = create(
           formData: { ...state.formData, weight: weight }
         })),
       
-      // // Check if user is authenticated - this would typically check a session or token
-      // isAuthenticated: () => {
-      //   // This is a simplified check - you would typically check a token or session
-      //   // For now, we'll assume if we're in a browser, we can check localStorage
-      //   if (typeof window !== 'undefined') {
-      //     return localStorage.getItem('user-auth-token') !== null;
-      //   }
-      //   return false;
-      // },
 
-      // Check if user is authenticated
-      isAuthenticated: () => {
-        // This checks if we're in a browser environment
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('user-auth-token');
-          return !!token; // Convert to boolean - true if token exists, false otherwise
-        }
-        return false;
-      },
       
       resetForm: () => 
         set({
@@ -218,7 +198,6 @@ export const useWMFormStore = create(
     }),
     {
       name: "wm-form-storage", // Name for localStorage key
-      // You can add additional persistence options here
     }
   )
 );

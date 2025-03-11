@@ -4,13 +4,11 @@ import { supabase } from "./supabase";
 /**
  * Sign in with Google OAuth
  */
-export const signInWithGoogle = async (returnUrl?: string) => {
-  const redirectPath = returnUrl ? `/?returnUrl=${encodeURIComponent(returnUrl)}` : '/';
-  
+export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${window.location.origin}${redirectPath}`,
+      redirectTo: `${window.location.origin}/`,
     },
   });
 

@@ -12,3 +12,5 @@ const AuthLayout = ({ title, children }: { title: string; children: React.ReactN
 };
 
 export default AuthLayout;
+
+

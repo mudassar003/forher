@@ -1,7 +1,7 @@
 //src/app/c/wm/medical-intake/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
@@ -197,7 +197,18 @@ const medicalQuestions: MedicalQuestion[] = [
   }
 ];
 
-export default function MedicalIntakePage() {
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+      <p className="mt-4 text-lg">Loading...</p>
+    </div>
+  );
+}
+
+// Form component that uses searchParams
+function MedicalIntakeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = "/c/wm/medical-intake";
@@ -503,5 +514,14 @@ export default function MedicalIntakePage() {
         </button>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function MedicalIntakePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <MedicalIntakeForm />
+    </Suspense>
   );
 }

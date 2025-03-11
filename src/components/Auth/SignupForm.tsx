@@ -1,9 +1,9 @@
-//src/components/Auth/SignupForm.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
 import { signUpWithEmail, signInWithGoogle } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FcGoogle } from "react-icons/fc"; // Google icon
 import { FaApple } from "react-icons/fa"; // Apple icon
 
@@ -21,34 +21,50 @@ const SignupForm = () => {
   } = useAuthFormStore();
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [returnUrl, setReturnUrl] = useState<string>("/dashboard");
+
+  // Extract the returnUrl parameter if present
+  useEffect(() => {
+    const returnUrlParam = searchParams?.get("returnUrl");
+    if (returnUrlParam) {
+      setReturnUrl(returnUrlParam);
+    }
+  }, [searchParams]);
 
   const handleEmailSignup = async () => {
     setLoading(true);
-    const { error } = await signUpWithEmail(email, password);
+    const { error, user } = await signUpWithEmail(email, password);
     if (error) {
       setError(error);
     } else {
+      // Store auth token
+      if (typeof window !== 'undefined' && user) {
+        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
+      }
       resetForm();
-      router.push("/");
+      router.push(returnUrl);
     }
     setLoading(false);
   };
 
   const handleGoogleSignup = async () => {
     setLoading(true);
-    const { error } = await signInWithGoogle();
+    const { error, user } = await signInWithGoogle();
     if (error) {
       setError(error);
     } else {
-      router.push("/dashboard");
+      // Store auth token
+      if (typeof window !== 'undefined' && user) {
+        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
+      }
+      router.push(returnUrl);
     }
     setLoading(false);
   };
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-      
-
       {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
       <div className="space-y-4">
@@ -113,7 +129,7 @@ const SignupForm = () => {
 
       <p className="text-center text-sm mt-6 text-gray-500">
         Already have an account?{" "}
-        <a href="/login" className="text-blue-600 hover:underline">
+        <a href={`/login${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} className="text-blue-600 hover:underline">
           Log in
         </a>
       </p>

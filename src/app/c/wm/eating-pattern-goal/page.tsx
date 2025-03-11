@@ -37,8 +37,8 @@ export default function GoalMeaning() {
       setGoalMeaning(selectedOptions);
       markStepCompleted("/c/wm/eating-pattern-goal");
       
-      // Navigate to the submit step
-      router.push("/c/wm/submit");
+      // Navigate to the auth required step (changed from submit)
+      router.push("/c/wm/auth-required");
     }
   };
 

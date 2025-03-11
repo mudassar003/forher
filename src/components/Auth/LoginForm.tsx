@@ -1,9 +1,9 @@
-//src/components/Auth/LoginForm.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FcGoogle } from "react-icons/fc"; // Google icon
 import { FaApple } from "react-icons/fa"; // Apple icon
 
@@ -21,41 +21,61 @@ const LoginForm = () => {
   } = useAuthFormStore();
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [returnUrl, setReturnUrl] = useState<string>("/dashboard");
 
-  const handleEmailLogin = async () => {
+  // Extract the returnUrl parameter if present
+  useEffect(() => {
+    const returnUrlParam = searchParams?.get("returnUrl");
+    if (returnUrlParam) {
+      setReturnUrl(returnUrlParam);
+    }
+  }, [searchParams]);
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    const { error } = await signInWithEmail(email, password);
+    const { error, user } = await signInWithEmail(email, password);
     if (error) {
       setError(error);
     } else {
+      // Store auth token
+      if (typeof window !== 'undefined' && user) {
+        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
+      }
       resetForm();
-      router.push("/dashboard");
+      router.push(returnUrl);
     }
     setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    const { error } = await signInWithGoogle();
+    const { error, user } = await signInWithGoogle();
     if (error) {
       setError(error);
+    } else {
+      // Store auth token
+      if (typeof window !== 'undefined' && user) {
+        localStorage.setItem('user-auth-token', user.token || 'token-placeholder');
+      }
+      router.push(returnUrl);
     }
     setLoading(false);
   };
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-      
-
       {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
-      <div className="space-y-4">
+      <form onSubmit={handleEmailLogin} className="space-y-4">
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
           className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+          required
         />
 
         <input
@@ -64,6 +84,7 @@ const LoginForm = () => {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+          required
         />
 
         <div className="text-right">
@@ -73,13 +94,13 @@ const LoginForm = () => {
         </div>
 
         <button
-          onClick={handleEmailLogin}
+          type="submit"
           disabled={loading}
           className="w-full bg-black text-white p-3 rounded-md font-semibold hover:opacity-90 transition disabled:opacity-50"
         >
           {loading ? "Logging in..." : "Log in"}
         </button>
-      </div>
+      </form>
 
       <div className="flex items-center my-6">
         <hr className="flex-grow border-gray-300" />
@@ -106,7 +127,7 @@ const LoginForm = () => {
 
       <p className="text-center text-sm mt-6 text-gray-500">
         First time here?{" "}
-        <a href="/signup" className="text-blue-600 hover:underline">
+        <a href={`/signup${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} className="text-blue-600 hover:underline">
           Create an account
         </a>
       </p>

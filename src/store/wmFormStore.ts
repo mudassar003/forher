@@ -19,6 +19,8 @@ interface WMFormData {
     eatingPatterns: string[] | null;
     programSupport: string[] | null;
     goalMeaning: string[] | null;
+    height: string | null;    // New field for height
+    weight: string | null;    // New field for weight
     // Add other form fields as needed
   };
 }
@@ -39,7 +41,10 @@ interface WMFormState extends WMFormData {
   setEatingPatterns: (patterns: string[]) => void;
   setProgramSupport: (support: string[]) => void;
   setGoalMeaning: (meaning: string[]) => void;
+  setHeight: (height: string) => void;      // New setter for height
+  setWeight: (weight: string) => void;      // New setter for weight
   resetForm: () => void;
+  isAuthenticated: () => boolean;           // New method to check authentication status
   // You can add more setters for additional form fields
 }
 
@@ -62,13 +67,15 @@ export const WM_FORM_STEPS = [
   "/c/wm/eating-patterns",
   "/c/wm/eating-pattern-program-support",
   "/c/wm/eating-pattern-goal",
+  "/c/wm/auth-required",          // New step for authentication
+  "/c/wm/intake-height-weight",   // New step for height/weight
   "/c/wm/submit"
 ];
 
 // Create the Zustand store with persistence
 export const useWMFormStore = create(
   persist<WMFormState>(
-    (set) => ({
+    (set, get) => ({
       // Initial state
       currentStep: WM_FORM_STEPS[0],
       completedSteps: [],
@@ -85,6 +92,8 @@ export const useWMFormStore = create(
         eatingPatterns: null,
         programSupport: null,
         goalMeaning: null,
+        height: null,
+        weight: null,
       },
 
       // Actions
@@ -154,6 +163,26 @@ export const useWMFormStore = create(
         set((state) => ({
           formData: { ...state.formData, goalMeaning: meaning }
         })),
+        
+      setHeight: (height) => 
+        set((state) => ({
+          formData: { ...state.formData, height: height }
+        })),
+        
+      setWeight: (weight) => 
+        set((state) => ({
+          formData: { ...state.formData, weight: weight }
+        })),
+      
+      // Check if user is authenticated - this would typically check a session or token
+      isAuthenticated: () => {
+        // This is a simplified check - you would typically check a token or session
+        // For now, we'll assume if we're in a browser, we can check localStorage
+        if (typeof window !== 'undefined') {
+          return localStorage.getItem('user-auth-token') !== null;
+        }
+        return false;
+      },
       
       resetForm: () => 
         set({
@@ -172,6 +201,8 @@ export const useWMFormStore = create(
             eatingPatterns: null,
             programSupport: null,
             goalMeaning: null,
+            height: null,
+            weight: null,
           }
         }),
     }),

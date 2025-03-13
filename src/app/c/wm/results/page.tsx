@@ -10,13 +10,6 @@ import { client } from '@/sanity/lib/client';
 import HomeHeader from "@/components/HomeHeader";
 import GlobalFooter from "@/components/GlobalFooter";
 
-interface Recommendation {
-  eligible: boolean;
-  recommendedProductId: string | null;
-  explanation: string;
-  product?: any;
-}
-
 interface Product {
   _id: string;
   title: string;
@@ -24,6 +17,13 @@ interface Product {
   price: number;
   description: string;
   mainImage?: any;
+}
+
+interface Recommendation {
+  eligible: boolean;
+  recommendedProductId: string | null;
+  explanation: string;
+  product?: Product;
 }
 
 export default function ResultsPage() {
@@ -40,7 +40,7 @@ export default function ResultsPage() {
     const fetchData = async () => {
       try {
         // Fetch all weight loss products regardless of recommendation
-        const products = await client.fetch(`
+        const products: Product[] = await client.fetch(`
           *[_type == "product" && references(*[_type=="productCategory" && slug.current=="weight-loss"]._id)] {
             _id, title, slug, price, description, mainImage
           }
@@ -102,7 +102,7 @@ export default function ResultsPage() {
           if (parsedRecommendation.eligible && 
               parsedRecommendation.recommendedProductId && 
               !parsedRecommendation.product) {
-            const recommendedProduct = products.find(p => p._id === parsedRecommendation.recommendedProductId);
+            const recommendedProduct = products.find((p: Product) => p._id === parsedRecommendation.recommendedProductId);
             if (recommendedProduct) {
               parsedRecommendation.product = recommendedProduct;
             }
@@ -284,7 +284,7 @@ export default function ResultsPage() {
           <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of physician-formulated weight loss treatments designed to support your journey to better health.</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allProducts.slice(0, 8).map((product) => (
+            {allProducts.slice(0, 8).map((product: Product) => (
               <Link 
                 href={`/products/${product.slug?.current}`} 
                 key={product._id} 

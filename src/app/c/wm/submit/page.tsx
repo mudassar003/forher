@@ -21,15 +21,24 @@ export default function SubmitStep() {
 
   // Load responses from sessionStorage on component mount
   useEffect(() => {
-    try {
-      const storedResponses = sessionStorage.getItem("weightLossResponses");
-      if (storedResponses) {
-        setResponses(JSON.parse(storedResponses));
+    // Only run in browser environment
+    if (typeof window !== 'undefined') {
+      try {
+        const storedResponses = sessionStorage.getItem("weightLossResponses");
+        if (storedResponses) {
+          setResponses(JSON.parse(storedResponses));
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error loading stored responses:", error);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error loading stored responses:", error);
-      setIsLoading(false);
+    } else {
+      // If we're in server-side rendering, just set loading to false after a short delay
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, []);
 

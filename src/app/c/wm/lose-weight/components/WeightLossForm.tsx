@@ -16,7 +16,7 @@ export default function WeightLossForm() {
   // Get the current offset from URL directly instead of using useSearchParams hook
   const [offset, setOffset] = useState(1); // Default to 1
   
-  // Use an effect to get the search params
+  // Use an effect to get the search params (safely in browser environment)
   useEffect(() => {
     // Get offset from URL
     const searchParams = new URL(window.location.href).searchParams;
@@ -65,8 +65,11 @@ export default function WeightLossForm() {
     setStepOffset(pathname, offset);
     
     // Store responses in sessionStorage for now
-    const sessionResponses = { ...responses };
-    sessionStorage.setItem("weightLossResponses", JSON.stringify(sessionResponses));
+    // Only run in browser environment
+    if (typeof window !== 'undefined') {
+      const sessionResponses = { ...responses };
+      sessionStorage.setItem("weightLossResponses", JSON.stringify(sessionResponses));
+    }
   };
   
   // Handle navigation to next screen
@@ -109,13 +112,16 @@ export default function WeightLossForm() {
   
   // Load stored responses on mount
   useEffect(() => {
-    try {
-      const storedResponses = sessionStorage.getItem("weightLossResponses");
-      if (storedResponses) {
-        setResponses(JSON.parse(storedResponses));
+    // Only run in browser environment
+    if (typeof window !== 'undefined') {
+      try {
+        const storedResponses = sessionStorage.getItem("weightLossResponses");
+        if (storedResponses) {
+          setResponses(JSON.parse(storedResponses));
+        }
+      } catch (error) {
+        console.error("Error loading stored responses:", error);
       }
-    } catch (error) {
-      console.error("Error loading stored responses:", error);
     }
   }, []);
 

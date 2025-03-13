@@ -1,3 +1,4 @@
+//scr/comp/GlobalFooter.tsx
 "use client";
 
 import { FiFacebook, FiInstagram, FiTwitter, FiLinkedin } from "react-icons/fi";

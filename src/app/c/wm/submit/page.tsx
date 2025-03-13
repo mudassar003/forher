@@ -1,4 +1,4 @@
-//src/app/c/wm/submit/page.tsx
+// src/app/c/wm/submit/page.tsx (fixed version)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -18,28 +18,28 @@ export default function SubmitStep() {
   const { markStepCompleted } = useWMFormStore();
   const [responses, setResponses] = useState<FormResponse>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Load responses from sessionStorage on component mount
   useEffect(() => {
-    // Only run in browser environment
     if (typeof window !== 'undefined') {
       try {
+        console.log("Attempting to load responses from sessionStorage");
         const storedResponses = sessionStorage.getItem("weightLossResponses");
+        console.log("Raw stored responses:", storedResponses);
+        
         if (storedResponses) {
-          setResponses(JSON.parse(storedResponses));
-          console.log("Loaded stored responses:", JSON.parse(storedResponses));
+          const parsedResponses = JSON.parse(storedResponses);
+          console.log("Parsed responses:", parsedResponses);
+          setResponses(parsedResponses);
+        } else {
+          console.log("No responses found in sessionStorage");
         }
-        setIsLoading(false);
       } catch (error) {
         console.error("Error loading stored responses:", error);
+      } finally {
         setIsLoading(false);
       }
-    } else {
-      // If we're in server-side rendering, just set loading to false after a short delay
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -70,16 +70,27 @@ export default function SubmitStep() {
   };
 
   // Handle the form submission
-  const handleSubmit = () => {
-    // Mark this step as completed
-    markStepCompleted("/c/wm/submit");
+  const handleSubmit = async () => {
+    setIsProcessing(true);
     
-    // Here you would typically send the data to your backend
-    console.log("Form submitted with responses:", responses);
-    
-    // After submission, redirect to the homepage or a success page using direct navigation
-    if (typeof window !== 'undefined') {
-      window.location.href = "/";
+    try {
+      // Mark this step as completed
+      markStepCompleted("/c/wm/submit");
+      
+      // In a real implementation, you would send the data to your API here
+      console.log("Sending data to API:", responses);
+      
+      // Simulate API call with a timeout
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Store the responses for the results page
+      sessionStorage.setItem("finalResponses", JSON.stringify(responses));
+      
+      // Navigate to results page
+      router.push("/c/wm/results");
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setIsProcessing(false);
     }
   };
 
@@ -136,9 +147,14 @@ export default function SubmitStep() {
       <div className="fixed bottom-6 w-full flex justify-center z-10">
         <button
           onClick={handleSubmit}
-          className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl hover:bg-gray-900"
+          disabled={isProcessing || Object.keys(responses).length === 0}
+          className={`text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl ${
+            isProcessing || Object.keys(responses).length === 0 
+              ? "bg-gray-400 text-white cursor-not-allowed" 
+              : "bg-black text-white hover:bg-gray-900"
+          }`}
         >
-          Submit & Get Recommendations
+          {isProcessing ? "Processing..." : "Submit & Get Recommendations"}
         </button>
       </div>
 

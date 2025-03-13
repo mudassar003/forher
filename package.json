@@ -22,6 +22,7 @@
     "next": "15.1.7",
     "next-auth": "^4.24.11",
     "next-sanity": "^9.8.61",
+    "openai": "^4.87.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.4.0",

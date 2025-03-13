@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 import { weightLossQuestions } from "../lose-weight/data/questions";
-import { FormResponse } from "../lose-weight/types";
+import { 
+  FormResponse, 
+  QuestionType, 
+  SingleSelectQuestion, 
+  MultiSelectQuestion 
+} from "../lose-weight/types";
 
 export default function SubmitStep() {
   const router = useRouter();
@@ -31,18 +36,26 @@ export default function SubmitStep() {
   // Gets the label for a given option ID for a specific question
   const getOptionLabel = (questionId: string, optionId: string | string[]) => {
     const question = weightLossQuestions.find(q => q.id === questionId);
-    if (!question || !question.options) return "Not specified";
+    if (!question) return "Not specified";
+
+    // Check if the question type has options (single-select or multi-select)
+    if (question.type === QuestionType.TextInput) {
+      return typeof optionId === 'string' ? optionId : optionId.join(', ');
+    }
+
+    // Now TypeScript knows this question has options
+    const questionWithOptions = question as SingleSelectQuestion | MultiSelectQuestion;
 
     // For multi-select questions
     if (Array.isArray(optionId)) {
       return optionId.map(id => {
-        const option = question.options.find(opt => opt.id === id);
+        const option = questionWithOptions.options.find(opt => opt.id === id);
         return option ? option.label : id;
       }).join(", ");
     }
 
     // For single-select questions
-    const option = question.options.find(opt => opt.id === optionId);
+    const option = questionWithOptions.options.find(opt => opt.id === optionId);
     return option ? option.label : optionId;
   };
 
@@ -53,9 +66,6 @@ export default function SubmitStep() {
     
     // Here you would typically send the data to your backend
     console.log("Form submitted with responses:", responses);
-
-    // You could call an API endpoint here
-    // Example: await fetch('/api/submit-wm-form', { method: 'POST', body: JSON.stringify(responses) });
     
     // After submission, redirect to the homepage or a success page
     router.push("/");

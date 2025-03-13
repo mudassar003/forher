@@ -29,7 +29,7 @@ export const WM_FORM_STEPS = [
 // Create the Zustand store with persistence
 export const useWMFormStore = create(
   persist<WMFormState>(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       currentStep: WM_FORM_STEPS[0],
       completedSteps: [],

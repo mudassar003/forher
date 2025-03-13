@@ -8,7 +8,7 @@ export default function StepOne() {
   const router = useRouter();
 
   const nextStep = () => {
-    router.push("/c/wm/lose-weight"); // Navigate to the next step
+    router.push("/c/wm/lose-weight?offset=1"); // Navigate to the next step
   };
 
   return (

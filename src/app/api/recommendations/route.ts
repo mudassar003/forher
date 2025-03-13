@@ -5,8 +5,30 @@ import { client } from '@/sanity/lib/client';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL, // Optional: if you need a custom API endpoint
 });
+
+// Define TypeScript interfaces
+interface Product {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  price: number;
+  description: string;
+  mainImage?: any;
+}
+
+interface ProductScore {
+  product: Product;
+  score: number;
+  reason: string;
+}
+
+interface EligibilityResult {
+  eligible: boolean;
+  reason: string;
+}
 
 export async function POST(request: Request) {
   try {
@@ -46,16 +68,19 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error('Error processing recommendation:', error);
+    // Type casting the error or using optional chaining to safely access message
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
     return NextResponse.json({ 
       eligible: false,
       explanation: "We encountered an error processing your information. Please try again later.",
-      error: error.message 
+      error: errorMessage
     });
   }
 }
 
 // Helper function to fetch products from Sanity
-async function fetchProducts() {
+async function fetchProducts(): Promise<Product[]> {
   try {
     return await client.fetch(`
       *[_type == "product" && references(*[_type=="productCategory" && slug.current=="weight-loss"]._id)] {
@@ -74,7 +99,7 @@ async function fetchProducts() {
 }
 
 // Determine eligibility based on user responses
-function determineEligibility(responses) {
+function determineEligibility(responses: Record<string, any>): EligibilityResult {
   // Check for age restrictions
   if (responses['age-group'] === 'under-18') {
     return {
@@ -113,9 +138,9 @@ function determineEligibility(responses) {
 }
 
 // Find the best product match based on user responses
-function findBestProductMatch(responses, products) {
+function findBestProductMatch(responses: Record<string, any>, products: Product[]): ProductScore {
   // Scoring system for products
-  const productScores = products.map(product => {
+  const productScores: ProductScore[] = products.map(product => {
     let score = 0;
     let reason = '';
     
@@ -168,7 +193,7 @@ function findBestProductMatch(responses, products) {
   });
   
   // Sort by score (highest first)
-  productScores.sort((a, b) => b.score - a.score);
+  productScores.sort((a: ProductScore, b: ProductScore) => b.score - a.score);
   
   // Return the best match
   return productScores[0];

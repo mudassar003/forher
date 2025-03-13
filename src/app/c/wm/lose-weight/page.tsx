@@ -6,7 +6,7 @@ import LoadingFallback from "./components/LoadingFallback";
 import IntroductionStep from "./components/IntroductionStep";
 import WeightLossForm from "./components/WeightLossForm";
 
-// The main page component stays simple
+// The main page component
 export default function LoseWeightPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
@@ -15,21 +15,40 @@ export default function LoseWeightPage() {
   );
 }
 
-// This client-side router handles the URL patterns inside the Suspense boundary
+// This client-side router handles the URL parameters
 function ClientPageRouter() {
   const [offset, setOffset] = useState<number | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Safely access window object only in browser environment after component mounts
   useEffect(() => {
-    // Now we're safely in the browser environment
-    const searchParams = new URL(window.location.href).searchParams;
-    const urlOffset = parseInt(searchParams.get("offset") || "0");
-    setOffset(urlOffset);
+    // Skip if we're in server-side rendering
+    if (typeof window === 'undefined') return;
+    
+    const readUrlOffset = () => {
+      const searchParams = new URL(window.location.href).searchParams;
+      const urlOffset = parseInt(searchParams.get("offset") || "0");
+      setOffset(urlOffset);
+      // Mark as loaded once we've read the parameters
+      setIsLoaded(true);
+    };
+    
+    // Read the initial offset
+    readUrlOffset();
+    
+    // Set up a listener for URL changes (back/forward navigation)
+    const handleRouteChange = () => {
+      readUrlOffset();
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    return () => window.removeEventListener('popstate', handleRouteChange);
   }, []);
 
-  // Show loading while determining the offset
+  // If the offset is still being determined, render a minimal placeholder
+  // This avoids the loading spinner flash between steps
   if (offset === null) {
-    return <LoadingFallback />;
+    return <div className="min-h-screen bg-white"></div>;
   }
 
   // If offset is 0, show the introduction step

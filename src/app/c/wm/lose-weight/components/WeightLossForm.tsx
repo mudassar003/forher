@@ -15,13 +15,16 @@ export default function WeightLossForm() {
   
   // Get the current offset from URL directly instead of using useSearchParams hook
   const [offset, setOffset] = useState(1); // Default to 1
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Use an effect to get the search params (safely in browser environment)
   useEffect(() => {
-    // Get offset from URL
-    const searchParams = new URL(window.location.href).searchParams;
-    const urlOffset = parseInt(searchParams.get("offset") || "1");
-    setOffset(urlOffset);
+    if (typeof window !== 'undefined') {
+      // Get offset from URL
+      const searchParams = new URL(window.location.href).searchParams;
+      const urlOffset = parseInt(searchParams.get("offset") || "1");
+      setOffset(urlOffset);
+    }
   }, []);
   
   // Get states and actions from the store
@@ -43,7 +46,7 @@ export default function WeightLossForm() {
   
   // Check if we have a valid question for this offset
   useEffect(() => {
-    if (!currentQuestion && offset > 0) {
+    if (typeof window !== 'undefined' && !currentQuestion && offset > 0) {
       // Handle case where offset is invalid
       router.push(`${pathname}?offset=1`);
     }
@@ -61,19 +64,35 @@ export default function WeightLossForm() {
   
   // Store the current responses
   const storeResponses = () => {
-    // Store the current offset
-    setStepOffset(pathname, offset);
-    
-    // Store responses in sessionStorage for now
-    // Only run in browser environment
     if (typeof window !== 'undefined') {
+      // Store the current offset
+      setStepOffset(pathname, offset);
+      
+      // Store responses in sessionStorage for now
       const sessionResponses = { ...responses };
-      sessionStorage.setItem("weightLossResponses", JSON.stringify(sessionResponses));
+      try {
+        sessionStorage.setItem("weightLossResponses", JSON.stringify(sessionResponses));
+      } catch (error) {
+        console.error("Error storing responses:", error);
+      }
     }
   };
   
-  // Handle navigation to next screen
+  // Pre-load the next question data to prepare for quick transition
+  const preloadNextQuestion = () => {
+    if (currentQuestionIndex >= weightLossQuestions.length - 1) {
+      // No next question to preload
+      return;
+    }
+    
+    // Preload the next question's content here if needed
+    // This is just a placeholder for potential preloading logic
+  };
+  
+  // Handle navigation to next screen using history.pushState for smoother transitions
   const handleContinue = () => {
+    if (typeof window === 'undefined') return;
+    
     // Store current screen's responses
     storeResponses();
     
@@ -82,11 +101,24 @@ export default function WeightLossForm() {
       // Mark step as completed
       markStepCompleted(pathname);
       
+      // Set transitioning state (will be reset when the new page loads)
+      setIsTransitioning(true);
+      
       // Navigate to the next step in the flow
-      router.push("/c/wm/submit");
+      // Use window.location for cross-page navigation but avoid reloading for within-form navigation
+      window.location.href = "/c/wm/submit";
     } else {
-      // Navigate to the next offset
-      router.push(`${pathname}?offset=${offset + 1}`);
+      // For within-form navigation, do it without a full page refresh
+      // First update the URL using history API
+      const nextOffset = offset + 1;
+      const nextUrl = `${pathname}?offset=${nextOffset}`;
+      window.history.pushState({}, '', nextUrl);
+      
+      // Then update the offset state to show the next question
+      setOffset(nextOffset);
+      
+      // Optionally run any animations or transitions here
+      // This keeps the same component instance and avoids a full reload
     }
   };
   
@@ -125,12 +157,40 @@ export default function WeightLossForm() {
     }
   }, []);
 
+  // When URL changes via browser back/forward buttons, update the offset
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handlePopState = () => {
+        const searchParams = new URL(window.location.href).searchParams;
+        const urlOffset = parseInt(searchParams.get("offset") || "1");
+        setOffset(urlOffset);
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, []);
+
+  // Preload next question when the current one is displayed
+  useEffect(() => {
+    preloadNextQuestion();
+  }, [offset]);
+
   // If no currentQuestion is available yet, show loading instead of error
   if (!currentQuestion) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
         <p className="mt-4 text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  if (isTransitioning) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+        <p className="mt-4 text-lg">Navigating to next step...</p>
       </div>
     );
   }
@@ -169,9 +229,9 @@ export default function WeightLossForm() {
       <div className="fixed bottom-6 w-full flex justify-center z-10">
         <button
           onClick={handleContinue}
-          disabled={!isContinueEnabled()}
+          disabled={!isContinueEnabled() || isTransitioning}
           className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl ${
-            isContinueEnabled() ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
+            isContinueEnabled() && !isTransitioning ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
           Continue

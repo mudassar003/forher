@@ -27,6 +27,7 @@ export default function SubmitStep() {
         const storedResponses = sessionStorage.getItem("weightLossResponses");
         if (storedResponses) {
           setResponses(JSON.parse(storedResponses));
+          console.log("Loaded stored responses:", JSON.parse(storedResponses));
         }
         setIsLoading(false);
       } catch (error) {
@@ -76,8 +77,10 @@ export default function SubmitStep() {
     // Here you would typically send the data to your backend
     console.log("Form submitted with responses:", responses);
     
-    // After submission, redirect to the homepage or a success page
-    router.push("/");
+    // After submission, redirect to the homepage or a success page using direct navigation
+    if (typeof window !== 'undefined') {
+      window.location.href = "/";
+    }
   };
 
   if (isLoading) {

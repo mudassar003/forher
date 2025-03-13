@@ -1,6 +1,7 @@
 //src/app/c/wm/lose-weight/components/IntroductionStep.tsx
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
@@ -9,13 +10,21 @@ export default function IntroductionStep() {
   const router = useRouter();
   const { markStepCompleted } = useWMFormStore();
   const pathname = "/c/wm/lose-weight";
+  const [isLoading, setIsLoading] = useState(false);
 
   const nextStep = () => {
     // Mark the introduction step as completed in the store
     markStepCompleted(pathname);
     
-    // Navigate to the first question
-    router.push(`${pathname}?offset=1`);
+    // Navigate to the first question - using history.pushState for smoother transition
+    if (typeof window !== 'undefined') {
+      // Update URL without full page reload
+      const nextUrl = `${pathname}?offset=1`;
+      window.history.pushState({}, '', nextUrl);
+      
+      // Now programmatically trigger navigation with the router for SPA-style navigation
+      router.push(nextUrl);
+    }
   };
 
   return (
@@ -45,9 +54,10 @@ export default function IntroductionStep() {
       <div className="fixed bottom-6 w-full flex justify-center z-10">
         <button
           onClick={nextStep}
+          disabled={isLoading}
           className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl hover:bg-gray-900"
         >
-          Continue
+          {isLoading ? "Loading..." : "Continue"}
         </button>
       </div>
     </div>

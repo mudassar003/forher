@@ -24,15 +24,15 @@ export default function IntroductionStep() {
       <ProgressBar progress={20} />
 
       {/* Centered Content */}
-      <div className="max-w-lg text-center mt-10">
-        <h2 className="text-3xl font-semibold text-[#fe92b5]">Start your weight loss journey.</h2>
-        <p className="text-xl font-medium text-black mt-3">
+      <div className="max-w-3xl text-center mt-10">
+        <h2 className="text-4xl font-semibold text-[#fe92b5] mb-6">Start your weight loss journey.</h2>
+        <p className="text-2xl font-medium text-black mt-3">
           Learn about treatment options based on your goals, habits, and health history.
         </p>
       </div>
 
       {/* Bottom Disclaimer Text */}
-      <div className="absolute bottom-20 w-full max-w-lg text-center text-gray-500 text-sm px-4">
+      <div className="absolute bottom-20 w-full max-w-2xl text-center text-gray-500 text-sm px-4">
         <p>
           By clicking 'Continue', you agree that Hers may use your responses to personalize your 
           experience and other purposes as described in our 
@@ -42,10 +42,10 @@ export default function IntroductionStep() {
       </div>
 
       {/* Step-Specific Button */}
-      <div className="fixed bottom-6 w-full flex justify-center">
+      <div className="fixed bottom-6 w-full flex justify-center z-10">
         <button
           onClick={nextStep}
-          className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-lg"
+          className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl hover:bg-gray-900"
         >
           Continue
         </button>

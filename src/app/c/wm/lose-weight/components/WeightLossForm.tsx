@@ -115,14 +115,14 @@ export default function WeightLossForm() {
       {/* Progress Bar */}
       <ProgressBar progress={progressPercentage} />
 
-      <div className="w-full max-w-lg mt-16 mb-24">
+      <div className="w-full max-w-2xl mt-16 mb-24">
         {/* Question - Left-aligned, larger text */}
-        <h2 className="text-3xl font-semibold text-black mb-8 text-left">
+        <h2 className="text-4xl font-semibold text-black mb-10 text-left">
           {currentQuestion.question}
         </h2>
         
         {currentQuestion.description && (
-          <p className="text-gray-600 mb-8 text-left">
+          <p className="text-gray-600 mb-8 text-left text-lg">
             {currentQuestion.description}
           </p>
         )}
@@ -145,7 +145,7 @@ export default function WeightLossForm() {
         <button
           onClick={handleContinue}
           disabled={!isContinueEnabled()}
-          className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-lg ${
+          className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl ${
             isContinueEnabled() ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
           }`}
         >

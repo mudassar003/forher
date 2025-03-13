@@ -15,7 +15,7 @@ export const SingleSelect: React.FC<{
   onChange: (value: string) => void;
 }> = ({ question, value, onChange }) => {
   return (
-    <div className="space-y-5 mb-10">
+    <div className="space-y-6 mb-12">
       {question.options.map((option) => (
         <button
           key={option.id}
@@ -26,7 +26,7 @@ export const SingleSelect: React.FC<{
               : "border-gray-300 hover:border-gray-400"
           }`}
         >
-          <span className="text-lg">{option.label}</span>
+          <span className="text-lg font-medium">{option.label}</span>
         </button>
       ))}
     </div>
@@ -69,7 +69,7 @@ export const MultiSelect: React.FC<{
   };
   
   return (
-    <div className="space-y-5 mb-10">
+    <div className="space-y-6 mb-12">
       {question.options.map((option) => (
         <button
           key={option.id}
@@ -80,7 +80,7 @@ export const MultiSelect: React.FC<{
               : "border-gray-300 hover:border-gray-400"
           }`}
         >
-          <span className="text-lg">{option.label}</span>
+          <span className="text-lg font-medium">{option.label}</span>
         </button>
       ))}
     </div>
@@ -120,13 +120,13 @@ export const TextInput: React.FC<{
   };
   
   return (
-    <div className="mb-10">
+    <div className="mb-12">
       <input
         type={question.inputType}
         value={value}
         onChange={handleChange}
         placeholder={question.placeholder}
-        className={`w-full p-6 text-lg rounded-lg border-2 ${
+        className={`w-full p-6 text-xl rounded-lg border-2 ${
           error ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
         } focus:outline-none`}
       />

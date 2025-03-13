@@ -1,4 +1,4 @@
-//src/app/c/wm/submit/page.tsx
+//src/app/wm/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";

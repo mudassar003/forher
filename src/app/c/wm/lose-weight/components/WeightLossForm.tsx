@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
@@ -11,11 +11,18 @@ import { FormResponse } from "../types";
 
 export default function WeightLossForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const pathname = "/c/wm/lose-weight";
   
-  // Get the current offset from URL query parameters (default to 1)
-  const offset = parseInt(searchParams?.get("offset") || "1");
+  // Get the current offset from URL directly instead of using useSearchParams hook
+  const [offset, setOffset] = useState(1); // Default to 1
+  
+  // Use an effect to get the search params
+  useEffect(() => {
+    // Get offset from URL
+    const searchParams = new URL(window.location.href).searchParams;
+    const urlOffset = parseInt(searchParams.get("offset") || "1");
+    setOffset(urlOffset);
+  }, []);
   
   // Get states and actions from the store
   const { 
@@ -35,16 +42,17 @@ export default function WeightLossForm() {
   const progressPercentage = getProgressPercentage(offset);
   
   // Check if we have a valid question for this offset
-  if (!currentQuestion) {
-    // Handle case where offset is invalid
-    useEffect(() => {
+  useEffect(() => {
+    if (!currentQuestion && offset > 0) {
+      // Handle case where offset is invalid
       router.push(`${pathname}?offset=1`);
-    }, [router, pathname]);
-    return null;
-  }
+    }
+  }, [currentQuestion, offset, router, pathname]);
   
   // Handle response change
   const handleResponseChange = (value: any) => {
+    if (!currentQuestion) return;
+    
     setResponses(prev => ({
       ...prev,
       [currentQuestion.id]: value
@@ -57,7 +65,6 @@ export default function WeightLossForm() {
     setStepOffset(pathname, offset);
     
     // Store responses in sessionStorage for now
-    // In a real app, you'd store this in your global store
     const sessionResponses = { ...responses };
     sessionStorage.setItem("weightLossResponses", JSON.stringify(sessionResponses));
   };
@@ -82,6 +89,8 @@ export default function WeightLossForm() {
   
   // Check if continue button should be enabled
   const isContinueEnabled = () => {
+    if (!currentQuestion) return false;
+    
     const response = responses[currentQuestion.id];
     
     if (response === undefined) return false;
@@ -109,6 +118,16 @@ export default function WeightLossForm() {
       console.error("Error loading stored responses:", error);
     }
   }, []);
+
+  // If no currentQuestion is available yet, show loading instead of error
+  if (!currentQuestion) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+        <p className="mt-4 text-lg">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex flex-col items-center justify-start min-h-screen bg-white px-6">

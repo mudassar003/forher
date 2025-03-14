@@ -104,7 +104,7 @@ export async function POST(request: Request) {
 async function fetchProducts(): Promise<Product[]> {
   try {
     return await client.fetch(`
-      *[_type == "product" && references(*[_type=="productCategory" && slug.current=="birth-control"]._id)] {
+      *[_type == "product" && references(*[_type=="productCategory" && slug.current=="sexual-health-and-birth-control"]._id)] {
         _id,
         title,
         slug,

@@ -1,69 +1,194 @@
-//src/app/c/wm/lose-weight/data/questions.ts
+// src/app/c/wm/lose-weight/data/questions.ts
 import { Question, QuestionType } from "../types";
 
 // Define all questions for the weight loss form
 export const weightLossQuestions: Question[] = [
-  // Question 1 - Age group
+  // Step 1: Basic Demographics
   {
     id: "age-group",
     question: "What is your age group?",
-    description: "Select your current age range.",
+    description: "Please select your current age range.",
     type: QuestionType.SingleSelect,
     options: [
       { id: "under-18", label: "Under 18" },
-      { id: "18-25", label: "18-25" },
-      { id: "26-35", label: "26-35" },
-      { id: "36-45", label: "36-45" },
-      { id: "46-55", label: "46-55" },
-      { id: "56-plus", label: "56+" }
+      { id: "18-24", label: "18-24" },
+      { id: "25-34", label: "25-34" },
+      { id: "35-44", label: "35-44" },
+      { id: "45-54", label: "45-54" },
+      { id: "55-plus", label: "55+" }
     ]
   },
-  
-  // Question 2 - Current weight range
   {
-    id: "current-weight-range",
-    question: "What is your current weight range?",
-    description: "Select your current weight range.",
+    id: "gender",
+    question: "Are you female?",
+    description: "Our products are specifically designed for women.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "under-50kg", label: "Under 50 kg (110 lbs)" },
-      { id: "50-65kg", label: "50-65 kg (110-143 lbs)" },
-      { id: "66-80kg", label: "66-80 kg (144-176 lbs)" },
-      { id: "81-100kg", label: "81-100 kg (177-220 lbs)" },
-      { id: "101-120kg", label: "101-120 kg (221-264 lbs)" },
-      { id: "over-120kg", label: "Over 120 kg (265+ lbs)" }
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
     ]
   },
-  
-  // Question 3 - Weight loss goal
+
+  // Step 2: Height, Weight & BMI Calculation
   {
-    id: "weight-loss-goal",
-    question: "What is your weight loss goal?",
-    description: "This helps us tailor your program.",
+    id: "current-weight",
+    question: "What is your current weight?",
+    description: "Enter your weight in kilograms (kg) or pounds (lbs).",
+    type: QuestionType.TextInput,
+    placeholder: "Enter weight (e.g., 70kg or 154lbs)",
+    inputType: "text",
+    validation: (value: string) => {
+      // Accept format like "70kg" or "154lbs" or just numbers
+      return /^\d+(\.\d+)?(kg|lbs)?$/i.test(value);
+    },
+    errorMessage: "Please enter a valid weight (e.g., 70kg or 154lbs)"
+  },
+  {
+    id: "height",
+    question: "What is your height?",
+    description: "Enter your height in centimeters (cm) or feet and inches (e.g., 5'7\").",
+    type: QuestionType.TextInput,
+    placeholder: "Enter height (e.g., 170cm or 5'7\")",
+    inputType: "text",
+    validation: (value: string) => {
+      // Accept format like "170cm" or "5'7\"" or just numbers
+      return /^\d+(\.?\d+)?(cm|m)?$|^\d+'(\d+\")?$/i.test(value);
+    },
+    errorMessage: "Please enter a valid height (e.g., 170cm or 5'7\")"
+  },
+
+  // Step 3: Pregnancy & Breastfeeding
+  {
+    id: "pregnant",
+    question: "Are you currently pregnant?",
+    description: "Weight loss products are not recommended during pregnancy.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "lose-5-10kg", label: "Lose 5-10 kg (11-22 lbs)" },
-      { id: "lose-11-20kg", label: "Lose 11-20 kg (23-44 lbs)" },
-      { id: "lose-20kg-plus", label: "Lose more than 20 kg (45+ lbs)" },
-      { id: "maintain", label: "Maintain current weight but improve metabolism" }
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
     ]
   },
-  
-  // Question 4 - Activity level
+  {
+    id: "breastfeeding",
+    question: "Are you currently breastfeeding?",
+    description: "Weight loss products are not recommended while breastfeeding.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+
+  // Step 4: Medical History
+  {
+    id: "medical-conditions",
+    question: "Do you have any of the following medical conditions?",
+    description: "Select all that apply.",
+    type: QuestionType.MultiSelect,
+    options: [
+      { id: "type1-diabetes", label: "Type 1 Diabetes" },
+      { id: "type2-diabetes", label: "Type 2 Diabetes" },
+      { id: "hypertension", label: "Hypertension (High Blood Pressure)" },
+      { id: "pcos", label: "PCOS (Polycystic Ovary Syndrome)" },
+      { id: "thyroid", label: "Thyroid Disorder" },
+      { id: "heart-disease", label: "Heart Disease" },
+      { id: "kidney-liver-disease", label: "Kidney or Liver Disease" },
+      { id: "depression-anxiety", label: "Depression or Anxiety" },
+      { id: "none", label: "None of the above" }
+    ]
+  },
+  {
+    id: "prescription-medications",
+    question: "Do you take any prescription medications?",
+    description: "Some medications may interact with weight loss treatments.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+  {
+    id: "medications-list",
+    question: "Please list your current medications",
+    description: "This information helps us ensure there are no contraindications.",
+    type: QuestionType.TextInput,
+    placeholder: "Enter your medications, separated by commas",
+    inputType: "text",
+    conditionalDisplay: (formData) => formData["prescription-medications"] === "yes"
+  },
+  {
+    id: "eating-disorder",
+    question: "Have you been diagnosed with an eating disorder (Anorexia, Bulimia, Binge Eating)?",
+    description: "Weight loss products may not be appropriate for those with eating disorders.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+
+  // Step 5: Previous Weight Loss Attempts
+  {
+    id: "previous-weight-loss",
+    question: "Have you previously tried weight loss programs, diets, or medications?",
+    description: "Your experience helps us provide better recommendations.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "first-attempt", label: "No, this is my first attempt" },
+      { id: "didnt-work", label: "Yes, but they didn't work" },
+      { id: "worked-temporarily", label: "Yes, and they worked for a while" }
+    ]
+  },
+  {
+    id: "previous-medications",
+    question: "Have you used any of the following weight loss medications before?",
+    description: "Select all that apply.",
+    type: QuestionType.MultiSelect,
+    options: [
+      { id: "phentermine", label: "Phentermine" },
+      { id: "orlistat", label: "Orlistat" },
+      { id: "semaglutide", label: "Semaglutide" },
+      { id: "tirzepatide", label: "Tirzepatide" },
+      { id: "none", label: "None of the above" }
+    ]
+  },
+
+  // Step 6: Activity Level & Metabolism
   {
     id: "activity-level",
-    question: "How active is your lifestyle?",
-    description: "Select your current activity level.",
+    question: "How active are you?",
+    description: "Select the option that best describes your typical activity level.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "sedentary", label: "Sedentary (little or no exercise)" },
-      { id: "lightly-active", label: "Lightly active (exercise 1-2 times per week)" },
-      { id: "moderately-active", label: "Moderately active (exercise 3-4 times per week)" },
-      { id: "very-active", label: "Very active (exercise 5+ times per week)" }
+      { id: "sedentary", label: "Sedentary (Little or no exercise)" },
+      { id: "lightly-active", label: "Lightly active (1-2 workouts per week)" },
+      { id: "moderately-active", label: "Moderately active (3-4 workouts per week)" },
+      { id: "very-active", label: "Very active (5+ workouts per week)" }
     ]
   },
-  
-  // Question 5 - Eating habits
+  {
+    id: "metabolism",
+    question: "How would you describe your metabolism?",
+    description: "This helps us understand your body's natural tendencies.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "fast", label: "Fast" },
+      { id: "normal", label: "Normal" },
+      { id: "slow", label: "Slow" }
+    ]
+  },
+  {
+    id: "recent-weight-gain",
+    question: "Have you noticed significant weight gain recently?",
+    description: "This may help identify underlying causes.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+
+  // Step 7: Eating Habits & Cravings
   {
     id: "eating-habits",
     question: "How would you describe your eating habits?",
@@ -72,103 +197,98 @@ export const weightLossQuestions: Question[] = [
     options: [
       { id: "portion-control", label: "I eat mostly healthy but struggle with portion control" },
       { id: "sugar-carbs", label: "I often crave sugary or high-carb foods" },
-      { id: "emotional-eating", label: "I eat emotionally or due to stress" },
-      { id: "specific-diet", label: "I follow a specific diet (e.g., keto, intermittent fasting, etc.)" },
-      { id: "inconsistent", label: "My diet varies, and I struggle with consistency" }
+      { id: "emotional-eating", label: "I eat due to stress or emotions" },
+      { id: "specific-diet", label: "I follow a specific diet (e.g., keto, intermittent fasting)" }
     ]
   },
-  
-  // Question 6 - Cravings
   {
     id: "cravings",
     question: "Do you struggle with cravings?",
     description: "Select the option that best describes your experience with food cravings.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "frequent-cravings", label: "Yes, I frequently crave sweets and carbs" },
-      { id: "some-control", label: "Yes, I have cravings but can control them sometimes" },
-      { id: "no-cravings", label: "No, I don't struggle with cravings much" }
+      { id: "frequent-cravings", label: "Yes, frequently" },
+      { id: "some-control", label: "Yes, but I can control them" },
+      { id: "no-cravings", label: "No" }
     ]
   },
-  
-  // Question 7 - Hunger frequency
   {
-    id: "hunger-frequency",
-    question: "How often do you feel hungry throughout the day?",
-    description: "Select the option that best describes your hunger patterns.",
+    id: "eat-out",
+    question: "How often do you eat out?",
+    description: "This helps us understand your dietary patterns.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "almost-always", label: "Almost always" },
-      { id: "frequently", label: "Frequently" },
-      { id: "sometimes", label: "Sometimes" },
-      { id: "rarely", label: "Rarely" }
+      { id: "rarely", label: "Rarely" },
+      { id: "occasionally", label: "Occasionally" },
+      { id: "frequently", label: "Frequently" }
     ]
   },
-  
-  // Question 8 - Medical conditions
   {
-    id: "medical-conditions",
-    question: "Do you have any of the following conditions?",
-    description: "Select all that apply.",
-    type: QuestionType.MultiSelect,
-    options: [
-      { id: "diabetes", label: "Type 2 Diabetes" },
-      { id: "insulin-resistance", label: "Insulin resistance or metabolic syndrome" },
-      { id: "hypertension", label: "Hypertension (high blood pressure)" },
-      { id: "depression-anxiety", label: "Depression or anxiety" },
-      { id: "none", label: "None of the above" }
-    ]
-  },
-  
-  // Question 9 - Prior weight loss treatments
-  {
-    id: "prior-treatments",
-    question: "Have you tried any weight loss medications or treatments before?",
-    description: "Select the option that best describes your experience.",
+    id: "alcohol",
+    question: "Do you drink alcohol?",
+    description: "Alcohol can impact weight loss and interact with certain medications.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "yes-worked", label: "Yes, and they worked for me" },
-      { id: "yes-didnt-work", label: "Yes, but they didn't work as expected" },
-      { id: "no-first-time", label: "No, this is my first time" }
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
     ]
   },
-  
-  // Question 10 - Injectable comfort
+
+  // Step 8: Sleep & Stress
   {
-    id: "injectable-comfort",
-    question: "Are you comfortable with injectable weight loss medications?",
-    description: "This helps us determine the best treatment options for you.",
+    id: "sleep-hours",
+    question: "How many hours of sleep do you get per night?",
+    description: "Sleep can significantly impact weight management.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "open-to-injections", label: "Yes, I am open to injections" },
-      { id: "prefer-oral", label: "No, I prefer oral medications" }
+      { id: "less-than-5", label: "Less than 5 hours" },
+      { id: "5-7", label: "5-7 hours" },
+      { id: "8-plus", label: "8+ hours" }
     ]
   },
-  
-  // Question 11 - Focus areas
   {
-    id: "focus-areas",
-    question: "What is your main focus in weight loss?",
-    description: "This helps us tailor your program to your specific needs.",
+    id: "stress-levels",
+    question: "How would you rate your stress levels?",
+    description: "Stress can affect weight and eating habits.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "control-appetite", label: "Controlling appetite and cravings" },
-      { id: "boost-metabolism", label: "Boosting metabolism and energy" },
-      { id: "manage-blood-sugar", label: "Managing blood sugar and insulin resistance" },
-      { id: "combination", label: "A combination of all the above" }
+      { id: "low", label: "Low" },
+      { id: "moderate", label: "Moderate" },
+      { id: "high", label: "High" }
     ]
   },
-  
-  // Question 12 - Preference for results timeframe
+
+  // Step 9: Medical Eligibility Confirmation
   {
-    id: "results-timeframe",
-    question: "Would you prefer a medication that works gradually for long-term results or one with faster effects?",
-    description: "Select your preference for treatment outcomes.",
+    id: "doctor-consultation",
+    question: "Are you willing to consult a doctor before taking weight loss treatments?",
+    description: "Medical consultation is essential for safe and effective treatment.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "gradual", label: "I prefer gradual, sustainable weight loss" },
-      { id: "faster", label: "I want to see faster results" },
-      { id: "either", label: "I'm open to either, as long as it works" }
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+
+  // Step 10: Product Preference
+  {
+    id: "prescription-preference",
+    question: "Are you open to prescription-based treatments?",
+    description: "Prescription treatments may be more effective for some individuals.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No (Only OTC products recommended)" }
+    ]
+  },
+  {
+    id: "medication-type",
+    question: "Would you prefer injections or oral medications?",
+    description: "Different medication formats have varying benefits and convenience levels.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "injections", label: "I am comfortable with injections" },
+      { id: "oral", label: "I prefer oral medications" }
     ]
   }
 ];
@@ -180,7 +300,143 @@ export const getProgressPercentage = (currentOffset: number): number => {
   
   if (currentOffset === 0) return 20;
   
-  // First actual question starts at 50%, increases proportionally to last question
+  // First actual question starts at 25%, increases proportionally to last question
   const questionIndex = currentOffset - 1; // Since offset 1 = first question
-  return 50 + (questionIndex / totalQuestions * 45);
+  return 25 + (questionIndex / totalQuestions * 70);
+};
+
+// Helper function to calculate BMI from height and weight inputs
+export const calculateBMI = (weight: string, height: string): number | null => {
+  try {
+    // Parse weight
+    let weightInKg: number;
+    if (weight.toLowerCase().includes('lbs')) {
+      // Convert pounds to kg
+      weightInKg = parseFloat(weight) * 0.453592;
+    } else {
+      // Already in kg or just a number
+      weightInKg = parseFloat(weight);
+    }
+
+    // Parse height
+    let heightInMeters: number;
+    if (height.toLowerCase().includes('cm')) {
+      // Convert cm to meters
+      heightInMeters = parseFloat(height) / 100;
+    } else if (height.toLowerCase().includes('m')) {
+      // Already in meters
+      heightInMeters = parseFloat(height);
+    } else if (height.includes('\'')) {
+      // Format like 5'7" (feet and inches)
+      const parts = height.split('\'');
+      const feet = parseFloat(parts[0]);
+      const inches = parts[1] ? parseFloat(parts[1].replace('"', '')) : 0;
+      heightInMeters = (feet * 0.3048) + (inches * 0.0254);
+    } else {
+      // Assume cm if just a number
+      heightInMeters = parseFloat(height) / 100;
+    }
+
+    // Calculate BMI
+    return weightInKg / (heightInMeters * heightInMeters);
+  } catch (error) {
+    console.error('Error calculating BMI:', error);
+    return null;
+  }
+};
+
+// Determine eligibility based on responses
+export const checkEligibility = (responses: Record<string, any>): { eligible: boolean; reason: string } => {
+  // Step 1: Age Check
+  if (responses['age-group'] === 'under-18') {
+    return {
+      eligible: false,
+      reason: "You are not eligible for weight loss products as they are not recommended for individuals under 18 years of age."
+    };
+  }
+
+  // Step 1: Gender Check
+  if (responses['gender'] === 'no') {
+    return {
+      eligible: false,
+      reason: "Our products are specifically designed for women. We recommend consulting with a healthcare provider for personalized weight management guidance."
+    };
+  }
+
+  // Step 2: BMI Check (if both height and weight are provided)
+  if (responses['current-weight'] && responses['height']) {
+    const bmi = calculateBMI(responses['current-weight'], responses['height']);
+    if (bmi !== null) {
+      if (bmi < 18.5) {
+        return {
+          eligible: false,
+          reason: "Based on your BMI calculation, you are in the underweight category. Weight loss products are not recommended. Please consult with a healthcare provider."
+        };
+      } else if (bmi < 25) {
+        // Normal weight - eligible but with warning
+        // We'll just note this and continue checking other criteria
+      }
+    }
+  }
+
+  // Step 3: Pregnancy & Breastfeeding
+  if (responses['pregnant'] === 'yes') {
+    return {
+      eligible: false,
+      reason: "Weight loss products are not recommended during pregnancy. Please consult with your healthcare provider for safe weight management during pregnancy."
+    };
+  }
+
+  if (responses['breastfeeding'] === 'yes') {
+    return {
+      eligible: false,
+      reason: "Weight loss products are not recommended while breastfeeding. Please consult with your healthcare provider for safe weight management while breastfeeding."
+    };
+  }
+
+  // Step 4: Medical Conditions
+  if (Array.isArray(responses['medical-conditions'])) {
+    if (responses['medical-conditions'].includes('type1-diabetes')) {
+      return {
+        eligible: false,
+        reason: "Weight loss products may not be suitable for individuals with Type 1 Diabetes. Please consult with your healthcare provider for personalized weight management options."
+      };
+    }
+
+    if (responses['medical-conditions'].includes('heart-disease')) {
+      return {
+        eligible: false,
+        reason: "Weight loss products may not be suitable for individuals with heart disease. Please consult with your healthcare provider for personalized weight management options."
+      };
+    }
+
+    if (responses['medical-conditions'].includes('kidney-liver-disease')) {
+      return {
+        eligible: false,
+        reason: "Weight loss products may not be suitable for individuals with kidney or liver disease. Please consult with your healthcare provider for personalized weight management options."
+      };
+    }
+  }
+
+  // Step 4: Eating Disorder
+  if (responses['eating-disorder'] === 'yes') {
+    return {
+      eligible: false,
+      reason: "Weight loss products are not recommended for individuals with a history of eating disorders. Please consult with your healthcare provider for healthy weight management approaches."
+    };
+  }
+
+  // Step 9: Doctor Consultation
+  if (responses['doctor-consultation'] === 'no') {
+    return {
+      eligible: false,
+      reason: "Medical consultation is required before starting weight loss treatments to ensure safety and effectiveness. Please reconsider consulting with a healthcare provider."
+    };
+  }
+
+  // If we've passed all the checks, the user is eligible
+  return {
+    eligible: true,
+    reason: "Based on your responses, you appear to be eligible for our weight loss products. Your safety is our priority, so we still recommend discussing with your healthcare provider before starting any new regimen."
+  };
 };

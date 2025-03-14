@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
-import { weightLossQuestions, getProgressPercentage } from "../data/questions";
+import { weightLossQuestions, getProgressPercentage, calculateBMI, checkEligibility } from "../data/questions";
 import { FormResponse } from "../types";
 
 export default function WeightLossForm() {
@@ -16,6 +16,7 @@ export default function WeightLossForm() {
   // Get the current offset from URL directly instead of using useSearchParams hook
   const [offset, setOffset] = useState(1); // Default to 1
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
   
   // Use an effect to get the search params (safely in browser environment)
   useEffect(() => {
@@ -34,12 +35,32 @@ export default function WeightLossForm() {
     setStepOffset
   } = useWMFormStore();
   
-  // Get the current question based on offset
-  const currentQuestionIndex = offset - 1; // Adjust for 0-based array index
-  const currentQuestion = weightLossQuestions[currentQuestionIndex];
-  
   // Form state for responses
   const [responses, setResponses] = useState<FormResponse>({});
+  
+  // BMI calculation state
+  const [bmi, setBmi] = useState<number | null>(null);
+  
+  // Calculate BMI when weight and height are both entered
+  useEffect(() => {
+    if (responses['current-weight'] && responses['height']) {
+      const calculatedBmi = calculateBMI(
+        responses['current-weight'] as string, 
+        responses['height'] as string
+      );
+      setBmi(calculatedBmi);
+    }
+  }, [responses['current-weight'], responses['height']]);
+  
+  // Filter questions based on conditional display
+  const filteredQuestions = weightLossQuestions.filter(question => {
+    if (!question.conditionalDisplay) return true;
+    return question.conditionalDisplay(responses);
+  });
+  
+  // Get the current question based on offset
+  const currentQuestionIndex = offset - 1; // Adjust for 0-based array index
+  const currentQuestion = filteredQuestions[currentQuestionIndex];
   
   // Progress percentage
   const progressPercentage = getProgressPercentage(offset);
@@ -52,14 +73,47 @@ export default function WeightLossForm() {
     }
   }, [currentQuestion, offset, router, pathname]);
   
+  // Load stored responses on mount
+  useEffect(() => {
+    // Only run in browser environment
+    if (typeof window !== 'undefined') {
+      try {
+        const storedResponses = sessionStorage.getItem("weightLossResponses");
+        if (storedResponses) {
+          setResponses(JSON.parse(storedResponses));
+        }
+      } catch (error) {
+        console.error("Error loading stored responses:", error);
+      }
+    }
+  }, []);
+  
   // Handle response change
   const handleResponseChange = (value: any) => {
     if (!currentQuestion) return;
     
-    setResponses(prev => ({
-      ...prev,
+    const updatedResponses = {
+      ...responses,
       [currentQuestion.id]: value
-    }));
+    };
+    
+    setResponses(updatedResponses);
+    
+    // Check for eligibility criteria after certain critical questions
+    const eligibilityCheckQuestions = [
+      'age-group', 'gender', 'pregnant', 'breastfeeding', 
+      'medical-conditions', 'eating-disorder', 'doctor-consultation'
+    ];
+    
+    if (eligibilityCheckQuestions.includes(currentQuestion.id)) {
+      const eligibility = checkEligibility(updatedResponses);
+      
+      if (!eligibility.eligible) {
+        setIneligibilityReason(eligibility.reason);
+      } else {
+        setIneligibilityReason(null);
+      }
+    }
   };
   
   // Store the current responses
@@ -68,36 +122,40 @@ export default function WeightLossForm() {
       // Store the current offset
       setStepOffset(pathname, offset);
       
-      // Store responses in sessionStorage for now
-      const sessionResponses = { ...responses };
+      // Store responses in sessionStorage
       try {
-        sessionStorage.setItem("weightLossResponses", JSON.stringify(sessionResponses));
+        sessionStorage.setItem("weightLossResponses", JSON.stringify(responses));
       } catch (error) {
         console.error("Error storing responses:", error);
       }
     }
   };
   
-  // Pre-load the next question data to prepare for quick transition
-  const preloadNextQuestion = () => {
-    if (currentQuestionIndex >= weightLossQuestions.length - 1) {
-      // No next question to preload
-      return;
-    }
-    
-    // Preload the next question's content here if needed
-    // This is just a placeholder for potential preloading logic
-  };
-  
-  // Handle navigation to next screen using history.pushState for smoother transitions
+  // Handle navigation to next screen
   const handleContinue = () => {
     if (typeof window === 'undefined') return;
     
     // Store current screen's responses
     storeResponses();
     
+    // If user is ineligible, redirect to a dedicated ineligible page
+    if (ineligibilityReason) {
+      // Store the ineligibility reason for the results page
+      sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
+      
+      // Mark step as completed
+      markStepCompleted(pathname);
+      
+      // Set transitioning state
+      setIsTransitioning(true);
+      
+      // Navigate to the results page directly
+      window.location.href = "/c/wm/results";
+      return;
+    }
+    
     // If this is the last screen
-    if (currentQuestionIndex >= weightLossQuestions.length - 1) {
+    if (currentQuestionIndex >= filteredQuestions.length - 1) {
       // Mark step as completed
       markStepCompleted(pathname);
       
@@ -105,7 +163,6 @@ export default function WeightLossForm() {
       setIsTransitioning(true);
       
       // Navigate to the next step in the flow
-      // Use window.location for cross-page navigation but avoid reloading for within-form navigation
       window.location.href = "/c/wm/submit";
     } else {
       // For within-form navigation, do it without a full page refresh
@@ -116,9 +173,6 @@ export default function WeightLossForm() {
       
       // Then update the offset state to show the next question
       setOffset(nextOffset);
-      
-      // Optionally run any animations or transitions here
-      // This keeps the same component instance and avoids a full reload
     }
   };
   
@@ -142,21 +196,6 @@ export default function WeightLossForm() {
     }
   };
   
-  // Load stored responses on mount
-  useEffect(() => {
-    // Only run in browser environment
-    if (typeof window !== 'undefined') {
-      try {
-        const storedResponses = sessionStorage.getItem("weightLossResponses");
-        if (storedResponses) {
-          setResponses(JSON.parse(storedResponses));
-        }
-      } catch (error) {
-        console.error("Error loading stored responses:", error);
-      }
-    }
-  }, []);
-
   // When URL changes via browser back/forward buttons, update the offset
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -170,11 +209,6 @@ export default function WeightLossForm() {
       return () => window.removeEventListener('popstate', handlePopState);
     }
   }, []);
-
-  // Preload next question when the current one is displayed
-  useEffect(() => {
-    preloadNextQuestion();
-  }, [offset]);
 
   // If no currentQuestion is available yet, show loading instead of error
   if (!currentQuestion) {
@@ -190,7 +224,7 @@ export default function WeightLossForm() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-        <p className="mt-4 text-lg">Navigating to next step...</p>
+        <p className="mt-4 text-lg">Analyzing your responses...</p>
       </div>
     );
   }
@@ -210,6 +244,36 @@ export default function WeightLossForm() {
           <p className="text-gray-600 mb-8 text-left text-lg">
             {currentQuestion.description}
           </p>
+        )}
+        
+        {/* Display BMI calculation result if available */}
+        {currentQuestion.id === 'height' && bmi !== null && (
+          <div className={`p-4 mb-6 rounded-lg ${
+            bmi < 18.5 ? 'bg-amber-100' : 
+            bmi < 25 ? 'bg-green-100' : 
+            bmi < 30 ? 'bg-yellow-100' : 
+            'bg-orange-100'
+          }`}>
+            <p className="font-medium">Your calculated BMI: {bmi.toFixed(1)}</p>
+            <p className="text-sm mt-1">
+              {bmi < 18.5 ? 'Underweight' : 
+               bmi < 25 ? 'Normal weight' : 
+               bmi < 30 ? 'Overweight' : 
+               'Obese'}
+            </p>
+          </div>
+        )}
+        
+        {/* Display ineligibility warning if applicable */}
+        {ineligibilityReason && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
+            <p className="font-medium text-red-700">Eligibility Notice:</p>
+            <p className="text-red-600">{ineligibilityReason}</p>
+            <p className="text-sm mt-2 text-gray-600">
+              You can continue with the assessment, but based on your responses, 
+              our products may not be suitable for you.
+            </p>
+          </div>
         )}
         
         {/* Render the appropriate question component */}
@@ -234,7 +298,7 @@ export default function WeightLossForm() {
             isContinueEnabled() && !isTransitioning ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Continue
+          {ineligibilityReason ? "Continue to Results" : "Continue"}
         </button>
       </div>
     </div>

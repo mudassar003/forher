@@ -9,6 +9,7 @@ import { urlFor } from '@/sanity/lib/image';
 import { client } from '@/sanity/lib/client';
 import HomeHeader from "@/components/HomeHeader";
 import GlobalFooter from "@/components/GlobalFooter";
+import { calculateBMI } from "../lose-weight/data/questions";
 
 interface Product {
   _id: string;
@@ -17,6 +18,8 @@ interface Product {
   price: number;
   description: string;
   mainImage?: any;
+  productType?: string;
+  administrationType?: string;
 }
 
 interface Recommendation {
@@ -32,8 +35,16 @@ export default function ResultsPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bmi, setBmi] = useState<number | null>(null);
+  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if we have a stored ineligibility reason
+    const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
+    if (storedIneligibilityReason) {
+      setIneligibilityReason(storedIneligibilityReason);
+    }
+    
     // Check if we already have a recommendation in localStorage
     const savedRecommendation = localStorage.getItem('weightLossRecommendation');
     
@@ -42,11 +53,24 @@ export default function ResultsPage() {
         // Fetch all weight loss products regardless of recommendation
         const products: Product[] = await client.fetch(`
           *[_type == "product" && references(*[_type=="productCategory" && slug.current=="weight-loss"]._id)] {
-            _id, title, slug, price, description, mainImage
+            _id, title, slug, price, description, mainImage, productType, administrationType
           }
         `);
         
         setAllProducts(products || []);
+        
+        // If the user is ineligible, create a custom recommendation object
+        if (storedIneligibilityReason) {
+          const ineligibleRecommendation: Recommendation = {
+            eligible: false,
+            recommendedProductId: null,
+            explanation: storedIneligibilityReason
+          };
+          
+          setRecommendation(ineligibleRecommendation);
+          setIsLoading(false);
+          return;
+        }
         
         // If we have a saved recommendation, use it
         if (savedRecommendation) {
@@ -64,6 +88,15 @@ export default function ResultsPage() {
         }
         
         const responses = JSON.parse(storedResponses);
+        
+        // Calculate BMI if applicable
+        if (responses['current-weight'] && responses['height']) {
+          const calculatedBmi = calculateBMI(
+            responses['current-weight'] as string,
+            responses['height'] as string
+          );
+          setBmi(calculatedBmi);
+        }
         
         // Call the API to get recommendations
         const response = await fetch('/api/recommendations', {
@@ -129,6 +162,7 @@ export default function ResultsPage() {
     localStorage.removeItem('weightLossRecommendation');
     sessionStorage.removeItem('finalResponses');
     sessionStorage.removeItem('weightLossResponses');
+    sessionStorage.removeItem('ineligibilityReason');
     router.push("/c/wm");
   };
 
@@ -174,6 +208,35 @@ export default function ResultsPage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-4xl font-semibold text-[#fe92b5] text-center mb-10">Your Personalized Recommendation</h1>
         
+        {/* Display BMI information if available */}
+        {bmi !== null && (
+          <div className={`max-w-4xl mx-auto p-5 mb-10 rounded-lg ${
+            bmi < 18.5 ? 'bg-amber-100' : 
+            bmi < 25 ? 'bg-green-100' : 
+            bmi < 30 ? 'bg-yellow-100' : 
+            'bg-orange-100'
+          }`}>
+            <h3 className="text-xl font-semibold">Your BMI: {bmi.toFixed(1)}</h3>
+            <p className="mt-1">
+              Category: <strong>
+                {bmi < 18.5 ? 'Underweight' : 
+                 bmi < 25 ? 'Normal weight' : 
+                 bmi < 30 ? 'Overweight' : 
+                 'Obese'}
+              </strong>
+            </p>
+            <p className="mt-2 text-sm">
+              {bmi < 18.5 ? 
+                'A BMI below 18.5 is considered underweight. Weight loss products are not typically recommended.' : 
+               bmi < 25 ? 
+                'A BMI between 18.5 and 24.9 is considered normal weight. Consider lifestyle changes if you wish to maintain or optimize your weight.' : 
+               bmi < 30 ? 
+                'A BMI between 25 and 29.9 is considered overweight. Weight management products may be helpful in conjunction with lifestyle changes.' : 
+                'A BMI of 30 or higher is considered obese. Weight management products can be beneficial alongside lifestyle modifications.'}
+            </p>
+          </div>
+        )}
+        
         {/* Recommendation Section */}
         <section className="mb-16">
           {/* Eligible with Product Recommendation */}
@@ -210,6 +273,18 @@ export default function ResultsPage() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
+                      </div>
+                    )}
+                    
+                    {recommendation.product.productType && (
+                      <div className="mt-2 inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                        {recommendation.product.productType === 'OTC' ? 'Over-the-counter' : 'Prescription required'}
+                      </div>
+                    )}
+                    
+                    {recommendation.product.administrationType && (
+                      <div className="mt-2 ml-2 inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                        {recommendation.product.administrationType === 'oral' ? 'Oral medication' : 'Injectable'}
                       </div>
                     )}
                   </div>
@@ -283,7 +358,7 @@ export default function ResultsPage() {
           <h2 className="text-3xl font-semibold text-gray-800 mb-6">Weight Loss Products</h2>
           <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of physician-formulated weight loss treatments designed to support your journey to better health.</p>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {allProducts.slice(0, 8).map((product: Product) => (
               <Link 
                 href={`/products/${product.slug?.current}`} 
@@ -322,7 +397,14 @@ export default function ResultsPage() {
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-grow">{product.description}</p>
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-gray-900">${product.price}</span>
-                      <span className="text-sm text-gray-500">Weight Loss</span>
+                      <div className="flex flex-col items-end">
+                        {product.productType && (
+                          <span className="text-xs text-gray-500">{product.productType === 'OTC' ? 'Over-the-counter' : 'Prescription'}</span>
+                        )}
+                        {product.administrationType && (
+                          <span className="text-xs text-gray-500">{product.administrationType === 'oral' ? 'Oral' : 'Injectable'}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

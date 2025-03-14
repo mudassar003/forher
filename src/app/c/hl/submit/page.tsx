@@ -81,8 +81,13 @@ export default function SubmitStep() {
 
   // Group questions by their sections for better organization
   const getSectionForQuestion = (questionId: string): string => {
-    // For this simplified version with just two questions, we'll put them both in one section
-    return "Hair Loss Assessment";
+    const sectionMap: Record<string, string> = {
+      'hair-loss-pattern': 'Hair Loss Assessment',
+      'hair-loss-duration': 'Hair Loss Assessment'
+      // Add more mappings as you add more questions
+    };
+    
+    return sectionMap[questionId] || 'Other Information';
   };
 
   // Group questions by section
@@ -144,7 +149,7 @@ export default function SubmitStep() {
       {/* Progress Bar - 100% complete */}
       <ProgressBar progress={100} />
       
-      <h2 className="text-3xl font-semibold text-[#6366f1] mt-8">
+      <h2 className="text-3xl font-semibold text-[#fe92b5] mt-8">
         Review Your Hair Loss Assessment
       </h2>
       

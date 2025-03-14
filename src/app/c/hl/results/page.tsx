@@ -160,7 +160,7 @@ export default function ResultsPage() {
       <div className="min-h-screen flex flex-col">
         <HomeHeader />
         <div className="flex-grow flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-gray-300 border-t-[#6366f1] rounded-full animate-spin"></div>
+          <div className="w-16 h-16 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
           <p className="mt-6 text-xl">Analyzing your responses...</p>
           <p className="mt-2 text-gray-500">We're preparing your personalized recommendation</p>
         </div>
@@ -175,7 +175,7 @@ export default function ResultsPage() {
         <HomeHeader />
         <div className="flex-grow flex flex-col items-center justify-center px-6">
           <div className="w-full max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold text-[#6366f1] mb-6">Oops! Something went wrong</h2>
+            <h2 className="text-3xl font-semibold text-[#fe92b5] mb-6">Oops! Something went wrong</h2>
             <p className="text-xl mb-8">{error}</p>
             <button 
               onClick={() => router.push("/c/hl/submit")}
@@ -195,15 +195,15 @@ export default function ResultsPage() {
       <HomeHeader />
       
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-semibold text-[#6366f1] text-center mb-10">Your Personalized Recommendation</h1>
+        <h1 className="text-4xl font-semibold text-[#fe92b5] text-center mb-10">Your Personalized Recommendation</h1>
         
         {/* Recommendation Section */}
         <section className="mb-16">
           {/* Eligible with Product Recommendation */}
           {recommendation?.eligible && recommendation.product && (
             <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
-              <div className="bg-gradient-to-r from-[#6366f1]/10 to-[#6366f1]/5 p-6 flex items-center">
-                <div className="w-16 h-16 bg-[#6366f1] rounded-full flex items-center justify-center mr-4">
+              <div className="bg-gradient-to-r from-[#fe92b5]/10 to-[#fe92b5]/5 p-6 flex items-center">
+                <div className="w-16 h-16 bg-[#fe92b5] rounded-full flex items-center justify-center mr-4">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -254,7 +254,7 @@ export default function ResultsPage() {
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">{recommendation.product.title}</h3>
                     <div className="flex items-center mb-4">
                       <span className="text-xl font-bold text-black">${recommendation.product.price}</span>
-                      <span className="ml-2 px-2 py-1 bg-[#6366f1] text-white text-xs rounded-full">Recommended</span>
+                      <span className="ml-2 px-2 py-1 bg-[#fe92b5] text-white text-xs rounded-full">Recommended</span>
                     </div>
                     <p className="text-gray-700 mb-6">{recommendation.product.description}</p>
                     
@@ -303,7 +303,7 @@ export default function ResultsPage() {
                   </button>
                   <Link 
                     href="/consultation" 
-                    className="bg-[#6366f1] text-white text-lg font-medium px-6 py-3 rounded-full text-center hover:bg-[#6366f1]/90 flex-1"
+                    className="bg-[#fe92b5] text-white text-lg font-medium px-6 py-3 rounded-full text-center hover:bg-[#fe92b5]/90 flex-1"
                   >
                     Book a Consultation
                   </Link>
@@ -345,7 +345,7 @@ export default function ResultsPage() {
                     )}
                     
                     {recommendation?.product && recommendation.product._id === product._id && (
-                      <div className="absolute top-2 right-2 bg-[#6366f1] text-white text-xs py-1 px-2 rounded-full">
+                      <div className="absolute top-2 right-2 bg-[#fe92b5] text-white text-xs py-1 px-2 rounded-full">
                         Recommended
                       </div>
                     )}

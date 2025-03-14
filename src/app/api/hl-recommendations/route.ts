@@ -84,14 +84,14 @@ export async function POST(request: Request) {
           messages: [
             {
               role: "system",
-              content: "You are a helpful hair loss consultant. Provide a personalized, encouraging explanation for why a specific hair loss product is recommended based on the user's assessment responses."
+              content: "You are a helpful hair loss consultant. Provide a very brief explanation (2-3 sentences max) for why a specific hair loss product is recommended based on the user's assessment responses."
             },
             {
               role: "user",
               content: `Based on the following user responses: ${JSON.stringify(formResponses)}, we have recommended: ${productMatch.product.title}. The basic reason is: ${productMatch.reason}. Please enhance this explanation to be more personalized and informative, including why this is a good match for their specific hair loss pattern and duration. Keep it under 3 paragraphs and maintain a professional, supportive tone.`
             }
           ],
-          max_tokens: 300
+          max_tokens: 100
         });
         
         if (openAIResponse.choices && openAIResponse.choices[0]?.message?.content) {

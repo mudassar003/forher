@@ -1,14 +1,14 @@
-//src/app/c/hl/introduction/page.tsx
+//src/app/c/b/introduction/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
-import  ProgressBar  from "../components/ProgressBar"; 
+import ProgressBar from "@/app/c/b/components/ProgressBar";
 
-export default function StepOne() {
+export default function IntroductionPage() {
   const router = useRouter();
 
   const nextStep = () => {
-    router.push("/c/hl/hair-loss?offset=1"); // Navigate to the next step
+    router.push("/c/b/birth-control?offset=1"); // Navigate to the next step
   };
 
   return (
@@ -18,9 +18,9 @@ export default function StepOne() {
 
       {/* Centered Content */}
       <div className="max-w-lg text-center mt-10">
-        <h2 className="text-3xl font-semibold text-[#fe92b5]">Start your hair loss treatment journey.</h2>
+        <h2 className="text-3xl font-semibold text-[#01b5de]">Find your perfect birth control.</h2>
         <p className="text-xl font-medium text-black mt-3">
-          Learn about treatment options based on your goals, hair type, and health history.
+          Answer a few questions to discover your ideal birth control options based on your needs and lifestyle.
         </p>
       </div>
 

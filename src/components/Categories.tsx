@@ -14,14 +14,14 @@ const buttonData = [
     url: "/c/wm", // Define the URL here
   },
   {
-    text: "Find relief for anxiety",
+    text: "Grow fuller hair",
     color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#4B6478] to-[#3D5B74]",
-    textColor: "text-[#3D5B74]",
+    hoverColor: "from-[#506C5F] to-[#4E7F6B]",
+    textColor: "text-[#4E7F6B]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/mh", // Define the URL here
+    url: "/c/hl", // Define the URL here
   },
-  {
+   {
     text: "Control your cycle",
     color: "from-[#EBF3ED] to-[#EBF3ED]",
     hoverColor: "from-[#8B9B96] to-[#5F9C92]",
@@ -30,13 +30,15 @@ const buttonData = [
     url: "/c/b", // Define the URL here
   },
   {
-    text: "Grow fuller hair",
+    text: "Find relief for anxiety",
     color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#506C5F] to-[#4E7F6B]",
-    textColor: "text-[#4E7F6B]",
+    hoverColor: "from-[#4B6478] to-[#3D5B74]",
+    textColor: "text-[#3D5B74]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/hl", // Define the URL here
+    url: "/c/mh", // Define the URL here
   },
+ 
+
   {
     text: "Get glowing skin",
     color: "from-[#EBF3ED] to-[#EBF3ED]",

@@ -43,7 +43,7 @@ export default function HairLossEntry() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       {/* Loading Animation */}
-      <div className="w-24 h-24 border-4 border-[#6366f1] border-t-transparent rounded-full animate-spin mb-8"></div>
+      <div className="w-24 h-24 border-4 border-[#fe92b5] border-t-transparent rounded-full animate-spin mb-8"></div>
       
       {/* Loading Text */}
       <p className="text-xl text-gray-600">

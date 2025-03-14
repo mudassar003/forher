@@ -56,3 +56,31 @@ export interface FormState {
   responses: FormResponse;
   currentOffset: number;
 }
+
+// Product type interface
+export interface Product {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  price: number;
+  description: string;
+  mainImage?: any;
+  productType?: string; // OTC or prescription
+  administrationType?: string; // oral, ring, patch, etc.
+}
+
+// Product score interface for recommendations
+export interface ProductScore {
+  product: Product;
+  score: number;
+  reason: string;
+}
+
+// Recommendation result interface
+export interface RecommendationResult {
+  eligible: boolean;
+  recommendedProductId: string | null;
+  explanation: string;
+  product?: Product;
+  error?: string;
+}

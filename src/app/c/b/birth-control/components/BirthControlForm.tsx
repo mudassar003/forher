@@ -7,7 +7,7 @@ import { useBCFormStore } from "@/store/bcFormStore";
 import ProgressBar from "@/app/c/b/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
 import { birthControlQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
-import { FormResponse } from "../types";
+import { FormResponse, QuestionType } from "../types";
 
 export default function BirthControlForm() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function BirthControlForm() {
   }, []);
   
   // Get states and actions from the store
-  const { 
+  const {
     formData,
     markStepCompleted,
     setStepOffset
@@ -85,10 +85,16 @@ export default function BirthControlForm() {
     
     setResponses(updatedResponses);
     
-    // Check for eligibility criteria after certain critical questions
+    // Check for eligibility after any critical questions
     const eligibilityCheckQuestions = [
-      'bc-type'
-      // Add other critical questions here as needed
+      'age',
+      'gender',
+      'pregnant',
+      'breastfeeding',
+      'medical-conditions',
+      'eating-disorder',
+      'blood-clots',
+      'doctor-consult'
     ];
     
     if (eligibilityCheckQuestions.includes(currentQuestion.id)) {
@@ -171,11 +177,11 @@ export default function BirthControlForm() {
     if (response === undefined) return false;
     
     switch (currentQuestion.type) {
-      case "single-select":
+      case QuestionType.SingleSelect:
         return typeof response === "string" && response !== "";
-      case "multi-select":
+      case QuestionType.MultiSelect:
         return Array.isArray(response) && response.length > 0;
-      case "text-input":
+      case QuestionType.TextInput:
         return typeof response === "string" && response.trim() !== "";
       default:
         return false;
@@ -215,12 +221,64 @@ export default function BirthControlForm() {
     );
   }
 
+  // Get step number for display (grouping related questions into steps)
+  const getStepNumber = (): number => {
+    if (!currentQuestion) return 1;
+    
+    const stepMap: Record<string, number> = {
+      // Step 1: Basic Demographics
+      'age': 1,
+      'gender': 1,
+      
+      // Step 2: Pregnancy & Breastfeeding
+      'pregnant': 2,
+      'breastfeeding': 2,
+      
+      // Step 3: Medical History
+      'medical-conditions': 3,
+      'medications': 3,
+      'medication-specify': 3,
+      'eating-disorder': 3,
+      
+      // Step 4: Birth Control History
+      'bc-history': 4,
+      'blood-clots': 4,
+      'daily-pill': 4,
+      
+      // Step 5: Sexual Health & Libido
+      'libido-decrease': 5,
+      'stress-impact': 5,
+      'natural-support': 5,
+      'herbal-allergies': 5,
+      
+      // Step 6: Lifestyle & Preferences
+      'smoking': 6,
+      'regular-cycle': 6,
+      'overall-wellbeing': 6,
+      'daily-supplements': 6,
+      
+      // Step 7: Medical Eligibility Confirmation
+      'doctor-consult': 7,
+      
+      // Step 8: Product Preference
+      'non-prescription': 8,
+      'hormonal-bc': 8
+    };
+    
+    return stepMap[currentQuestion.id] || 1;
+  };
+
   return (
     <div className="relative flex flex-col items-center justify-start min-h-screen bg-white px-6">
       {/* Progress Bar */}
       <ProgressBar progress={progressPercentage} />
 
       <div className="w-full max-w-2xl mt-16 mb-24">
+        {/* Current Step Indicator */}
+        <div className="mb-4 text-[#fe92b5] font-medium">
+          Step {getStepNumber()} of 8
+        </div>
+        
         {/* Question - Left-aligned, larger text */}
         <h2 className="text-4xl font-semibold text-black mb-10 text-left">
           {currentQuestion.question}
@@ -238,14 +296,14 @@ export default function BirthControlForm() {
             <p className="font-medium text-red-700">Eligibility Notice:</p>
             <p className="text-red-600">{ineligibilityReason}</p>
             <p className="text-sm mt-2 text-gray-600">
-              You can continue with the assessment, but based on your responses, 
+              You can continue with the assessment, but based on your responses,
               our products may not be suitable for you.
             </p>
           </div>
         )}
         
         {/* Render the appropriate question component */}
-        <QuestionRenderer 
+        <QuestionRenderer
           question={currentQuestion}
           value={responses[currentQuestion.id]}
           onChange={handleResponseChange}
@@ -253,8 +311,8 @@ export default function BirthControlForm() {
       </div>
 
       {/* White gradient fade effect at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white to-transparent pointer-events-none" style={{ 
-        backgroundImage: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%)' 
+      <div className="fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white to-transparent pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%)'
       }}></div>
 
       {/* Fixed Button at Bottom */}
@@ -262,9 +320,8 @@ export default function BirthControlForm() {
         <button
           onClick={handleContinue}
           disabled={!isContinueEnabled() || isTransitioning}
-          className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl ${
-            isContinueEnabled() && !isTransitioning ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
-          }`}
+          className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl ${isContinueEnabled() && !isTransitioning ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
+            }`}
         >
           {ineligibilityReason ? "Continue to Results" : "Continue"}
         </button>

@@ -23,8 +23,9 @@ interface Product {
 }
 
 interface OpenAIRecommendation {
-  productId: string;
+  productId: string | null;
   explanation: string;
+  eligible: boolean;
 }
 
 interface ProductScore {
@@ -74,6 +75,15 @@ export async function POST(request: Request) {
     
     // Get recommendation from OpenAI
     const recommendation = await getOpenAIRecommendation(formResponses, products);
+    
+    // If OpenAI determined user is not eligible, return with explanation
+    if (!recommendation.eligible) {
+      return NextResponse.json({
+        eligible: false,
+        recommendedProductId: null,
+        explanation: recommendation.explanation
+      });
+    }
     
     // Find the recommended product details
     const recommendedProduct = products.find(p => p._id === recommendation.productId);
@@ -128,6 +138,12 @@ async function fetchProducts(): Promise<Product[]> {
 }
 
 // Optimized function to get recommendations from OpenAI with token control
+interface OpenAIRecommendation {
+  productId: string | null;
+  explanation: string;
+  eligible: boolean;
+}
+
 async function getOpenAIRecommendation(
   formResponses: Record<string, any>, 
   products: Product[]
@@ -153,7 +169,7 @@ async function getOpenAIRecommendation(
       messages: [
         {
           role: "system",
-          content: "You are a birth control consultant. Analyze user preferences and recommend the single best product match."
+          content: "You are a women's health consultant specializing in sexual health and birth control. Analyze user preferences and recommend the single best product match based on their health profile, lifestyle needs, and preferences. If no product is a suitable match, indicate they are not eligible."
         },
         {
           role: "user",
@@ -162,8 +178,11 @@ async function getOpenAIRecommendation(
           Available products: ${JSON.stringify(productsForPrompt)}
           
           Respond with ONLY a JSON object containing:
-          1. productId: The ID of the recommended product
-          2. explanation: A brief, personalized explanation (MAXIMUM 1 paragraph)`
+          1. eligible: true/false whether any product is suitable for this user
+          2. productId: The ID of the recommended product, or null if no product is suitable
+          3. explanation: A brief, personalized explanation (MAXIMUM 1 paragraph) explaining why this product is right for them OR why no product is suitable
+          
+          If none of the products are suitable based on the user's health profile, set eligible to false, productId to null, and provide an explanation of why they are not eligible.`
         }
       ],
       max_tokens: 150, // Control response length 
@@ -181,8 +200,22 @@ async function getOpenAIRecommendation(
     const recommendation = JSON.parse(content) as OpenAIRecommendation;
     
     // Validate that we got the expected fields
-    if (!recommendation.productId || !recommendation.explanation) {
+    if (recommendation.eligible === undefined || recommendation.explanation === undefined) {
       throw new Error("OpenAI response is missing required fields");
+    }
+    
+    // If OpenAI determines the user is not eligible, return with null productId
+    if (!recommendation.eligible) {
+      return {
+        productId: null,
+        explanation: recommendation.explanation,
+        eligible: false
+      };
+    }
+    
+    // If eligible but no productId, that's an error
+    if (!recommendation.productId) {
+      throw new Error("OpenAI marked user as eligible but didn't provide a product ID");
     }
     
     return recommendation;
@@ -193,7 +226,8 @@ async function getOpenAIRecommendation(
     const fallbackMatch = findBestProductMatch(formResponses, products);
     return {
       productId: fallbackMatch.product._id,
-      explanation: fallbackMatch.reason
+      explanation: fallbackMatch.reason,
+      eligible: true
     };
   }
 }
@@ -205,31 +239,53 @@ function preFilterProducts(responses: Record<string, any>, products: Product[]):
   
   let filteredProducts = [...products];
   
-  // Filter by birth control type if specified
-  if (responses['bc-type'] && responses['bc-type'] !== 'not-sure') {
-    const typeMap: Record<string, string[]> = {
-      'pill': ['oral', 'pill'],
-      'patch': ['patch', 'transdermal'],
-      'ring': ['ring', 'vaginal'],
-      'iud': ['iud', 'intrauterine'],
-      'implant': ['implant', 'subdermal'],
-      'emergency': ['emergency', 'morning-after']
-    };
+  // Filter based on daily pill preference
+  if (responses['daily-pill'] === 'no') {
+    // Filter out oral options for users who don't want daily pills
+    const nonPillProducts = filteredProducts.filter(product => {
+      if (!product.administrationType) return true;
+      return !['oral', 'pill'].some(type => 
+        product.administrationType?.toLowerCase().includes(type)
+      );
+    });
     
-    const preferredTypes = typeMap[responses['bc-type']] || [];
+    // Only apply the filter if it doesn't eliminate all products
+    if (nonPillProducts.length > 0) {
+      filteredProducts = nonPillProducts;
+    }
+  }
+  
+  // Filter based on blood clot history
+  if (responses['blood-clots'] === 'yes') {
+    // Filter out combination hormonal methods if possible
+    // This would require additional product metadata
+    // For now, we'll rely on eligibility check to handle this
+  }
+  
+  // Filter for libido support products if that's a primary interest
+  if (responses['natural-support'] === 'yes' && 
+      (responses['libido-decrease'] === 'frequently' || responses['libido-decrease'] === 'sometimes')) {
+    const libidoProducts = filteredProducts.filter(product => {
+      // Filter for products that have natural libido support
+      return product.productType?.toLowerCase().includes('libido') || 
+             product.description?.toLowerCase().includes('libido');
+    });
     
-    if (preferredTypes.length > 0) {
-      const typeFilteredProducts = filteredProducts.filter(product => {
-        if (!product.administrationType) return false;
-        return preferredTypes.some(type => 
-          product.administrationType?.toLowerCase().includes(type)
-        );
-      });
-      
-      // Only apply the filter if it doesn't eliminate all products
-      if (typeFilteredProducts.length > 0) {
-        filteredProducts = typeFilteredProducts;
-      }
+    // Only apply filter if it doesn't eliminate all products
+    if (libidoProducts.length > 0) {
+      filteredProducts = libidoProducts;
+    }
+  }
+  
+  // Filter for non-prescription preference
+  if (responses['non-prescription'] === 'yes') {
+    const otcProducts = filteredProducts.filter(product => {
+      return product.productType === 'OTC';
+    });
+    
+    // Only apply if it doesn't eliminate all products
+    if (otcProducts.length > 0) {
+      filteredProducts = otcProducts;
     }
   }
   
@@ -264,31 +320,8 @@ function condenseDescription(description: string): string {
 
 // Legacy function for fallback
 function findBestProductMatch(responses: Record<string, any>, products: Product[]): ProductScore {
-  // Filter products based on birth control type preference
-  let filteredProducts = [...products];
-  
-  // Filter by birth control type
-  if (responses['bc-type'] && responses['bc-type'] !== 'not-sure') {
-    const typeMap: Record<string, string[]> = {
-      'pill': ['oral', 'pill'],
-      'patch': ['patch', 'transdermal'],
-      'ring': ['ring', 'vaginal'],
-      'iud': ['iud', 'intrauterine'],
-      'implant': ['implant', 'subdermal'],
-      'emergency': ['emergency', 'morning-after']
-    };
-    
-    const preferredTypes = typeMap[responses['bc-type']] || [];
-    
-    if (preferredTypes.length > 0) {
-      filteredProducts = filteredProducts.filter(product => {
-        if (!product.administrationType) return true;
-        return preferredTypes.some(type => 
-          product.administrationType?.toLowerCase().includes(type)
-        );
-      });
-    }
-  }
+  // Initial filtering
+  let filteredProducts = preFilterProducts(responses, products);
   
   // If no products match the filters, revert to all products
   if (filteredProducts.length === 0) {
@@ -300,53 +333,101 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
     let score = 0;
     let reasons: string[] = [];
     
-    // Base score for matching the preferred type
-    if (responses['bc-type'] !== 'not-sure') {
-      const bcType = responses['bc-type'];
-      const productType = product.administrationType?.toLowerCase() || '';
+    // Age-based scoring
+    const ageMap: Record<string, number> = {
+      'under-18': 0, // Not eligible
+      '18-24': 1,
+      '25-34': 2,
+      '35-44': 3,
+      '45-54': 4,
+      '55-plus': 5
+    };
+    
+    const userAgeGroup = responses['age'];
+    if (userAgeGroup && ageMap[userAgeGroup] > 0) {
+      // Higher score for products that match the user's age group
+      // This would require additional product metadata about age suitability
+      score += 2;
+    }
+    
+    // Score based on daily pill preference
+    if (responses['daily-pill'] === 'yes' && 
+        product.administrationType?.toLowerCase().includes('oral')) {
+      score += 5;
+      reasons.push("Matches your preference for oral contraceptives");
+    } else if (responses['daily-pill'] === 'no' && 
+              !product.administrationType?.toLowerCase().includes('oral')) {
+      score += 5;
+      reasons.push("Matches your preference for non-daily contraceptives");
+    }
+    
+    // Score based on libido support interest
+    if ((responses['libido-decrease'] === 'frequently' || responses['libido-decrease'] === 'sometimes') && 
+        responses['natural-support'] === 'yes' && 
+        (product.description?.toLowerCase().includes('libido') || 
+         product.title.toLowerCase().includes('libido'))) {
+      score += 8;
+      reasons.push("Provides natural libido support as you requested");
+    }
+    
+    // Score based on prescription vs. non-prescription preference
+    if (responses['non-prescription'] === 'yes' && product.productType === 'OTC') {
+      score += 7;
+      reasons.push("Non-prescription option that matches your preference");
+    } else if (responses['hormonal-bc'] === 'yes' && product.productType !== 'OTC') {
+      score += 7;
+      reasons.push("Prescription hormonal option that matches your preference");
+    }
+    
+    // Score based on medical conditions
+    if (responses['medical-conditions'] && Array.isArray(responses['medical-conditions'])) {
+      const conditions = responses['medical-conditions'];
       
-      if (
-        (bcType === 'pill' && productType.includes('oral')) ||
-        (bcType === 'patch' && productType.includes('patch')) ||
-        (bcType === 'ring' && productType.includes('ring')) ||
-        (bcType === 'iud' && productType.includes('iud')) ||
-        (bcType === 'implant' && productType.includes('implant')) ||
-        (bcType === 'emergency' && productType.includes('emergency'))
-      ) {
-        score += 10;
-        reasons.push(`This is a ${bcType} type birth control, which matches your preference`);
+      if (conditions.includes('pcos') && 
+          product.description?.toLowerCase().includes('pcos')) {
+        score += 6;
+        reasons.push("May help with PCOS symptoms");
+      }
+      
+      if ((conditions.includes('depression-anxiety') || responses['stress-impact'] === 'yes') && 
+          product.description?.toLowerCase().includes('mood')) {
+        score += 4;
+        reasons.push("May have fewer mood-related side effects");
       }
     }
     
-    // Score based on experience
-    if (responses['experience'] === 'never') {
-      // For first-time users, prefer methods that are easier to use
+    // Score based on cycle regularity
+    if (responses['regular-cycle'] === 'no' && 
+        product.description?.toLowerCase().includes('regul')) {
+      score += 5;
+      reasons.push("May help regulate your menstrual cycle");
+    }
+    
+    // Score based on previous birth control experience
+    if (responses['bc-history'] === 'side-effects') {
+      // For users with side effects, prefer products with "low hormone" or similar messaging
+      if (product.description?.toLowerCase().includes('low') && 
+          product.description?.toLowerCase().includes('hormone')) {
+        score += 6;
+        reasons.push("Low-hormone option that may reduce side effects");
+      }
+    } else if (responses['bc-history'] === 'never') {
+      // For first-time users, prefer standard options
       if (product.administrationType?.toLowerCase().includes('pill')) {
         score += 3;
-        reasons.push("Pills are often recommended for first-time birth control users due to their ease of use");
+        reasons.push("Good option for first-time birth control users");
       }
-    } else if (responses['experience'] === 'current' || responses['experience'] === 'previous') {
-      // For experienced users, give a slight boost to all methods
-      score += 2;
-      reasons.push("This option is suitable for someone with previous birth control experience");
     }
     
-    // If the product is emergency contraception and user specified emergency
-    if (responses['bc-type'] === 'emergency' && 
-        product.administrationType?.toLowerCase().includes('emergency')) {
-      score += 15; // Higher priority for emergency needs
-      reasons.push("This emergency contraception matches your immediate needs");
+    // If no specific matches found, give a small default score
+    if (score === 0) {
+      score = 1;
     }
     
     // If we have reasons, create a combined reason string
     let reason = reasons.length > 0
       ? "Based on your assessment, " + product.title + " is recommended because: " + reasons.join(". ") + "."
       : `${product.title} provides reliable birth control that aligns with your preferences.`;
-    
-    // If no specific matches found, give a small default score
-    if (score === 0) {
-      score = 1;
-    }
     
     return {
       product,
@@ -358,249 +439,6 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
   // Sort by score (highest first)
   productScores.sort((a, b) => b.score - a.score);
   
-  // Return the best match - ADDED TYPE ASSERTION
+  // Return the best match
   return productScores[0] as ProductScore;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // src/app/api/bc-recommendations/route.ts
-// import { NextResponse } from 'next/server';
-// import OpenAI from 'openai';
-// import { client } from '@/sanity/lib/client';
-// import { checkEligibility } from '@/app/c/b/birth-control/data/questions';
-
-// // Initialize OpenAI client
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY,
-//   baseURL: process.env.OPENAI_BASE_URL, // Optional: if you need a custom API endpoint
-// });
-
-// // Define TypeScript interfaces
-// interface Product {
-//   _id: string;
-//   title: string;
-//   slug: { current: string };
-//   price: number;
-//   description: string;
-//   mainImage?: any;
-//   productType?: string; // OTC or prescription
-//   administrationType?: string; // oral, ring, patch, etc.
-// }
-
-// interface ProductScore {
-//   product: Product;
-//   score: number;
-//   reason: string;
-// }
-
-// export async function POST(request: Request) {
-//   try {
-//     const { formResponses } = await request.json();
-    
-//     // Check eligibility first using our rule-based system
-//     const eligibility = checkEligibility(formResponses);
-    
-//     if (!eligibility.eligible) {
-//       // Not eligible, return with explanation
-//       return NextResponse.json({
-//         eligible: false,
-//         recommendedProductId: null,
-//         explanation: eligibility.reason
-//       });
-//     }
-    
-//     // User is eligible, fetch birth control products from Sanity
-//     const products = await fetchProducts();
-    
-//     if (!products || products.length === 0) {
-//       return NextResponse.json({
-//         eligible: true,
-//         recommendedProductId: null,
-//         explanation: "No birth control products are currently available. Please check back later."
-//       });
-//     }
-    
-//     // Find the best matching product based on user responses
-//     const productMatch = findBestProductMatch(formResponses, products);
-    
-//     // Optional: Use OpenAI to generate a personalized explanation
-//     // Only if OPENAI_API_KEY is available
-//     let enhancedExplanation = productMatch.reason;
-    
-//     if (process.env.OPENAI_API_KEY) {
-//       try {
-//         const openAIResponse = await openai.chat.completions.create({
-//           model: "gpt-4o-mini", // or another appropriate model
-//           messages: [
-//             {
-//               role: "system",
-//               content: "You are a helpful birth control consultant. Provide a personalized, encouraging explanation for why a specific birth control product is recommended based on the user's assessment responses."
-//             },
-//             {
-//               role: "user",
-//               content: `Based on the following user responses: ${JSON.stringify(formResponses)}, we have recommended: ${productMatch.product.title}. The basic reason is: ${productMatch.reason}. Please enhance this explanation to be more personalized and informative, including why this is a good match for their specific situation. Keep it under 3 paragraphs and maintain a professional, supportive tone.`
-//             }
-//           ],
-//           max_tokens: 100
-//         });
-        
-//         if (openAIResponse.choices && openAIResponse.choices[0]?.message?.content) {
-//           enhancedExplanation = openAIResponse.choices[0].message.content;
-//         }
-//       } catch (aiError) {
-//         console.error('Error generating enhanced explanation with OpenAI:', aiError);
-//         // Continue with our basic explanation if OpenAI fails
-//       }
-//     }
-    
-//     return NextResponse.json({
-//       eligible: true,
-//       recommendedProductId: productMatch.product._id,
-//       explanation: enhancedExplanation,
-//       product: productMatch.product
-//     });
-//   } catch (error) {
-//     console.error('Error processing recommendation:', error);
-//     const errorMessage = error instanceof Error ? error.message : String(error);
-    
-//     return NextResponse.json({ 
-//       eligible: false,
-//       explanation: "We encountered an error processing your information. Please try again later.",
-//       error: errorMessage
-//     });
-//   }
-// }
-
-// // Helper function to fetch products from Sanity
-// async function fetchProducts(): Promise<Product[]> {
-//   try {
-//     return await client.fetch(`
-//       *[_type == "product" && references(*[_type=="productCategory" && slug.current=="sexual-health-and-birth-control"]._id)] {
-//         _id,
-//         title,
-//         slug,
-//         price,
-//         description,
-//         mainImage,
-//         productType,
-//         administrationType
-//       }
-//     `);
-//   } catch (error) {
-//     console.error("Error fetching products from Sanity:", error);
-//     return [];
-//   }
-// }
-
-// // Find the best product match based on user responses
-// function findBestProductMatch(responses: Record<string, any>, products: Product[]): ProductScore {
-//   // Filter products based on birth control type preference
-//   let filteredProducts = [...products];
-  
-//   // Filter by birth control type
-//   if (responses['bc-type'] && responses['bc-type'] !== 'not-sure') {
-//     const typeMap: Record<string, string[]> = {
-//       'pill': ['oral', 'pill'],
-//       'patch': ['patch', 'transdermal'],
-//       'ring': ['ring', 'vaginal'],
-//       'iud': ['iud', 'intrauterine'],
-//       'implant': ['implant', 'subdermal'],
-//       'emergency': ['emergency', 'morning-after']
-//     };
-    
-//     const preferredTypes = typeMap[responses['bc-type']] || [];
-    
-//     if (preferredTypes.length > 0) {
-//       filteredProducts = filteredProducts.filter(product => {
-//         if (!product.administrationType) return true;
-//         return preferredTypes.some(type => 
-//           product.administrationType?.toLowerCase().includes(type)
-//         );
-//       });
-//     }
-//   }
-  
-//   // If no products match the filters, revert to all products
-//   if (filteredProducts.length === 0) {
-//     filteredProducts = products;
-//   }
-  
-//   // Scoring system for products
-//   const productScores: ProductScore[] = filteredProducts.map(product => {
-//     let score = 0;
-//     let reasons: string[] = [];
-    
-//     // Base score for matching the preferred type
-//     if (responses['bc-type'] !== 'not-sure') {
-//       const bcType = responses['bc-type'];
-//       const productType = product.administrationType?.toLowerCase() || '';
-      
-//       if (
-//         (bcType === 'pill' && productType.includes('oral')) ||
-//         (bcType === 'patch' && productType.includes('patch')) ||
-//         (bcType === 'ring' && productType.includes('ring')) ||
-//         (bcType === 'iud' && productType.includes('iud')) ||
-//         (bcType === 'implant' && productType.includes('implant')) ||
-//         (bcType === 'emergency' && productType.includes('emergency'))
-//       ) {
-//         score += 10;
-//         reasons.push(`This is a ${bcType} type birth control, which matches your preference`);
-//       }
-//     }
-    
-//     // Score based on experience
-//     if (responses['experience'] === 'never') {
-//       // For first-time users, prefer methods that are easier to use
-//       if (product.administrationType?.toLowerCase().includes('pill')) {
-//         score += 3;
-//         reasons.push("Pills are often recommended for first-time birth control users due to their ease of use");
-//       }
-//     } else if (responses['experience'] === 'current' || responses['experience'] === 'previous') {
-//       // For experienced users, give a slight boost to all methods
-//       score += 2;
-//       reasons.push("This option is suitable for someone with previous birth control experience");
-//     }
-    
-//     // If the product is emergency contraception and user specified emergency
-//     if (responses['bc-type'] === 'emergency' && 
-//         product.administrationType?.toLowerCase().includes('emergency')) {
-//       score += 15; // Higher priority for emergency needs
-//       reasons.push("This emergency contraception matches your immediate needs");
-//     }
-    
-//     // If we have reasons, create a combined reason string
-//     let reason = reasons.length > 0
-//       ? "Based on your assessment, " + product.title + " is recommended because: " + reasons.join(". ") + "."
-//       : `${product.title} provides reliable birth control that aligns with your preferences.`;
-    
-//     // If no specific matches found, give a small default score
-//     if (score === 0) {
-//       score = 1;
-//     }
-    
-//     return {
-//       product,
-//       score,
-//       reason
-//     };
-//   });
-  
-//   // Sort by score (highest first)
-//   productScores.sort((a: ProductScore, b: ProductScore) => b.score - a.score);
-  
-//   // Return the best match
-//   return productScores[0];
-// }

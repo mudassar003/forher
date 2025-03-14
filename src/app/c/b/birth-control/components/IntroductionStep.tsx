@@ -34,7 +34,7 @@ export default function IntroductionStep() {
 
       {/* Centered Content */}
       <div className="max-w-3xl text-center mt-10">
-        <h2 className="text-4xl font-semibold text-[#01b5de] mb-6">Find your perfect birth control.</h2>
+        <h2 className="text-4xl font-semibold text-[#fe92b5] mb-6">Find your perfect birth control.</h2>
         <p className="text-2xl font-medium text-black mt-3">
           Answer a few questions to discover your ideal birth control options based on your needs and lifestyle.
         </p>

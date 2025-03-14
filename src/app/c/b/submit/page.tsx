@@ -84,6 +84,7 @@ export default function SubmitStep() {
     const sectionMap: Record<string, string> = {
       'bc-type': 'Birth Control Preference',
       'experience': 'Previous Experience'
+      // Add more section mappings as needed
     };
     
     return sectionMap[questionId] || 'Other Information';
@@ -118,7 +119,7 @@ export default function SubmitStep() {
       // Mark this step as completed
       markStepCompleted("/c/b/submit");
       
-      // Store the responses for later
+      // Store the responses for the results page
       sessionStorage.setItem("finalBCResponses", JSON.stringify(responses));
       
       // If we have an ineligibility reason, make sure it's also stored
@@ -126,18 +127,8 @@ export default function SubmitStep() {
         sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
       }
       
-      // Redirect to the products page with a parameter to indicate the selection
-      let bcType = "all";
-      if (responses['bc-type']) {
-        bcType = responses['bc-type'] as string;
-      }
-      
-      // In a real implementation, you'd redirect to products or results
-      // For now, let's just show an alert indicating the next step
-      alert("Thank you for your responses! In a full implementation, you would be redirected to product recommendations based on your selection: " + bcType);
-      
-      // Reset the processing state
-      setIsProcessing(false);
+      // Navigate to results page
+      router.push("/c/b/results");
     } catch (error) {
       console.error("Error submitting form:", error);
       setIsProcessing(false);
@@ -158,7 +149,7 @@ export default function SubmitStep() {
       {/* Progress Bar - 100% complete */}
       <ProgressBar progress={100} />
       
-      <h2 className="text-3xl font-semibold text-[#01b5de] mt-8">
+      <h2 className="text-3xl font-semibold text-[#fe92b5] mt-8">
         Review Your Birth Control Assessment
       </h2>
       
@@ -168,9 +159,13 @@ export default function SubmitStep() {
 
       {/* Display any notices if applicable */}
       {ineligibilityReason && (
-        <div className="w-full max-w-2xl bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 rounded-r-lg">
-          <p className="font-medium text-blue-700">Notice:</p>
-          <p className="text-blue-600">{ineligibilityReason}</p>
+        <div className="w-full max-w-2xl bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
+          <p className="font-medium text-red-700">Eligibility Notice:</p>
+          <p className="text-red-600">{ineligibilityReason}</p>
+          <p className="text-sm mt-2 text-gray-600">
+            Based on your responses, our products may not be suitable for you. We can still
+            provide general recommendations when you submit.
+          </p>
         </div>
       )}
 

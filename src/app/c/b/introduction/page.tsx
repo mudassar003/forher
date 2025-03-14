@@ -18,7 +18,7 @@ export default function IntroductionPage() {
 
       {/* Centered Content */}
       <div className="max-w-lg text-center mt-10">
-        <h2 className="text-3xl font-semibold text-[#01b5de]">Find your perfect birth control.</h2>
+        <h2 className="text-3xl font-semibold text-[#fe92b5]">Find your perfect birth control.</h2>
         <p className="text-xl font-medium text-black mt-3">
           Answer a few questions to discover your ideal birth control options based on your needs and lifestyle.
         </p>

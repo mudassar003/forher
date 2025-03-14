@@ -11,7 +11,7 @@ export default function ProgressBar({ progress }: ProgressBarProps) {
       <div className="w-full max-w-2xl bg-gray-300 h-2 rounded-full">
         <div
           className="h-2 rounded-full transition-all duration-300"
-          style={{ width: `${progress}%`, backgroundColor: "#01b5de" }} // Updated color for Birth Control
+          style={{ width: `${progress}%`, backgroundColor: "#fe92b5" }} // Updated color for Birth Control
         />
       </div>
     </div>

@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     if (process.env.OPENAI_API_KEY) {
       try {
         const openAIResponse = await openai.chat.completions.create({
-          model: "gpt-4", // or another appropriate model
+          model: "gpt-4o-mini", // or another appropriate model
           messages: [
             {
               role: "system",

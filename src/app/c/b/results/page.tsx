@@ -49,8 +49,9 @@ export default function ResultsPage() {
     const fetchData = async () => {
       try {
         // Fetch all birth control products regardless of recommendation
+        // Updated to fetch from "sexual-health-and-birth-control" category
         const products: Product[] = await client.fetch(`
-          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="birth-control"]._id)] {
+          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="sexual-health-and-birth-control"]._id)] {
             _id, title, slug, price, description, mainImage, productType, administrationType
           }
         `);
@@ -313,10 +314,10 @@ export default function ResultsPage() {
           )}
         </section>
         
-        {/* Browse Other Products Section */}
+        {/* Browse Other Products Section - Updated section title */}
         <section>
-          <h2 className="text-3xl font-semibold text-gray-800 mb-6">Birth Control Products</h2>
-          <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of birth control options designed to match your lifestyle and preferences.</p>
+          <h2 className="text-3xl font-semibold text-gray-800 mb-6">Sexual Health & Birth Control Products</h2>
+          <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of sexual health and birth control options designed to match your lifestyle and preferences.</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {allProducts.slice(0, 8).map((product: Product) => (

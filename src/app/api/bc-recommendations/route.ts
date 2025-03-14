@@ -27,6 +27,12 @@ interface OpenAIRecommendation {
   explanation: string;
 }
 
+interface ProductScore {
+  product: Product;
+  score: number;
+  reason: string;
+}
+
 export async function POST(request: Request) {
   try {
     const { formResponses } = await request.json();
@@ -237,7 +243,7 @@ function preFilterProducts(responses: Record<string, any>, products: Product[]):
   return filteredProducts;
 }
 
-// Helper function to condense product descriptions
+// Helper function to condense product descriptions - FIXED
 function condenseDescription(description: string): string {
   if (!description) return "";
   
@@ -247,8 +253,8 @@ function condenseDescription(description: string): string {
   // Split into sentences
   const sentences = description.match(/[^.!?]+[.!?]+/g) || [];
   
-  // Take first sentence only
-  if (sentences.length > 0) {
+  // Take first sentence only - ADDED NULL CHECK
+  if (sentences.length > 0 && sentences[0]) {
     return sentences[0].trim();
   }
   
@@ -257,7 +263,7 @@ function condenseDescription(description: string): string {
 }
 
 // Legacy function for fallback
-function findBestProductMatch(responses: Record<string, any>, products: Product[]) {
+function findBestProductMatch(responses: Record<string, any>, products: Product[]): ProductScore {
   // Filter products based on birth control type preference
   let filteredProducts = [...products];
   
@@ -352,15 +358,9 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
   // Sort by score (highest first)
   productScores.sort((a, b) => b.score - a.score);
   
-  // Return the best match
-  return productScores[0];
+  // Return the best match - ADDED TYPE ASSERTION
+  return productScores[0] as ProductScore;
 }
-
-
-
-
-
-
 
 
 

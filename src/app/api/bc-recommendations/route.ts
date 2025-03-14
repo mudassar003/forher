@@ -76,7 +76,7 @@ export async function POST(request: Request) {
               content: `Based on the following user responses: ${JSON.stringify(formResponses)}, we have recommended: ${productMatch.product.title}. The basic reason is: ${productMatch.reason}. Please enhance this explanation to be more personalized and informative, including why this is a good match for their specific situation. Keep it under 3 paragraphs and maintain a professional, supportive tone.`
             }
           ],
-          max_tokens: 300
+          max_tokens: 100
         });
         
         if (openAIResponse.choices && openAIResponse.choices[0]?.message?.content) {

@@ -1,5 +1,14 @@
 // src/app/api/hl-recommendations/route.ts
 import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
+import { client } from '@/sanity/lib/client';
+import { checkEligibility } from '@/app/c/hl/hair-loss/data/questions';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+   // Optional: if you need a custom API endpoint
+});
 
 // Define TypeScript interfaces
 interface Product {
@@ -23,44 +32,81 @@ export async function POST(request: Request) {
   try {
     const { formResponses } = await request.json();
     
-    // Mock products (in a real application, these would come from a database like Sanity)
-    const products: Product[] = [
-      {
-        _id: "product1",
-        title: "Minoxidil 5% Solution",
-        slug: { current: "minoxidil-5-solution" },
-        price: 29.99,
-        description: "Clinically proven topical solution to help regrow hair and prevent further hair loss.",
-        productType: "OTC",
-        administrationType: "topical"
-      },
-      {
-        _id: "product2",
-        title: "Finasteride Tablets",
-        slug: { current: "finasteride-tablets" },
-        price: 49.99,
-        description: "Prescription medication that blocks DHT production to prevent hair loss at the root cause.",
-        productType: "prescription",
-        administrationType: "oral"
-      },
-      {
-        _id: "product3",
-        title: "Ketoconazole Shampoo",
-        slug: { current: "ketoconazole-shampoo" },
-        price: 19.99,
-        description: "Anti-fungal shampoo that may help with hair loss by reducing scalp inflammation.",
-        productType: "OTC",
-        administrationType: "topical"
+    // Check eligibility first using our rule-based system
+    const eligibility = checkEligibility(formResponses);
+    
+    if (!eligibility.eligible) {
+      // Not eligible, return with explanation
+      return NextResponse.json({
+        eligible: false,
+        recommendedProductId: null,
+        explanation: eligibility.reason
+      });
+    }
+    
+    // User is eligible, fetch hair loss products from Sanity
+    const products = await fetchProducts();
+    
+    if (!products || products.length === 0) {
+      // Fallback to mock products if no products found in Sanity
+      const mockProducts = getMockProducts();
+      
+      if (mockProducts.length === 0) {
+        return NextResponse.json({
+          eligible: true,
+          recommendedProductId: null,
+          explanation: "No hair loss products are currently available. Please check back later."
+        });
       }
-    ];
+      
+      // Use mock products if Sanity fetch fails
+      const productMatch = findBestProductMatch(formResponses, mockProducts);
+      
+      return NextResponse.json({
+        eligible: true,
+        recommendedProductId: productMatch.product._id,
+        explanation: productMatch.reason,
+        product: productMatch.product
+      });
+    }
     
     // Find the best matching product based on user responses
     const productMatch = findBestProductMatch(formResponses, products);
     
+    // Optional: Use OpenAI to generate a personalized explanation
+    // Only if OPENAI_API_KEY is available
+    let enhancedExplanation = productMatch.reason;
+    
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const openAIResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini", // or another appropriate model
+          messages: [
+            {
+              role: "system",
+              content: "You are a helpful hair loss consultant. Provide a personalized, encouraging explanation for why a specific hair loss product is recommended based on the user's assessment responses."
+            },
+            {
+              role: "user",
+              content: `Based on the following user responses: ${JSON.stringify(formResponses)}, we have recommended: ${productMatch.product.title}. The basic reason is: ${productMatch.reason}. Please enhance this explanation to be more personalized and informative, including why this is a good match for their specific hair loss pattern and duration. Keep it under 3 paragraphs and maintain a professional, supportive tone.`
+            }
+          ],
+          max_tokens: 300
+        });
+        
+        if (openAIResponse.choices && openAIResponse.choices[0]?.message?.content) {
+          enhancedExplanation = openAIResponse.choices[0].message.content;
+        }
+      } catch (aiError) {
+        console.error('Error generating enhanced explanation with OpenAI:', aiError);
+        // Continue with our basic explanation if OpenAI fails
+      }
+    }
+    
     return NextResponse.json({
       eligible: true,
       recommendedProductId: productMatch.product._id,
-      explanation: productMatch.reason,
+      explanation: enhancedExplanation,
       product: productMatch.product
     });
   } catch (error) {
@@ -75,10 +121,90 @@ export async function POST(request: Request) {
   }
 }
 
+// Helper function to fetch products from Sanity
+async function fetchProducts(): Promise<Product[]> {
+  try {
+    return await client.fetch(`
+      *[_type == "product" && references(*[_type=="productCategory" && slug.current=="hair-loss"]._id)] {
+        _id,
+        title,
+        slug,
+        price,
+        description,
+        mainImage,
+        productType,
+        administrationType
+      }
+    `);
+  } catch (error) {
+    console.error("Error fetching products from Sanity:", error);
+    return [];
+  }
+}
+
+// Provide mock products as fallback
+function getMockProducts(): Product[] {
+  return [
+    {
+      _id: "product1",
+      title: "Minoxidil 5% Solution",
+      slug: { current: "minoxidil-5-solution" },
+      price: 29.99,
+      description: "Clinically proven topical solution to help regrow hair and prevent further hair loss.",
+      productType: "OTC",
+      administrationType: "topical"
+    },
+    {
+      _id: "product2",
+      title: "Finasteride Tablets",
+      slug: { current: "finasteride-tablets" },
+      price: 49.99,
+      description: "Prescription medication that blocks DHT production to prevent hair loss at the root cause.",
+      productType: "prescription",
+      administrationType: "oral"
+    },
+    {
+      _id: "product3",
+      title: "Ketoconazole Shampoo",
+      slug: { current: "ketoconazole-shampoo" },
+      price: 19.99,
+      description: "Anti-fungal shampoo that may help with hair loss by reducing scalp inflammation.",
+      productType: "OTC",
+      administrationType: "topical"
+    }
+  ];
+}
+
 // Find the best product match based on user responses
 function findBestProductMatch(responses: Record<string, any>, products: Product[]): ProductScore {
+  // Filter products based on prescription preference if available
+  let filteredProducts = [...products];
+  
+  // Apply product type filtering if specified
+  if (responses['prescription-preference'] === 'no') {
+    filteredProducts = filteredProducts.filter(product => 
+      product.productType === 'OTC' || product.productType === 'over-the-counter'
+    );
+  }
+  
+  // Filter by administration type preference if specified
+  if (responses['preferred-application'] === 'topical') {
+    filteredProducts = filteredProducts.filter(product => 
+      product.administrationType === 'topical' || !product.administrationType
+    );
+  } else if (responses['preferred-application'] === 'oral') {
+    filteredProducts = filteredProducts.filter(product => 
+      product.administrationType === 'oral' || !product.administrationType
+    );
+  }
+  
+  // If no products match the filters, revert to all products
+  if (filteredProducts.length === 0) {
+    filteredProducts = products;
+  }
+  
   // Scoring system for products
-  const productScores: ProductScore[] = products.map(product => {
+  const productScores: ProductScore[] = filteredProducts.map(product => {
     let score = 0;
     let reasons: string[] = [];
     
@@ -121,6 +247,48 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
         product.title.toLowerCase().includes('finasteride')) {
       score += 5;
       reasons.push("For longer-term hair loss, treatment that addresses the root cause (DHT) is important");
+    }
+    
+    // Score based on family history (if available)
+    if (responses['family-history'] === 'yes' && 
+        product.title.toLowerCase().includes('finasteride')) {
+      score += 7;
+      reasons.push("For hereditary hair loss, DHT-blocking treatments like Finasteride can be particularly effective");
+    }
+    
+    // Score based on previous treatments (if available)
+    if (Array.isArray(responses['previous-treatments'])) {
+      for (const treatment of responses['previous-treatments']) {
+        if (product.title.toLowerCase().includes(treatment.toLowerCase())) {
+          // They've used it before - could be positive or negative
+          if (responses['previous-results'] === 'somewhat-effective') {
+            score += 3;
+            reasons.push("You've had some success with this treatment before");
+          } else if (responses['previous-results'] === 'very-effective') {
+            score += 7;
+            reasons.push("This treatment has worked well for you in the past");
+          } else if (responses['previous-results'] === 'not-effective') {
+            score -= 5; // Reduce score if it didn't work for them
+          }
+        }
+      }
+    }
+    
+    // Additional considerations for product type preferences
+    if (responses['concerns'] && Array.isArray(responses['concerns'])) {
+      // If they're concerned about side effects
+      if (responses['concerns'].includes('side-effects') && 
+          product.administrationType === 'topical') {
+        score += 5;
+        reasons.push("Topical treatments typically have fewer systemic side effects");
+      }
+      
+      // If they're concerned about ease of use
+      if (responses['concerns'].includes('convenience') && 
+          product.administrationType === 'oral') {
+        score += 5;
+        reasons.push("Oral medications offer a more convenient daily routine");
+      }
     }
     
     // If we have reasons, create a combined reason string

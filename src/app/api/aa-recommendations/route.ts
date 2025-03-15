@@ -20,6 +20,9 @@ interface Product {
   mainImage?: any;
   productType?: string; // OTC or prescription
   administrationType?: string; // oral or topical
+  suitableForSkinTypes?: string[]; // Array of skin types this product works well for
+  targetConcerns?: string[]; // Array of skin concerns this product addresses
+  ingredients?: string[]; // Key ingredients
 }
 
 interface ProductScore {
@@ -118,7 +121,10 @@ async function fetchProducts(): Promise<Product[]> {
         description,
         mainImage,
         productType,
-        administrationType
+        administrationType,
+        "suitableForSkinTypes": skinTypes[],
+        "targetConcerns": concerns[],
+        "ingredients": ingredients[]
       }
     `);
   } catch (error) {
@@ -129,26 +135,22 @@ async function fetchProducts(): Promise<Product[]> {
 
 // Find the best product match based on user responses
 function findBestProductMatch(responses: Record<string, any>, products: Product[]): ProductScore {
-  // Filter products based on prescription preference
+  // Initial filtering based on crucial criteria
   let filteredProducts = [...products];
   
-  // Filter by prescription preference
-  if (responses['prescription-preference'] === 'no') {
+  // Filter by skin type if present in product data
+  const skinType = responses['skin-type'];
+  if (skinType && skinType !== 'normal') {
+    const preferredSkinTypes = [skinType, 'all', 'normal'];
     filteredProducts = filteredProducts.filter(product => 
-      product.productType === 'OTC' || product.productType === 'over-the-counter'
+      !product.suitableForSkinTypes || 
+      product.suitableForSkinTypes.some(type => preferredSkinTypes.includes(type))
     );
   }
   
-  // Filter by administration type preference
-  if (responses['application-type'] === 'topical') {
-    filteredProducts = filteredProducts.filter(product => 
-      product.administrationType === 'topical' || !product.administrationType
-    );
-  } else if (responses['application-type'] === 'oral') {
-    filteredProducts = filteredProducts.filter(product => 
-      product.administrationType === 'oral' || !product.administrationType
-    );
-  }
+  // If the user has allergies, we should filter out products with those ingredients
+  // This would require more detailed product data than we currently have
+  // Would be implemented here if ingredient lists were available
   
   // If no products match the filters, revert to all products
   if (filteredProducts.length === 0) {
@@ -160,72 +162,173 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
     let score = 0;
     let reasons: string[] = [];
     
-    // Score based on skin concern
-    if (responses['skin-concern'] === 'acne' && 
+    // Score based on skin type match
+    if (product.suitableForSkinTypes && product.suitableForSkinTypes.includes(responses['skin-type'])) {
+      score += 10;
+      reasons.push(`This product is specifically formulated for ${responses['skin-type']} skin`);
+    }
+    
+    // Score based on skin concerns
+    const userConcerns = responses['skin-concerns'] || [];
+    if (Array.isArray(userConcerns) && product.targetConcerns) {
+      userConcerns.forEach(concern => {
+        if (product.targetConcerns?.includes(concern)) {
+          score += 5;
+          
+          // Add concern-specific reason
+          switch(concern) {
+            case 'acne':
+              reasons.push("This product helps treat and prevent acne breakouts");
+              break;
+            case 'wrinkles':
+              reasons.push("This product helps reduce the appearance of fine lines and wrinkles");
+              break;
+            case 'hyperpigmentation':
+              reasons.push("This product helps fade dark spots and even skin tone");
+              break;
+            case 'redness':
+              reasons.push("This product helps reduce redness and irritation");
+              break;
+            case 'dry-patches':
+              reasons.push("This product provides deep hydration for dry skin");
+              break;
+            case 'uneven-tone':
+              reasons.push("This product helps even out skin tone");
+              break;
+            case 'dark-circles':
+              reasons.push("This product helps reduce the appearance of dark circles");
+              break;
+            default:
+              // No specific reason added for other concerns
+              break;
+          }
+        }
+      });
+    }
+    
+    // Score based on product attributes that might match text in product title or description
+    
+    // For acne-prone or oily skin
+    if ((responses['skin-type'] === 'oily' || 
+        (Array.isArray(responses['skin-concerns']) && responses['skin-concerns'].includes('acne'))) && 
         (product.title.toLowerCase().includes('acne') || 
          product.title.toLowerCase().includes('clear') ||
-         product.title.toLowerCase().includes('blemish'))) {
-      score += 10;
-      reasons.push("This product is specifically formulated to target acne and breakouts");
+         product.title.toLowerCase().includes('blemish') ||
+         product.title.toLowerCase().includes('oil control'))) {
+      score += 8;
     }
     
-    if (responses['skin-concern'] === 'aging' && 
+    // For anti-aging concerns
+    if ((Array.isArray(responses['skin-concerns']) && 
+        (responses['skin-concerns'].includes('wrinkles') || responses['skin-concerns'].includes('dark-circles'))) && 
         (product.title.toLowerCase().includes('anti-aging') || 
          product.title.toLowerCase().includes('wrinkle') ||
-         product.title.toLowerCase().includes('retinol'))) {
-      score += 10;
-      reasons.push("This product contains ingredients that help reduce fine lines and wrinkles");
+         product.title.toLowerCase().includes('retinol') ||
+         product.title.toLowerCase().includes('firm'))) {
+      score += 8;
     }
     
-    if (responses['skin-concern'] === 'dark-spots' && 
+    // For hyperpigmentation/dark spots
+    if ((Array.isArray(responses['skin-concerns']) && 
+        (responses['skin-concerns'].includes('hyperpigmentation') || responses['skin-concerns'].includes('uneven-tone'))) && 
         (product.title.toLowerCase().includes('brightening') || 
          product.title.toLowerCase().includes('vitamin c') ||
-         product.title.toLowerCase().includes('hyperpigmentation'))) {
-      score += 10;
-      reasons.push("This product helps fade dark spots and even out skin tone");
+         product.title.toLowerCase().includes('even') ||
+         product.title.toLowerCase().includes('glow'))) {
+      score += 8;
     }
     
-    if (responses['skin-concern'] === 'dryness' && 
+    // For dry skin
+    if ((responses['skin-type'] === 'dry' || 
+        (Array.isArray(responses['skin-concerns']) && responses['skin-concerns'].includes('dry-patches'))) && 
         (product.title.toLowerCase().includes('hydrating') || 
          product.title.toLowerCase().includes('moisturizing') ||
          product.title.toLowerCase().includes('hyaluronic'))) {
-      score += 10;
-      reasons.push("This product provides deep hydration for dry, flaky skin");
+      score += 8;
     }
     
-    if (responses['skin-concern'] === 'redness' && 
+    // For sensitive skin or redness
+    if ((responses['skin-type'] === 'sensitive' || 
+        (Array.isArray(responses['skin-concerns']) && responses['skin-concerns'].includes('redness'))) && 
         (product.title.toLowerCase().includes('calming') || 
          product.title.toLowerCase().includes('soothing') ||
-         product.title.toLowerCase().includes('redness'))) {
-      score += 10;
-      reasons.push("This product helps reduce redness and inflammation");
+         product.title.toLowerCase().includes('sensitive') ||
+         product.title.toLowerCase().includes('gentle'))) {
+      score += 8;
     }
     
-    if (responses['skin-concern'] === 'oiliness' && 
-        (product.title.toLowerCase().includes('oil control') || 
-         product.title.toLowerCase().includes('mattifying') ||
-         product.title.toLowerCase().includes('balancing'))) {
-      score += 10;
-      reasons.push("This product helps control excess oil while maintaining skin balance");
+    // If user has severe medical conditions, favor gentler products
+    const medicalConditions = responses['medical-conditions'] || [];
+    if (Array.isArray(medicalConditions) && medicalConditions.length > 0 && medicalConditions[0] !== 'none') {
+      if (product.title.toLowerCase().includes('gentle') || 
+          product.title.toLowerCase().includes('sensitive') ||
+          product.title.toLowerCase().includes('calming')) {
+        score += 5;
+        reasons.push("This gentle formula is suitable for those with existing health conditions");
+      }
     }
     
-    // Score based on duration of concern
-    if (responses['concern-duration'] === 'more-than-year' && 
-        (product.title.toLowerCase().includes('intensive') || 
-         product.title.toLowerCase().includes('advanced'))) {
-      score += 5;
-      reasons.push("This intensive formula is designed for persistent skin concerns");
+    // Consider user's lifestyle factors
+    if (responses['water-intake'] === 'less-than-1' && 
+        (product.title.toLowerCase().includes('hydrating') || 
+         product.title.toLowerCase().includes('moisturizing'))) {
+      score += 3;
+      reasons.push("This product provides extra hydration to complement your water intake");
     }
     
-    // If we have reasons, create a combined reason string
-    let reason = reasons.length > 0
-      ? "Based on your assessment, " + product.title + " is recommended because: " + reasons.join(". ") + "."
-      : `${product.title} provides comprehensive support for your skin care needs based on your goals and current skin condition.`;
+    if (responses['stress-levels'] === 'high' && 
+        (product.title.toLowerCase().includes('calming') || 
+         product.title.toLowerCase().includes('soothing'))) {
+      score += 3;
+      reasons.push("This product helps calm and soothe stressed skin");
+    }
+    
+    if ((responses['smoking-alcohol'] === 'both' || 
+         responses['smoking-alcohol'] === 'smoking-only' || 
+         responses['smoking-alcohol'] === 'alcohol-only') && 
+        (product.title.toLowerCase().includes('antioxidant') || 
+         product.title.toLowerCase().includes('repair') ||
+         product.title.toLowerCase().includes('vitamin c'))) {
+      score += 3;
+      reasons.push("This product contains antioxidants to help combat environmental stressors");
+    }
+    
+    if (responses['sun-exposure'] === 'yes' && 
+        (product.title.toLowerCase().includes('spf') || 
+         product.title.toLowerCase().includes('protection') ||
+         product.title.toLowerCase().includes('repair'))) {
+      score += 4;
+      reasons.push("This product helps protect and repair skin that's frequently exposed to the sun");
+    }
+    
+    // First-time skincare users might prefer simpler products
+    if (responses['skincare-frequency'] === 'starting' && 
+        !product.title.toLowerCase().includes('advanced') && 
+        !product.title.toLowerCase().includes('professional')) {
+      score += 4;
+      reasons.push("This product is beginner-friendly and a great addition to a new skincare routine");
+    }
+    
+    // Experienced users might prefer more advanced formulations
+    if ((responses['skincare-frequency'] === 'daily' || 
+         (Array.isArray(responses['current-products']) && responses['current-products'].length > 3)) && 
+        (product.title.toLowerCase().includes('advanced') || 
+         product.title.toLowerCase().includes('professional') ||
+         product.title.toLowerCase().includes('concentrated'))) {
+      score += 4;
+      reasons.push("This advanced formula is well-suited for someone with an established skincare routine");
+    }
     
     // If no specific matches found, give a small default score
     if (score === 0) {
       score = 1;
+      reasons.push("This product provides general skincare benefits");
     }
+    
+    // If we have reasons, create a combined reason string
+    let reason = reasons.length > 0
+      ? `Based on your assessment, ${product.title} is recommended because: ${reasons.join(". ")}.`
+      : `${product.title} provides comprehensive support for your skin care needs based on your goals and current skin condition.`;
     
     return {
       product,

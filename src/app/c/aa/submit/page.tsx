@@ -74,6 +74,8 @@ export default function SubmitStep() {
 
     // For multi-select questions
     if (Array.isArray(optionId)) {
+      if (optionId.length === 0) return "None selected";
+      
       return optionId.map(id => {
         const option = questionWithOptions.options.find(opt => opt.id === id);
         return option ? option.label : id;
@@ -88,21 +90,46 @@ export default function SubmitStep() {
   // Group questions by their sections for better organization
   const getSectionForQuestion = (questionId: string): string => {
     const sectionMap: Record<string, string> = {
-      'skin-concern': 'Skin Concerns',
-      'concern-duration': 'Skin Concerns',
-      'skin-type': 'Skin Type & Conditions',
-      'sensitivities': 'Skin Type & Conditions',
-      'allergies': 'Skin Type & Conditions',
-      'current-products': 'Current Routine',
-      'current-regimen': 'Current Routine',
+      // Basic Demographics
+      'age-group': 'Basic Information',
+      'gender': 'Basic Information',
+      
+      // Skin Type Assessment
+      'skin-type': 'Skin Type & Concerns',
+      'skin-concerns': 'Skin Type & Concerns',
+      
+      // Skin Conditions & Sensitivity
+      'skin-conditions': 'Skin Conditions & Sensitivity',
+      'product-sensitivity': 'Skin Conditions & Sensitivity',
+      
+      // Usage of Skincare Products
+      'skincare-frequency': 'Current Skincare Routine',
+      'current-products': 'Current Skincare Routine',
+      
+      // Medical Conditions
       'medical-conditions': 'Medical History',
-      'prescription-medications': 'Medical History',
-      'medical-history': 'Medical History',
+      
+      // Previous Skincare Treatments
       'previous-treatments': 'Treatment History',
-      'product-results': 'Treatment History',
-      'prescription-preference': 'Product Preference',
-      'application-type': 'Product Preference'
-      // Add more mappings as you add more questions
+      'treatment-reactions': 'Treatment History',
+      
+      // Lifestyle & Diet
+      'stress-levels': 'Lifestyle Factors',
+      'water-intake': 'Lifestyle Factors',
+      'diet': 'Lifestyle Factors',
+      'smoking-alcohol': 'Lifestyle Factors',
+      
+      // Sun Protection & Outdoor Exposure
+      'sunscreen-usage': 'Sun Protection',
+      'sun-exposure': 'Sun Protection',
+      
+      // Allergies & Sensitivities
+      'allergies': 'Allergies & Sensitivities',
+      'allergy-details': 'Allergies & Sensitivities',
+      
+      // Consultation and Medical Advice
+      'dermatologist-consult': 'Product Preferences',
+      'results-timeline': 'Product Preferences'
     };
     
     return sectionMap[questionId] || 'Other Information';
@@ -167,12 +194,12 @@ export default function SubmitStep() {
       {/* Progress Bar - 100% complete */}
       <ProgressBar progress={100} />
       
-      <h2 className="text-3xl font-semibold text-[#fe92b5] mt-8">
+      <h2 className="text-3xl font-semibold text-[#fe92b5] mt-16 mb-2">
         Review Your Skin Assessment
       </h2>
       
-      <p className="text-xl font-medium text-black mt-3 mb-8">
-        You've made it to the final step. Please review your responses before submitting.
+      <p className="text-xl font-medium text-black mb-8">
+        You've completed the "Get Glowing Skin" eligibility questionnaire. Please review your responses before submitting.
       </p>
 
       {/* Display skin type information if available */}

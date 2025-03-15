@@ -81,7 +81,10 @@ const LoginForm = ({ returnUrl = '/dashboard' }) => {
         />
 
         <div className="text-right">
-          <a href="/forgot-password" className="text-sm text-purple-600 hover:underline">
+          <a 
+            href={`/forgot-password${returnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 
+            className="text-sm text-purple-600 hover:underline"
+          >
             Forgot your password?
           </a>
         </div>
@@ -120,7 +123,10 @@ const LoginForm = ({ returnUrl = '/dashboard' }) => {
 
       <p className="text-center text-sm mt-6 text-gray-500">
         First time here?{" "}
-        <a href="/signup" className="text-blue-600 hover:underline">
+        <a 
+          href={`/signup${returnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 
+          className="text-blue-600 hover:underline"
+        >
           Create an account
         </a>
       </p>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { sendPasswordResetEmail } from "@/lib/auth";
 
 const ForgotPassword = () => {
@@ -8,6 +9,10 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Get returnUrl from query params if exists
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams?.get('returnUrl') || '';
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +59,10 @@ const ForgotPassword = () => {
 
       <p className="text-center text-sm mt-6 text-gray-500">
         Remembered your password?{" "}
-        <a href="/login" className="text-blue-600 hover:underline">
+        <a 
+          href={`/login${returnUrl ? `?returnUrl=${returnUrl}` : ''}`} 
+          className="text-blue-600 hover:underline"
+        >
           Log in
         </a>
       </p>

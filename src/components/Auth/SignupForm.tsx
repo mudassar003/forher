@@ -120,7 +120,10 @@ const SignupForm = ({ returnUrl = '/dashboard' }) => {
 
       <p className="text-center text-sm mt-6 text-gray-500">
         Already have an account?{" "}
-        <a href="/login" className="text-blue-600 hover:underline">
+        <a 
+          href={`/login${returnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 
+          className="text-blue-600 hover:underline"
+        >
           Log in
         </a>
       </p>

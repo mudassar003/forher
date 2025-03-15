@@ -1,8 +1,8 @@
-// src/app/api/recommendations/route.ts
+// src/app/api/mh-recommendations/route.ts
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { client } from '@/sanity/lib/client';
-import { checkEligibility, calculateBMI } from '@/app/c/wm/lose-weight/data/questions';
+import { checkEligibility } from '@/app/c/mh/anxiety/data/questions';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -44,14 +44,14 @@ export async function POST(request: Request) {
       });
     }
     
-    // User is eligible, fetch weight loss products from Sanity
+    // User is eligible, fetch mental health products from Sanity
     const products = await fetchProducts();
     
     if (!products || products.length === 0) {
       return NextResponse.json({
         eligible: true,
         recommendedProductId: null,
-        explanation: "No weight loss products are currently available. Please check back later."
+        explanation: "No mental health products are currently available. Please check back later."
       });
     }
     
@@ -69,14 +69,14 @@ export async function POST(request: Request) {
           messages: [
             {
               role: "system",
-              content: "You are a helpful weight loss consultant. Provide a personalized, encouraging explanation for why a specific weight loss product is recommended based on the user's assessment responses."
+              content: "You are a helpful mental health consultant. Provide a personalized, encouraging explanation for why a specific anxiety management product is recommended based on the user's assessment responses."
             },
             {
               role: "user",
               content: `Based on the following user responses: ${JSON.stringify(formResponses)}, we have recommended: ${productMatch.product.title}. The basic reason is: ${productMatch.reason}. Please enhance this explanation to be more personalized and informative, including why this is a good match for their specific situation. Keep it under 3 paragraphs and maintain a professional, supportive tone.`
             }
           ],
-          max_tokens: 300
+          max_tokens: 100
         });
         
         if (openAIResponse.choices && openAIResponse.choices[0]?.message?.content) {
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
 async function fetchProducts(): Promise<Product[]> {
   try {
     return await client.fetch(`
-      *[_type == "product" && references(*[_type=="productCategory" && slug.current=="weight-loss"]._id)] {
+      *[_type == "product" && references(*[_type=="productCategory" && slug.current=="anxiety"]._id)] {
         _id,
         title,
         slug,
@@ -132,21 +132,10 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
   // Filter products based on prescription preference
   let filteredProducts = [...products];
   
-  // Filter by prescription preference
+  // Filter by prescription preference if specified
   if (responses['prescription-preference'] === 'no') {
     filteredProducts = filteredProducts.filter(product => 
       product.productType === 'OTC' || product.productType === 'over-the-counter'
-    );
-  }
-  
-  // Filter by administration type preference
-  if (responses['medication-type'] === 'injections') {
-    filteredProducts = filteredProducts.filter(product => 
-      product.administrationType === 'injectable' || !product.administrationType
-    );
-  } else if (responses['medication-type'] === 'oral') {
-    filteredProducts = filteredProducts.filter(product => 
-      product.administrationType === 'oral' || !product.administrationType
     );
   }
   
@@ -160,114 +149,90 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
     let score = 0;
     let reasons: string[] = [];
     
-    // Calculate BMI if height and weight provided
-    let bmi = null;
-    if (responses['current-weight'] && responses['height']) {
-      bmi = calculateBMI(responses['current-weight'], responses['height']);
-    }
-    
-    // Score based on medical conditions
-    if (Array.isArray(responses['medical-conditions'])) {
-      // Type 2 Diabetes
-      if (responses['medical-conditions'].includes('type2-diabetes') && 
-          product.title.toLowerCase().includes('semaglutide')) {
+    // Score based on anxiety severity
+    if (responses['anxiety-severity']) {
+      // Higher-strength products for severe anxiety
+      if (responses['anxiety-severity'] === 'severe' && 
+          (product.title.toLowerCase().includes('ssri') || 
+           product.title.toLowerCase().includes('snri'))) {
         score += 10;
-        reasons.push("Semaglutide has shown benefits for people with Type 2 Diabetes");
+        reasons.push("This medication is effective for managing severe anxiety");
       }
       
-      // PCOS
-      if (responses['medical-conditions'].includes('pcos') && 
-          (product.title.toLowerCase().includes('metformin') || 
-           product.title.toLowerCase().includes('spironolactone'))) {
+      // Lower-strength or OTC products for mild anxiety
+      if (responses['anxiety-severity'] === 'mild' && 
+          product.productType === 'OTC') {
         score += 10;
-        reasons.push("This medication can help address hormonal aspects of PCOS");
+        reasons.push("This option is appropriate for mild anxiety and doesn't require a prescription");
+      }
+    }
+    
+    // Score based on anxiety symptoms
+    if (Array.isArray(responses['anxiety-symptoms'])) {
+      // For panic attacks
+      if (responses['anxiety-symptoms'].includes('panic-attacks') && 
+          (product.title.toLowerCase().includes('benzodiazepine') || 
+           product.title.toLowerCase().includes('alprazolam'))) {
+        score += 10;
+        reasons.push("This medication can help manage panic attacks");
       }
       
-      // Depression/Anxiety
-      if (responses['medical-conditions'].includes('depression-anxiety') && 
-          product.title.toLowerCase().includes('bupropion')) {
-        score += 10;
-        reasons.push("Bupropion can help address mood while supporting weight loss");
+      // For sleep issues
+      if (responses['anxiety-symptoms'].includes('sleep-issues') && 
+          (product.title.toLowerCase().includes('sleep') || 
+           product.title.toLowerCase().includes('melatonin'))) {
+        score += 8;
+        reasons.push("This product addresses anxiety-related sleep disturbances");
       }
     }
     
-    // Score based on eating habits
-    if (responses['eating-habits'] === 'portion-control' && 
-        (product.title.toLowerCase().includes('semaglutide') || 
-         product.title.toLowerCase().includes('tirzepatide'))) {
-      score += 8;
-      reasons.push("This medication helps with portion control by increasing feelings of fullness");
-    }
-    
-    if (responses['eating-habits'] === 'sugar-carbs' && 
-        (product.title.toLowerCase().includes('metformin') || 
-         product.title.toLowerCase().includes('orlistat'))) {
-      score += 8;
-      reasons.push("This medication can help manage carbohydrate metabolism and cravings");
-    }
-    
-    if (responses['eating-habits'] === 'emotional-eating' && 
-        product.title.toLowerCase().includes('bupropion')) {
-      score += 10;
-      reasons.push("This medication can help address the emotional aspects of eating while supporting weight loss");
-    }
-    
-    // Score based on cravings
-    if (responses['cravings'] === 'frequent-cravings' && 
-        (product.title.toLowerCase().includes('phentermine') || 
-         product.title.toLowerCase().includes('topiramate'))) {
-      score += 8;
-      reasons.push("This medication helps reduce appetite and cravings");
-    }
-    
-    // Score based on metabolism
-    if (responses['metabolism'] === 'slow' && 
-        product.title.toLowerCase().includes('phentermine')) {
-      score += 5;
-      reasons.push("This medication can help boost metabolism");
-    }
-    
-    // Score based on stress
-    if (responses['stress-levels'] === 'high' && 
-        product.title.toLowerCase().includes('bupropion')) {
-      score += 5;
-      reasons.push("This medication can help manage stress-related eating");
-    }
-    
-    // Score based on previous experience with medications
-    if (Array.isArray(responses['previous-medications'])) {
-      for (const med of responses['previous-medications']) {
-        if (product.title.toLowerCase().includes(med.toLowerCase())) {
-          // They've used it before - could be positive or negative
-          if (responses['previous-weight-loss'] === 'worked-temporarily') {
-            score += 5;
-            reasons.push("You've had some success with this medication before");
-          } else if (responses['previous-weight-loss'] === 'didnt-work') {
-            score -= 5; // Reduce score if it didn't work for them
-          }
-        }
-      }
-    }
-    
-    // Score based on BMI
-    if (bmi !== null) {
-      if (bmi >= 30 && 
-          (product.title.toLowerCase().includes('semaglutide') || 
-           product.title.toLowerCase().includes('tirzepatide'))) {
-        score += 10;
-        reasons.push("This medication is particularly effective for higher BMI levels");
-      } else if (bmi >= 25 && bmi < 30 && 
-                (product.title.toLowerCase().includes('phentermine') || 
-                 product.title.toLowerCase().includes('orlistat'))) {
+    // Score based on previous treatment
+    if (Array.isArray(responses['previous-treatment'])) {
+      // If they've tried therapy but not medication
+      if (responses['previous-treatment'].includes('therapy') && 
+          !responses['previous-treatment'].includes('medication')) {
         score += 5;
-        reasons.push("This medication is appropriate for your BMI range");
+        reasons.push("This can complement your therapy experience");
+      }
+      
+      // If they've tried self-help
+      if (responses['previous-treatment'].includes('self-help') && 
+          product.productType === 'OTC') {
+        score += 5;
+        reasons.push("This aligns with your self-help approach");
+      }
+    }
+    
+    // Score based on treatment goals
+    if (Array.isArray(responses['treatment-goals'])) {
+      // For improving sleep
+      if (responses['treatment-goals'].includes('improve-sleep') && 
+          (product.title.toLowerCase().includes('sleep') || 
+           product.title.toLowerCase().includes('melatonin'))) {
+        score += 8;
+        reasons.push("This directly addresses your goal of improving sleep");
+      }
+      
+      // For managing specific situations
+      if (responses['treatment-goals'].includes('manage-specific') && 
+          product.title.toLowerCase().includes('as-needed')) {
+        score += 8;
+        reasons.push("This can be used as-needed for specific anxiety-provoking situations");
+      }
+      
+      // For long-term solutions
+      if (responses['treatment-goals'].includes('long-term') && 
+          (product.title.toLowerCase().includes('ssri') || 
+           product.title.toLowerCase().includes('therapy'))) {
+        score += 10;
+        reasons.push("This provides a sustainable, long-term approach to anxiety management");
       }
     }
     
     // If we have reasons, create a combined reason string
     let reason = reasons.length > 0
       ? "Based on your assessment, " + product.title + " is recommended because: " + reasons.join(". ") + "."
-      : `${product.title} provides comprehensive support for your weight loss journey based on your goals and current health status.`;
+      : `${product.title} provides comprehensive support for your anxiety management based on your symptoms and goals.`;
     
     // If no specific matches found, give a small default score
     if (score === 0) {

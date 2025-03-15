@@ -1,11 +1,11 @@
-// src/app/c/hl/submit/page.tsx
+// src/app/c/mh/submit/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useHLFormStore } from "@/store/hlFormStore";
-import ProgressBar from "@/app/c/consultation/components/ProgressBar";
-import { hairLossQuestions, checkEligibility } from "../anxiety/data/questions";
+import { useMHFormStore } from "@/store/mhFormStore";
+import ProgressBar from "@/app/c/mh/components/ProgressBar";
+import { mentalHealthQuestions, checkEligibility } from "../anxiety/data/questions";
 import { 
   FormResponse, 
   QuestionType, 
@@ -15,7 +15,7 @@ import {
 
 export default function SubmitStep() {
   const router = useRouter();
-  const { markStepCompleted } = useHLFormStore();
+  const { markStepCompleted } = useMHFormStore();
   const [responses, setResponses] = useState<FormResponse>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -32,7 +32,7 @@ export default function SubmitStep() {
         }
         
         // Load responses
-        const storedResponses = sessionStorage.getItem("hairLossResponses");
+        const storedResponses = sessionStorage.getItem("mentalHealthResponses");
         if (storedResponses) {
           const parsedResponses = JSON.parse(storedResponses);
           setResponses(parsedResponses);
@@ -55,7 +55,7 @@ export default function SubmitStep() {
 
   // Gets the label for a given option ID for a specific question
   const getOptionLabel = (questionId: string, optionId: string | string[]) => {
-    const question = hairLossQuestions.find(q => q.id === questionId);
+    const question = mentalHealthQuestions.find(q => q.id === questionId);
     if (!question) return "Not specified";
 
     // Check if the question type has options (single-select or multi-select)
@@ -82,9 +82,27 @@ export default function SubmitStep() {
   // Group questions by their sections for better organization
   const getSectionForQuestion = (questionId: string): string => {
     const sectionMap: Record<string, string> = {
-      'hair-loss-pattern': 'Hair Loss Assessment',
-      'hair-loss-duration': 'Hair Loss Assessment'
-      // Add more mappings as you add more questions
+      'age-group': 'Basic Demographics',
+      'gender': 'Basic Demographics',
+      'anxiety-symptoms': 'Symptoms & Severity',
+      'symptom-duration': 'Symptoms & Severity',
+      'symptom-severity': 'Symptoms & Severity',
+      'daily-impact': 'Impact Assessment',
+      'triggers': 'Impact Assessment',
+      'medical-history': 'Medical History',
+      'current-medications': 'Medical History',
+      'medication-list': 'Medical History',
+      'diagnosed-conditions': 'Medical History',
+      'previous-treatment': 'Previous Treatment',
+      'treatment-effectiveness': 'Previous Treatment',
+      'sleep-quality': 'Lifestyle Factors',
+      'stress-levels': 'Lifestyle Factors',
+      'alcohol-consumption': 'Lifestyle Factors',
+      'caffeine-consumption': 'Lifestyle Factors',
+      'exercise-frequency': 'Lifestyle Factors',
+      'treatment-preferences': 'Treatment Preferences',
+      'medication-openness': 'Treatment Preferences',
+      'therapy-preference': 'Treatment Preferences'
     };
     
     return sectionMap[questionId] || 'Other Information';
@@ -95,7 +113,7 @@ export default function SubmitStep() {
     const grouped: Record<string, any[]> = {};
     
     // Get questions that have responses
-    const respondedQuestions = hairLossQuestions.filter(q => 
+    const respondedQuestions = mentalHealthQuestions.filter(q => 
       responses[q.id] !== undefined
     );
     
@@ -117,10 +135,10 @@ export default function SubmitStep() {
     
     try {
       // Mark this step as completed
-      markStepCompleted("/c/hl/submit");
+      markStepCompleted("/c/mh/submit");
       
       // Store the responses for the results page
-      sessionStorage.setItem("finalHairLossResponses", JSON.stringify(responses));
+      sessionStorage.setItem("finalMentalHealthResponses", JSON.stringify(responses));
       
       // If we have an ineligibility reason, make sure it's also stored
       if (ineligibilityReason) {
@@ -128,7 +146,7 @@ export default function SubmitStep() {
       }
       
       // Navigate to results page
-      router.push("/c/hl/results");
+      router.push("/c/mh/results");
     } catch (error) {
       console.error("Error submitting form:", error);
       setIsProcessing(false);
@@ -150,7 +168,7 @@ export default function SubmitStep() {
       <ProgressBar progress={100} />
       
       <h2 className="text-3xl font-semibold text-[#fe92b5] mt-8">
-        Review Your Hair Loss Assessment
+        Review Your Mental Health Assessment
       </h2>
       
       <p className="text-xl font-medium text-black mt-3 mb-8">

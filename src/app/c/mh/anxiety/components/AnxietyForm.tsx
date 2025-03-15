@@ -1,15 +1,15 @@
-//src/app/c/hl/hair-loss/components/HairLossForm.tsx
+//src/app/c/mh/anxiety/components/AnxietyForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useHLFormStore } from "@/store/mhFormStore";
+import { useMHFormStore } from "@/store/mhFormStore";
 import ProgressBar from "@/app/c/mh/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
-import { hairLossQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
+import { anxietyQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
 import { FormResponse } from "../types";
 
-export default function HairLossForm() {
+export default function AnxietyForm() {
   const router = useRouter();
   const pathname = "/c/mh/anxiety";
   
@@ -33,13 +33,13 @@ export default function HairLossForm() {
     formData,
     markStepCompleted,
     setStepOffset
-  } = useHLFormStore();
+  } = useMHFormStore();
   
   // Form state for responses
   const [responses, setResponses] = useState<FormResponse>({});
   
   // Filter questions based on conditional display
-  const filteredQuestions = hairLossQuestions.filter(question => {
+  const filteredQuestions = anxietyQuestions.filter(question => {
     if (!question.conditionalDisplay) return true;
     return question.conditionalDisplay(responses);
   });
@@ -64,7 +64,7 @@ export default function HairLossForm() {
     // Only run in browser environment
     if (typeof window !== 'undefined') {
       try {
-        const storedResponses = sessionStorage.getItem("hairLossResponses");
+        const storedResponses = sessionStorage.getItem("anxietyResponses");
         if (storedResponses) {
           setResponses(JSON.parse(storedResponses));
         }
@@ -103,7 +103,7 @@ export default function HairLossForm() {
       
       // Store responses in sessionStorage
       try {
-        sessionStorage.setItem("hairLossResponses", JSON.stringify(responses));
+        sessionStorage.setItem("anxietyResponses", JSON.stringify(responses));
       } catch (error) {
         console.error("Error storing responses:", error);
       }

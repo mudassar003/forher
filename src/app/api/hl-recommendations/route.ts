@@ -48,25 +48,11 @@ export async function POST(request: Request) {
     const products = await fetchProducts();
     
     if (!products || products.length === 0) {
-      // Fallback to mock products if no products found in Sanity
-      const mockProducts = getMockProducts();
-      
-      if (mockProducts.length === 0) {
-        return NextResponse.json({
-          eligible: true,
-          recommendedProductId: null,
-          explanation: "No hair loss products are currently available. Please check back later."
-        });
-      }
-      
-      // Use mock products if Sanity fetch fails
-      const productMatch = findBestProductMatch(formResponses, mockProducts);
-      
+      // No products found in Sanity - return message similar to birth control API
       return NextResponse.json({
         eligible: true,
-        recommendedProductId: productMatch.product._id,
-        explanation: productMatch.reason,
-        product: productMatch.product
+        recommendedProductId: null,
+        explanation: "No hair loss products are currently available. Please check back later."
       });
     }
     
@@ -140,39 +126,6 @@ async function fetchProducts(): Promise<Product[]> {
     console.error("Error fetching products from Sanity:", error);
     return [];
   }
-}
-
-// Provide mock products as fallback
-function getMockProducts(): Product[] {
-  return [
-    {
-      _id: "product1",
-      title: "Minoxidil 5% Solution",
-      slug: { current: "minoxidil-5-solution" },
-      price: 29.99,
-      description: "Clinically proven topical solution to help regrow hair and prevent further hair loss.",
-      productType: "OTC",
-      administrationType: "topical"
-    },
-    {
-      _id: "product2",
-      title: "Finasteride Tablets",
-      slug: { current: "finasteride-tablets" },
-      price: 49.99,
-      description: "Prescription medication that blocks DHT production to prevent hair loss at the root cause.",
-      productType: "prescription",
-      administrationType: "oral"
-    },
-    {
-      _id: "product3",
-      title: "Ketoconazole Shampoo",
-      slug: { current: "ketoconazole-shampoo" },
-      price: 19.99,
-      description: "Anti-fungal shampoo that may help with hair loss by reducing scalp inflammation.",
-      productType: "OTC",
-      administrationType: "topical"
-    }
-  ];
 }
 
 // Find the best product match based on user responses

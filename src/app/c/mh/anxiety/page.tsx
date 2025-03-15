@@ -1,9 +1,9 @@
-//src/app/c/hl/hair-loss/page.tsx
+//src/app/c/mh/anxiety/page.tsx
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
 import LoadingFallback from "./components/LoadingFallback";
-import HairLossForm from "./components/AnxietyForm";
+import AnxietyForm from "./components/AnxietyForm";
 
 // The main page component
 export default function AnxietyPage() {
@@ -51,5 +51,5 @@ function ClientPageRouter() {
   }
 
   // For all other offsets, show the form
-  return <HairLossForm />;
+  return <AnxietyForm />;
 }

@@ -1,4 +1,4 @@
-// src/app/c/hl/results/page.tsx
+// src/app/c/mh/results/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -37,27 +37,23 @@ export default function ResultsPage() {
   const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if we have a stored ineligibility reason
     const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
     if (storedIneligibilityReason) {
       setIneligibilityReason(storedIneligibilityReason);
     }
     
-    // Check if we already have a recommendation in localStorage
-    const savedRecommendation = localStorage.getItem('hairLossRecommendation');
+    const savedRecommendation = localStorage.getItem('anxietyRecommendation');
     
     const fetchData = async () => {
       try {
-        // Fetch all hair loss products regardless of recommendation
         const products: Product[] = await client.fetch(`
-          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="hair-loss"]._id)] {
+          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="mental-health"]._id)] {
             _id, title, slug, price, description, mainImage, productType, administrationType
           }
         `);
         
         setAllProducts(products || []);
         
-        // If the user is ineligible, create a custom recommendation object
         if (storedIneligibilityReason) {
           const ineligibleRecommendation: Recommendation = {
             eligible: false,
@@ -70,25 +66,22 @@ export default function ResultsPage() {
           return;
         }
         
-        // If we have a saved recommendation, use it
         if (savedRecommendation) {
           setRecommendation(JSON.parse(savedRecommendation));
           setIsLoading(false);
           return;
         }
         
-        // Otherwise, get form responses and call the API
-        const storedResponses = sessionStorage.getItem("finalHairLossResponses");
+        const storedResponses = sessionStorage.getItem("finalAnxietyResponses");
         
         if (!storedResponses) {
-          router.push("/c/hl");
+          router.push("/c/mh");
           return;
         }
         
         const responses = JSON.parse(storedResponses);
         
-        // Call the API to get recommendations
-        const response = await fetch('/api/hl-recommendations', {
+        const response = await fetch('/api/mh-recommendations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -102,13 +95,10 @@ export default function ResultsPage() {
         
         const data = await response.json();
         
-        // Parse recommendation data
         let parsedRecommendation: Recommendation;
         
-        // Check if the response is a string (explanation) or an object
         if (typeof data === 'string' || (data && !data.hasOwnProperty('eligible'))) {
-          // If it's just text, create a structured object
-          const explanation = typeof data === 'string' ? data : data.explanation || "Based on your responses, we cannot recommend our hair loss medications at this time.";
+          const explanation = typeof data === 'string' ? data : data.explanation || "Based on your responses, we cannot recommend specific anxiety medications at this time.";
           
           parsedRecommendation = {
             eligible: false,
@@ -116,11 +106,8 @@ export default function ResultsPage() {
             explanation: explanation
           };
         } else {
-          // Otherwise use the structured response
           parsedRecommendation = data as Recommendation;
           
-          // If the recommendation has a product ID but not the product data,
-          // find it in the products we fetched
           if (parsedRecommendation.eligible && 
               parsedRecommendation.recommendedProductId && 
               !parsedRecommendation.product) {
@@ -131,8 +118,7 @@ export default function ResultsPage() {
           }
         }
         
-        // Save the recommendation to localStorage for persistence
-        localStorage.setItem('hairLossRecommendation', JSON.stringify(parsedRecommendation));
+        localStorage.setItem('anxietyRecommendation', JSON.stringify(parsedRecommendation));
         
         setRecommendation(parsedRecommendation);
       } catch (error) {
@@ -146,13 +132,12 @@ export default function ResultsPage() {
     fetchData();
   }, [router]);
 
-  // Function to clear recommendation and start over
   const startOver = () => {
-    localStorage.removeItem('hairLossRecommendation');
-    sessionStorage.removeItem('finalHairLossResponses');
-    sessionStorage.removeItem('hairLossResponses');
+    localStorage.removeItem('anxietyRecommendation');
+    sessionStorage.removeItem('finalAnxietyResponses');
+    sessionStorage.removeItem('anxietyResponses');
     sessionStorage.removeItem('ineligibilityReason');
-    router.push("/c/hl");
+    router.push("/c/mh");
   };
 
   if (isLoading) {
@@ -178,7 +163,7 @@ export default function ResultsPage() {
             <h2 className="text-3xl font-semibold text-[#fe92b5] mb-6">Oops! Something went wrong</h2>
             <p className="text-xl mb-8">{error}</p>
             <button 
-              onClick={() => router.push("/c/hl/submit")}
+              onClick={() => router.push("/c/mh/submit")}
               className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-gray-900"
             >
               Try Again
@@ -197,9 +182,7 @@ export default function ResultsPage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-4xl font-semibold text-[#fe92b5] text-center mb-10">Your Personalized Recommendation</h1>
         
-        {/* Recommendation Section */}
         <section className="mb-16">
-          {/* Eligible with Product Recommendation */}
           {recommendation?.eligible && recommendation.product && (
             <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
               <div className="bg-gradient-to-r from-[#fe92b5]/10 to-[#fe92b5]/5 p-6 flex items-center">
@@ -216,7 +199,6 @@ export default function ResultsPage() {
               
               <div className="p-6">
                 <div className="flex flex-col md:flex-row gap-8">
-                  {/* Product Image */}
                   <div className="md:w-1/3">
                     {recommendation.product.mainImage ? (
                       <div className="relative h-64 w-full rounded-lg overflow-hidden">
@@ -244,12 +226,11 @@ export default function ResultsPage() {
                     
                     {recommendation.product.administrationType && (
                       <div className="mt-2 ml-2 inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                        {recommendation.product.administrationType === 'oral' ? 'Oral medication' : 'Topical'}
+                        {recommendation.product.administrationType === 'oral' ? 'Oral medication' : 'Other form'}
                       </div>
                     )}
                   </div>
                   
-                  {/* Product Details */}
                   <div className="md:w-2/3">
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">{recommendation.product.title}</h3>
                     <div className="flex items-center mb-4">
@@ -274,7 +255,6 @@ export default function ResultsPage() {
             </div>
           )}
           
-          {/* Not Eligible */}
           {(!recommendation?.eligible || !recommendation?.product) && (
             <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
               <div className="bg-gradient-to-r from-amber-100 to-amber-50 p-6 flex items-center">
@@ -291,7 +271,7 @@ export default function ResultsPage() {
               
               <div className="p-6">
                 <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                  <p className="text-lg leading-relaxed">{recommendation?.explanation || "Based on your responses, we recommend consulting with a healthcare provider before pursuing hair loss medication. Your health is our priority."}</p>
+                  <p className="text-lg leading-relaxed">{recommendation?.explanation || "Based on your responses, we recommend consulting with a healthcare provider before pursuing anxiety treatment. Your health is our priority."}</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -313,10 +293,9 @@ export default function ResultsPage() {
           )}
         </section>
         
-        {/* Browse Other Products Section */}
         <section>
-          <h2 className="text-3xl font-semibold text-gray-800 mb-6">Hair Loss Products</h2>
-          <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of physician-formulated hair loss treatments designed to help you restore and maintain your hair.</p>
+          <h2 className="text-3xl font-semibold text-gray-800 mb-6">Mental Health Products</h2>
+          <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of mental health treatments designed to help you manage anxiety and improve your wellbeing.</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {allProducts.slice(0, 8).map((product: Product) => (
@@ -326,7 +305,6 @@ export default function ResultsPage() {
                 className="group"
               >
                 <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1 h-full flex flex-col">
-                  {/* Product Image */}
                   <div className="relative h-48 w-full bg-gray-100">
                     {product.mainImage ? (
                       <Image 
@@ -351,7 +329,6 @@ export default function ResultsPage() {
                     )}
                   </div>
                   
-                  {/* Product Details */}
                   <div className="p-4 flex-grow flex flex-col">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{product.title}</h3>
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-grow">{product.description}</p>
@@ -382,7 +359,6 @@ export default function ResultsPage() {
           </div>
         </section>
       </main>
-      
       <GlobalFooter />
     </div>
   );

@@ -1,13 +1,13 @@
-//src/app/c/hl/page.tsx
+//src/app/c/mh/page.tsx
 "use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useHLFormStore, getLastCompletedStep } from "@/store/consultFormStore";
+import { useMHFormStore, getLastCompletedStep } from "@/store/mhFormStore";
 
-export default function HairLossEntry() {
+export default function MentalHealthEntry() {
   const router = useRouter();
-  const { completedSteps, formData } = useHLFormStore();
+  const { completedSteps, formData } = useMHFormStore();
 
   useEffect(() => {
     // Check if the user has already started the form
@@ -17,7 +17,7 @@ export default function HairLossEntry() {
       
       // Check if we need to resume at a specific offset
       const stepOffsets = formData.stepOffsets || {};
-      let redirectPath = lastCompletedStep || "/c/hl/introduction";
+      let redirectPath = lastCompletedStep || "/c/mh/introduction";
       
       // If this step has a stored offset, include it in the redirect URL
       if (stepOffsets[lastCompletedStep]) {
@@ -33,7 +33,7 @@ export default function HairLossEntry() {
     } else {
       // If no progress, redirect to the introduction page
       const timer = setTimeout(() => {
-        router.push("/c/hl/introduction");
+        router.push("/c/mh/introduction");
       }, 1000);
 
       return () => clearTimeout(timer);

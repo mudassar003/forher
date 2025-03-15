@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Updated headlines with your brand colors
 const headlines = [
-  { text: "Weight loss", color: "#68724C" }, // Greenish
-  { text: "Wellness", color: "#7F5D76" }, // Purple
-  { text: "Thicker hair", color: "#4E7F6B" }, // Teal
-  { text: "Anxiety relief", color: "#3D5B74" }, // Blue
-  { text: "Glowing skin", color: "#5F9C92" }, // Soft Teal
+  { text: "Weight loss", color: "#fe92b5" }, // Primary brand color
+  { text: "Wellness", color: "#f96897" },    // Darker accent
+  { text: "Thicker hair", color: "#fc4e87" }, // Another darker accent
+  { text: "Anxiety relief", color: "#fe92b5" }, // Primary brand color
+  { text: "Glowing skin", color: "#f96897" },  // Darker accent
 ];
 
 export default function RotatingHeadlineSection() {
@@ -29,7 +30,7 @@ export default function RotatingHeadlineSection() {
         <AnimatePresence mode="wait">
           <motion.h1
             key={headlines[index].text}
-            className="text-5xl md:text-7xl lg:text-8xl  leading-light font-normal"
+            className="text-5xl md:text-7xl lg:text-8xl leading-light font-normal"
             style={{ color: headlines[index].color, whiteSpace: 'nowrap' }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -42,7 +43,8 @@ export default function RotatingHeadlineSection() {
       </div>
       
       {/* Main Supporting Text */}
-      <h2 className="w-full text-left text-4xl mt-[-1px] md:w-auto md:text-6xl lg:text-8xl md:mt-4">
+      <h2 className="w-full text-left text-4xl mt-[-1px] md:w-auto md:text-6xl lg:text-8xl md:mt-4" 
+          style={{ color: "#fc4e87" }}>
         personalized to you
       </h2>
 

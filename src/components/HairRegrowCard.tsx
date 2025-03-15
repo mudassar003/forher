@@ -34,7 +34,7 @@ const HairRegrowCard = () => {
   };
 
   return (
-    <div className="bg-[#729693] min-h-screen flex justify-center items-center p-6">
+    <div className="bg-[#f96897] min-h-screen flex justify-center items-center p-6">
       <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-[400px_minmax(0,1fr)] gap-4">
         {/* Left Column - First Two Sections */}
         <div className="flex flex-col space-y-6">

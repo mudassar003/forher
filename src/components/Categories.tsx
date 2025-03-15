@@ -2,58 +2,61 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link"; // Import Link from next/link
+import Link from "next/link";
 
+// Updated button data with brand colors and different background gradients
+// Primary: #fe92b5
+// Darker accent 1: #f96897
+// Darker accent 2: #fc4e87
+// Additional lighter shades for backgrounds
 const buttonData = [
   {
     text: "Lose weight",
-    color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#3A5226] to-[#5A6E3F]",
-    textColor: "text-[#5A6E3F]",
+    color: "from-[#ffe6f0] to-[#ffeff6]",
+    hoverColor: "from-[#fc4e87] to-[#fe92b5]",
+    textColor: "text-[#fc4e87]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/wm", // Define the URL here
+    url: "/c/wm",
   },
   {
     text: "Grow fuller hair",
-    color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#506C5F] to-[#4E7F6B]",
-    textColor: "text-[#4E7F6B]",
+    color: "from-[#ffd6e4] to-[#ffe1ec]",
+    hoverColor: "from-[#f96897] to-[#fe92b5]",
+    textColor: "text-[#f96897]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/hl", // Define the URL here
+    url: "/c/hl",
   },
-   {
+  {
     text: "Control your cycle",
-    color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#8B9B96] to-[#5F9C92]",
-    textColor: "text-[#5F9C92]",
+    color: "from-[#ffeaf2] to-[#ffd9e7]",
+    hoverColor: "from-[#fe92b5] to-[#f96897]",
+    textColor: "text-[#fe92b5]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/b", // Define the URL here
+    url: "/c/b",
   },
   {
     text: "Find relief for anxiety",
-    color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#4B6478] to-[#3D5B74]",
-    textColor: "text-[#3D5B74]",
+    color: "from-[#ffcfdf] to-[#ffe0eb]",
+    hoverColor: "from-[#fc4e87] to-[#f96897]",
+    textColor: "text-[#fc4e87]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/mh", // Define the URL here
+    url: "/c/mh",
   },
- 
-
   {
     text: "Get glowing skin",
-    color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#658C84] to-[#5F9C92]",
-    textColor: "text-[#5F9C92]",
+    color: "from-[#ffd1e0] to-[#ffe8f1]",
+    hoverColor: "from-[#fe92b5] to-[#fc4e87]",
+    textColor: "text-[#fe92b5]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/aa", // Define the URL here
+    url: "/c/aa",
   },
   {
     text: "Explore wellness",
-    color: "from-[#EBF3ED] to-[#EBF3ED]",
-    hoverColor: "from-[#7A5B68] to-[#7F5D76]",
-    textColor: "text-[#7F5D76]",
+    color: "from-[#ffe2ed] to-[#ffd4e2]",
+    hoverColor: "from-[#f96897] to-[#fc4e87]",
+    textColor: "text-[#f96897]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/c/consultation", // Define the URL here
+    url: "/c/consultation",
   },
 ];
 
@@ -68,7 +71,7 @@ export default function HoverEffectButtons() {
           {buttonData.map((item, index) => {
             const words = item.text.split(" ");
             return (
-              <Link key={index} href={item.url}> {/* Wrap the button in the Link component */}
+              <Link key={index} href={item.url}>
                 <div
                   className={`relative flex items-center justify-between w-[280px] h-[75px] p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                     hoverIndex === index ? item.hoverColor : item.color
@@ -115,12 +118,12 @@ export default function HoverEffectButtons() {
         </div>
       </div>
 
-      {/* Desktop: Grid Layout (Unchanged) */}
+      {/* Desktop: Grid Layout */}
       <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-8 lg:px-16 mt-12">
         {buttonData.map((item, index) => {
           const words = item.text.split(" ");
           return (
-            <Link key={index} href={item.url}> {/* Wrap the button in the Link component */}
+            <Link key={index} href={item.url}>
               <div
                 className={`relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                   hoverIndex === index ? item.hoverColor : item.color

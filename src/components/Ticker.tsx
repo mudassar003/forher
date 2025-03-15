@@ -22,76 +22,127 @@ const tickerItems: TickerItem[] = [
   { id: 10, icon: <FaStar />, text: "Personalized to your needs" },
 ];
 
-export default function Ticker() {
-  const [isPaused, setIsPaused] = useState(false);
-  const desktopSpeed = 25;
-  const mobileSpeed = 10; // Even faster speed for mobile
-  const [animationDuration, setAnimationDuration] = useState(desktopSpeed);
+// Brand colors
+const primaryColor = "#fe92b5";
+const accentColor = "#f96897";
+const darkAccentColor = "#fc4e87";
+const lightBgColor = "#fff8fa";
 
+export default function Ticker() {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  
+  // Different speeds for different devices
+  const desktopSpeed = 25;
+  const mobileSpeed = 10;
+
+  // Check if device is mobile on mount and when window resizes
   useEffect(() => {
-    const updateDuration = () => {
-      const screenWidth = window.innerWidth;
-      // Force update the animation duration based on screen width
-      if (screenWidth < 768) {
-        setAnimationDuration(mobileSpeed);
-      } else {
-        setAnimationDuration(desktopSpeed);
-      }
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
     
     // Run on initial render
-    updateDuration();
+    checkIfMobile();
     
     // Add event listener for window resize
-    window.addEventListener("resize", updateDuration);
+    window.addEventListener("resize", checkIfMobile);
     
     // Cleanup
-    return () => window.removeEventListener("resize", updateDuration);
-  }, [mobileSpeed, desktopSpeed]);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
 
-  // Brand colors
-  const primaryColor = "#fe92b5";
-  const accentColor = "#f96897";
-  const darkAccentColor = "#fc4e87";
-  const lightBgColor = "#fff8fa"; // Light pink background that complements brand colors
-
-  return (
+  // Mobile specific ticker
+  const MobileTicker = () => (
     <div
-      className="relative w-full overflow-hidden py-2 flex items-center opacity-0 animate-fade-in"
+      className="relative w-full overflow-hidden py-2 flex items-center animate-fade-in"
       style={{ backgroundColor: lightBgColor }}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
       <div 
-        className="relative z-10 px-4 whitespace-nowrap font-medium text-base md:text-base flex items-center"
+        className="relative z-10 px-3 whitespace-nowrap font-medium flex items-center"
         style={{ backgroundColor: lightBgColor, color: darkAccentColor }}
       >
-        <span className="text-xs md:text-base">Why Direct2Her?</span>
-        <span className="ml-2 text-xs md:text-base" style={{ color: accentColor }}>|</span>
+        <span className="text-xs">Why Direct2Her?</span>
+        <span className="ml-1 text-xs" style={{ color: accentColor }}>|</span>
       </div>
       <div className="w-full overflow-hidden relative">
         <div
-          className="flex space-x-36 ticker-animation"
+          className="flex space-x-16"
           style={{
-            animation: `slide ${animationDuration}s linear infinite`,
+            animation: `slideMobile ${mobileSpeed}s linear infinite`,
             animationPlayState: isPaused ? 'paused' : 'running',
             whiteSpace: 'nowrap',
           }}
         >
-          {/* Triple the items to ensure smooth looping */}
           {[...tickerItems, ...tickerItems, ...tickerItems].map((item, index) => (
-            <div key={index} className="flex items-center space-x-2 text-xs md:text-sm font-normal">
-              <span className="text-base md:text-lg" style={{ color: accentColor }}>{item.icon}</span>
+            <div key={index} className="flex items-center space-x-1 text-xs font-normal">
+              <span className="text-sm" style={{ color: accentColor }}>{item.icon}</span>
               <span style={{ color: "#333" }}>{item.text}</span>
             </div>
           ))}
         </div>
       </div>
+    </div>
+  );
+
+  // Desktop specific ticker
+  const DesktopTicker = () => (
+    <div
+      className="relative w-full overflow-hidden py-2 flex items-center animate-fade-in"
+      style={{ backgroundColor: lightBgColor }}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div 
+        className="relative z-10 px-4 whitespace-nowrap font-medium flex items-center"
+        style={{ backgroundColor: lightBgColor, color: darkAccentColor }}
+      >
+        <span className="text-base">Why Direct2Her?</span>
+        <span className="ml-2 text-base" style={{ color: accentColor }}>|</span>
+      </div>
+      <div className="w-full overflow-hidden relative">
+        <div
+          className="flex space-x-36"
+          style={{
+            animation: `slideDesktop ${desktopSpeed}s linear infinite`,
+            animationPlayState: isPaused ? 'paused' : 'running',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {[...tickerItems, ...tickerItems, ...tickerItems].map((item, index) => (
+            <div key={index} className="flex items-center space-x-2 text-sm font-normal">
+              <span className="text-lg" style={{ color: accentColor }}>{item.icon}</span>
+              <span style={{ color: "#333" }}>{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Render either mobile or desktop ticker based on screen width */}
+      <div className="hidden md:block">
+        <DesktopTicker />
+      </div>
+      <div className="block md:hidden">
+        <MobileTicker />
+      </div>
 
       <style jsx global>{`
-        @keyframes slide {
+        @keyframes slideDesktop {
+          from {
+            transform: translateX(0%);
+          }
+          to {
+            transform: translateX(-50%);
+          }
+        }
+        
+        @keyframes slideMobile {
           from {
             transform: translateX(0%);
           }
@@ -112,19 +163,7 @@ export default function Ticker() {
         .animate-fade-in {
           animation: fade-in 0.5s ease-out forwards;
         }
-
-        @media (max-width: 767px) {
-          .ticker-animation {
-            animation-duration: ${mobileSpeed}s !important;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .ticker-animation {
-            animation-duration: ${desktopSpeed}s !important;
-          }
-        }
       `}</style>
-    </div>
+    </>
   );
 }

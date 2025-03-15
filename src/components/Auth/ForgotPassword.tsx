@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { sendPasswordResetEmail } from "@/lib/auth";
 
-const ForgotPassword = () => {
+interface ForgotPasswordProps {
+  returnUrl?: string | null;
+}
+
+const ForgotPassword = ({ returnUrl = '' }: ForgotPasswordProps) => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  // Get returnUrl from query params if exists
-  const searchParams = useSearchParams();
-  const returnUrl = searchParams?.get('returnUrl') || '';
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -91,7 +91,7 @@ export default async function ProductPage({
   const relatedProducts: RelatedProduct[] = await getRelatedProducts(product._id, categoryIds)
 
   // Pre-generate the image URLs on the server with error handling
-  let mainImageUrl;
+  let mainImageUrl: string | undefined;
   try {
     mainImageUrl = product.mainImage ? urlFor(product.mainImage).url() : undefined;
   } catch (error) {
@@ -99,7 +99,7 @@ export default async function ProductPage({
     mainImageUrl = undefined;
   }
   
-  let imageUrls = [];
+  let imageUrls: string[] = [];
   try {
     imageUrls = product.images && Array.isArray(product.images) 
       ? product.images.map(img => urlFor(img).url()) 
@@ -111,7 +111,7 @@ export default async function ProductPage({
 
   // Pre-generate image URLs for related products too with error handling
   const relatedProductsWithUrls = relatedProducts.map(relatedProduct => {
-    let mainImageUrl;
+    let mainImageUrl: string | undefined;
     try {
       mainImageUrl = relatedProduct.mainImage ? urlFor(relatedProduct.mainImage).url() : undefined;
     } catch (error) {

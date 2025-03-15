@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 // Define the types for our form data
-interface HLFormData {
+interface ConsultFormData {
   currentStep: string;
   completedSteps: string[];
   formData: {
@@ -12,7 +12,7 @@ interface HLFormData {
 }
 
 // Define the store state and actions
-interface HLFormState extends HLFormData {
+interface ConsultFormState extends ConsultFormData {
   setCurrentStep: (step: string) => void;
   markStepCompleted: (step: string) => void;
   setStepOffset: (step: string, offset: number) => void;
@@ -28,7 +28,7 @@ export const HL_FORM_STEPS = [
 
 // Create the Zustand store with persistence
 export const useHLFormStore = create(
-  persist<HLFormState>(
+  persist<ConsultFormState>(
     (set) => ({
       // Initial state
       currentStep: HL_FORM_STEPS[0],
@@ -67,14 +67,14 @@ export const useHLFormStore = create(
         }),
     }),
     {
-      name: "hl-form-storage", // Name for localStorage key
+      name: "consult-form-storage", // Name for localStorage key
     }
   )
 );
 
 // Helper function to determine if a user can access a specific step
 export const canAccessStep = (step: string, completedSteps: string[]): boolean => {
-  const stepIndex = HL_FORM_STEPS.indexOf(step);
+  const stepIndex = CONSULT_FORM_STEPS.indexOf(step);
   if (stepIndex === 0) return true; // First step is always accessible
   
   // Check if the previous step has been completed
@@ -84,7 +84,7 @@ export const canAccessStep = (step: string, completedSteps: string[]): boolean =
 
 // Helper function to get the next step
 export const getNextStep = (currentStep: string): string | null => {
-  const currentIndex = HL_FORM_STEPS.indexOf(currentStep);
+  const currentIndex = Consult_FORM_STEPS.indexOf(currentStep);
   if (currentIndex === -1 || currentIndex === HL_FORM_STEPS.length - 1) return null;
   return HL_FORM_STEPS[currentIndex + 1];
 };

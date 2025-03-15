@@ -1,10 +1,10 @@
-//src/app/c/hl/components/StepLayout.tsx
+//src/app/c/consultation/components/StepLayout.tsx
 "use client";
 
 import { useEffect } from "react";
 import ProgressBar from "./ProgressBar";
 import { useRouter, usePathname } from "next/navigation";
-import { useHLFormStore, HL_FORM_STEPS, getNextStep } from "@/store/consultFormStore";
+import { useConsultFormStore, HL_FORM_STEPS, getNextStep } from "@/store/consultFormStore";
 
 interface StepLayoutProps {
   children: React.ReactNode;

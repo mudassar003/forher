@@ -33,7 +33,11 @@ interface RelatedProduct {
 }
 
 // Generate metadata for SEO
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: { slug: string } 
+}): Promise<Metadata> {
   const product: Product | null = await getProduct(params.slug)
   
   if (!product) {
@@ -82,7 +86,13 @@ async function getRelatedProducts(productId: string, categoryIds: string[], limi
   )
 }
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
+interface ProductPageProps {
+  params: {
+    slug: string
+  }
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = params
   const product: Product | null = await getProduct(slug)
   

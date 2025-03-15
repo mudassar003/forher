@@ -4,7 +4,7 @@
 import { useEffect } from "react";
 import ProgressBar from "./ProgressBar";
 import { useRouter, usePathname } from "next/navigation";
-import { useHLFormStore, HL_FORM_STEPS, getNextStep } from "@/store/mhFormStore";
+import { useMHFormStore, MH_FORM_STEPS, getNextStep } from "@/store/mhFormStore";
 
 interface StepLayoutProps {
   children: React.ReactNode;

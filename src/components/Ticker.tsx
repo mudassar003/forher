@@ -25,19 +25,29 @@ const tickerItems: TickerItem[] = [
 export default function Ticker() {
   const [isPaused, setIsPaused] = useState(false);
   const desktopSpeed = 25;
-  const mobileSpeed = 30;
+  const mobileSpeed = 10; // Even faster speed for mobile
   const [animationDuration, setAnimationDuration] = useState(desktopSpeed);
 
   useEffect(() => {
     const updateDuration = () => {
       const screenWidth = window.innerWidth;
-      setAnimationDuration(screenWidth < 768 ? mobileSpeed : desktopSpeed);
+      // Force update the animation duration based on screen width
+      if (screenWidth < 768) {
+        setAnimationDuration(mobileSpeed);
+      } else {
+        setAnimationDuration(desktopSpeed);
+      }
     };
     
+    // Run on initial render
     updateDuration();
+    
+    // Add event listener for window resize
     window.addEventListener("resize", updateDuration);
+    
+    // Cleanup
     return () => window.removeEventListener("resize", updateDuration);
-  }, []);
+  }, [mobileSpeed, desktopSpeed]);
 
   // Brand colors
   const primaryColor = "#fe92b5";
@@ -55,14 +65,15 @@ export default function Ticker() {
       onTouchEnd={() => setIsPaused(false)}
     >
       <div 
-        className="relative z-10 px-4 whitespace-nowrap font-medium"
+        className="relative z-10 px-4 whitespace-nowrap font-medium text-base md:text-base flex items-center"
         style={{ backgroundColor: lightBgColor, color: darkAccentColor }}
       >
-        Why Direct2Her?
+        <span className="text-xs md:text-base">Why Direct2Her?</span>
+        <span className="ml-2 text-xs md:text-base" style={{ color: accentColor }}>|</span>
       </div>
       <div className="w-full overflow-hidden relative">
         <div
-          className="flex space-x-36"
+          className="flex space-x-36 ticker-animation"
           style={{
             animation: `slide ${animationDuration}s linear infinite`,
             animationPlayState: isPaused ? 'paused' : 'running',
@@ -71,8 +82,8 @@ export default function Ticker() {
         >
           {/* Triple the items to ensure smooth looping */}
           {[...tickerItems, ...tickerItems, ...tickerItems].map((item, index) => (
-            <div key={index} className="flex items-center space-x-2 text-sm font-normal">
-              <span className="text-lg" style={{ color: accentColor }}>{item.icon}</span>
+            <div key={index} className="flex items-center space-x-2 text-xs md:text-sm font-normal">
+              <span className="text-base md:text-lg" style={{ color: accentColor }}>{item.icon}</span>
               <span style={{ color: "#333" }}>{item.text}</span>
             </div>
           ))}
@@ -100,6 +111,18 @@ export default function Ticker() {
 
         .animate-fade-in {
           animation: fade-in 0.5s ease-out forwards;
+        }
+
+        @media (max-width: 767px) {
+          .ticker-animation {
+            animation-duration: ${mobileSpeed}s !important;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .ticker-animation {
+            animation-duration: ${desktopSpeed}s !important;
+          }
         }
       `}</style>
     </div>

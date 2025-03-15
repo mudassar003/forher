@@ -32,6 +32,14 @@ interface RelatedProduct {
   isOnSale: boolean
 }
 
+// Updated type definition to match Next.js's PageProps
+type ProductPageProps = {
+  params: {
+    slug: string
+  }
+  searchParams?: Record<string, string | string[] | undefined>
+}
+
 // Generate metadata for SEO
 export async function generateMetadata({ 
   params 
@@ -86,13 +94,7 @@ async function getRelatedProducts(productId: string, categoryIds: string[], limi
   )
 }
 
-interface ProductPageProps {
-  params: {
-    slug: string
-  }
-}
-
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = params
   const product: Product | null = await getProduct(slug)
   

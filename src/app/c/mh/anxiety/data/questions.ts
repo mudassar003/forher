@@ -2,7 +2,7 @@
 import { Question, QuestionType } from "../types";
 
 // Define all questions for the mental health form
-export const mentalHealthQuestions: Question[] = [
+export const anxietyQuestions: Question[] = [
   // Step 1: Basic Demographics
   {
     id: "age-group",
@@ -315,7 +315,7 @@ export const mentalHealthQuestions: Question[] = [
 // Calculate progress percentage based on current question index
 export const getProgressPercentage = (currentOffset: number): number => {
   // Offset 0 is introduction (20%), max should be 95% for the last question
-  const totalQuestions = mentalHealthQuestions.length;
+  const totalQuestions = anxietyQuestions.length;
   
   if (currentOffset === 0) return 20;
   

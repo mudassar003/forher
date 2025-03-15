@@ -1,7 +1,8 @@
 //src/app/(login)/login/page.tsx
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import AuthLayout from "@/components/Auth/AuthLayout";
 import LoginForm from "@/components/Auth/LoginForm";
 
@@ -17,10 +18,20 @@ const LoginFormLoading = () => (
 );
 
 const LoginPage = () => {
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl') || '/dashboard'; // Default to dashboard
+
+  // Store the returnUrl in sessionStorage for use after OAuth redirects
+  useEffect(() => {
+    if (returnUrl) {
+      sessionStorage.setItem('loginReturnUrl', returnUrl);
+    }
+  }, [returnUrl]);
+
   return (
     <AuthLayout title="Welcome back">
       <Suspense fallback={<LoginFormLoading />}>
-        <LoginForm />
+        <LoginForm returnUrl={returnUrl} />
       </Suspense>
     </AuthLayout>
   );

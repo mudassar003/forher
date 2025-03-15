@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc"; // Google icon
 import { FaApple } from "react-icons/fa"; // Apple icon
 
-const SignupForm = () => {
+const SignupForm = ({ returnUrl = '/dashboard' }) => {
   const {
     email,
     password,
@@ -34,7 +34,12 @@ const SignupForm = () => {
         localStorage.setItem('user-auth-token', data.session.access_token || 'token-placeholder');
       }
       resetForm();
-      router.push("/dashboard");
+      
+      // Get the stored returnUrl or use the provided one
+      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
+      sessionStorage.removeItem('loginReturnUrl'); // Clean up
+      
+      router.push(storedReturnUrl);
     }
     setLoading(false);
   };
@@ -44,10 +49,8 @@ const SignupForm = () => {
     const { error, data } = await signInWithGoogle();
     if (error) {
       setError(error);
-    } else {
-      // For OAuth redirect flow, the token will be set upon return from provider
-      router.push("/dashboard");
     }
+    // For OAuth redirect flow, the returnUrl handling happens in AuthCallback
     setLoading(false);
   };
 

@@ -2,12 +2,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const AuthCallback = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Handle the OAuth callback
@@ -20,11 +19,12 @@ const AuthCallback = () => {
           // Store the access token in localStorage
           localStorage.setItem('user-auth-token', session.access_token);
           
-          // Look for returnUrl in URL or use default
-          const returnUrl = searchParams?.get("returnUrl") || "/dashboard";
+          // Get the stored returnUrl or use default
+          const returnUrl = sessionStorage.getItem('loginReturnUrl') || "/dashboard";
+          sessionStorage.removeItem('loginReturnUrl'); // Clean up
           
           // Redirect to the return URL
-          router.push(decodeURIComponent(returnUrl));
+          router.push(returnUrl);
         } else {
           // If no session found but we're on the callback page,
           // redirect to login with a message
@@ -37,7 +37,7 @@ const AuthCallback = () => {
     };
 
     handleAuthCallback();
-  }, [router, searchParams]);
+  }, [router]);
 
   // This component doesn't render anything visible
   return null;

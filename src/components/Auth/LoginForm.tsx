@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc"; // Google icon
 import { FaApple } from "react-icons/fa"; // Apple icon
 
-const LoginForm = () => {
+const LoginForm = ({ returnUrl = '/dashboard' }) => {
   const {
     email,
     password,
@@ -35,21 +35,25 @@ const LoginForm = () => {
         localStorage.setItem('user-auth-token', data.session.access_token || 'token-placeholder');
       }
       resetForm();
-      router.push("/dashboard");
+      
+      // Get the stored returnUrl (may have changed if user did OAuth)
+      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
+      sessionStorage.removeItem('loginReturnUrl'); // Clean up
+      
+      // Redirect to the return URL
+      router.push(storedReturnUrl);
     }
     setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    const { error, data } = await signInWithGoogle();
+    const { error } = await signInWithGoogle();
     if (error) {
       setError(error);
-    } else {
-      // For OAuth redirect flow, the token will be set upon return from provider
-      // We don't need to set the token here as it'll be handled by the checkSession function
-      router.push("/dashboard");
     }
+    // For OAuth, the redirect will happen automatically after auth completion
+    // The returnUrl is already saved in sessionStorage
     setLoading(false);
   };
 

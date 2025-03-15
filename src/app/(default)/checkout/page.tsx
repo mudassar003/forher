@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { countries } from "countries-list";
+import LoginButton from '@/components/Auth/LoginButton';
 
 interface ValidationErrors {
   [key: string]: string;
@@ -188,8 +189,12 @@ export default function CheckoutPage() {
               </div>
               
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm">Already have an account?</span>
-                <a href="/login" className="text-black text-sm hover:underline">Log in</a>
+                <p className="text-sm font-semibold ">Already have an account?</p>
+                <LoginButton 
+                    buttonText="Login" 
+                    className=" text-black" 
+                    // No need to specify returnUrl, it will use the current URL
+                  />
               </div>
             </div>
 

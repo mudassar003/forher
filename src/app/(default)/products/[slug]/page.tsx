@@ -4,7 +4,6 @@ import { client } from '@/sanity/lib/client'
 import { notFound } from 'next/navigation'
 import ProductClient from './ProductClient'
 import { urlFor } from '@/sanity/lib/image'
-import { Metadata } from 'next'
 
 interface Product {
   _id: string
@@ -32,32 +31,7 @@ interface RelatedProduct {
   isOnSale: boolean
 }
 
-// Updated params type for Next.js 15
 type ParamsType = Promise<{ slug: string }>;
-
-// Generate metadata for SEO - Updated for Next.js 15
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: ParamsType 
-}): Promise<Metadata> {
-  const resolvedParams = await params;
-  const product: Product | null = await getProduct(resolvedParams.slug)
-  
-  if (!product) {
-    return {
-      title: 'Product Not Found',
-    }
-  }
-  
-  return {
-    title: `${product.title} | Your Store Name`,
-    description: product.description,
-    openGraph: {
-      images: product.mainImage ? [urlFor(product.mainImage).width(1200).height(630).url()] : [],
-    },
-  }
-}
 
 async function getProduct(slug: string) {
   return client.fetch(
@@ -90,7 +64,6 @@ async function getRelatedProducts(productId: string, categoryIds: string[], limi
   )
 }
 
-// Updated for Next.js 15 - params is now a Promise
 export default async function ProductPage({ 
   params, 
   searchParams 
@@ -160,7 +133,6 @@ export default async function ProductPage({
   )
 }
 
-// Updated generateStaticParams for Next.js 15
 export async function generateStaticParams() {
   const products: { slug: { current: string } }[] = await client.fetch(
     groq`*[_type == "product"]{ slug { current } }`

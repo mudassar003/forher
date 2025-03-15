@@ -82,11 +82,42 @@ export default function SubmitStep() {
   // Group questions by their sections for better organization
   const getSectionForQuestion = (questionId: string): string => {
     const sectionMap: Record<string, string> = {
-      'treatment-interest': 'Treatment Interest',
-      'concern-duration': 'Treatment History',
-      'previous-treatments': 'Treatment History',
-      'medical-conditions': 'Medical Information'
-      // Add more mappings as you add more questions
+      // Step 1: Basic Information
+      'age-group': 'Basic Information',
+      'gender': 'Basic Information',
+      
+      // Step 2: Main Concern
+      'main-concern': 'Main Concern',
+      
+      // Step 3: Health Conditions
+      'health-conditions': 'Health Conditions',
+      
+      // Step 4: Lifestyle Assessment
+      'activity-level': 'Lifestyle Assessment',
+      'water-intake': 'Lifestyle Assessment',
+      'dietary-restrictions': 'Lifestyle Assessment',
+      'dietary-details': 'Lifestyle Assessment',
+      'stress-level': 'Lifestyle Assessment',
+      
+      // Step 5: Targeted Goals
+      'specific-goal': 'Targeted Goals',
+      'previous-treatments': 'Targeted Goals',
+      
+      // Step 6: Product Preferences
+      'open-to-oral': 'Product Preferences',
+      'open-to-topical': 'Product Preferences',
+      'product-preference': 'Product Preferences',
+      
+      // Step 7: Medical Advice
+      'willing-to-consult': 'Medical Advice',
+      
+      // Step 8: Additional Information
+      'allergies': 'Additional Information',
+      'allergy-details': 'Additional Information',
+      'share-medical-history': 'Additional Information',
+      
+      // Eligibility Confirmation
+      'proceed-with-recommendations': 'Confirmation'
     };
     
     return sectionMap[questionId] || 'Other Information';

@@ -9,31 +9,44 @@ import { supabase } from "@/lib/supabase";
 const Dashboard = () => {
   const { user } = useAuthStore();
   const [orderCount, setOrderCount] = useState(0);
+  const [customerName, setCustomerName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOrderCount = async () => {
+    const fetchUserData = async () => {
       try {
         if (!user) return;
         
+        // Fetch order count
         const { data: ordersData, error: ordersError, count } = await supabase
           .from("orders")
-          .select("id", { count: 'exact' })
-          .eq("email", user.email);
+          .select("id, customer_name", { count: 'exact' })
+          .eq("email", user.email)
+          .order("created_at", { ascending: false });
 
         if (ordersError) {
           console.error("Error fetching orders:", ordersError);
         } else {
           setOrderCount(count || ordersData.length || 0);
+          
+          // Get customer name from the most recent order
+          if (ordersData && ordersData.length > 0 && ordersData[0].customer_name) {
+            setCustomerName(ordersData[0].customer_name);
+          } else {
+            // Fallback to user metadata or email
+            setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
+          }
         }
       } catch (error) {
-        console.error("Error in order count fetch:", error);
+        console.error("Error in user data fetch:", error);
+        // Set fallback name
+        setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrderCount();
+    fetchUserData();
   }, [user]);
 
   // Placeholder stats for dashboard, but with dynamic order count
@@ -46,7 +59,9 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+          Welcome back, {loading ? "..." : customerName}!
+        </h2>
         
         {/* Quick stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -150,47 +165,7 @@ const Dashboard = () => {
         </div>
       </div>
       
-      {/* Recent activity section */}
-      {/* <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">Recent Activity</h2>
-        <div className="border-t border-gray-200">
-          <div className="py-3 flex items-center">
-            <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium">Your order #ORD12345 has shipped</p>
-              <p className="text-sm text-gray-500">Mar 14, 2025</p>
-            </div>
-          </div>
-          
-          <div className="py-3 flex items-center border-t border-gray-200">
-            <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium">Upcoming appointment: Hair Regrowth Consultation</p>
-              <p className="text-sm text-gray-500">Mar 10, 2025 10:00 AM</p>
-            </div>
-          </div>
-          
-          <div className="py-3 flex items-center border-t border-gray-200">
-            <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium">Your subscription was renewed</p>
-              <p className="text-sm text-gray-500">Mar 5, 2025</p>
-            </div>
-          </div>
-        </div>
-      </div> */}
+      {/* Recent activity section can be uncommented and integrated with real data if needed */}
     </div>
   );
 };

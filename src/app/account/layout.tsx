@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import GlobalFooter from "@/components/GlobalFooter";
 import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 // Define navigation items
 const navItems = [
@@ -24,6 +25,37 @@ const AccountHeader = () => {
   const { user, setUser } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [customerName, setCustomerName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCustomerName = async () => {
+      if (!user) return;
+
+      try {
+        // Attempt to fetch customer name from orders
+        const { data, error } = await supabase
+          .from("orders")
+          .select("customer_name")
+          .eq("email", user.email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (data && data.customer_name) {
+          setCustomerName(data.customer_name);
+        } else {
+          // Fallback to user metadata or email
+          setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || null);
+        }
+      } catch (error) {
+        console.error("Error fetching customer name:", error);
+        // Fallback to user metadata or email
+        setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || null);
+      }
+    };
+
+    fetchCustomerName();
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut();
@@ -37,9 +69,9 @@ const AccountHeader = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold">My Account</h1>
-            {user && (
+            {customerName && (
               <span className="text-sm bg-pink-100 text-pink-600 px-3 py-1 rounded-full">
-                {user.email}
+                {customerName}
               </span>
             )}
           </div>

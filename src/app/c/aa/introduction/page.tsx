@@ -1,14 +1,14 @@
-//src/app/c/hl/introduction/page.tsx
+//src/app/c/aa/introduction/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
-import  ProgressBar  from "../components/ProgressBar"; 
+import ProgressBar from "../components/ProgressBar"; 
 
 export default function StepOne() {
   const router = useRouter();
 
   const nextStep = () => {
-    router.push("/c/consultation/consult?offset=1"); // Navigate to the next step
+    router.push("/c/aa/skin?offset=1"); // Navigate to the next step
   };
 
   return (
@@ -18,9 +18,9 @@ export default function StepOne() {
 
       {/* Centered Content */}
       <div className="max-w-lg text-center mt-10">
-        <h2 className="text-3xl font-semibold text-[#fe92b5]">Start your hair loss treatment journey.</h2>
+        <h2 className="text-3xl font-semibold text-[#fe92b5]">Start your skin care journey.</h2>
         <p className="text-xl font-medium text-black mt-3">
-          Learn about treatment options based on your goals, hair type, and health history.
+          Learn about treatment options based on your goals, skin type, and health history.
         </p>
       </div>
 

@@ -1,4 +1,4 @@
-// src/app/c/hl/results/page.tsx
+// src/app/c/aa/results/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -38,19 +38,19 @@ export default function ResultsPage() {
 
   useEffect(() => {
     // Check if we have a stored ineligibility reason
-    const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
+    const storedIneligibilityReason = sessionStorage.getItem("skinIneligibilityReason");
     if (storedIneligibilityReason) {
       setIneligibilityReason(storedIneligibilityReason);
     }
     
     // Check if we already have a recommendation in localStorage
-    const savedRecommendation = localStorage.getItem('hairLossRecommendation');
+    const savedRecommendation = localStorage.getItem('skinRecommendation');
     
     const fetchData = async () => {
       try {
-        // Fetch all hair loss products regardless of recommendation
+        // Fetch all skin products regardless of recommendation
         const products: Product[] = await client.fetch(`
-          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="hair-loss"]._id)] {
+          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="skin-care"]._id)] {
             _id, title, slug, price, description, mainImage, productType, administrationType
           }
         `);
@@ -78,17 +78,17 @@ export default function ResultsPage() {
         }
         
         // Otherwise, get form responses and call the API
-        const storedResponses = sessionStorage.getItem("finalHairLossResponses");
+        const storedResponses = sessionStorage.getItem("finalSkinResponses");
         
         if (!storedResponses) {
-          router.push("/c/hl");
+          router.push("/c/aa");
           return;
         }
         
         const responses = JSON.parse(storedResponses);
         
         // Call the API to get recommendations
-        const response = await fetch('/api/hl-recommendations', {
+        const response = await fetch('/api/aa-recommendations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ export default function ResultsPage() {
         // Check if the response is a string (explanation) or an object
         if (typeof data === 'string' || (data && !data.hasOwnProperty('eligible'))) {
           // If it's just text, create a structured object
-          const explanation = typeof data === 'string' ? data : data.explanation || "Based on your responses, we cannot recommend our hair loss medications at this time.";
+          const explanation = typeof data === 'string' ? data : data.explanation || "Based on your responses, we cannot recommend our skin care products at this time.";
           
           parsedRecommendation = {
             eligible: false,
@@ -132,7 +132,7 @@ export default function ResultsPage() {
         }
         
         // Save the recommendation to localStorage for persistence
-        localStorage.setItem('hairLossRecommendation', JSON.stringify(parsedRecommendation));
+        localStorage.setItem('skinRecommendation', JSON.stringify(parsedRecommendation));
         
         setRecommendation(parsedRecommendation);
       } catch (error) {
@@ -148,11 +148,11 @@ export default function ResultsPage() {
 
   // Function to clear recommendation and start over
   const startOver = () => {
-    localStorage.removeItem('hairLossRecommendation');
-    sessionStorage.removeItem('finalHairLossResponses');
-    sessionStorage.removeItem('hairLossResponses');
-    sessionStorage.removeItem('ineligibilityReason');
-    router.push("/c/hl");
+    localStorage.removeItem('skinRecommendation');
+    sessionStorage.removeItem('finalSkinResponses');
+    sessionStorage.removeItem('skinResponses');
+    sessionStorage.removeItem('skinIneligibilityReason');
+    router.push("/c/aa");
   };
 
   if (isLoading) {
@@ -178,7 +178,7 @@ export default function ResultsPage() {
             <h2 className="text-3xl font-semibold text-[#fe92b5] mb-6">Oops! Something went wrong</h2>
             <p className="text-xl mb-8">{error}</p>
             <button 
-              onClick={() => router.push("/c/hl/submit")}
+              onClick={() => router.push("/c/aa/submit")}
               className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-gray-900"
             >
               Try Again
@@ -291,7 +291,7 @@ export default function ResultsPage() {
               
               <div className="p-6">
                 <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                  <p className="text-lg leading-relaxed">{recommendation?.explanation || "Based on your responses, we recommend consulting with a healthcare provider before pursuing hair loss medication. Your health is our priority."}</p>
+                  <p className="text-lg leading-relaxed">{recommendation?.explanation || "Based on your responses, we recommend consulting with a healthcare provider before pursuing skin treatments. Your health is our priority."}</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -315,8 +315,8 @@ export default function ResultsPage() {
         
         {/* Browse Other Products Section */}
         <section>
-          <h2 className="text-3xl font-semibold text-gray-800 mb-6">Hair Loss Products</h2>
-          <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of physician-formulated hair loss treatments designed to help you restore and maintain your hair.</p>
+          <h2 className="text-3xl font-semibold text-gray-800 mb-6">Skin Care Products</h2>
+          <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of physician-formulated skin care treatments designed to help you achieve healthy, radiant skin.</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {allProducts.slice(0, 8).map((product: Product) => (

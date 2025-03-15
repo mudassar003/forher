@@ -1,8 +1,8 @@
-// src/app/api/recommendations/route.ts
+// src/app/api/aa-recommendations/route.ts
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { client } from '@/sanity/lib/client';
-import { checkEligibility, calculateBMI } from '@/app/c/wm/lose-weight/data/questions';
+import { checkEligibility } from '@/app/c/aa/skin/data/questions';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -19,7 +19,7 @@ interface Product {
   description: string;
   mainImage?: any;
   productType?: string; // OTC or prescription
-  administrationType?: string; // oral or injectable
+  administrationType?: string; // oral or topical
 }
 
 interface ProductScore {
@@ -44,14 +44,14 @@ export async function POST(request: Request) {
       });
     }
     
-    // User is eligible, fetch weight loss products from Sanity
+    // User is eligible, fetch skin care products from Sanity
     const products = await fetchProducts();
     
     if (!products || products.length === 0) {
       return NextResponse.json({
         eligible: true,
         recommendedProductId: null,
-        explanation: "No weight loss products are currently available. Please check back later."
+        explanation: "No skin care products are currently available. Please check back later."
       });
     }
     
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
           messages: [
             {
               role: "system",
-              content: "You are a helpful weight loss consultant. Provide a personalized, encouraging explanation for why a specific weight loss product is recommended based on the user's assessment responses."
+              content: "You are a helpful skincare consultant. Provide a personalized, encouraging explanation for why a specific skin care product is recommended based on the user's assessment responses."
             },
             {
               role: "user",
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
 async function fetchProducts(): Promise<Product[]> {
   try {
     return await client.fetch(`
-      *[_type == "product" && references(*[_type=="productCategory" && slug.current=="weight-loss"]._id)] {
+      *[_type == "product" && references(*[_type=="productCategory" && slug.current=="skin-care"]._id)] {
         _id,
         title,
         slug,
@@ -140,11 +140,11 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
   }
   
   // Filter by administration type preference
-  if (responses['medication-type'] === 'injections') {
+  if (responses['application-type'] === 'topical') {
     filteredProducts = filteredProducts.filter(product => 
-      product.administrationType === 'injectable' || !product.administrationType
+      product.administrationType === 'topical' || !product.administrationType
     );
-  } else if (responses['medication-type'] === 'oral') {
+  } else if (responses['application-type'] === 'oral') {
     filteredProducts = filteredProducts.filter(product => 
       product.administrationType === 'oral' || !product.administrationType
     );
@@ -160,114 +160,67 @@ function findBestProductMatch(responses: Record<string, any>, products: Product[
     let score = 0;
     let reasons: string[] = [];
     
-    // Calculate BMI if height and weight provided
-    let bmi = null;
-    if (responses['current-weight'] && responses['height']) {
-      bmi = calculateBMI(responses['current-weight'], responses['height']);
-    }
-    
-    // Score based on medical conditions
-    if (Array.isArray(responses['medical-conditions'])) {
-      // Type 2 Diabetes
-      if (responses['medical-conditions'].includes('type2-diabetes') && 
-          product.title.toLowerCase().includes('semaglutide')) {
-        score += 10;
-        reasons.push("Semaglutide has shown benefits for people with Type 2 Diabetes");
-      }
-      
-      // PCOS
-      if (responses['medical-conditions'].includes('pcos') && 
-          (product.title.toLowerCase().includes('metformin') || 
-           product.title.toLowerCase().includes('spironolactone'))) {
-        score += 10;
-        reasons.push("This medication can help address hormonal aspects of PCOS");
-      }
-      
-      // Depression/Anxiety
-      if (responses['medical-conditions'].includes('depression-anxiety') && 
-          product.title.toLowerCase().includes('bupropion')) {
-        score += 10;
-        reasons.push("Bupropion can help address mood while supporting weight loss");
-      }
-    }
-    
-    // Score based on eating habits
-    if (responses['eating-habits'] === 'portion-control' && 
-        (product.title.toLowerCase().includes('semaglutide') || 
-         product.title.toLowerCase().includes('tirzepatide'))) {
-      score += 8;
-      reasons.push("This medication helps with portion control by increasing feelings of fullness");
-    }
-    
-    if (responses['eating-habits'] === 'sugar-carbs' && 
-        (product.title.toLowerCase().includes('metformin') || 
-         product.title.toLowerCase().includes('orlistat'))) {
-      score += 8;
-      reasons.push("This medication can help manage carbohydrate metabolism and cravings");
-    }
-    
-    if (responses['eating-habits'] === 'emotional-eating' && 
-        product.title.toLowerCase().includes('bupropion')) {
+    // Score based on skin concern
+    if (responses['skin-concern'] === 'acne' && 
+        (product.title.toLowerCase().includes('acne') || 
+         product.title.toLowerCase().includes('clear') ||
+         product.title.toLowerCase().includes('blemish'))) {
       score += 10;
-      reasons.push("This medication can help address the emotional aspects of eating while supporting weight loss");
+      reasons.push("This product is specifically formulated to target acne and breakouts");
     }
     
-    // Score based on cravings
-    if (responses['cravings'] === 'frequent-cravings' && 
-        (product.title.toLowerCase().includes('phentermine') || 
-         product.title.toLowerCase().includes('topiramate'))) {
-      score += 8;
-      reasons.push("This medication helps reduce appetite and cravings");
+    if (responses['skin-concern'] === 'aging' && 
+        (product.title.toLowerCase().includes('anti-aging') || 
+         product.title.toLowerCase().includes('wrinkle') ||
+         product.title.toLowerCase().includes('retinol'))) {
+      score += 10;
+      reasons.push("This product contains ingredients that help reduce fine lines and wrinkles");
     }
     
-    // Score based on metabolism
-    if (responses['metabolism'] === 'slow' && 
-        product.title.toLowerCase().includes('phentermine')) {
+    if (responses['skin-concern'] === 'dark-spots' && 
+        (product.title.toLowerCase().includes('brightening') || 
+         product.title.toLowerCase().includes('vitamin c') ||
+         product.title.toLowerCase().includes('hyperpigmentation'))) {
+      score += 10;
+      reasons.push("This product helps fade dark spots and even out skin tone");
+    }
+    
+    if (responses['skin-concern'] === 'dryness' && 
+        (product.title.toLowerCase().includes('hydrating') || 
+         product.title.toLowerCase().includes('moisturizing') ||
+         product.title.toLowerCase().includes('hyaluronic'))) {
+      score += 10;
+      reasons.push("This product provides deep hydration for dry, flaky skin");
+    }
+    
+    if (responses['skin-concern'] === 'redness' && 
+        (product.title.toLowerCase().includes('calming') || 
+         product.title.toLowerCase().includes('soothing') ||
+         product.title.toLowerCase().includes('redness'))) {
+      score += 10;
+      reasons.push("This product helps reduce redness and inflammation");
+    }
+    
+    if (responses['skin-concern'] === 'oiliness' && 
+        (product.title.toLowerCase().includes('oil control') || 
+         product.title.toLowerCase().includes('mattifying') ||
+         product.title.toLowerCase().includes('balancing'))) {
+      score += 10;
+      reasons.push("This product helps control excess oil while maintaining skin balance");
+    }
+    
+    // Score based on duration of concern
+    if (responses['concern-duration'] === 'more-than-year' && 
+        (product.title.toLowerCase().includes('intensive') || 
+         product.title.toLowerCase().includes('advanced'))) {
       score += 5;
-      reasons.push("This medication can help boost metabolism");
-    }
-    
-    // Score based on stress
-    if (responses['stress-levels'] === 'high' && 
-        product.title.toLowerCase().includes('bupropion')) {
-      score += 5;
-      reasons.push("This medication can help manage stress-related eating");
-    }
-    
-    // Score based on previous experience with medications
-    if (Array.isArray(responses['previous-medications'])) {
-      for (const med of responses['previous-medications']) {
-        if (product.title.toLowerCase().includes(med.toLowerCase())) {
-          // They've used it before - could be positive or negative
-          if (responses['previous-weight-loss'] === 'worked-temporarily') {
-            score += 5;
-            reasons.push("You've had some success with this medication before");
-          } else if (responses['previous-weight-loss'] === 'didnt-work') {
-            score -= 5; // Reduce score if it didn't work for them
-          }
-        }
-      }
-    }
-    
-    // Score based on BMI
-    if (bmi !== null) {
-      if (bmi >= 30 && 
-          (product.title.toLowerCase().includes('semaglutide') || 
-           product.title.toLowerCase().includes('tirzepatide'))) {
-        score += 10;
-        reasons.push("This medication is particularly effective for higher BMI levels");
-      } else if (bmi >= 25 && bmi < 30 && 
-                (product.title.toLowerCase().includes('phentermine') || 
-                 product.title.toLowerCase().includes('orlistat'))) {
-        score += 5;
-        reasons.push("This medication is appropriate for your BMI range");
-      }
+      reasons.push("This intensive formula is designed for persistent skin concerns");
     }
     
     // If we have reasons, create a combined reason string
     let reason = reasons.length > 0
       ? "Based on your assessment, " + product.title + " is recommended because: " + reasons.join(". ") + "."
-      : `${product.title} provides comprehensive support for your weight loss journey based on your goals and current health status.`;
+      : `${product.title} provides comprehensive support for your skin care needs based on your goals and current skin condition.`;
     
     // If no specific matches found, give a small default score
     if (score === 0) {

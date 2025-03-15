@@ -1,4 +1,4 @@
-//src/app/c/hl/hair-loss/types/index.ts
+//src/app/c/aa/skin/types/index.ts
 
 // Question option type
 export interface QuestionOption {

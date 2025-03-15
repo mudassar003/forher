@@ -1,10 +1,10 @@
-//src/app/c/hl/components/StepLayout.tsx
+//src/app/c/aa/components/StepLayout.tsx
 "use client";
 
 import { useEffect } from "react";
 import ProgressBar from "./ProgressBar";
 import { useRouter, usePathname } from "next/navigation";
-import { useHLFormStore, HL_FORM_STEPS, getNextStep } from "@/store/aaFormStore";
+import { useAAFormStore, AA_FORM_STEPS, getNextStep } from "@/store/aaFormStore";
 
 interface StepLayoutProps {
   children: React.ReactNode;
@@ -20,15 +20,15 @@ export default function StepLayout({ children }: StepLayoutProps) {
     completedSteps, 
     setCurrentStep, 
     markStepCompleted 
-  } = useHLFormStore();
+  } = useAAFormStore();
 
   // Calculate progress
-  const currentStepIndex = HL_FORM_STEPS.indexOf(pathname);
-  const progressPercentage = ((currentStepIndex + 1) / HL_FORM_STEPS.length) * 100;
+  const currentStepIndex = AA_FORM_STEPS.indexOf(pathname);
+  const progressPercentage = ((currentStepIndex + 1) / AA_FORM_STEPS.length) * 100;
 
   // Update current step in the store when pathname changes
   useEffect(() => {
-    if (pathname && HL_FORM_STEPS.includes(pathname)) {
+    if (pathname && AA_FORM_STEPS.includes(pathname)) {
       setCurrentStep(pathname);
     }
   }, [pathname, setCurrentStep]);

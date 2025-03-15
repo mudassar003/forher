@@ -1,4 +1,4 @@
-//src/app/c/hl/hair-loss/components/QuestionTypes/index.tsx
+//src/app/c/aa/skin/components/QuestionTypes/index.tsx
 import React, { useState } from "react";
 import { 
   Question, 

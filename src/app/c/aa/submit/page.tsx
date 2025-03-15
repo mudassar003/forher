@@ -1,11 +1,11 @@
-// src/app/c/hl/submit/page.tsx
+// src/app/c/aa/submit/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useHLFormStore } from "@/store/hlFormStore";
-import ProgressBar from "@/app/c/consultation/components/ProgressBar";
-import { hairLossQuestions, checkEligibility } from "../skin/data/questions";
+import { useAAFormStore } from "@/store/aaFormStore";
+import ProgressBar from "@/app/c/aa/components/ProgressBar";
+import { skinQuestions, checkEligibility } from "../skin/data/questions";
 import { 
   FormResponse, 
   QuestionType, 
@@ -15,27 +15,33 @@ import {
 
 export default function SubmitStep() {
   const router = useRouter();
-  const { markStepCompleted } = useHLFormStore();
+  const { markStepCompleted } = useAAFormStore();
   const [responses, setResponses] = useState<FormResponse>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
+  const [skinType, setSkinType] = useState<string | null>(null);
 
   // Load responses from sessionStorage on component mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
         // Check if there's an ineligibility reason stored
-        const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
+        const storedIneligibilityReason = sessionStorage.getItem("skinIneligibilityReason");
         if (storedIneligibilityReason) {
           setIneligibilityReason(storedIneligibilityReason);
         }
         
         // Load responses
-        const storedResponses = sessionStorage.getItem("hairLossResponses");
+        const storedResponses = sessionStorage.getItem("skinResponses");
         if (storedResponses) {
           const parsedResponses = JSON.parse(storedResponses);
           setResponses(parsedResponses);
+          
+          // Set skin type if available
+          if (parsedResponses['skin-type']) {
+            setSkinType(parsedResponses['skin-type'] as string);
+          }
           
           // Check eligibility based on all responses
           const eligibility = checkEligibility(parsedResponses);
@@ -55,7 +61,7 @@ export default function SubmitStep() {
 
   // Gets the label for a given option ID for a specific question
   const getOptionLabel = (questionId: string, optionId: string | string[]) => {
-    const question = hairLossQuestions.find(q => q.id === questionId);
+    const question = skinQuestions.find(q => q.id === questionId);
     if (!question) return "Not specified";
 
     // Check if the question type has options (single-select or multi-select)
@@ -82,8 +88,20 @@ export default function SubmitStep() {
   // Group questions by their sections for better organization
   const getSectionForQuestion = (questionId: string): string => {
     const sectionMap: Record<string, string> = {
-      'hair-loss-pattern': 'Hair Loss Assessment',
-      'hair-loss-duration': 'Hair Loss Assessment'
+      'skin-concern': 'Skin Concerns',
+      'concern-duration': 'Skin Concerns',
+      'skin-type': 'Skin Type & Conditions',
+      'sensitivities': 'Skin Type & Conditions',
+      'allergies': 'Skin Type & Conditions',
+      'current-products': 'Current Routine',
+      'current-regimen': 'Current Routine',
+      'medical-conditions': 'Medical History',
+      'prescription-medications': 'Medical History',
+      'medical-history': 'Medical History',
+      'previous-treatments': 'Treatment History',
+      'product-results': 'Treatment History',
+      'prescription-preference': 'Product Preference',
+      'application-type': 'Product Preference'
       // Add more mappings as you add more questions
     };
     
@@ -95,7 +113,7 @@ export default function SubmitStep() {
     const grouped: Record<string, any[]> = {};
     
     // Get questions that have responses
-    const respondedQuestions = hairLossQuestions.filter(q => 
+    const respondedQuestions = skinQuestions.filter(q => 
       responses[q.id] !== undefined
     );
     
@@ -117,18 +135,18 @@ export default function SubmitStep() {
     
     try {
       // Mark this step as completed
-      markStepCompleted("/c/hl/submit");
+      markStepCompleted("/c/aa/submit");
       
       // Store the responses for the results page
-      sessionStorage.setItem("finalHairLossResponses", JSON.stringify(responses));
+      sessionStorage.setItem("finalSkinResponses", JSON.stringify(responses));
       
       // If we have an ineligibility reason, make sure it's also stored
       if (ineligibilityReason) {
-        sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
+        sessionStorage.setItem("skinIneligibilityReason", ineligibilityReason);
       }
       
       // Navigate to results page
-      router.push("/c/hl/results");
+      router.push("/c/aa/results");
     } catch (error) {
       console.error("Error submitting form:", error);
       setIsProcessing(false);
@@ -150,12 +168,22 @@ export default function SubmitStep() {
       <ProgressBar progress={100} />
       
       <h2 className="text-3xl font-semibold text-[#fe92b5] mt-8">
-        Review Your Hair Loss Assessment
+        Review Your Skin Assessment
       </h2>
       
       <p className="text-xl font-medium text-black mt-3 mb-8">
         You've made it to the final step. Please review your responses before submitting.
       </p>
+
+      {/* Display skin type information if available */}
+      {skinType && (
+        <div className="w-full max-w-2xl p-5 mb-6 rounded-lg bg-blue-50">
+          <h3 className="text-lg font-semibold">Your Skin Type: {getOptionLabel('skin-type', skinType)}</h3>
+          <p className="mt-1">
+            Our recommendations will be tailored to address your specific skin type and concerns.
+          </p>
+        </div>
+      )}
 
       {/* Display ineligibility warning if applicable */}
       {ineligibilityReason && (

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMHFormStore } from "@/store/mhFormStore";
 import ProgressBar from "@/app/c/mh/components/ProgressBar";
-import { mentalHealthQuestions, checkEligibility } from "../anxiety/data/questions";
+import { anxietyQuestions, checkEligibility, assessAnxietySeverity } from "../anxiety/data/questions";
 import { 
   FormResponse, 
   QuestionType, 
@@ -20,6 +20,7 @@ export default function SubmitStep() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
+  const [anxietySeverity, setAnxietySeverity] = useState<string | null>(null);
 
   // Load responses from sessionStorage on component mount
   useEffect(() => {
@@ -32,10 +33,14 @@ export default function SubmitStep() {
         }
         
         // Load responses
-        const storedResponses = sessionStorage.getItem("mentalHealthResponses");
+        const storedResponses = sessionStorage.getItem("anxietyResponses");
         if (storedResponses) {
           const parsedResponses = JSON.parse(storedResponses);
           setResponses(parsedResponses);
+          
+          // Calculate anxiety severity based on responses
+          const severity = assessAnxietySeverity(parsedResponses);
+          setAnxietySeverity(severity);
           
           // Check eligibility based on all responses
           const eligibility = checkEligibility(parsedResponses);
@@ -55,7 +60,7 @@ export default function SubmitStep() {
 
   // Gets the label for a given option ID for a specific question
   const getOptionLabel = (questionId: string, optionId: string | string[]) => {
-    const question = mentalHealthQuestions.find(q => q.id === questionId);
+    const question = anxietyQuestions.find(q => q.id === questionId);
     if (!question) return "Not specified";
 
     // Check if the question type has options (single-select or multi-select)
@@ -113,7 +118,7 @@ export default function SubmitStep() {
     const grouped: Record<string, any[]> = {};
     
     // Get questions that have responses
-    const respondedQuestions = mentalHealthQuestions.filter(q => 
+    const respondedQuestions = anxietyQuestions.filter(q => 
       responses[q.id] !== undefined
     );
     
@@ -138,7 +143,7 @@ export default function SubmitStep() {
       markStepCompleted("/c/mh/submit");
       
       // Store the responses for the results page
-      sessionStorage.setItem("finalMentalHealthResponses", JSON.stringify(responses));
+      sessionStorage.setItem("finalAnxietyResponses", JSON.stringify(responses));
       
       // If we have an ineligibility reason, make sure it's also stored
       if (ineligibilityReason) {
@@ -174,6 +179,27 @@ export default function SubmitStep() {
       <p className="text-xl font-medium text-black mt-3 mb-8">
         You've made it to the final step. Please review your responses before submitting.
       </p>
+
+      {/* Display anxiety severity information if available */}
+      {anxietySeverity !== null && (
+        <div className={`w-full max-w-2xl p-5 mb-6 rounded-lg ${
+          anxietySeverity === 'Mild' ? 'bg-green-100' : 
+          anxietySeverity === 'Moderate' ? 'bg-yellow-100' : 
+          anxietySeverity === 'Moderate to Severe' ? 'bg-orange-100' : 
+          'bg-red-100'
+        }`}>
+          <h3 className="text-lg font-semibold">Your Anxiety Level: {anxietySeverity}</h3>
+          <p className="mt-1">
+            {anxietySeverity === 'Mild' ? 
+              'Your symptoms appear to be manageable with minimal impact on daily life.' : 
+             anxietySeverity === 'Moderate' ? 
+              'Your symptoms are having a noticeable impact on your daily functioning.' : 
+             anxietySeverity === 'Moderate to Severe' ? 
+              'Your symptoms are significantly impacting multiple areas of your life.' : 
+              'Your symptoms are having a substantial impact on your daily functioning and wellbeing.'}
+          </p>
+        </div>
+      )}
 
       {/* Display ineligibility warning if applicable */}
       {ineligibilityReason && (

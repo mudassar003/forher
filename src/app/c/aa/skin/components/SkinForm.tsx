@@ -1,15 +1,15 @@
-//src/app/c/hl/hair-loss/components/HairLossForm.tsx
+//src/app/c/aa/skin/components/SkinForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useHLFormStore } from "@/store/aaFormStore";
+import { useAAFormStore } from "@/store/aaFormStore";
 import ProgressBar from "@/app/c/aa/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
-import { hairLossQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
+import { skinQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
 import { FormResponse } from "../types";
 
-export default function HairLossForm() {
+export default function SkinForm() {
   const router = useRouter();
   const pathname = "/c/aa/skin";
   
@@ -33,13 +33,13 @@ export default function HairLossForm() {
     formData,
     markStepCompleted,
     setStepOffset
-  } = useHLFormStore();
+  } = useAAFormStore();
   
   // Form state for responses
   const [responses, setResponses] = useState<FormResponse>({});
   
   // Filter questions based on conditional display
-  const filteredQuestions = hairLossQuestions.filter(question => {
+  const filteredQuestions = skinQuestions.filter(question => {
     if (!question.conditionalDisplay) return true;
     return question.conditionalDisplay(responses);
   });
@@ -64,7 +64,7 @@ export default function HairLossForm() {
     // Only run in browser environment
     if (typeof window !== 'undefined') {
       try {
-        const storedResponses = sessionStorage.getItem("hairLossResponses");
+        const storedResponses = sessionStorage.getItem("skinResponses");
         if (storedResponses) {
           setResponses(JSON.parse(storedResponses));
         }
@@ -103,7 +103,7 @@ export default function HairLossForm() {
       
       // Store responses in sessionStorage
       try {
-        sessionStorage.setItem("hairLossResponses", JSON.stringify(responses));
+        sessionStorage.setItem("skinResponses", JSON.stringify(responses));
       } catch (error) {
         console.error("Error storing responses:", error);
       }
@@ -120,7 +120,7 @@ export default function HairLossForm() {
     // If user is ineligible, redirect to a dedicated ineligible page
     if (ineligibilityReason) {
       // Store the ineligibility reason for the results page
-      sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
+      sessionStorage.setItem("skinIneligibilityReason", ineligibilityReason);
       
       // Mark step as completed
       markStepCompleted(pathname);

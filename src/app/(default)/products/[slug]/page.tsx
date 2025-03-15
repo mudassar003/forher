@@ -32,6 +32,7 @@ interface RelatedProduct {
 }
 
 type ParamsType = Promise<{ slug: string }>;
+type SearchParamsType = Promise<Record<string, string | string[] | undefined>>;
 
 async function getProduct(slug: string) {
   return client.fetch(
@@ -69,10 +70,14 @@ export default async function ProductPage({
   searchParams 
 }: { 
   params: ParamsType,
-  searchParams?: Record<string, string | string[] | undefined>
+  searchParams?: SearchParamsType
 }) {
   const resolvedParams = await params;
   const { slug } = resolvedParams;
+  
+  // Resolve searchParams if needed
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  
   const product: Product | null = await getProduct(slug)
   
   if (!product) {

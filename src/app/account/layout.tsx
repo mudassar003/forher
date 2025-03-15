@@ -28,7 +28,7 @@ const AccountHeader = () => {
   const handleLogout = async () => {
     await signOut();
     setUser(null);
-    router.push("/login");
+    router.push("/");
   };
 
   return (

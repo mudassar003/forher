@@ -3,13 +3,42 @@
 
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const Dashboard = () => {
   const { user } = useAuthStore();
+  const [orderCount, setOrderCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Placeholder stats for dashboard
+  useEffect(() => {
+    const fetchOrderCount = async () => {
+      try {
+        if (!user) return;
+        
+        const { data: ordersData, error: ordersError, count } = await supabase
+          .from("orders")
+          .select("id", { count: 'exact' })
+          .eq("email", user.email);
+
+        if (ordersError) {
+          console.error("Error fetching orders:", ordersError);
+        } else {
+          setOrderCount(count || ordersData.length || 0);
+        }
+      } catch (error) {
+        console.error("Error in order count fetch:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrderCount();
+  }, [user]);
+
+  // Placeholder stats for dashboard, but with dynamic order count
   const stats = [
-    { label: "Orders", value: "3", icon: "📦" },
+    { label: "Orders", value: loading ? "..." : orderCount.toString(), icon: "📦" },
     { label: "Appointments", value: "2", icon: "📅" },
     { label: "Active Subscriptions", value: "1", icon: "🔄" },
   ];
@@ -122,7 +151,7 @@ const Dashboard = () => {
       </div>
       
       {/* Recent activity section */}
-      <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
+      {/* <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">Recent Activity</h2>
         <div className="border-t border-gray-200">
           <div className="py-3 flex items-center">
@@ -161,7 +190,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

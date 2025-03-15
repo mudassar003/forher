@@ -17,7 +17,8 @@ const LoginFormLoading = () => (
   </div>
 );
 
-const LoginPage = () => {
+// Component that uses useSearchParams
+const LoginWithParams = () => {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/dashboard'; // Default to dashboard
 
@@ -28,10 +29,15 @@ const LoginPage = () => {
     }
   }, [returnUrl]);
 
+  return <LoginForm returnUrl={returnUrl} />;
+};
+
+// Main page component
+const LoginPage = () => {
   return (
     <AuthLayout title="Welcome back">
       <Suspense fallback={<LoginFormLoading />}>
-        <LoginForm returnUrl={returnUrl} />
+        <LoginWithParams />
       </Suspense>
     </AuthLayout>
   );

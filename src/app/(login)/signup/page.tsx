@@ -17,7 +17,8 @@ const SignupFormLoading = () => (
   </div>
 );
 
-const SignupPage = () => {
+// Component that uses useSearchParams
+const SignupWithParams = () => {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/dashboard'; // Default to dashboard
 
@@ -28,10 +29,15 @@ const SignupPage = () => {
     }
   }, [returnUrl]);
 
+  return <SignupForm returnUrl={returnUrl} />;
+};
+
+// Main page component
+const SignupPage = () => {
   return (
     <AuthLayout title="Let's get your account set up">
       <Suspense fallback={<SignupFormLoading />}>
-        <SignupForm returnUrl={returnUrl} />
+        <SignupWithParams />
       </Suspense>
     </AuthLayout>
   );

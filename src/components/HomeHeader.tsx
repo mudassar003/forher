@@ -104,6 +104,19 @@ const HomeHeader = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, [isMenuOpen]);
 
+  // Prevent body scrolling when menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
   return (
     <header
       className={`sticky top-0 z-50 transition-colors duration-300 ${
@@ -113,6 +126,15 @@ const HomeHeader = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between py-4">
+          {/* Mobile Menu Button - Moved to left */}
+          <button 
+            className="md:hidden text-black focus:outline-none" 
+            onClick={toggleMenu}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMenuOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}
+          </button>
+
           {/* Logo */}
           <Link href="/" className="text-3xl md:text-4xl font-semibold text-black">
             Direct2Her
@@ -159,55 +181,103 @@ const HomeHeader = () => {
                 </span>
               )}
             </Link>
-
-            {/* Mobile Menu Button */}
-            <button 
-              className="md:hidden text-black focus:outline-none" 
-              onClick={toggleMenu}
-              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            >
-              {isMenuOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <div
-        className={`md:hidden absolute top-full left-0 right-0 transition-transform duration-300 ease-in-out transform ${
-          isMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
+      {/* Mobile Menu - Modified to slide from left */}
+      <div 
+        className={`md:hidden fixed top-0 left-0 h-full w-3/4 max-w-xs z-50 shadow-lg transition-transform duration-300 ease-in-out transform ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ backgroundColor: headerBg }}
       >
-        <div className="px-4 pt-2 pb-4 shadow-lg">
-          <nav className="flex flex-col space-y-4">
-            <Link href="/" className="text-lg font-normal text-gray-800 hover:text-black py-2 border-b border-gray-100">
-              Home
+        <div className="flex flex-col h-full">
+          {/* Menu Header with Close Button */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <Link href="/" className="text-2xl font-semibold text-black">
+              Direct2Her
             </Link>
-            <Link href="#" className="text-lg font-normal text-gray-800 hover:text-black py-2 border-b border-gray-100">
-              Weight Loss
-            </Link>
-            <Link href="#" className="text-lg font-normal text-gray-800 hover:text-black py-2 border-b border-gray-100">
-              Mental Health
-            </Link>
-            <Link href="#" className="text-lg font-normal text-gray-800 hover:text-black py-2 border-b border-gray-100">
-              Hair Regrowth
-            </Link>
-            <Link href="/products" className="text-lg font-normal text-gray-800 hover:text-black py-2 border-b border-gray-100">
-              Products
-            </Link>
-            <Link href="/studio" className="text-lg font-normal text-gray-800 hover:text-black py-2 border-b border-gray-100">
-              Studio
-            </Link>
-            <Link href={user ? "/account" : "/login"} className="py-2">
+            <button 
+              className="text-black focus:outline-none" 
+              onClick={toggleMenu}
+              aria-label="Close menu"
+            >
+              <FiX className="text-2xl" />
+            </button>
+          </div>
+          
+          {/* Navigation Links */}
+          <div className="flex-grow overflow-y-auto px-4 py-2">
+            <nav className="flex flex-col space-y-4">
+              <Link 
+                href="/" 
+                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link 
+                href="#" 
+                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Weight Loss
+              </Link>
+              <Link 
+                href="#" 
+                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Mental Health
+              </Link>
+              <Link 
+                href="#" 
+                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Hair Regrowth
+              </Link>
+              <Link 
+                href="/products" 
+                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Products
+              </Link>
+              <Link 
+                href="/studio" 
+                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Studio
+              </Link>
+            </nav>
+          </div>
+          
+          {/* User Account Button at Bottom */}
+          <div className="p-4 border-t border-gray-200">
+            <Link 
+              href={user ? "/account" : "/login"} 
+              className="block"
+              onClick={() => setIsMenuOpen(false)}
+            >
               <button className="w-full flex items-center justify-center bg-black text-white px-5 py-3 rounded-full shadow-sm hover:bg-gray-800 transition">
                 <FiUser className="mr-2" />
                 <span>{user ? "My Account" : "Login / Sign Up"}</span>
               </button>
             </Link>
-          </nav>
+          </div>
         </div>
       </div>
+      
+      {/* Overlay when menu is open */}
+      {isMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
     </header>
   );
 };

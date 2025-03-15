@@ -1,4 +1,4 @@
-// src/app/products/[slug]/page.tsx
+// src/app/(default)/products/[slug]/page.tsx
 import { groq } from 'next-sanity'
 import { client } from '@/sanity/lib/client'
 import { notFound } from 'next/navigation'
@@ -30,14 +30,6 @@ interface RelatedProduct {
   price: number
   compareAtPrice?: number
   isOnSale: boolean
-}
-
-// Updated type definition to match Next.js's PageProps
-type ProductPageProps = {
-  params: {
-    slug: string
-  }
-  searchParams?: Record<string, string | string[] | undefined>
 }
 
 // Generate metadata for SEO
@@ -94,7 +86,14 @@ async function getRelatedProducts(productId: string, categoryIds: string[], limi
   )
 }
 
-export default async function ProductPage({ params, searchParams }: ProductPageProps) {
+// Updated to use the correct type pattern for Next.js App Router
+export default async function ProductPage({ 
+  params, 
+  searchParams 
+}: { 
+  params: { slug: string },
+  searchParams?: Record<string, string | string[] | undefined>
+}) {
   const { slug } = params
   const product: Product | null = await getProduct(slug)
   

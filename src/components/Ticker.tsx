@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, JSX } from "react";
@@ -40,15 +39,27 @@ export default function Ticker() {
     return () => window.removeEventListener("resize", updateDuration);
   }, []);
 
+  // Brand colors
+  const primaryColor = "#fe92b5";
+  const accentColor = "#f96897";
+  const darkAccentColor = "#fc4e87";
+  const lightBgColor = "#fff8fa"; // Light pink background that complements brand colors
+
   return (
     <div
-      className="relative w-full overflow-hidden bg-[#EBF3ED] py-2 flex items-center opacity-0 animate-fade-in"
+      className="relative w-full overflow-hidden py-2 flex items-center opacity-0 animate-fade-in"
+      style={{ backgroundColor: lightBgColor }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
-      <div className="relative z-10 bg-[#EBF3ED] px-4 whitespace-nowrap text-black">Why Direct2Her?</div>
+      <div 
+        className="relative z-10 px-4 whitespace-nowrap font-medium"
+        style={{ backgroundColor: lightBgColor, color: darkAccentColor }}
+      >
+        Why Direct2Her?
+      </div>
       <div className="w-full overflow-hidden relative">
         <div
           className="flex space-x-36"
@@ -58,10 +69,11 @@ export default function Ticker() {
             whiteSpace: 'nowrap',
           }}
         >
-          {[...tickerItems, ...tickerItems].map((item, index) => (
-            <div key={index} className="flex items-center space-x-2 text-black text-sm font-normal">
-              <span className="text-lg">{item.icon}</span>
-              <span>{item.text}</span>
+          {/* Triple the items to ensure smooth looping */}
+          {[...tickerItems, ...tickerItems, ...tickerItems].map((item, index) => (
+            <div key={index} className="flex items-center space-x-2 text-sm font-normal">
+              <span className="text-lg" style={{ color: accentColor }}>{item.icon}</span>
+              <span style={{ color: "#333" }}>{item.text}</span>
             </div>
           ))}
         </div>
@@ -73,7 +85,7 @@ export default function Ticker() {
             transform: translateX(0%);
           }
           to {
-            transform: translateX(-30%);
+            transform: translateX(-50%);
           }
         }
 

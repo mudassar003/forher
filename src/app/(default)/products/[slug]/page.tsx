@@ -32,13 +32,17 @@ interface RelatedProduct {
   isOnSale: boolean
 }
 
-// Generate metadata for SEO
+// Updated params type for Next.js 15
+type ParamsType = Promise<{ slug: string }>;
+
+// Generate metadata for SEO - Updated for Next.js 15
 export async function generateMetadata({ 
   params 
 }: { 
-  params: { slug: string } 
+  params: ParamsType 
 }): Promise<Metadata> {
-  const product: Product | null = await getProduct(params.slug)
+  const resolvedParams = await params;
+  const product: Product | null = await getProduct(resolvedParams.slug)
   
   if (!product) {
     return {
@@ -86,15 +90,16 @@ async function getRelatedProducts(productId: string, categoryIds: string[], limi
   )
 }
 
-// Updated to use the correct type pattern for Next.js App Router
+// Updated for Next.js 15 - params is now a Promise
 export default async function ProductPage({ 
   params, 
   searchParams 
 }: { 
-  params: { slug: string },
+  params: ParamsType,
   searchParams?: Record<string, string | string[] | undefined>
 }) {
-  const { slug } = params
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
   const product: Product | null = await getProduct(slug)
   
   if (!product) {
@@ -155,7 +160,7 @@ export default async function ProductPage({
   )
 }
 
-// Add generateStaticParams to help Next.js understand the params structure for static generation
+// Updated generateStaticParams for Next.js 15
 export async function generateStaticParams() {
   const products: { slug: { current: string } }[] = await client.fetch(
     groq`*[_type == "product"]{ slug { current } }`

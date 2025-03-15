@@ -15,7 +15,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
-  // Form states (keep all your original states)
+  // Form states
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -151,32 +151,15 @@ export default function CheckoutPage() {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
       
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header Section - Keep original styling */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">DirectForHer</h1>
-          <Link href="/cart">
-            <div className="relative">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <path d="M16 10a4 4 0 0 1-8 0"></path>
-              </svg>
-              {cart.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {cart.reduce((acc, item) => acc + item.quantity, 0)}
-                </span>
-              )}
-            </div>
-          </Link>
-        </div>
-        
+      <div className="max-w-6xl mx-auto p-6">        
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Left Side - Checkout Form */}
           <div className="col-span-3 overflow-y-auto max-h-[calc(100vh-100px)] hide-scrollbar">
+            <h1 className="text-2xl font-bold mb-8">Checkout</h1>
+            
             {/* Contact Information with Error Handling */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Contact</h2>
+              <h2 className="text-lg font-semibold mb-4">Contact</h2>
               <div className="mb-4">
                 <input 
                   type="email" 
@@ -184,7 +167,7 @@ export default function CheckoutPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => handleBlur("email")}
                   className={`w-full p-3 border rounded-md focus:outline-none ${
-                    validationErrors.email ? "border-red-500" : "focus:ring-1 focus:ring-blue-500"
+                    validationErrors.email ? "border-red-500" : "focus:ring-1 focus:ring-black"
                   }`}
                   placeholder="Email"
                 />
@@ -206,18 +189,18 @@ export default function CheckoutPage() {
               
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm">Already have an account?</span>
-                <a href="/login" className="text-blue-600 text-sm hover:underline">Log in</a>
+                <a href="/login" className="text-black text-sm hover:underline">Log in</a>
               </div>
             </div>
 
             {/* Delivery Information */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Delivery</h2>
+              <h2 className="text-lg font-semibold mb-4">Delivery</h2>
               <div className="mb-4">
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">Select Country</label>
+                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">Country/Region</label>
                 <select
                   id="country"
-                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-black"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
                   title="Select your country"
@@ -234,7 +217,7 @@ export default function CheckoutPage() {
                     type="text" 
                     value={firstName} 
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-black"
                     placeholder="First name (optional)"
                   />
                 </div>
@@ -245,7 +228,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setLastName(e.target.value)}
                     onBlur={() => handleBlur("lastName")}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
-                      validationErrors.lastName ? "border-red-500" : "focus:ring-1 focus:ring-blue-500"
+                      validationErrors.lastName ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     }`}
                     placeholder="Last name"
                   />
@@ -262,7 +245,7 @@ export default function CheckoutPage() {
                   onChange={(e) => setAddress(e.target.value)}
                   onBlur={() => handleBlur("address")}
                   className={`w-full p-3 border rounded-md focus:outline-none ${
-                    validationErrors.address ? "border-red-500" : "focus:ring-1 focus:ring-blue-500"
+                    validationErrors.address ? "border-red-500" : "focus:ring-1 focus:ring-black"
                   }`}
                   placeholder="Address"
                 />
@@ -276,7 +259,7 @@ export default function CheckoutPage() {
                   type="text" 
                   value={apartment} 
                   onChange={(e) => setApartment(e.target.value)}
-                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-black"
                   placeholder="Apartment, suite, etc. (optional)"
                 />
               </div>
@@ -289,7 +272,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setCity(e.target.value)}
                     onBlur={() => handleBlur("city")}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
-                      validationErrors.city ? "border-red-500" : "focus:ring-1 focus:ring-blue-500"
+                      validationErrors.city ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     }`}
                     placeholder="City"
                   />
@@ -304,7 +287,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setPostalCode(e.target.value)}
                     onBlur={() => handleBlur("postalCode")}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
-                      validationErrors.postalCode ? "border-red-500" : "focus:ring-1 focus:ring-blue-500"
+                      validationErrors.postalCode ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     }`}
                     placeholder="Postal code (optional)"
                   />
@@ -322,7 +305,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setPhone(e.target.value)}
                     onBlur={() => handleBlur("phone")}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
-                      validationErrors.phone ? "border-red-500" : "focus:ring-1 focus:ring-blue-500"
+                      validationErrors.phone ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     } pr-10`}
                     placeholder="Phone (e.g. +1234567890)"
                   />
@@ -340,11 +323,11 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Shipping Method (unchanged from original) */}
+            {/* Shipping Method */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Shipping method</h2>
+              <h2 className="text-lg font-semibold mb-4">Shipping method</h2>
               <div className="border rounded-md overflow-hidden">
-                <div className="flex justify-between items-center p-4 bg-blue-50">
+                <div className="flex justify-between items-center p-4" style={{ backgroundColor: "#f9f9f9" }}>
                   <div className="flex items-center">
                     <input 
                       type="radio" 
@@ -355,15 +338,16 @@ export default function CheckoutPage() {
                       onChange={() => setShippingMethod("standard")} 
                       className="mr-2" 
                     />
-                    <label htmlFor="standardShipping">Standard Delievery</label>
+                    <label htmlFor="standardShipping">Standard Delivery (2-5 business days)</label>
                   </div>
+                  <span className="font-medium">Rs {shippingCost.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Payment Methods (unchanged from original) */}
+            {/* Payment Methods */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Payment</h2>
+              <h2 className="text-lg font-semibold mb-4">Payment</h2>
               <p className="text-gray-600 mb-4">All transactions are secure and encrypted.</p>
               <div className="border rounded-md overflow-hidden">
                 <div className="border-b">
@@ -377,29 +361,44 @@ export default function CheckoutPage() {
                       onChange={() => setPaymentMethod("cod")} 
                       className="mr-2" 
                     />
-                    <label htmlFor="codPayment">Cash on Delivery (COD)</label>
+                    <label htmlFor="codPayment" className="flex items-center">
+                      <span>Cash on Delivery (COD)</span>
+                      <svg className="ml-2" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M17 9V7C17 4.2 14.8 2 12 2C9.2 2 7 4.2 7 7V9" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 14.5C13.1046 14.5 14 13.6046 14 12.5C14 11.3954 13.1046 10.5 12 10.5C10.8954 10.5 10 11.3954 10 12.5C10 13.6046 10.8954 14.5 12 14.5Z" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M19 15.6V8.4C19 7.08 17.92 6 16.6 6H7.4C6.08 6 5 7.08 5 8.4V15.6C5 16.92 6.08 18 7.4 18H16.6C17.92 18 19 16.92 19 15.6Z" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </label>
                   </div>
                 </div>
-                <div className="border-b">
+                <div>
                   <div className="p-4 flex items-center">
                     <input 
                       type="radio" 
-                      id="bankDeposit" 
+                      id="cardPayment" 
                       name="paymentMethod" 
                       value="bank" 
                       checked={paymentMethod === "bank"} 
                       onChange={() => setPaymentMethod("bank")} 
                       className="mr-2" 
                     />
-                    <label htmlFor="bankDeposit">Card Payment</label>
+                    <label htmlFor="cardPayment" className="flex items-center">
+                      <span>Card Payment</span>
+                      <svg className="ml-2" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M2 8.5H22" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M6 16.5H8" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M10.5 16.5H14.5" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M22 12.03V16.11C22 19.62 21.11 20.5 17.56 20.5H6.44C2.89 20.5 2 19.62 2 16.11V7.89C2 4.38 2.89 3.5 6.44 3.5H17.56C21.11 3.5 22 4.38 22 7.89V8.98" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </label>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Billing Address (unchanged from original) */}
+            {/* Billing Address */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Billing address</h2>
+              <h2 className="text-lg font-semibold mb-4">Billing address</h2>
               <div className="border rounded-md overflow-hidden">
                 <div className="border-b">
                   <div className="p-4 flex items-center">
@@ -432,61 +431,60 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Complete Order Button */}
+            {/* Return to cart link */}
             <div className="mb-8">
-              <button 
-                onClick={handlePlaceOrder}
-                disabled={isSubmitting}
-                className={`w-full ${
-                  isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-                } text-white py-4 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-lg font-medium`}
-              >
-                {isSubmitting ? "Processing..." : "Complete order"}
-              </button>
+              <Link href="/cart" className="flex items-center text-black hover:underline">
+                <svg className="mr-2" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Return to cart
+              </Link>
             </div>
           </div>
 
-          {/* Right Side - Order Summary (unchanged from original) */}
+          {/* Right Side - Order Summary */}
           <div className="col-span-2 bg-gray-50 p-6 rounded-md sticky top-6 h-fit">
-            <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-6">Order Summary</h2>
+            
+            <div className="mb-6 max-h-[300px] overflow-y-auto">
               {cart.map((item, index) => (
                 <div key={index} className="flex items-center mb-4">
-                  <div className="relative w-20 h-20 rounded-md overflow-hidden">
+                  <div className="relative w-20 h-20 rounded-md overflow-hidden border border-gray-200 bg-white">
                     <Image
                       src={item.image ?? '/placeholder.png'}
                       alt={item.name}
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute -top-1 -right-1 bg-gray-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    <div className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                       {item.quantity}
                     </div>
                   </div>
                   <div className="ml-4 flex-grow">
-                    <h3 className="font-medium">{item.name}</h3>
+                    <h3 className="font-medium text-sm">{item.name}</h3>
                   </div>
                   <div className="font-medium">Rs {(item.price).toFixed(2)}</div>
                 </div>
               ))}
             </div>
 
-            {/* <div className="mb-6">
+            <div className="mb-6">
               <div className="flex gap-2">
                 <input 
                   type="text" 
                   value={giftCard} 
                   onChange={(e) => setGiftCard(e.target.value)} 
-                  className="flex-grow p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Gift card"
+                  className="flex-grow p-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-black"
+                  placeholder="Discount code"
                 />
                 <button 
-                  onClick={handleApplyGiftCard}
-                  className="bg-gray-200 text-gray-700 py-3 px-6 rounded-md hover:bg-gray-300 focus:outline-none"
+                  className="bg-gray-200 text-black py-3 px-6 rounded-md hover:bg-gray-300 focus:outline-none transition-colors"
                 >
                   Apply
                 </button>
               </div>
-            </div> */}
+            </div>
 
             <div className="border-t pt-4">
               <div className="flex justify-between mb-2">
@@ -514,6 +512,17 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Complete Order Button */}
+            <button 
+              onClick={handlePlaceOrder}
+              disabled={isSubmitting}
+              className={`w-full mt-6 ${
+                isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-black hover:bg-gray-800"
+              } text-white py-4 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-lg font-medium transition-colors`}
+            >
+              {isSubmitting ? "Processing..." : "Complete order"}
+            </button>
           </div>
         </div>
       </div>

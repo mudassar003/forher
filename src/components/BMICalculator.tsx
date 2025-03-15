@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 const BMICalculator = () => {
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-  const [bmi, setBmi] = useState(null);
+  const [bmi, setBmi] = useState<string | null>(null);
   const [bmiCategory, setBmiCategory] = useState('');
   const [displayMode, setDisplayMode] = useState('imperial'); // 'imperial' or 'metric'
 

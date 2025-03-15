@@ -5,7 +5,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { countries } from "countries-list";
-import LoginButton from '@/components/Auth/LoginButton';
+import CheckoutAuth from '@/components/Checkout/CheckoutAuth';
+import { useAuthStore } from "@/store/authStore";
 
 interface ValidationErrors {
   [key: string]: string;
@@ -13,8 +14,10 @@ interface ValidationErrors {
 
 export default function CheckoutPage() {
   const { cart, clearCart } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [isClient, setIsClient] = useState(false);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -32,10 +35,23 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [billingAddressType, setBillingAddressType] = useState("same");
 
+  // Hydration fix
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const countryList = Object.values(countries).map((c) => c.name);
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shippingCost = 150;
+  const shippingCost = 15; // $15 USD for shipping
   const total = subtotal + shippingCost;
+
+  // Format currency as USD
+  const formatUSD = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
 
   // Validation patterns
   const validationPatterns = {
@@ -145,6 +161,18 @@ export default function CheckoutPage() {
 
   const handleBlur = (field: string) => validateForm();
 
+  if (!isClient) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
+          <div className="h-40 bg-gray-200 rounded mb-6"></div>
+          <div className="h-60 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    ); // Show loading state and prevent hydration errors
+  }
+
   return (
     <>
       <style jsx>{`
@@ -158,45 +186,13 @@ export default function CheckoutPage() {
           <div className="col-span-3 overflow-y-auto max-h-[calc(100vh-100px)] hide-scrollbar">
             <h1 className="text-2xl font-bold mb-8">Checkout</h1>
             
-            {/* Contact Information with Error Handling */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4">Contact</h2>
-              <div className="mb-4">
-                <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={() => handleBlur("email")}
-                  className={`w-full p-3 border rounded-md focus:outline-none ${
-                    validationErrors.email ? "border-red-500" : "focus:ring-1 focus:ring-black"
-                  }`}
-                  placeholder="Email"
-                />
-                {validationErrors.email && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
-                )}
-              </div>
-              
-              <div className="flex items-center mb-2">
-                <input 
-                  type="checkbox" 
-                  id="newsOffers"
-                  checked={newsOffers} 
-                  onChange={() => setNewsOffers(!newsOffers)} 
-                  className="mr-2"
-                />
-                <label htmlFor="newsOffers" className="text-sm">Email me with news and offers</label>
-              </div>
-              
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-sm font-semibold ">Already have an account?</p>
-                <LoginButton 
-                    buttonText="Login" 
-                    className=" text-black" 
-                    // No need to specify returnUrl, it will use the current URL
-                  />
-              </div>
-            </div>
+            {/* Contact Information with Authentication Component */}
+            <CheckoutAuth 
+              email={email}
+              setEmail={setEmail}
+              newsOffers={newsOffers}
+              setNewsOffers={setNewsOffers}
+            />
 
             {/* Delivery Information */}
             <div className="mb-8">
@@ -345,7 +341,7 @@ export default function CheckoutPage() {
                     />
                     <label htmlFor="standardShipping">Standard Delivery (2-5 business days)</label>
                   </div>
-                  <span className="font-medium">Rs {shippingCost.toFixed(2)}</span>
+                  <span className="font-medium">{formatUSD(shippingCost)}</span>
                 </div>
               </div>
             </div>
@@ -469,7 +465,7 @@ export default function CheckoutPage() {
                   <div className="ml-4 flex-grow">
                     <h3 className="font-medium text-sm">{item.name}</h3>
                   </div>
-                  <div className="font-medium">Rs {(item.price).toFixed(2)}</div>
+                  <div className="font-medium">{formatUSD(item.price)}</div>
                 </div>
               ))}
             </div>
@@ -494,7 +490,7 @@ export default function CheckoutPage() {
             <div className="border-t pt-4">
               <div className="flex justify-between mb-2">
                 <span>Subtotal · {cart.length} items</span>
-                <span>Rs {subtotal.toFixed(2)}</span>
+                <span>{formatUSD(subtotal)}</span>
               </div>
               <div className="flex justify-between mb-2">
                 <div className="flex items-center gap-1">
@@ -507,13 +503,13 @@ export default function CheckoutPage() {
                     </svg>
                   </div>
                 </div>
-                <span>Rs {shippingCost.toFixed(2)}</span>
+                <span>{formatUSD(shippingCost)}</span>
               </div>
               <div className="flex justify-between items-center font-bold py-4 border-t">
                 <span>Total</span>
                 <div className="text-right">
-                  <div className="text-sm text-gray-500 font-normal">PKR</div>
-                  <span>Rs {total.toFixed(2)}</span>
+                  <div className="text-sm text-gray-500 font-normal">USD</div>
+                  <span>{formatUSD(total)}</span>
                 </div>
               </div>
             </div>

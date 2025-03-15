@@ -1,4 +1,4 @@
-//src/app/c/hl/components/SubmitButton.tsx
+//src/app/c/consultation/components/SubmitButton.tsx
 "use client";
 
 export default function SubmitButton({ onSubmit }: { onSubmit: () => void }) {

@@ -1,4 +1,4 @@
-//src/app/c/hl/hair-loss/components/LoadingFallback.tsx
+//src/app/c/consultation/consult/components/LoadingFallback.tsx
 import React from "react";
 
 export default function LoadingFallback() {

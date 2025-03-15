@@ -1,4 +1,4 @@
-// src/app/c/hl/hair-loss/data/questions.ts
+//src/app/c/consultation/consult/data/questions.ts
 import { Question, QuestionType } from "../types";
 
 // Define all questions for the hair loss form

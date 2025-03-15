@@ -1,4 +1,4 @@
-// src/app/c/hl/results/page.tsx
+//src/app/c/consultation/results/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";

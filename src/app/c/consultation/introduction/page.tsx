@@ -1,4 +1,4 @@
-//src/app/c/hl/introduction/page.tsx
+//src/app/c/consultation/introduction/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";

@@ -1,4 +1,4 @@
-//src/app/c/hl/hair-loss/page.tsx
+//src/app/c/consultation/consult/page.tsx
 "use client";
 
 import { Suspense, useState, useEffect } from "react";

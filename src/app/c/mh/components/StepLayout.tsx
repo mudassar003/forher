@@ -20,15 +20,15 @@ export default function StepLayout({ children }: StepLayoutProps) {
     completedSteps, 
     setCurrentStep, 
     markStepCompleted 
-  } = useHLFormStore();
+  } = useMHFormStore();
 
   // Calculate progress
-  const currentStepIndex = HL_FORM_STEPS.indexOf(pathname);
-  const progressPercentage = ((currentStepIndex + 1) / HL_FORM_STEPS.length) * 100;
+  const currentStepIndex = MH_FORM_STEPS.indexOf(pathname);
+  const progressPercentage = ((currentStepIndex + 1) / MH_FORM_STEPS.length) * 100;
 
   // Update current step in the store when pathname changes
   useEffect(() => {
-    if (pathname && HL_FORM_STEPS.includes(pathname)) {
+    if (pathname && MH_FORM_STEPS.includes(pathname)) {
       setCurrentStep(pathname);
     }
   }, [pathname, setCurrentStep]);

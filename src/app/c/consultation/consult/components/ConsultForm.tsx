@@ -3,13 +3,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useHLFormStore } from "@/store/consultFormStore";
+import { useConsultFormStore } from "@/store/consultFormStore";
 import ProgressBar from "@/app/c/consultation/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
-import { hairLossQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
+import { consultationQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
 import { FormResponse } from "../types";
 
-export default function HairLossForm() {
+export default function ConsultForm() {
   const router = useRouter();
   const pathname = "/c/consultation/consult";
   
@@ -33,13 +33,13 @@ export default function HairLossForm() {
     formData,
     markStepCompleted,
     setStepOffset
-  } = useHLFormStore();
+  } = useConsultFormStore();
   
   // Form state for responses
   const [responses, setResponses] = useState<FormResponse>({});
   
   // Filter questions based on conditional display
-  const filteredQuestions = hairLossQuestions.filter(question => {
+  const filteredQuestions = consultationQuestions.filter(question => {
     if (!question.conditionalDisplay) return true;
     return question.conditionalDisplay(responses);
   });
@@ -64,7 +64,7 @@ export default function HairLossForm() {
     // Only run in browser environment
     if (typeof window !== 'undefined') {
       try {
-        const storedResponses = sessionStorage.getItem("hairLossResponses");
+        const storedResponses = sessionStorage.getItem("consultationResponses");
         if (storedResponses) {
           setResponses(JSON.parse(storedResponses));
         }
@@ -103,7 +103,7 @@ export default function HairLossForm() {
       
       // Store responses in sessionStorage
       try {
-        sessionStorage.setItem("hairLossResponses", JSON.stringify(responses));
+        sessionStorage.setItem("consultationResponses", JSON.stringify(responses));
       } catch (error) {
         console.error("Error storing responses:", error);
       }

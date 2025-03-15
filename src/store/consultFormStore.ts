@@ -1,4 +1,4 @@
-// src/store/hlFormStore.ts
+// src/store/consultFormStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -20,18 +20,18 @@ interface ConsultFormState extends ConsultFormData {
 }
 
 // Define the form steps in order
-export const HL_FORM_STEPS = [
-  "/c/hl/introduction",
-  "/c/hl/hair-loss",
-  "/c/hl/submit"
+export const CONSULT_FORM_STEPS = [
+  "/c/consultation/introduction",
+  "/c/consultation/consult",
+  "/c/consultation/submit"
 ];
 
 // Create the Zustand store with persistence
-export const useHLFormStore = create(
+export const useConsultFormStore = create(
   persist<ConsultFormState>(
     (set) => ({
       // Initial state
-      currentStep: HL_FORM_STEPS[0],
+      currentStep: CONSULT_FORM_STEPS[0],
       completedSteps: [],
       formData: {
         stepOffsets: {}, // Track offsets for each step
@@ -59,7 +59,7 @@ export const useHLFormStore = create(
       
       resetForm: () => 
         set({
-          currentStep: HL_FORM_STEPS[0],
+          currentStep: CONSULT_FORM_STEPS[0],
           completedSteps: [],
           formData: {
             stepOffsets: {},
@@ -78,28 +78,28 @@ export const canAccessStep = (step: string, completedSteps: string[]): boolean =
   if (stepIndex === 0) return true; // First step is always accessible
   
   // Check if the previous step has been completed
-  const previousStep = HL_FORM_STEPS[stepIndex - 1];
+  const previousStep = CONSULT_FORM_STEPS[stepIndex - 1];
   return completedSteps.includes(previousStep);
 };
 
 // Helper function to get the next step
 export const getNextStep = (currentStep: string): string | null => {
-  const currentIndex = Consult_FORM_STEPS.indexOf(currentStep);
-  if (currentIndex === -1 || currentIndex === HL_FORM_STEPS.length - 1) return null;
-  return HL_FORM_STEPS[currentIndex + 1];
+  const currentIndex = CONSULT_FORM_STEPS.indexOf(currentStep);
+  if (currentIndex === -1 || currentIndex === CONSULT_FORM_STEPS.length - 1) return null;
+  return CONSULT_FORM_STEPS[currentIndex + 1];
 };
 
 // Helper function to get last completed step (for resuming)
 export const getLastCompletedStep = (completedSteps: string[]): string => {
-  if (completedSteps.length === 0) return HL_FORM_STEPS[0];
+  if (completedSteps.length === 0) return CONSULT_FORM_STEPS[0];
   
-  // Find the last completed step based on the order in HL_FORM_STEPS
-  const validCompletedSteps = completedSteps.filter(step => HL_FORM_STEPS.includes(step));
-  if (validCompletedSteps.length === 0) return HL_FORM_STEPS[0];
+  // Find the last completed step based on the order in CONSULT_FORM_STEPS
+  const validCompletedSteps = completedSteps.filter(step => CONSULT_FORM_STEPS.includes(step));
+  if (validCompletedSteps.length === 0) return CONSULT_FORM_STEPS[0];
   
   // Sort by their index in the steps array
   validCompletedSteps.sort((a, b) => 
-    HL_FORM_STEPS.indexOf(b) - HL_FORM_STEPS.indexOf(a)
+    CONSULT_FORM_STEPS.indexOf(b) - CONSULT_FORM_STEPS.indexOf(a)
   );
   
   return validCompletedSteps[0];

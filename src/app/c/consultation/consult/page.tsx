@@ -3,7 +3,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import LoadingFallback from "./components/LoadingFallback";
-import HairLossForm from "./components/ConsultForm";
+import ConsultForm from "./components/ConsultForm";
 
 // The main page component
 export default function ConsultPage() {
@@ -51,5 +51,5 @@ function ClientPageRouter() {
   }
 
   // For all other offsets, show the form
-  return <HairLossForm />;
+  return <ConsultForm />;
 }

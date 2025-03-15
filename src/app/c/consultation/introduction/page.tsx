@@ -2,9 +2,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import  ProgressBar  from "../components/ProgressBar"; 
+import ProgressBar from "../components/ProgressBar"; 
 
-export default function StepOne() {
+export default function IntroductionStep() {
   const router = useRouter();
 
   const nextStep = () => {
@@ -18,9 +18,9 @@ export default function StepOne() {
 
       {/* Centered Content */}
       <div className="max-w-lg text-center mt-10">
-        <h2 className="text-3xl font-semibold text-[#fe92b5]">Start your hair loss treatment journey.</h2>
+        <h2 className="text-3xl font-semibold text-[#fe92b5]">Start your consultation journey.</h2>
         <p className="text-xl font-medium text-black mt-3">
-          Learn about treatment options based on your goals, hair type, and health history.
+          Learn about treatment options based on your goals, health history, and personal needs.
         </p>
       </div>
 

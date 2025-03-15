@@ -53,7 +53,7 @@ const buttonData = [
     hoverColor: "from-[#7A5B68] to-[#7F5D76]",
     textColor: "text-[#7F5D76]",
     image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
-    url: "/vitamin-women", // Define the URL here
+    url: "/consultation", // Define the URL here
   },
 ];
 

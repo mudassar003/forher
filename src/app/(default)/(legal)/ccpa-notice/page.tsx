@@ -1,4 +1,4 @@
-//src/app/ccpa-notice/page.tsx
+//src/app/(default)/(legal)/ccpa-notice/page.tsx
 "use client";
 
 import { useState, ChangeEvent, FormEvent } from "react";

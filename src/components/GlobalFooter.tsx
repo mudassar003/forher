@@ -39,22 +39,22 @@ const GlobalFooter = () => {
             <h3 className="text-lg font-medium mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                <a href="/about" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
-                  Careers
+                <a href="/c/wm" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                  Weight Loss
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
-                  Blog
+                <a href="/c/hl" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                  Hair Loss
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                <a href="/contact" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
                   Contact
                 </a>
               </li>
@@ -66,22 +66,22 @@ const GlobalFooter = () => {
             <h3 className="text-lg font-medium mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                <a href="/privacy-policy" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                <a href="/terms-of-service" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
                   Terms of Service
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                <a href="/cookie-policy" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
                   Cookie Policy
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
+                <a href="/ccpa-notice" className="text-sm text-gray-600 hover:text-black transition-colors duration-200">
                   CCPA Notice
                 </a>
               </li>

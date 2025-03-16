@@ -1,11 +1,21 @@
 //src/app/ccpa-notice/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 
-export default function CCPANotice() {
-  const [formData, setFormData] = useState({
+// Define the form data interface
+interface FormData {
+  requestType: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  details: string;
+  verification: boolean;
+}
+
+export default function CCPANotice(): JSX.Element {
+  const [formData, setFormData] = useState<FormData>({
     requestType: "",
     firstName: "",
     lastName: "",
@@ -14,11 +24,11 @@ export default function CCPANotice() {
     verification: false
   });
   
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+  const [submitted, setSubmitted] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
   
   // Handle form input changes
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>): void => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
@@ -27,7 +37,7 @@ export default function CCPANotice() {
   };
   
   // Function to handle CCPA rights request form submission
-  const handleRequestSubmit = (e) => {
+  const handleRequestSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     setError("");
     

@@ -145,13 +145,13 @@ const HomeHeader = () => {
             <Link href="/" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
               Home
             </Link>
-            <Link href="#" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/c/wm" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
               Weight Loss
             </Link>
-            <Link href="#" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/c/mh" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
               Mental Health
             </Link>
-            <Link href="#" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/c/hl" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
               Hair Regrowth
             </Link>
             <Link href="/products" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
@@ -218,21 +218,21 @@ const HomeHeader = () => {
                 Home
               </Link>
               <Link 
-                href="#" 
+                href="/c/wm" 
                 className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Weight Loss
               </Link>
               <Link 
-                href="#" 
+                href="/c/mh" 
                 className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Mental Health
               </Link>
               <Link 
-                href="#" 
+                href="/c/hl" 
                 className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
                 onClick={() => setIsMenuOpen(false)}
               >

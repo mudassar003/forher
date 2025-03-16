@@ -40,7 +40,7 @@ const Dashboard = () => {
       } catch (error) {
         console.error("Error in user data fetch:", error);
         // Set fallback name
-        setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
+        setCustomerName(user?.user_metadata?.name || user?.email?.split('@')[0] || 'User');
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,7 @@
+//src/app/account/settings/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { supabase } from "@/lib/supabase";
@@ -19,8 +20,8 @@ const AccountSettingsPage = () => {
   
   // UI states
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ text: "", type: "" });
-  const [passwordMessage, setPasswordMessage] = useState({ text: "", type: "" });
+  const [message, setMessage] = useState<{ text: string; type: string }>({ text: "", type: "" });
+  const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: string }>({ text: "", type: "" });
   
   // Load user data
   useEffect(() => {
@@ -35,7 +36,7 @@ const AccountSettingsPage = () => {
   }, [user, router]);
   
   // Handle profile update
-  const handleProfileUpdate = async (e) => {
+  const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ text: "", type: "" });
@@ -55,7 +56,7 @@ const AccountSettingsPage = () => {
         text: "Profile updated successfully!",
         type: "success"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
       setMessage({
         text: error.message || "Failed to update profile. Please try again.",
@@ -67,7 +68,7 @@ const AccountSettingsPage = () => {
   };
   
   // Handle password update
-  const handlePasswordUpdate = async (e) => {
+  const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setPasswordMessage({ text: "", type: "" });
@@ -83,9 +84,13 @@ const AccountSettingsPage = () => {
     }
     
     try {
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      
       // First, verify the current password
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
+        email: user.email || "",
         password: currentPassword,
       });
       
@@ -112,7 +117,7 @@ const AccountSettingsPage = () => {
         text: "Password updated successfully!",
         type: "success"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating password:", error);
       setPasswordMessage({
         text: error.message || "Failed to update password. Please try again.",
@@ -158,7 +163,7 @@ const AccountSettingsPage = () => {
             <input
               type="email"
               id="email"
-              value={user.email}
+              value={user.email || ""}
               disabled
               className="w-full p-3 border border-gray-300 rounded-md bg-gray-100"
             />

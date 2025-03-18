@@ -138,22 +138,6 @@ export default function WeightLossForm() {
     // Store current screen's responses
     storeResponses();
     
-    // If user is ineligible, redirect to a dedicated ineligible page
-    if (ineligibilityReason) {
-      // Store the ineligibility reason for the results page
-      sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
-      
-      // Mark step as completed
-      markStepCompleted(pathname);
-      
-      // Set transitioning state
-      setIsTransitioning(true);
-      
-      // Navigate to the results page directly
-      window.location.href = "/c/wm/results";
-      return;
-    }
-    
     // If this is the last screen
     if (currentQuestionIndex >= filteredQuestions.length - 1) {
       // Mark step as completed

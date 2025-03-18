@@ -347,20 +347,16 @@ export const calculateBMI = (weight: string, height: string): number | null => {
 
 // Determine eligibility based on responses
 export const checkEligibility = (responses: Record<string, any>): { eligible: boolean; reason: string } => {
+  let reason = "Based on your responses, you appear to be eligible for our weight loss products. Your safety is our priority, so we still recommend discussing with your healthcare provider before starting any new regimen.";
+
   // Step 1: Age Check
   if (responses['age-group'] === 'under-18') {
-    return {
-      eligible: false,
-      reason: "You are not eligible for weight loss products as they are not recommended for individuals under 18 years of age."
-    };
+    reason = "Note: Weight loss products are not recommended for individuals under 18 years of age.";
   }
 
   // Step 1: Gender Check
   if (responses['gender'] === 'no') {
-    return {
-      eligible: false,
-      reason: "Our products are specifically designed for women. We recommend consulting with a healthcare provider for personalized weight management guidance."
-    };
+    reason = "Note: Our products are specifically designed for women. We recommend consulting with a healthcare provider for personalized weight management guidance.";
   }
 
   // Step 2: BMI Check (if both height and weight are provided)
@@ -368,75 +364,48 @@ export const checkEligibility = (responses: Record<string, any>): { eligible: bo
     const bmi = calculateBMI(responses['current-weight'], responses['height']);
     if (bmi !== null) {
       if (bmi < 18.5) {
-        return {
-          eligible: false,
-          reason: "Based on your BMI calculation, you are in the underweight category. Weight loss products are not recommended. Please consult with a healthcare provider."
-        };
-      } else if (bmi < 25) {
-        // Normal weight - eligible but with warning
-        // We'll just note this and continue checking other criteria
+        reason = "Note: Based on your BMI calculation, you are in the underweight category. Weight loss products are not recommended. Please consult with a healthcare provider.";
       }
     }
   }
 
   // Step 3: Pregnancy & Breastfeeding
   if (responses['pregnant'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "Weight loss products are not recommended during pregnancy. Please consult with your healthcare provider for safe weight management during pregnancy."
-    };
+    reason = "Note: Weight loss products are not recommended during pregnancy. Please consult with your healthcare provider for safe weight management during pregnancy.";
   }
 
   if (responses['breastfeeding'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "Weight loss products are not recommended while breastfeeding. Please consult with your healthcare provider for safe weight management while breastfeeding."
-    };
+    reason = "Note: Weight loss products are not recommended while breastfeeding. Please consult with your healthcare provider for safe weight management while breastfeeding.";
   }
 
   // Step 4: Medical Conditions
   if (Array.isArray(responses['medical-conditions'])) {
     if (responses['medical-conditions'].includes('type1-diabetes')) {
-      return {
-        eligible: false,
-        reason: "Weight loss products may not be suitable for individuals with Type 1 Diabetes. Please consult with your healthcare provider for personalized weight management options."
-      };
+      reason = "Note: Weight loss products may not be suitable for individuals with Type 1 Diabetes. Please consult with your healthcare provider for personalized weight management options.";
     }
 
     if (responses['medical-conditions'].includes('heart-disease')) {
-      return {
-        eligible: false,
-        reason: "Weight loss products may not be suitable for individuals with heart disease. Please consult with your healthcare provider for personalized weight management options."
-      };
+      reason = "Note: Weight loss products may not be suitable for individuals with heart disease. Please consult with your healthcare provider for personalized weight management options.";
     }
 
     if (responses['medical-conditions'].includes('kidney-liver-disease')) {
-      return {
-        eligible: false,
-        reason: "Weight loss products may not be suitable for individuals with kidney or liver disease. Please consult with your healthcare provider for personalized weight management options."
-      };
+      reason = "Note: Weight loss products may not be suitable for individuals with kidney or liver disease. Please consult with your healthcare provider for personalized weight management options.";
     }
   }
 
   // Step 4: Eating Disorder
   if (responses['eating-disorder'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "Weight loss products are not recommended for individuals with a history of eating disorders. Please consult with your healthcare provider for healthy weight management approaches."
-    };
+    reason = "Note: Weight loss products are not recommended for individuals with a history of eating disorders. Please consult with your healthcare provider for healthy weight management approaches.";
   }
 
   // Step 9: Doctor Consultation
   if (responses['doctor-consultation'] === 'no') {
-    return {
-      eligible: false,
-      reason: "Medical consultation is required before starting weight loss treatments to ensure safety and effectiveness. Please reconsider consulting with a healthcare provider."
-    };
+    reason = "Note: Medical consultation is required before starting weight loss treatments to ensure safety and effectiveness. Please reconsider consulting with a healthcare provider.";
   }
 
-  // If we've passed all the checks, the user is eligible
+  // Always return eligible but with appropriate warning message
   return {
     eligible: true,
-    reason: "Based on your responses, you appear to be eligible for our weight loss products. Your safety is our priority, so we still recommend discussing with your healthcare provider before starting any new regimen."
+    reason: reason
   };
 };

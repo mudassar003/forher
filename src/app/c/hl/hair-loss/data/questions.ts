@@ -248,21 +248,21 @@ export const getProgressPercentage = (currentOffset: number): number => {
 
 // Determine eligibility based on responses
 export const checkEligibility = (responses: FormResponse): { eligible: boolean; reason: string } => {
-  // Check for disqualifying conditions based on the answers
+  // Check for conditions and provide guidance, but allow all users to proceed
 
   // Age under 18
   if (responses["age-group"] === "under-18") {
     return {
-      eligible: false,
-      reason: "You are not eligible for hair loss treatments. Our treatments are designed for individuals 18 years and older."
+      eligible: true,
+      reason: "While you are under 18, you can still proceed. However, we recommend consulting with a healthcare provider before starting any hair loss treatments."
     };
   }
 
   // Gender not female
   if (responses["gender"] === "no") {
     return {
-      eligible: false,
-      reason: "Our products are specifically designed for women's hair loss needs. We recommend consulting with a healthcare provider for treatments better suited to your needs."
+      eligible: true,
+      reason: "While our products are designed for women's hair loss needs, you can still proceed. We recommend consulting with a healthcare provider for treatments best suited to your needs."
     };
   }
 
@@ -272,8 +272,8 @@ export const checkEligibility = (responses: FormResponse): { eligible: boolean; 
       responses["affected-areas"].includes("no-noticeable-loss") && 
       responses["affected-areas"].length === 1) {
     return {
-      eligible: false,
-      reason: "Based on your responses, you may not need hair loss treatment at this time. We recommend monitoring your hair and consulting with a doctor if you notice changes."
+      eligible: true,
+      reason: "While you may not notice significant hair loss, you can still proceed. We recommend monitoring your hair and consulting with a doctor if you notice changes."
     };
   }
 
@@ -282,30 +282,30 @@ export const checkEligibility = (responses: FormResponse): { eligible: boolean; 
       Array.isArray(responses["medical-conditions"]) && 
       responses["medical-conditions"].includes("autoimmune-disorder")) {
     return {
-      eligible: false,
-      reason: "You may need medical consultation before using hair loss treatments. Autoimmune conditions can affect both hair loss and treatment effectiveness."
+      eligible: true,
+      reason: "While you have an autoimmune condition, you can still proceed. We strongly recommend consulting your doctor before starting any hair loss treatments."
     };
   }
 
   // Hair loss medications
   if (responses["hair-loss-medications"] === "yes") {
     return {
-      eligible: false,
-      reason: "Your hair loss may be medication-induced. We recommend consulting your doctor before starting any hair loss treatment."
+      eligible: true,
+      reason: "While you're taking medications that may cause hair loss, you can still proceed. We recommend consulting your doctor before starting any hair loss treatment."
     };
   }
 
   // Not willing to consult doctor
   if (responses["doctor-consultation"] === "no") {
     return {
-      eligible: false,
-      reason: "A medical consultation is required before starting our hair loss treatments to ensure they're safe and appropriate for you."
+      eligible: true,
+      reason: "While a medical consultation is recommended, you can still proceed. Please note that consulting a healthcare provider is important for safe and effective treatment."
     };
   }
 
-  // All checks passed, user is eligible
+  // All checks passed
   return {
     eligible: true,
-    reason: "Based on your responses, you appear to be eligible for our hair loss treatments. Please note that a medical consultation is still required before starting treatment."
+    reason: "Based on your responses, you appear to be eligible for our hair loss treatments. Please note that a medical consultation is still recommended before starting treatment."
   };
 };

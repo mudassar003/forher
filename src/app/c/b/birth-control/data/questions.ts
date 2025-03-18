@@ -266,34 +266,24 @@ export const getProgressPercentage = (currentOffset: number): number => {
 
 // Determine eligibility based on responses
 export const checkEligibility = (responses: Record<string, any>): { eligible: boolean; reason: string } => {
+  let reason = "Based on your responses, you appear to be eligible for our products. Our healthcare providers can help you select the best option for your needs.";
+
   // Basic Demographics checks
   if (responses['age'] === 'under-18') {
-    return {
-      eligible: false,
-      reason: "You must be 18 or older to be eligible for these products."
-    };
+    reason = "Note: You must be 18 or older to be eligible for these products. We recommend consulting with a healthcare provider for age-appropriate options.";
   }
   
   if (responses['gender'] === 'no') {
-    return {
-      eligible: false,
-      reason: "Our products are specifically designed for women's health needs."
-    };
+    reason = "Note: Our products are specifically designed for women's health needs. We appreciate your interest and hope to offer products suitable for all genders in the future.";
   }
   
   // Pregnancy & Breastfeeding checks
   if (responses['pregnant'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "Birth control products are not suitable during pregnancy."
-    };
+    reason = "Note: Birth control products are not suitable during pregnancy. We recommend consulting with your healthcare provider for pregnancy-safe options.";
   }
   
   if (responses['breastfeeding'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "You are not eligible for most birth control products while breastfeeding."
-    };
+    reason = "Note: Most birth control products are not recommended while breastfeeding. We suggest discussing options with your healthcare provider.";
   }
   
   // Medical History checks
@@ -301,69 +291,45 @@ export const checkEligibility = (responses: Record<string, any>): { eligible: bo
     const conditions = responses['medical-conditions'];
     
     if (conditions.includes('type1-diabetes')) {
-      return {
-        eligible: false,
-        reason: "Type 1 Diabetes may present risks with certain birth control options."
-      };
+      reason = "Note: Type 1 Diabetes may present risks with certain birth control options. We recommend discussing this with your healthcare provider.";
     }
     
     if (conditions.includes('heart-disease')) {
-      return {
-        eligible: false,
-        reason: "Heart disease may present risks with hormonal birth control options."
-      };
+      reason = "Note: Heart disease may present risks with hormonal birth control options. We suggest consulting with your healthcare provider.";
     }
     
     if (conditions.includes('kidney-liver')) {
-      return {
-        eligible: false,
-        reason: "Kidney or liver disease may affect how your body processes birth control."
-      };
+      reason = "Note: Kidney or liver disease may affect how your body processes birth control. We recommend discussing this with your healthcare provider.";
     }
   }
   
   if (responses['eating-disorder'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "A history of eating disorders may require specialized medical guidance for birth control."
-    };
+    reason = "Note: A history of eating disorders may require specialized medical guidance for birth control. We recommend consulting with your healthcare provider.";
   }
   
   // Blood clot history check
   if (responses['blood-clots'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "A history of blood clots, stroke, or estrogen sensitivity may make you ineligible for combination hormonal birth control."
-    };
+    reason = "Note: A history of blood clots, stroke, or estrogen sensitivity may make you ineligible for combination hormonal birth control. We recommend discussing alternative options with your healthcare provider.";
   }
   
   // Herbal supplement allergies check for libido products
   if (responses['herbal-allergies'] === 'yes' && responses['natural-support'] === 'yes') {
-    return {
-      eligible: false,
-      reason: "Allergies to herbal supplements may make you ineligible for our natural libido support products."
-    };
+    reason = "Note: Allergies to herbal supplements may make you ineligible for our natural libido support products. We recommend discussing alternative options with your healthcare provider.";
   }
   
   // Doctor consultation check
   if (responses['doctor-consult'] === 'no') {
-    return {
-      eligible: false,
-      reason: "Medical consultation is required before starting any of our products for your safety."
-    };
+    reason = "Note: Medical consultation is strongly recommended before starting any of our products for your safety. We encourage you to discuss your options with a healthcare provider.";
   }
   
-  // If smoking, provide a warning but don't make ineligible
+  // If smoking, provide a warning
   if (responses['smoking'] === 'yes') {
-    return {
-      eligible: true,
-      reason: "Based on your responses, you appear to be eligible. However, smoking may impact birth control effectiveness and increase health risks. Your healthcare provider will discuss this during consultation."
-    };
+    reason = "Note: Smoking may impact birth control effectiveness and increase health risks. We recommend discussing this with your healthcare provider during consultation.";
   }
   
-  // If we've passed all the checks, the user is eligible
+  // Always return eligible but with appropriate warning message
   return {
     eligible: true,
-    reason: "Based on your responses, you appear to be eligible for our products. Our healthcare providers can help you select the best option for your needs."
+    reason: reason
   };
 };

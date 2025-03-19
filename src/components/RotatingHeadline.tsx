@@ -172,7 +172,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   style={{ color: animatedWords[wordIndex].color }}
                 >
                   <span className="text-gray-500">Be</span> <span 
-                    className="underline decoration-wavy decoration-2 underline-offset-4 md:underline-offset-8"
+                    className=""
                   >
                     {animatedWords[wordIndex].text}
                   </span> <span className="text-gray-500">Today</span>

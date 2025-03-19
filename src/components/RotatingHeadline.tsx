@@ -3,8 +3,25 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
+// Define types for our data structures
+type CategoryId = "weight-loss" | "hair-care" | "anxiety" | "skin" | "cycle";
+type Stage = "initial" | "selected" | "quiz";
+
+interface Category {
+  id: CategoryId;
+  text: string;
+  color: string;
+  icon: string;
+}
+
+interface CategoryContent {
+  heading: string;
+  subheading: string;
+  ctaText: string;
+}
+
 // Categories with accessible colors (WCAG AA compliant)
-const categories = [
+const categories: Category[] = [
   { id: "weight-loss", text: "Weight Loss", color: "#0077b6", icon: "🍃" },  // Deep blue
   { id: "hair-care", text: "Hair Care", color: "#7209b7", icon: "✨" },      // Purple
   { id: "anxiety", text: "Anxiety Relief", color: "#3a86ff", icon: "🧘" },   // Blue
@@ -13,7 +30,7 @@ const categories = [
 ];
 
 // Content for each category that appears after selection
-const categoryContent = {
+const categoryContent: Record<CategoryId, CategoryContent> = {
   "weight-loss": {
     heading: "Personalized weight management",
     subheading: "Custom plans tailored to your body",
@@ -42,11 +59,11 @@ const categoryContent = {
 };
 
 export default function PersonalizedHeroSection() {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [stage, setStage] = useState("initial"); // initial, selected, quiz
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
+  const [stage, setStage] = useState<Stage>("initial"); // initial, selected, quiz
 
   // Handle category selection
-  const handleCategorySelect = (categoryId) => {
+  const handleCategorySelect = (categoryId: CategoryId) => {
     setSelectedCategory(categoryId);
     setStage("selected");
   };

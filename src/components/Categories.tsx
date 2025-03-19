@@ -1,86 +1,89 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 
-// Updated button data with brand colors and different background gradients
+// Common sizing variables
+const buttonSizes = {
+  mobileWidth: "100px",
+  mobileHeight: "90px",
+  desktopHeight: "110px"
+};
+
+// Updated button data with enhanced gradients and shadows
 // Primary: #fe92b5
 // Darker accent 1: #f96897
 // Darker accent 2: #fc4e87
-// Additional lighter shades for backgrounds
 const buttonData = [
   {
-    text: "Lose weight",
-    color: "from-[#ffe6f0] to-[#ffeff6]",
+    text: "Weight Loss",
+    color: "from-[#ffe6f0] via-[#ffd1e1] to-[#ffbfd4]", // Enhanced gradient
     hoverColor: "from-[#fc4e87] to-[#fe92b5]",
     textColor: "text-[#fc4e87]",
-    image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
     url: "/c/wm",
   },
   {
-    text: "Grow fuller hair",
-    color: "from-[#ffd6e4] to-[#ffe1ec]",
+    text: "Hair Care",
+    color: "from-[#ffe1ec] via-[#ffd6e4] to-[#ffc8d9]", // Enhanced gradient
     hoverColor: "from-[#f96897] to-[#fe92b5]",
     textColor: "text-[#f96897]",
-    image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
     url: "/c/hl",
   },
   {
-    text: "Control your cycle",
-    color: "from-[#ffeaf2] to-[#ffd9e7]",
+    text: "Cycle Management",
+    color: "from-[#ffebf3] via-[#ffdbe8] to-[#ffcadd]", // Enhanced gradient
     hoverColor: "from-[#fe92b5] to-[#f96897]",
-    textColor: "text-[#fe92b5]",
-    image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
+    textColor: "text-[#f96897]",
     url: "/c/b",
   },
   {
-    text: "Find relief for anxiety",
-    color: "from-[#ffcfdf] to-[#ffe0eb]",
+    text: "Anxiety Relief",
+    color: "from-[#ffe3ee] via-[#ffd3e2] to-[#ffc1d6]", // Enhanced gradient
     hoverColor: "from-[#fc4e87] to-[#f96897]",
     textColor: "text-[#fc4e87]",
-    image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
     url: "/c/mh",
   },
   {
-    text: "Get glowing skin",
-    color: "from-[#ffd1e0] to-[#ffe8f1]",
+    text: "Skin Care",
+    color: "from-[#ffe9f2] via-[#ffd9e6] to-[#ffc7db]", // Enhanced gradient
     hoverColor: "from-[#fe92b5] to-[#fc4e87]",
-    textColor: "text-[#fe92b5]",
-    image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
+    textColor: "text-[#f96897]",
     url: "/c/aa",
   },
   {
-    text: "Explore wellness",
-    color: "from-[#ffe2ed] to-[#ffd4e2]",
+    text: "Finding Balance",
+    color: "from-[#ffe4ef] via-[#ffd4e3] to-[#ffc2d7]", // Enhanced gradient
     hoverColor: "from-[#f96897] to-[#fc4e87]",
     textColor: "text-[#f96897]",
-    image: "/images/Hims_Homepage_Weight_Loss_Default.webp",
     url: "/c/consultation",
   },
 ];
 
 export default function HoverEffectButtons() {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [hoverIndex, setHoverIndex] = useState(null);
 
   return (
     <>
-      {/* Mobile: Horizontally Scrollable Categories with Three Items Per Row */}
-      <div className="sm:hidden overflow-x-auto px-4 py-4 scroll-smooth snap-x">
-        <div className="grid grid-cols-3 gap-2 w-[900px]">
+      {/* Mobile: Vertically Stacked Items */}
+      <div className="sm:hidden px-4 py-4">
+        <div className="grid grid-cols-1 gap-3">
           {buttonData.map((item, index) => {
             const words = item.text.split(" ");
             return (
               <Link key={index} href={item.url}>
                 <div
-                  className={`relative flex items-center justify-between w-[280px] h-[75px] p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+                  className={`relative flex items-center justify-between p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                     hoverIndex === index ? item.hoverColor : item.color
-                  } snap-start`}
+                  } ${
+                    hoverIndex === index 
+                      ? "shadow-lg shadow-pink-200/50" 
+                      : "shadow-md shadow-pink-100/30"
+                  }`}
                   onMouseEnter={() => setHoverIndex(index)}
                   onMouseLeave={() => setHoverIndex(null)}
                 >
                   <span
-                    className={`text-lg font-semibold flex items-center gap-1 transition-all duration-300 ${
+                    className={`text-xl font-semibold text-center mx-auto transition-all duration-300 ${
                       hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
                     }`}
                   >
@@ -94,18 +97,11 @@ export default function HoverEffectButtons() {
                     </span>
                   </span>
                   <div className="flex items-center gap-2">
-                    <Image
-                      src={item.image}
-                      alt={item.text}
-                      width={50}
-                      height={50}
-                      className={`transition-transform duration-300 ${
-                        hoverIndex === index ? "rotate-[-30deg] scale-110" : "rotate-0 scale-100"
-                      }`}
-                    />
                     <div
                       className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
-                        hoverIndex === index ? "bg-white text-black" : "bg-black text-white"
+                        hoverIndex === index 
+                          ? "bg-white text-black shadow-sm shadow-pink-300/50" 
+                          : "bg-black text-white shadow-sm shadow-pink-200/30"
                       }`}
                     >
                       ➝
@@ -119,7 +115,7 @@ export default function HoverEffectButtons() {
       </div>
 
       {/* Desktop: Grid Layout */}
-      <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-8 lg:px-16 mt-12">
+      <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-8 lg:px-16 mt-12 mb-16">
         {buttonData.map((item, index) => {
           const words = item.text.split(" ");
           return (
@@ -127,12 +123,16 @@ export default function HoverEffectButtons() {
               <div
                 className={`relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                   hoverIndex === index ? item.hoverColor : item.color
-                }`}
+                } ${
+                  hoverIndex === index 
+                    ? "shadow-lg shadow-pink-200/50" 
+                    : "shadow-md shadow-pink-100/30"
+                } h-28`}
                 onMouseEnter={() => setHoverIndex(index)}
                 onMouseLeave={() => setHoverIndex(null)}
               >
                 <span
-                  className={`text-xl font-semibold flex items-center gap-1 transition-all duration-300 ${
+                  className={`text-2xl font-semibold text-center mx-auto transition-all duration-300 ${
                     hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
                   }`}
                 >
@@ -146,18 +146,11 @@ export default function HoverEffectButtons() {
                   </span>
                 </span>
                 <div className="flex items-center gap-4">
-                  <Image
-                    src={item.image}
-                    alt={item.text}
-                    width={100}
-                    height={100}
-                    className={`transition-transform duration-300 ${
-                      hoverIndex === index ? "rotate-[-30deg] scale-110" : "rotate-0 scale-100"
-                    }`}
-                  />
                   <div
                     className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
-                      hoverIndex === index ? "bg-white text-black" : "bg-black text-white"
+                      hoverIndex === index 
+                        ? "bg-white text-black shadow-sm shadow-pink-300/50" 
+                        : "bg-black text-white shadow-sm shadow-pink-200/30"
                     }`}
                   >
                     ➝

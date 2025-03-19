@@ -126,7 +126,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
   };
 
   return (
-    <section className="flex flex-col items-center justify-center min-h-[70vh] px-6 md:px-12 lg:px-24 py-12 relative overflow-hidden">
+    <section className="flex flex-col items-center justify-center min-h-[70vh] px-4 sm:px-6 md:px-12 lg:px-24 py-8 sm:py-12 relative overflow-hidden">
       {/* Inject the keyframes animation */}
       <style>{animationKeyframes}</style>
       
@@ -142,9 +142,9 @@ export default function PersonalizedHeroSection(): React.ReactElement {
       <div className="relative z-10 w-full max-w-6xl mx-auto text-center">
         {stage === "initial" && (
           <>
-            {/* Initial headline */}
+            {/* Initial headline - Improved responsiveness */}
             <motion.h1 
-              className="text-5xl md:text-7xl lg:text-8xl font-normal leading-tight mb-14"
+              className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-normal leading-tight mb-6 sm:mb-10 md:mb-14"
               style={gradientTextStyle}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -154,9 +154,9 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               No More Waiting.
             </motion.h1>
             
-            {/* Animated subheading */}
+            {/* Animated subheading - Improved responsiveness */}
             <motion.div 
-              className="text-5xl md:text-6xl lg:text-7xl font-normal mb-8 overflow-visible h-32"
+              className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-normal mb-6 sm:mb-8 overflow-visible h-20 sm:h-24 md:h-28 lg:h-32"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -164,7 +164,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               <AnimatePresence mode="wait">
                 <motion.span
                   key={wordIndex}
-                  className="inline-block text-4xl md:text-5xl lg:text-6xl"
+                  className="inline-block text-2xl sm:text-3xl md:text-5xl lg:text-6xl"
                   initial={{ y: 40, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -40, opacity: 0 }}
@@ -172,7 +172,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   style={{ color: animatedWords[wordIndex].color }}
                 >
                   <span className="text-gray-500">Be</span> <span 
-                    className="underline decoration-wavy decoration-2 underline-offset-8"
+                    className="underline decoration-wavy decoration-2 underline-offset-4 md:underline-offset-8"
                   >
                     {animatedWords[wordIndex].text}
                   </span> <span className="text-gray-500">Today</span>
@@ -180,9 +180,9 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               </AnimatePresence>
             </motion.div>
 
-            {/* Subheading */}
+            {/* Subheading - Improved responsiveness */}
             <motion.p 
-              className="text-gray-600 text-xl md:text-2xl mb-12"
+              className="text-gray-600 text-lg sm:text-xl md:text-2xl mb-8 sm:mb-10 md:mb-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -192,7 +192,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
 
             {/* Category selection pills */}
             <motion.div 
-              className="flex flex-wrap gap-3 md:gap-4 justify-center"
+              className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 justify-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -200,7 +200,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               {categories.map((category, index) => (
                 <motion.button
                   key={category.id}
-                  className="w-full sm:w-auto px-6 py-3 rounded-full text-white font-medium text-lg md:text-xl transition-all hover:shadow-lg flex items-center justify-center sm:justify-start gap-2"
+                  className="w-full sm:w-auto px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-full text-white font-medium text-base sm:text-lg md:text-xl transition-all hover:shadow-lg flex items-center justify-center sm:justify-start gap-2"
                   style={{ 
                     background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
                     backgroundSize: "200% auto",
@@ -265,7 +265,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               
               {/* Dynamic heading based on selection */}
               <motion.h1 
-                className="text-5xl md:text-7xl lg:text-7xl font-normal mb-4"
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-normal mb-4"
                 style={{ color: "#e63946" }}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -276,7 +276,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               
               {/* Dynamic subheading */}
               <motion.p 
-                className="text-gray-600 text-xl md:text-2xl mb-12"
+                className="text-gray-600 text-lg sm:text-xl md:text-2xl mb-8 sm:mb-10 md:mb-12"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -292,7 +292,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <motion.button 
-                  className="px-8 py-4 rounded-full text-white font-medium text-lg transition-all hover:shadow-lg"
+                  className="px-6 sm:px-8 py-3 sm:py-4 rounded-full text-white font-medium text-base sm:text-lg transition-all hover:shadow-lg"
                   style={{ 
                     background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
                     backgroundSize: "200% auto",
@@ -302,10 +302,10 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Start Your Journey Today
+                  Make an Appointment
                 </motion.button>
                 <motion.button 
-                  className="px-8 py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-lg transition-all hover:shadow-lg"
+                  className="px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-base sm:text-lg transition-all hover:shadow-lg"
                   onClick={handleStartQuiz}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
@@ -322,12 +322,12 @@ export default function PersonalizedHeroSection(): React.ReactElement {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8"
+            className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8"
           >
             {/* Simple quiz start */}
             <div className="text-center mb-6">
               <motion.h2 
-                className="text-3xl font-normal mb-4"
+                className="text-2xl sm:text-3xl font-normal mb-4"
                 style={{ color: "#e63946" }}
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -336,7 +336,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 Let's personalize your {selectedCategory && categories.find(c => c.id === selectedCategory)?.text.toLowerCase()} plan
               </motion.h2>
               <motion.p 
-                className="text-gray-600"
+                className="text-gray-600 text-sm sm:text-base"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -353,10 +353,10 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <div className="text-left">
-                <label className="block text-gray-700 mb-2" htmlFor="concerns">How would you describe your current concerns?</label>
+                <label className="block text-gray-700 mb-2 text-sm sm:text-base" htmlFor="concerns">How would you describe your current concerns?</label>
                 <select 
                   id="concerns"
-                  className="w-full p-3 border border-gray-300 rounded-lg"
+                  className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg text-sm sm:text-base"
                   aria-label="Current concerns"
                 >
                   <option>Select an option</option>
@@ -367,10 +367,10 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               </div>
               
               <div className="text-left">
-                <label className="block text-gray-700 mb-2" htmlFor="priority">What's your top priority right now?</label>
+                <label className="block text-gray-700 mb-2 text-sm sm:text-base" htmlFor="priority">What's your top priority right now?</label>
                 <select 
                   id="priority"
-                  className="w-full p-3 border border-gray-300 rounded-lg"
+                  className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg text-sm sm:text-base"
                   aria-label="Top priority"
                 >
                   <option>Select an option</option>
@@ -383,7 +383,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
             
             <div className="flex justify-between">
               <motion.button 
-                className="px-6 py-3 rounded-full bg-white text-gray-700 border border-gray-200 font-medium transition-all hover:shadow-md"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-sm sm:text-base transition-all hover:shadow-md"
                 onClick={() => setStage("selected")}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
@@ -391,7 +391,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 Back
               </motion.button>
               <motion.button 
-                className="px-6 py-3 rounded-full text-white font-medium transition-all hover:shadow-md"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base transition-all hover:shadow-md"
                 style={{ backgroundColor: "#e63946" }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
@@ -401,6 +401,23 @@ export default function PersonalizedHeroSection(): React.ReactElement {
             </div>
           </motion.div>
         )}
+      </div>
+      
+      {/* Wave transition at the bottom of the section */}
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-1">
+        <svg 
+          className="relative block w-full h-16 sm:h-24" 
+          viewBox="0 0 1200 120" 
+          preserveAspectRatio="none"
+        >
+          <path 
+            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C15,10.18,36.88,20.62,58.94,31.06,108.88,52.93,163.34,71.36,216,87.57,281.12,107.36,345.66,119.57,411,119.22Z" 
+            className="fill-white dark:fill-gray-900"
+            style={{
+              filter: "drop-shadow(0px -2px 3px rgba(230, 57, 70, 0.1))"
+            }}
+          ></path>
+        </svg>
       </div>
     </section>
   );

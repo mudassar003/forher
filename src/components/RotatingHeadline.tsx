@@ -3,34 +3,17 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-// Define types for our data structures
-type CategoryId = "weight-loss" | "hair-care" | "anxiety" | "skin" | "cycle";
-type Stage = "initial" | "selected" | "quiz";
-
-interface Category {
-  id: CategoryId;
-  text: string;
-  color: string;
-  icon: string;
-}
-
-interface CategoryContent {
-  heading: string;
-  subheading: string;
-  ctaText: string;
-}
-
-// Categories with accessible colors (WCAG AA compliant)
-const categories: Category[] = [
-  { id: "weight-loss", text: "Weight Loss", color: "#0077b6", icon: "🍃" },  // Deep blue
-  { id: "hair-care", text: "Hair Care", color: "#7209b7", icon: "✨" },      // Purple
-  { id: "anxiety", text: "Anxiety Relief", color: "#3a86ff", icon: "🧘" },   // Blue
-  { id: "skin", text: "Skin Care", color: "#38b000", icon: "✨" },          // Green
-  { id: "cycle", text: "Cycle Management", color: "#d00000", icon: "🔄" },   // Red
+// Categories with consistent naming but we'll use a gradient instead of individual colors
+const categories = [
+  { id: "weight-loss", text: "Weight Loss", icon: "🍃" },
+  { id: "hair-care", text: "Hair Care", icon: "✨" },
+  { id: "anxiety", text: "Anxiety Relief", icon: "🧘" },
+  { id: "skin", text: "Skin Care", icon: "✨" },
+  { id: "cycle", text: "Cycle Management", icon: "🔄" },
 ];
 
 // Content for each category that appears after selection
-const categoryContent: Record<CategoryId, CategoryContent> = {
+const categoryContent = {
   "weight-loss": {
     heading: "Personalized weight management",
     subheading: "Custom plans tailored to your body",
@@ -59,11 +42,11 @@ const categoryContent: Record<CategoryId, CategoryContent> = {
 };
 
 export default function PersonalizedHeroSection() {
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
-  const [stage, setStage] = useState<Stage>("initial"); // initial, selected, quiz
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [stage, setStage] = useState("initial"); // initial, selected, quiz
 
   // Handle category selection
-  const handleCategorySelect = (categoryId: CategoryId) => {
+  const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
     setStage("selected");
   };
@@ -79,13 +62,30 @@ export default function PersonalizedHeroSection() {
     setStage("quiz");
   };
 
+  // Add keyframes for the gradient animation
+  const gradientKeyframesStyle = `
+    @keyframes gradient {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+  `;
+
   return (
     <section className="flex flex-col items-start justify-center min-h-[70vh] px-6 md:px-12 lg:px-24 py-12 relative overflow-hidden">
+      {/* Inject the keyframes animation */}
+      <style>{gradientKeyframesStyle}</style>
       {/* Background gradient effect */}
       <div 
         className="absolute inset-0 opacity-10"
         style={{ 
-          background: "radial-gradient(circle at 30% 50%, rgba(58, 134, 255, 0.15), transparent 70%)"
+          background: "radial-gradient(circle at 30% 50%, rgba(230, 57, 70, 0.15), transparent 70%)"
         }} 
       />
 
@@ -96,7 +96,7 @@ export default function PersonalizedHeroSection() {
             {/* Initial headline */}
             <motion.h1 
               className="text-5xl md:text-7xl lg:text-8xl font-normal leading-tight mb-6"
-              style={{ color: "#0e2b5c" }} /* Dark blue for high contrast */
+              style={{ color: "#111111" }} /* Near black for clarity */
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -125,10 +125,18 @@ export default function PersonalizedHeroSection() {
               {categories.map((category, index) => (
                 <motion.button
                   key={category.id}
-                  className="px-6 py-3 rounded-full text-white font-medium text-lg md:text-xl transition-all hover:shadow-lg flex items-center gap-2"
-                  style={{ backgroundColor: category.color }}
+                  className="w-full sm:w-auto px-6 py-3 rounded-full text-white font-medium text-lg md:text-xl transition-all hover:shadow-lg flex items-center justify-center sm:justify-start gap-2"
+                  style={{ 
+                    background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
+                    backgroundSize: "200% auto",
+                    animation: "gradient 3s linear infinite",
+                    transition: "all 0.3s ease"
+                  }}
                   onClick={() => handleCategorySelect(category.id)}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    background: "linear-gradient(90deg, #d00000 0%, #e63946 50%, #ff4d6d 100%)",
+                  }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
@@ -190,13 +198,17 @@ export default function PersonalizedHeroSection() {
               
               {/* Call to action */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                  className="px-8 py-4 rounded-full text-white font-medium text-lg transition-all hover:shadow-lg"
-                  style={{ backgroundColor: "#3a86ff" }} /* Universal accessible blue */
-                  onClick={() => window.location.href="/appointment"}
-                >
-                  Book an Appointment
-                </button>
+              <button 
+                className="px-8 py-4 rounded-full text-white font-medium text-lg transition-all hover:shadow-lg"
+                style={{ 
+                  background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
+                  backgroundSize: "200% auto",
+                  animation: "gradient 3s linear infinite",
+                }}
+                onClick={() => window.location.href="/appointment"}
+              >
+                Book an Appointment
+              </button>
                 <button 
                   className="px-8 py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-lg transition-all hover:shadow-lg"
                   onClick={handleStartQuiz}
@@ -260,7 +272,7 @@ export default function PersonalizedHeroSection() {
               </button>
               <button 
                 className="px-6 py-3 rounded-full text-white font-medium transition-all hover:shadow-md"
-                style={{ backgroundColor: categories.find(c => c.id === selectedCategory)?.color }}
+                style={{ backgroundColor: "#e63946" }}
               >
                 Continue
               </button>

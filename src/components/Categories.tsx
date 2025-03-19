@@ -60,7 +60,7 @@ const buttonData = [
 ];
 
 export default function HoverEffectButtons() {
-  const [hoverIndex, setHoverIndex] = useState(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   return (
     <>

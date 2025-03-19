@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-// Define types for our data structures
+// Define strict TypeScript types
 type CategoryId = "weight-loss" | "hair-care" | "anxiety" | "skin" | "cycle";
 type Stage = "initial" | "selected" | "quiz";
 
@@ -17,6 +17,21 @@ interface CategoryContent {
   heading: string;
   subheading: string;
   ctaText: string;
+}
+
+interface AnimatedWord {
+  text: string;
+  color: string;
+}
+
+interface GradientTextStyle {
+  color: string;
+  background?: string;
+  backgroundSize?: string;
+  WebkitBackgroundClip?: string;
+  WebkitTextFillColor?: string;
+  backgroundClip?: string;
+  animation?: string;
 }
 
 // Categories with consistent naming but we'll use a gradient instead of individual colors
@@ -57,86 +72,129 @@ const categoryContent: Record<CategoryId, CategoryContent> = {
   },
 };
 
-export default function PersonalizedHeroSection() {
+export default function PersonalizedHeroSection(): JSX.Element {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [stage, setStage] = useState<Stage>("initial"); // initial, selected, quiz
+  const [wordIndex, setWordIndex] = useState<number>(0);
+  
+  const animatedWords: AnimatedWord[] = [
+    { text: "healthier", color: "#e63946" }, // Brand red
+    { text: "happier", color: "#d81159" },  // Dark pink
+    { text: "stronger", color: "#8f2d56" }, // Deep raspberry
+    { text: "better", color: "#c1121f" },   // Cherry red
+    { text: "transformed", color: "#ff4d6d" } // Coral pink
+  ];
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIndex((prevIndex) => (prevIndex + 1) % animatedWords.length);
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [animatedWords.length]);
 
   // Handle category selection
-  const handleCategorySelect = (categoryId: CategoryId) => {
+  const handleCategorySelect = (categoryId: CategoryId): void => {
     setSelectedCategory(categoryId);
     setStage("selected");
   };
 
   // Reset to initial state
-  const handleReset = () => {
+  const handleReset = (): void => {
     setSelectedCategory(null);
     setStage("initial");
   };
 
   // Start personalization quiz
-  const handleStartQuiz = () => {
+  const handleStartQuiz = (): void => {
     setStage("quiz");
   };
 
-  // Add keyframes for the gradient animation
-  const gradientKeyframesStyle = `
+  // Add keyframes for animations
+  const animationKeyframes = `
     @keyframes gradient {
-      0% {
-        background-position: 0% 50%;
-      }
-      50% {
-        background-position: 100% 50%;
-      }
-      100% {
-        background-position: 0% 50%;
-      }
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
   `;
 
+  // Gradient text styles with proper typing
+  const gradientTextStyle: GradientTextStyle = {
+    color: "#e63946" // Using the brand color for "No More Waiting"
+  };
+
   return (
-    <section className="flex flex-col items-start justify-center min-h-[70vh] px-6 md:px-12 lg:px-24 py-12 relative overflow-hidden">
+    <section className="flex flex-col items-center justify-center min-h-[70vh] px-6 md:px-12 lg:px-24 py-12 relative overflow-hidden">
       {/* Inject the keyframes animation */}
-      <style>{gradientKeyframesStyle}</style>
+      <style>{animationKeyframes}</style>
+      
       {/* Background gradient effect */}
       <div 
         className="absolute inset-0 opacity-10"
         style={{ 
-          background: "radial-gradient(circle at 30% 50%, rgba(230, 57, 70, 0.15), transparent 70%)"
+          background: "radial-gradient(circle at 50% 50%, rgba(230, 57, 70, 0.15), transparent 70%)"
         }} 
       />
 
       {/* Main content container */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto">
+      <div className="relative z-10 w-full max-w-6xl mx-auto text-center">
         {stage === "initial" && (
           <>
             {/* Initial headline */}
             <motion.h1 
-              className="text-5xl md:text-7xl lg:text-8xl font-normal leading-tight mb-6"
-              style={{ color: "#111111" }} /* Near black for clarity */
+              className="text-5xl md:text-7xl lg:text-8xl font-normal leading-tight mb-14"
+              style={gradientTextStyle}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
+              aria-live="polite"
             >
-              Personalized care <br className="hidden md:block" />
-              <span className="text-4xl md:text-6xl lg:text-7xl">designed for you</span>
+              No More Waiting.
             </motion.h1>
+            
+            {/* Animated subheading */}
+            <motion.div 
+              className="text-5xl md:text-6xl lg:text-7xl font-normal mb-8 overflow-visible h-32"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={wordIndex}
+                  className="inline-block text-4xl md:text-5xl lg:text-6xl"
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -40, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  style={{ color: animatedWords[wordIndex].color }}
+                >
+                  <span className="text-gray-500">Be</span> <span 
+                    className="underline decoration-wavy decoration-2 underline-offset-8"
+                  >
+                    {animatedWords[wordIndex].text}
+                  </span> <span className="text-gray-500">Today</span>
+                </motion.span>
+              </AnimatePresence>
+            </motion.div>
 
             {/* Subheading */}
             <motion.p 
               className="text-gray-600 text-xl md:text-2xl mb-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              What are you looking for help with today?
+              Start your journey with personalized care
             </motion.p>
 
             {/* Category selection pills */}
             <motion.div 
-              className="flex flex-wrap gap-3 md:gap-4"
+              className="flex flex-wrap gap-3 md:gap-4 justify-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               {categories.map((category, index) => (
                 <motion.button
@@ -151,16 +209,16 @@ export default function PersonalizedHeroSection() {
                   onClick={() => handleCategorySelect(category.id)}
                   whileHover={{ 
                     scale: 1.05,
-                    background: "linear-gradient(90deg, #d00000 0%, #e63946 50%, #ff4d6d 100%)",
                   }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
                     y: 0,
-                    transition: { delay: 0.2 + (index * 0.1) }
+                    transition: { delay: 0.3 + (index * 0.1) }
                   }}
+                  aria-label={`Select ${category.text}`}
                 >
-                  <span>{category.icon}</span>
+                  <span role="img" aria-hidden="true">{category.icon}</span>
                   <span>{category.text}</span>
                 </motion.button>
               ))}
@@ -183,14 +241,15 @@ export default function PersonalizedHeroSection() {
               className="mb-12"
             >
               {/* Selected category indicator */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-4 justify-center">
                 <button 
                   onClick={handleReset}
                   className="text-gray-500 hover:text-gray-700 transition-colors"
+                  aria-label="Return to all categories"
                 >
                   ← All categories
                 </button>
-                <span className="text-gray-400">|</span>
+                <span className="text-gray-400" aria-hidden="true">|</span>
                 <span 
                   className="px-3 py-1 rounded-full text-white text-sm"
                   style={{ 
@@ -204,21 +263,34 @@ export default function PersonalizedHeroSection() {
               </div>
               
               {/* Dynamic heading based on selection */}
-              <h1 
+              <motion.h1 
                 className="text-5xl md:text-7xl lg:text-7xl font-normal mb-4"
                 style={{ color: "#e63946" }}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5 }}
               >
                 {categoryContent[selectedCategory].heading}
-              </h1>
+              </motion.h1>
               
               {/* Dynamic subheading */}
-              <p className="text-gray-600 text-xl md:text-2xl mb-12">
+              <motion.p 
+                className="text-gray-600 text-xl md:text-2xl mb-12"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
                 {categoryContent[selectedCategory].subheading}
-              </p>
+              </motion.p>
               
               {/* Call to action */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button 
+              <motion.div 
+                className="flex flex-col sm:flex-row gap-4 justify-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <motion.button 
                   className="px-8 py-4 rounded-full text-white font-medium text-lg transition-all hover:shadow-lg"
                   style={{ 
                     background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
@@ -226,16 +298,20 @@ export default function PersonalizedHeroSection() {
                     animation: "gradient 3s linear infinite",
                   }}
                   onClick={() => window.location.href="/appointment"}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  Book an Appointment
-                </button>
-                <button 
+                  Start Your Journey Today
+                </motion.button>
+                <motion.button 
                   className="px-8 py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-lg transition-all hover:shadow-lg"
                   onClick={handleStartQuiz}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   Take Assessment Survey
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
@@ -249,22 +325,36 @@ export default function PersonalizedHeroSection() {
           >
             {/* Simple quiz start */}
             <div className="text-center mb-6">
-              <h2 
+              <motion.h2 
                 className="text-3xl font-normal mb-4"
                 style={{ color: "#e63946" }}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5 }}
               >
-                Let's personalize your {categories.find(c => c.id === selectedCategory)?.text.toLowerCase()} plan
-              </h2>
-              <p className="text-gray-600">
+                Let's personalize your {selectedCategory && categories.find(c => c.id === selectedCategory)?.text.toLowerCase()} plan
+              </motion.h2>
+              <motion.p 
+                className="text-gray-600"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
                 Answer a few questions so we can tailor our recommendations
-              </p>
+              </motion.p>
             </div>
             
             {/* Quiz would continue here - this is just the starting point */}
-            <div className="space-y-6 mb-8">
+            <motion.div 
+              className="space-y-6 mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <div className="text-left">
-                <label className="block text-gray-700 mb-2">How would you describe your current concerns?</label>
+                <label className="block text-gray-700 mb-2" htmlFor="concerns">How would you describe your current concerns?</label>
                 <select 
+                  id="concerns"
                   className="w-full p-3 border border-gray-300 rounded-lg"
                   aria-label="Current concerns"
                 >
@@ -276,8 +366,9 @@ export default function PersonalizedHeroSection() {
               </div>
               
               <div className="text-left">
-                <label className="block text-gray-700 mb-2">What's your top priority right now?</label>
+                <label className="block text-gray-700 mb-2" htmlFor="priority">What's your top priority right now?</label>
                 <select 
+                  id="priority"
                   className="w-full p-3 border border-gray-300 rounded-lg"
                   aria-label="Top priority"
                 >
@@ -287,21 +378,25 @@ export default function PersonalizedHeroSection() {
                   <option>Addressing specific health concerns</option>
                 </select>
               </div>
-            </div>
+            </motion.div>
             
             <div className="flex justify-between">
-              <button 
+              <motion.button 
                 className="px-6 py-3 rounded-full bg-white text-gray-700 border border-gray-200 font-medium transition-all hover:shadow-md"
                 onClick={() => setStage("selected")}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
               >
                 Back
-              </button>
-              <button 
+              </motion.button>
+              <motion.button 
                 className="px-6 py-3 rounded-full text-white font-medium transition-all hover:shadow-md"
                 style={{ backgroundColor: "#e63946" }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
               >
                 Continue
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         )}

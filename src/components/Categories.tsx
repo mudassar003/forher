@@ -67,90 +67,32 @@ export default function HoverEffectButtons() {
       {/* Mobile: Vertically Stacked Items */}
       <div className="sm:hidden px-4 py-4">
         <div className="grid grid-cols-1 gap-3">
-          {buttonData.map((item, index) => {
-            const words = item.text.split(" ");
-            return (
-              <Link key={index} href={item.url}>
-                <div
-                  className={`relative flex items-center justify-between p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
-                    hoverIndex === index ? item.hoverColor : item.color
-                  } ${
-                    hoverIndex === index 
-                      ? "shadow-lg shadow-pink-200/50" 
-                      : "shadow-md shadow-pink-100/30"
-                  }`}
-                  onMouseEnter={() => setHoverIndex(index)}
-                  onMouseLeave={() => setHoverIndex(null)}
-                >
-                  <span
-                    className={`text-xl font-semibold text-center mx-auto transition-all duration-300 ${
-                      hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
-                    }`}
-                  >
-                    <span>{words.slice(0, -1).join(" ")}</span>{" "}
-                    <span
-                      className={`transition-all duration-300 ${
-                        hoverIndex === index ? "text-white" : item.textColor
-                      }`}
-                    >
-                      {words[words.length - 1]}
-                    </span>
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
-                        hoverIndex === index 
-                          ? "bg-white text-black shadow-sm shadow-pink-300/50" 
-                          : "bg-black text-white shadow-sm shadow-pink-200/30"
-                      }`}
-                    >
-                      ➝
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Desktop: Grid Layout */}
-      <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-8 lg:px-16 mt-12 mb-16">
-        {buttonData.map((item, index) => {
-          const words = item.text.split(" ");
-          return (
+          {buttonData.map((item, index) => (
             <Link key={index} href={item.url}>
               <div
-                className={`relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+                className={`relative flex items-center justify-between p-3 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
                   hoverIndex === index ? item.hoverColor : item.color
                 } ${
                   hoverIndex === index 
-                    ? "shadow-lg shadow-pink-200/50" 
-                    : "shadow-md shadow-pink-100/30"
-                } h-28`}
+                    ? "shadow-[0_10px_40px_-5px_rgb(252,78,135,0.4),0_0_20px_-5px_rgb(252,78,135,0.2)] scale-[1.02]" 
+                    : "shadow-[0_4px_15px_rgb(254,146,181,0.15)]"
+                }`}
                 onMouseEnter={() => setHoverIndex(index)}
                 onMouseLeave={() => setHoverIndex(null)}
               >
                 <span
-                  className={`text-2xl font-semibold text-center mx-auto transition-all duration-300 ${
-                    hoverIndex === index ? "bg-clip-text text-white mix-blend-overlay" : "text-black"
+                  className={`text-xl font-semibold text-center mx-auto transition-all duration-300 ${
+                    hoverIndex === index ? "text-white" : item.textColor
                   }`}
                 >
-                  <span>{words.slice(0, -1).join(" ")}</span>{" "}
-                  <span
-                    className={`transition-all duration-300 ${
-                      hoverIndex === index ? "text-white" : item.textColor
-                    }`}
-                  >
-                    {words[words.length - 1]}
-                  </span>
+                  {item.text}
                 </span>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <div
                     className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
                       hoverIndex === index 
-                        ? "bg-white text-black shadow-sm shadow-pink-300/50" 
-                        : "bg-black text-white shadow-sm shadow-pink-200/30"
+                        ? "bg-white text-black shadow-[0_4px_15px_rgb(252,78,135,0.4)]" 
+                        : "bg-black text-white shadow-[0_2px_8px_rgb(254,146,181,0.2)]"
                     }`}
                   >
                     ➝
@@ -158,8 +100,46 @@ export default function HoverEffectButtons() {
                 </div>
               </div>
             </Link>
-          );
-        })}
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: Grid Layout */}
+      <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-8 lg:px-16 mt-12 mb-16">
+        {buttonData.map((item, index) => (
+          <Link key={index} href={item.url}>
+            <div
+              className={`relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 bg-gradient-to-r ${
+                hoverIndex === index ? item.hoverColor : item.color
+              } ${
+                hoverIndex === index 
+                  ? "shadow-[0_10px_40px_-5px_rgb(252,78,135,0.4),0_0_20px_-5px_rgb(252,78,135,0.2)] scale-[1.02]" 
+                  : "shadow-[0_4px_15px_rgb(254,146,181,0.15)]"
+              } h-28`}
+              onMouseEnter={() => setHoverIndex(index)}
+              onMouseLeave={() => setHoverIndex(null)}
+            >
+              <span
+                className={`text-2xl font-semibold text-center mx-auto transition-all duration-300 ${
+                  hoverIndex === index ? "text-white" : item.textColor
+                }`}
+              >
+                {item.text}
+              </span>
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
+                    hoverIndex === index 
+                      ? "bg-white text-black shadow-[0_4px_15px_rgb(252,78,135,0.4)]" 
+                      : "bg-black text-white shadow-[0_2px_8px_rgb(254,146,181,0.2)]"
+                  }`}
+                >
+                  ➝
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
     </>
   );

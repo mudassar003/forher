@@ -137,27 +137,27 @@ const HomeHeader = () => {
 
           {/* Logo */}
           <Link href="/" className="text-3xl md:text-4xl font-semibold text-black">
-            Direct2Her
+            Lily's
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-6 lg:space-x-8">
-            <Link href="/" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Home
             </Link>
-            <Link href="/c/wm" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/c/wm" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Weight Loss
             </Link>
-            <Link href="/c/mh" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/c/mh" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Mental Health
             </Link>
-            <Link href="/c/hl" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/c/hl" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Hair Regrowth
             </Link>
-            <Link href="/products" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/products" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Products
             </Link>
-            <Link href="/studio" className="text-base lg:text-lg font-normal text-gray-800 hover:text-black transition-colors">
+            <Link href="/studio" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Studio
             </Link>
           </nav>
@@ -196,7 +196,7 @@ const HomeHeader = () => {
           {/* Menu Header with Close Button */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <Link href="/" className="text-2xl font-semibold text-black">
-              Direct2Her
+              Lily's
             </Link>
             <button 
               className="text-black focus:outline-none" 
@@ -212,42 +212,42 @@ const HomeHeader = () => {
             <nav className="flex flex-col space-y-4">
               <Link 
                 href="/" 
-                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
               </Link>
               <Link 
                 href="/c/wm" 
-                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Weight Loss
               </Link>
               <Link 
                 href="/c/mh" 
-                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Mental Health
               </Link>
               <Link 
                 href="/c/hl" 
-                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Hair Regrowth
               </Link>
               <Link 
                 href="/products" 
-                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Products
               </Link>
               <Link 
                 href="/studio" 
-                className="text-lg font-normal text-gray-800 hover:text-black py-3 border-b border-gray-100"
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Studio

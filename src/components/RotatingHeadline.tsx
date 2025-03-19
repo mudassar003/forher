@@ -3,8 +3,24 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
+// Define types for our data structures
+type CategoryId = "weight-loss" | "hair-care" | "anxiety" | "skin" | "cycle";
+type Stage = "initial" | "selected" | "quiz";
+
+interface Category {
+  id: CategoryId;
+  text: string;
+  icon: string;
+}
+
+interface CategoryContent {
+  heading: string;
+  subheading: string;
+  ctaText: string;
+}
+
 // Categories with consistent naming but we'll use a gradient instead of individual colors
-const categories = [
+const categories: Category[] = [
   { id: "weight-loss", text: "Weight Loss", icon: "🍃" },
   { id: "hair-care", text: "Hair Care", icon: "✨" },
   { id: "anxiety", text: "Anxiety Relief", icon: "🧘" },
@@ -13,7 +29,7 @@ const categories = [
 ];
 
 // Content for each category that appears after selection
-const categoryContent = {
+const categoryContent: Record<CategoryId, CategoryContent> = {
   "weight-loss": {
     heading: "Personalized weight management",
     subheading: "Custom plans tailored to your body",
@@ -42,11 +58,11 @@ const categoryContent = {
 };
 
 export default function PersonalizedHeroSection() {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [stage, setStage] = useState("initial"); // initial, selected, quiz
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
+  const [stage, setStage] = useState<Stage>("initial"); // initial, selected, quiz
 
   // Handle category selection
-  const handleCategorySelect = (categoryId) => {
+  const handleCategorySelect = (categoryId: CategoryId) => {
     setSelectedCategory(categoryId);
     setStage("selected");
   };
@@ -177,7 +193,11 @@ export default function PersonalizedHeroSection() {
                 <span className="text-gray-400">|</span>
                 <span 
                   className="px-3 py-1 rounded-full text-white text-sm"
-                  style={{ backgroundColor: categories.find(c => c.id === selectedCategory)?.color }}
+                  style={{ 
+                    background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
+                    backgroundSize: "200% auto",
+                    animation: "gradient 3s linear infinite",
+                  }}
                 >
                   {categories.find(c => c.id === selectedCategory)?.text}
                 </span>
@@ -186,7 +206,7 @@ export default function PersonalizedHeroSection() {
               {/* Dynamic heading based on selection */}
               <h1 
                 className="text-5xl md:text-7xl lg:text-7xl font-normal mb-4"
-                style={{ color: categories.find(c => c.id === selectedCategory)?.color }}
+                style={{ color: "#e63946" }}
               >
                 {categoryContent[selectedCategory].heading}
               </h1>
@@ -198,17 +218,17 @@ export default function PersonalizedHeroSection() {
               
               {/* Call to action */}
               <div className="flex flex-col sm:flex-row gap-4">
-              <button 
-                className="px-8 py-4 rounded-full text-white font-medium text-lg transition-all hover:shadow-lg"
-                style={{ 
-                  background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
-                  backgroundSize: "200% auto",
-                  animation: "gradient 3s linear infinite",
-                }}
-                onClick={() => window.location.href="/appointment"}
-              >
-                Book an Appointment
-              </button>
+                <button 
+                  className="px-8 py-4 rounded-full text-white font-medium text-lg transition-all hover:shadow-lg"
+                  style={{ 
+                    background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
+                    backgroundSize: "200% auto",
+                    animation: "gradient 3s linear infinite",
+                  }}
+                  onClick={() => window.location.href="/appointment"}
+                >
+                  Book an Appointment
+                </button>
                 <button 
                   className="px-8 py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-lg transition-all hover:shadow-lg"
                   onClick={handleStartQuiz}
@@ -231,7 +251,7 @@ export default function PersonalizedHeroSection() {
             <div className="text-center mb-6">
               <h2 
                 className="text-3xl font-normal mb-4"
-                style={{ color: categories.find(c => c.id === selectedCategory)?.color }}
+                style={{ color: "#e63946" }}
               >
                 Let's personalize your {categories.find(c => c.id === selectedCategory)?.text.toLowerCase()} plan
               </h2>
@@ -244,7 +264,10 @@ export default function PersonalizedHeroSection() {
             <div className="space-y-6 mb-8">
               <div className="text-left">
                 <label className="block text-gray-700 mb-2">How would you describe your current concerns?</label>
-                <select className="w-full p-3 border border-gray-300 rounded-lg">
+                <select 
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                  aria-label="Current concerns"
+                >
                   <option>Select an option</option>
                   <option>Just starting my journey</option>
                   <option>Tried other solutions without success</option>
@@ -254,7 +277,10 @@ export default function PersonalizedHeroSection() {
               
               <div className="text-left">
                 <label className="block text-gray-700 mb-2">What's your top priority right now?</label>
-                <select className="w-full p-3 border border-gray-300 rounded-lg">
+                <select 
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                  aria-label="Top priority"
+                >
                   <option>Select an option</option>
                   <option>Quick results</option>
                   <option>Sustainable long-term approach</option>

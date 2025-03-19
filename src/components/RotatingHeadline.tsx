@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
 
 // Define strict TypeScript types
 type CategoryId = "weight-loss" | "hair-care" | "anxiety" | "skin" | "cycle";
@@ -72,7 +73,7 @@ const categoryContent: Record<CategoryId, CategoryContent> = {
   },
 };
 
-export default function PersonalizedHeroSection(): JSX.Element {
+export default function PersonalizedHeroSection(): React.ReactElement {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [stage, setStage] = useState<Stage>("initial"); // initial, selected, quiz
   const [wordIndex, setWordIndex] = useState<number>(0);

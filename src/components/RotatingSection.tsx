@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import BMICalculator from "./BMICalculator";
 
-// Define categories and content from RotatingHeadline
 const categories = [
   { id: "weight-loss", text: "Weight Loss", icon: "🍃" },
   { id: "nutrition", text: "Nutrition", icon: "🥗" },
@@ -33,21 +32,20 @@ export default function HeroSection() {
   return (
     <section
       className="relative w-full min-h-[90vh] overflow-hidden"
-      style={{ 
-        background: "linear-gradient(135deg, #596e4c 0%, #3a4b2f 100%)",
-      }}
     >
-      {/* Background image with overlay */}
+      {/* Background image with minimal adjustments */}
       <div 
-        className="absolute inset-0 w-full h-full bg-cover bg-center z-0 opacity-70"
+        className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
         style={{
           backgroundImage: "url('/images/Picture2.jpg')",
-          mixBlendMode: "overlay"
+          filter: "brightness(1.05) saturate(0.95)" // Very subtle adjustments to help headband pop
         }}
       />
 
-      {/* Content overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/30 z-0"></div>
+      {/* Very subtle overlay to ensure text readability */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 z-0"
+      ></div>
 
       {/* Main content container with side-by-side layout */}
       <div className="container mx-auto relative z-10 px-6 py-16 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
@@ -150,7 +148,7 @@ export default function HeroSection() {
             transition={{ duration: 0.6, delay: 0.5 }}
           >
             <button 
-              className="px-6 py-3 bg-white text-green-800 rounded-full font-semibold shadow-lg transition transform hover:scale-105 hover:shadow-xl"
+              className="px-6 py-3 rounded-full font-semibold shadow-lg transition transform hover:scale-105 hover:shadow-xl"
               style={{
                 background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
                 color: "white"
@@ -175,7 +173,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0, x: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          <div className="bg-white/10 backdrop-blur-md p-1 rounded-2xl shadow-2xl border border-white/20">
+          <div className="bg-white/10 backdrop-blur-sm p-1 rounded-2xl shadow-2xl border border-white/20">
             <BMICalculator />
           </div>
         </motion.div>

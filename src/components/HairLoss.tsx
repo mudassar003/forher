@@ -5,16 +5,16 @@
 export default function HairLoss() {
   return (
     <section
-      className="relative w-full h-[85vh] flex flex-col items-center justify-between bg-cover bg-center text-white rounded-t-2xl overflow-hidden"
-      style={{ backgroundImage: "url('/images/bg-2.png')" }}
+      className="relative max-w-full h-[70vh] flex flex-col items-center justify-between bg-cover bg-center text-white rounded-t-2xl overflow-hidden"
+      style={{ backgroundImage: "url('/images/picture3.png')" }}
     >
       {/* Headings */}
       <div className="absolute top-[5%] text-center px-4 md:px-0">
         <h1 className="text-xl md:text-4xl font-semibold leading-tight">
-          Lose weight with a
+          Grow hair like 
         </h1>
         <h2 className="text-xl md:text-4xl font-semibold leading-tight">
-          personalized plan
+          never before
         </h2>
       </div>
 

@@ -45,32 +45,24 @@ export default function HairLoss() {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="bg-gradient-to-br from-[#ff5b8d] to-[#f83d7b] p-6 relative">
-            {/* Top content */}
-            <div className="text-white mb-20">
-              <h3 className="text-2xl md:text-3xl font-bold mb-2">Regrow hair in</h3>
-              <h4 className="text-2xl md:text-3xl font-bold">3–6 months with</h4>
-              <h4 className="text-2xl md:text-3xl font-bold mt-1">Minoxidil</h4>
-            </div>
-            
-            {/* Hand image repositioned and optimized */}
-            <div className="absolute bottom-0 right-0 w-60 h-60 flex items-end justify-end">
-              <Image
-                src="/images/Regrow_Hair.webp"
-                alt="Hand holding Minoxidil pill"
-                width={240}
-                height={240}
-                style={{ objectFit: 'contain', objectPosition: 'bottom right' }}
-              />
-            </div>
-            
-            {/* Button with glass effect and improved positioning */}
-            <motion.button 
-              className="absolute bottom-6 right-6 px-6 py-3 rounded-full bg-white/20 backdrop-blur-md text-white font-semibold text-sm md:text-base shadow-lg border border-white/30"
-              whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Get started
-            </motion.button>
+        
+            {/* Hand with pill image (centered between text and button) */}
+            <div className="relative w-full h-[400px] rounded-2xl bg-white/10 backdrop-blur-md shadow-lg overflow-hidden">
+                        <Image
+                          src="/images/Regrow_Hair.webp"
+                          alt="Regrow Hair"
+                          layout="fill"
+                          objectFit="cover"
+                        />
+                        <div className="absolute top-6 left-6 text-white font-semibold text-lg max-w-[60%]">
+                          <p>Regrow hair in</p>
+                          <p>3–6 months with</p>
+                          <p className="font-bold">Minoxidil</p>
+                        </div>
+                        <button className="absolute bottom-6 right-6 bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md">
+                          Get started
+                        </button>
+                      </div>
           </div>
         </motion.div>
 

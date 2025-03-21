@@ -2,8 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
-const solutions = [
+// Define types for our data
+interface Solution {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+}
+
+interface SolutionContent {
+  title: string;
+  subtitle: string;
+  features: string[];
+  results: string;
+  timeline: number;
+}
+
+interface SolutionContents {
+  [key: string]: SolutionContent;
+}
+
+const solutions: Solution[] = [
   {
     id: "minoxidil",
     title: "Topical Minoxidil",
@@ -24,13 +45,13 @@ const solutions = [
   }
 ];
 
-export default function NewHairLossSection() {
-  const [activeSolution, setActiveSolution] = useState("minoxidil");
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [beforeAfterValue, setBeforeAfterValue] = useState(50);
+export default function NewHairLossSection(): JSX.Element {
+  const [activeSolution, setActiveSolution] = useState<string>("minoxidil");
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [beforeAfterValue, setBeforeAfterValue] = useState<number>(50);
 
   // Solution content based on selection
-  const solutionContent = {
+  const solutionContent: SolutionContents = {
     minoxidil: {
       title: "Topical Minoxidil",
       subtitle: "The #1 FDA-approved hair regrowth treatment",
@@ -72,7 +93,7 @@ export default function NewHairLossSection() {
     }
   };
 
-  const handleSolutionChange = (solution) => {
+  const handleSolutionChange = (solution: string): void => {
     setIsAnimating(true);
     setTimeout(() => {
       setActiveSolution(solution);
@@ -144,37 +165,81 @@ export default function NewHairLossSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            {/* Before/After comparison visualization */}
+            {/* Before/After comparison visualization - Now using actual image */}
             <div className="aspect-[4/3] relative">
-              {/* Background pattern for placeholder */}
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 grid grid-cols-2">
-                <div className="relative h-full overflow-hidden bg-gray-800">
-                  <div className="absolute inset-0 opacity-70 flex items-center justify-center">
-                    <span className="text-white text-opacity-30 text-base md:text-xl font-bold">BEFORE</span>
+              {/* Using the HairLoss.webp image */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="relative h-full w-full">
+                  {/* After image (full) */}
+                  <div className="absolute inset-0 w-full h-full">
+                    <Image 
+                      src="/images/HairLoss.webp" 
+                      alt="After hair treatment results" 
+                      fill 
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
+                  
+                  {/* Before image (shown based on slider) */}
+                  <div 
+                    className="absolute inset-0 w-full h-full overflow-hidden" 
+                    style={{ width: `${beforeAfterValue}%` }}
+                  >
+                    <div className="absolute inset-0 bg-gray-800 opacity-70 flex items-center justify-center">
+                      <Image 
+                        src="/images/HairLoss.webp" 
+                        alt="Before hair treatment" 
+                        fill 
+                        style={{ 
+                          objectFit: 'cover',
+                          filter: 'grayscale(100%) brightness(60%)'
+                        }}
+                      />
+                      <span className="absolute text-white text-opacity-80 text-base md:text-xl font-bold">BEFORE</span>
+                    </div>
+                  </div>
+                  
+                  {/* After label */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span 
+                      className="text-white text-opacity-80 text-base md:text-xl font-bold"
+                      style={{ 
+                        transform: `translateX(${beforeAfterValue < 50 ? '0' : '100px'})`,
+                        opacity: beforeAfterValue > 70 ? 1 : 0,
+                        transition: 'all 0.3s ease-in-out'
+                      }}
+                    >
+                      AFTER
+                    </span>
+                  </div>
+                  
+                  {/* Slider control */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={beforeAfterValue} 
+                      onChange={(e) => setBeforeAfterValue(parseInt(e.target.value))}
+                      className="w-full h-1 appearance-none bg-transparent z-10"
+                      style={{
+                        accentColor: "#e63946"
+                      }}
+                    />
+                    <div 
+                      className="absolute left-1/2 top-0 w-1 h-full bg-white transform -translate-x-1/2 pointer-events-none z-10"
+                      style={{ left: `${beforeAfterValue}%` }}
+                    ></div>
+                    
+                    {/* Drag handle */}
+                    <div 
+                      className="absolute top-1/2 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full shadow-md pointer-events-none z-20 flex items-center justify-center"
+                      style={{ left: `${beforeAfterValue}%`, transform: 'translate(-50%, -50%)' }}
+                    >
+                      <div className="w-4 h-4 rounded-full" style={{ background: "#e63946" }}></div>
+                    </div>
                   </div>
                 </div>
-                <div className="relative h-full overflow-hidden bg-[#ffe6f0]">
-                  <div className="absolute inset-0 opacity-70 flex items-center justify-center">
-                    <span className="text-[#e63946] text-opacity-50 text-base md:text-xl font-bold">AFTER</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Slider control */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="100" 
-                  value={beforeAfterValue} 
-                  onChange={(e) => setBeforeAfterValue(parseInt(e.target.value))}
-                  className="w-full h-1 appearance-none bg-transparent z-10"
-                  style={{
-                    accentColor: "#e63946"
-                  }}
-                />
-                <div className="absolute left-0 top-0 h-full bg-gray-800" style={{ width: `${beforeAfterValue}%` }}></div>
-                <div className="absolute left-1/2 top-0 w-0.5 h-full bg-white transform -translate-x-1/2 pointer-events-none"></div>
               </div>
             </div>
             

@@ -243,6 +243,14 @@ export const hairLossQuestions: Array<{
   }
 ];
 
+// Calculate progress percentage based on current question offset
+export const getProgressPercentage = (currentOffset: number): number => {
+  const totalQuestions = hairLossQuestions.length;
+  // Calculate a percentage with a minimum of 5% and max of 100%
+  const percentage = Math.min(100, Math.max(5, (currentOffset / totalQuestions) * 100));
+  return Math.round(percentage); // Round to nearest integer
+};
+
 // Define the eligibility check function with proper type safety
 interface EligibilityResponse {
   eligible: boolean;

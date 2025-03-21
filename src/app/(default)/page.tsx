@@ -10,6 +10,7 @@ import FaqAccordion from "@/components/FaqAccordion";
 import SubscribeSection from "@/components/SubscribeSection";
 import AuthCallback from "@/components/Auth/AuthCallback";
 import HowItWorks from "@/components/HowItWorks";
+import NewHairLossSection from "@/components/NewHairLossSection";
 
 // Simple loading fallback for AuthCallback
 const AuthCallbackLoading = () => <div className="hidden">Loading auth callback...</div>;
@@ -21,7 +22,7 @@ export default function HomePage() {
         <RotatingHeadline />
         <HowItWorks />
         <RotatingSection />
-        <HairLoss />
+        <NewHairLossSection />
         <FaqAccordion />
         <SubscribeSection />
       </div>

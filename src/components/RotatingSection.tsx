@@ -30,28 +30,16 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section
-      className="relative w-full min-h-[90vh] overflow-hidden"
-    >
-      {/* Background image with minimal adjustments */}
-      <div 
-        className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-        style={{
-          backgroundImage: "url('/images/Picture2.jpg')",
-          filter: "brightness(1.05) saturate(0.95)" // Very subtle adjustments to help headband pop
-        }}
-      />
-
-      {/* Very subtle overlay to ensure text readability */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 z-0"
-      ></div>
+    <section className="relative w-full py-16 md:py-24 bg-gradient-to-b from-white to-[#f9f9f9] overflow-hidden">
+      {/* Background elements */}
+      <div className="absolute -top-10 right-0 w-64 h-64 rounded-full bg-[#ffe6f0] opacity-20 blur-3xl"></div>
+      <div className="absolute bottom-20 left-0 w-80 h-80 rounded-full bg-[#f9dde5] opacity-20 blur-3xl"></div>
 
       {/* Main content container with side-by-side layout */}
-      <div className="container mx-auto relative z-10 px-6 py-16 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
+      <div className="container mx-auto relative z-10 px-6 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
         {/* Left column: Copy and buttons */}
         <motion.div 
-          className="w-full md:w-1/2 text-white"
+          className="w-full md:w-1/2 text-gray-800"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -61,6 +49,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
+            style={{ color: "#e63946" }}
           >
             Start Your Weight Loss Journey The Right Way
           </motion.h1>
@@ -72,7 +61,7 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <span className="opacity-80">Be </span>
+            <span className="text-gray-600">Be </span>
             <AnimatePresence mode="wait">
               <motion.span
                 key={wordIndex}
@@ -86,7 +75,7 @@ export default function HeroSection() {
                 {animatedWords[wordIndex].text}
               </motion.span>
             </AnimatePresence>
-            <span className="opacity-80"> today</span>
+            <span className="text-gray-600"> today</span>
           </motion.p>
           
           {/* Benefits list */}
@@ -97,22 +86,22 @@ export default function HeroSection() {
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 text-white">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#ffe6f0] text-[#e63946]">
                 ✓
               </span>
-              <p>Save 30% on avg. with FSA & HSA</p>
+              <p className="text-gray-600">Save 30% on avg. with FSA & HSA</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 text-white">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#ffe6f0] text-[#e63946]">
                 ✓
               </span>
-              <p>No insurance required</p>
+              <p className="text-gray-600">No insurance required</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 text-white">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#ffe6f0] text-[#e63946]">
                 ✓
               </span>
-              <p>Expert medical guidance available</p>
+              <p className="text-gray-600">Expert medical guidance available</p>
             </div>
           </motion.div>
           
@@ -128,8 +117,8 @@ export default function HeroSection() {
                 key={category.id}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeCategory === category.id
-                    ? "bg-white text-green-800"
-                    : "bg-white/20 text-white hover:bg-white/30"
+                    ? "bg-gradient-to-r from-[#e63946] to-[#ff758f] text-white shadow-md"
+                    : "bg-white text-gray-700 border border-gray-200 hover:shadow-sm"
                 }`}
                 onClick={() => setActiveCategory(category.id)}
                 aria-label={`Select ${category.text}`}
@@ -147,22 +136,32 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <button 
-              className="px-6 py-3 rounded-full font-semibold shadow-lg transition transform hover:scale-105 hover:shadow-xl"
+            <motion.button 
+              className="px-6 py-3 rounded-full font-semibold shadow-lg"
               style={{
                 background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
+                backgroundSize: "200% auto",
                 color: "white"
               }}
+              whileHover={{ 
+                scale: 1.05, 
+                backgroundPosition: "right center"
+              }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.3 }}
               onClick={() => window.location.href="/products"}
             >
               See Products
-            </button>
-            <button 
-              className="px-6 py-3 rounded-full font-semibold shadow-lg transition transform hover:scale-105 hover:shadow-xl bg-white/20 backdrop-blur-sm text-white border-2 border-white"
+            </motion.button>
+            <motion.button 
+              className="px-6 py-3 rounded-full font-semibold shadow-md bg-white text-gray-700 border border-gray-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.3 }}
               onClick={() => window.location.href="/consultation"}
             >
               Book Consultation
-            </button>
+            </motion.button>
           </motion.div>
         </motion.div>
         
@@ -173,7 +172,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0, x: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          <div className="bg-white/10 backdrop-blur-sm p-1 rounded-2xl shadow-2xl border border-white/20">
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
             <BMICalculator />
           </div>
         </motion.div>

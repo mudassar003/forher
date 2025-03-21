@@ -289,16 +289,20 @@ export const getProgressPercentage = (currentOffset: number): number => {
 
 // Determine eligibility based on responses
 export const checkEligibility = (responses: Record<string, any>): { eligible: boolean; reason: string } => {
-  let reason = "Based on your responses, you appear to be eligible for our skin treatments. We'll recommend products specifically tailored to your skin type and concerns.";
-
   // Check for age under 18
   if (responses["age-group"] === "under-18") {
-    reason = "Note: Our skincare products are not recommended for those under 18 years of age. We suggest consulting with a dermatologist for personalized skincare advice.";
+    return {
+      eligible: false,
+      reason: "We're sorry, but our skincare products are not recommended for those under 18 years of age. We suggest consulting with a dermatologist for personalized skincare advice."
+    };
   }
 
   // Check for gender requirement
   if (responses["gender"] === "no") {
-    reason = "Note: Our current skincare line is specifically formulated for women. We appreciate your interest and hope to offer products suitable for all genders in the future.";
+    return {
+      eligible: false,
+      reason: "Our current skincare line is specifically formulated for women. We appreciate your interest and hope to offer products suitable for all genders in the future."
+    };
   }
 
   // Check for severe skin conditions that might need medical attention
@@ -307,17 +311,23 @@ export const checkEligibility = (responses: Record<string, any>): { eligible: bo
       (skinConditions.includes("psoriasis") || 
        skinConditions.includes("severe-acne") || 
        skinConditions.includes("eczema"))) {
-    reason = "Note: Based on your skin condition, we recommend consulting with a dermatologist before starting any new skincare regimen. They can provide personalized advice for your specific needs.";
+    return {
+      eligible: false,
+      reason: "Based on your skin condition, we recommend consulting with a dermatologist before starting any new skincare regimen. They can provide personalized advice for your specific needs."
+    };
   }
 
   // Check for willingness to consult a dermatologist
   if (responses["dermatologist-consult"] === "no") {
-    reason = "Note: Some of our advanced skincare products require professional guidance. We recommend being open to consulting with a dermatologist for the best results and to ensure the products are suitable for your specific skin needs.";
+    return {
+      eligible: false,
+      reason: "Some of our advanced skincare products require professional guidance. We recommend being open to consulting with a dermatologist for the best results and to ensure the products are suitable for your specific skin needs."
+    };
   }
 
-  // Always return eligible but with appropriate warning message
+  // If no eligibility issues were found
   return {
     eligible: true,
-    reason: reason
+    reason: "Based on your responses, you appear to be eligible for our skin treatments. We'll recommend products specifically tailored to your skin type and concerns."
   };
 };

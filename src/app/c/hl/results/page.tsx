@@ -34,8 +34,15 @@ export default function ResultsPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if we have a stored ineligibility reason
+    const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
+    if (storedIneligibilityReason) {
+      setIneligibilityReason(storedIneligibilityReason);
+    }
+    
     // Check if we already have a recommendation in localStorage
     const savedRecommendation = localStorage.getItem('hairLossRecommendation');
     
@@ -49,6 +56,19 @@ export default function ResultsPage() {
         `);
         
         setAllProducts(products || []);
+        
+        // If the user is ineligible, create a custom recommendation object
+        if (storedIneligibilityReason) {
+          const ineligibleRecommendation: Recommendation = {
+            eligible: false,
+            recommendedProductId: null,
+            explanation: storedIneligibilityReason
+          };
+          
+          setRecommendation(ineligibleRecommendation);
+          setIsLoading(false);
+          return;
+        }
         
         // If we have a saved recommendation, use it
         if (savedRecommendation) {
@@ -88,32 +108,26 @@ export default function ResultsPage() {
         // Check if the response is a string (explanation) or an object
         if (typeof data === 'string' || (data && !data.hasOwnProperty('eligible'))) {
           // If it's just text, create a structured object
-          const explanation = typeof data === 'string' ? data : data.explanation || "Based on your responses, here's our recommendation.";
+          const explanation = typeof data === 'string' ? data : data.explanation || "Based on your responses, we cannot recommend our hair loss medications at this time.";
           
-          // Default to eligible - everyone is eligible now
           parsedRecommendation = {
-            eligible: true,
-            recommendedProductId: products.length > 0 ? products[0]._id : null,
+            eligible: false,
+            recommendedProductId: null,
             explanation: explanation
           };
         } else {
           // Otherwise use the structured response
           parsedRecommendation = data as Recommendation;
-        }
-        
-        // If we have products but no recommended product yet, pick one
-        if (parsedRecommendation.eligible && !parsedRecommendation.recommendedProductId && products.length > 0) {
-          parsedRecommendation.recommendedProductId = products[0]._id;
-        }
-        
-        // If the recommendation has a product ID but not the product data,
-        // find it in the products we fetched
-        if (parsedRecommendation.eligible && 
-            parsedRecommendation.recommendedProductId && 
-            !parsedRecommendation.product) {
-          const recommendedProduct = products.find((p: Product) => p._id === parsedRecommendation.recommendedProductId);
-          if (recommendedProduct) {
-            parsedRecommendation.product = recommendedProduct;
+          
+          // If the recommendation has a product ID but not the product data,
+          // find it in the products we fetched
+          if (parsedRecommendation.eligible && 
+              parsedRecommendation.recommendedProductId && 
+              !parsedRecommendation.product) {
+            const recommendedProduct = products.find((p: Product) => p._id === parsedRecommendation.recommendedProductId);
+            if (recommendedProduct) {
+              parsedRecommendation.product = recommendedProduct;
+            }
           }
         }
         
@@ -137,6 +151,7 @@ export default function ResultsPage() {
     localStorage.removeItem('hairLossRecommendation');
     sessionStorage.removeItem('finalHairLossResponses');
     sessionStorage.removeItem('hairLossResponses');
+    sessionStorage.removeItem('ineligibilityReason');
     router.push("/c/hl");
   };
 

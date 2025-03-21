@@ -359,27 +359,37 @@ export const assessAnxietySeverity = (responses: Record<string, any>): string =>
 
 // Determine eligibility based on responses
 export const checkEligibility = (responses: Record<string, any>): { eligible: boolean; reason: string } => {
-  let reason = "Based on your responses, our mental health support services appear to be a good fit for your needs. We look forward to connecting you with appropriate resources.";
-
   // Step 1: Age Check
   if (responses['age-group'] === 'under-18') {
-    reason = "Note: Our mental health services are designed for adults 18 and older. We recommend speaking with a parent or guardian about seeking support from a mental health professional who specializes in working with adolescents.";
+    return {
+      eligible: false,
+      reason: "Our mental health services are designed for adults 18 and older. We recommend speaking with a parent or guardian about seeking support from a mental health professional who specializes in working with adolescents."
+    };
   }
 
   // Step 4: Active severe conditions check
   if (Array.isArray(responses['medical-history'])) {
     if (responses['medical-history'].includes('bipolar')) {
-      reason = "Note: Based on your responses, our standard anxiety treatment may not be the best fit for your needs. Bipolar disorder often requires specialized care. We recommend consulting with a psychiatrist for personalized treatment.";
+      return {
+        eligible: false,
+        reason: "Based on your responses, our standard anxiety treatment may not be the best fit for your needs. Bipolar disorder often requires specialized care. We recommend consulting with a psychiatrist for personalized treatment."
+      };
     }
 
     if (responses['medical-history'].includes('substance-use')) {
-      reason = "Note: Based on your responses, you may benefit from specialized care that addresses both substance use and anxiety. We recommend seeking care from a provider who specializes in dual diagnosis treatment.";
+      return {
+        eligible: false,
+        reason: "Based on your responses, you may benefit from specialized care that addresses both substance use and anxiety. We recommend seeking care from a provider who specializes in dual diagnosis treatment."
+      };
     }
   }
 
   // Step 4: Suicidal ideation check (this would be added to the questionnaire if appropriate)
   if (responses['suicidal-thoughts'] === 'yes') {
-    reason = "Note: Your safety is our top priority. Based on your responses, we recommend immediate consultation with a mental health professional or calling a crisis helpline for support. Our services are not designed for crisis intervention.";
+    return {
+      eligible: false,
+      reason: "Your safety is our top priority. Based on your responses, we recommend immediate consultation with a mental health professional or calling a crisis helpline for support. Our services are not designed for crisis intervention."
+    };
   }
 
   // Treatment readiness check
@@ -387,12 +397,15 @@ export const checkEligibility = (responses: Record<string, any>): { eligible: bo
       (!responses['treatment-preferences'] || 
        !Array.isArray(responses['treatment-preferences']) || 
        responses['treatment-preferences'].includes('medication'))) {
-    reason = "Note: We noticed that you're interested in medication support but also indicated you're not open to taking medication. Our providers can discuss non-medication options, but wanted to note this potential mismatch in expectations.";
+    return {
+      eligible: true,
+      reason: "We noticed that you're interested in medication support but also indicated you're not open to taking medication. Our providers can discuss non-medication options, but wanted to note this potential mismatch in expectations."
+    };
   }
 
-  // Always return eligible but with appropriate warning message
+  // If we've passed all the checks, the user is eligible
   return {
     eligible: true,
-    reason: reason
+    reason: "Based on your responses, our mental health support services appear to be a good fit for your needs. We look forward to connecting you with appropriate resources."
   };
 };

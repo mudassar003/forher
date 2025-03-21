@@ -1,8 +1,8 @@
 // src/app/c/hl/hair-loss/data/questions.ts
-import { FormResponse, QuestionType } from "../types";
+import { Question, QuestionType, FormResponse } from "../types";
 
-// Define all questions for the hair loss form - keeping only 10 essential questions
-export const hairLossQuestions = [
+// Define all questions for the hair loss form
+export const hairLossQuestions: Question[] = [
   // Step 1: Basic Demographics
   {
     id: "age-group",
@@ -54,6 +54,16 @@ export const hairLossQuestions = [
       { id: "no-noticeable-loss", label: "No noticeable hair loss" }
     ]
   },
+  {
+    id: "excessive-shedding",
+    question: "Do you experience excessive hair shedding (losing more than 100 hairs per day)?",
+    description: "Excessive shedding is when you notice significantly more hair falling out than usual.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
   
   // Step 3: Medical History
   {
@@ -70,6 +80,16 @@ export const hairLossQuestions = [
     ]
   },
   {
+    id: "hair-loss-medications",
+    question: "Are you currently taking any medications known to cause hair loss?",
+    description: "E.g., chemotherapy, beta-blockers, hormonal medications",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+  {
     id: "family-history",
     question: "Do you have a family history of hair loss?",
     description: "Such as female pattern baldness or male pattern baldness",
@@ -82,6 +102,16 @@ export const hairLossQuestions = [
   
   // Step 4: Lifestyle & Diet
   {
+    id: "balanced-diet",
+    question: "Do you have a balanced diet with sufficient protein and vitamins?",
+    description: "A balanced diet is important for hair health.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+  {
     id: "recent-changes",
     question: "Have you experienced recent stress, illness, or hormonal changes?",
     description: "E.g., post-pregnancy, menopause, major life events",
@@ -91,8 +121,6 @@ export const hairLossQuestions = [
       { id: "no", label: "No" }
     ]
   },
-  
-  // Step 5: Hair Care
   {
     id: "heat-styling",
     question: "How often do you use heat styling tools?",
@@ -104,8 +132,51 @@ export const hairLossQuestions = [
       { id: "frequently", label: "Frequently" }
     ]
   },
+  {
+    id: "chemical-treatments",
+    question: "Do you regularly dye or chemically treat your hair?",
+    description: "Including color treatments, perms, relaxers, etc.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
   
-  // Step 6: Treatment Preferences
+  // Step 5: Scalp Health & Hair Care
+  {
+    id: "scalp-issues",
+    question: "Do you experience dandruff, scalp irritation, or itchiness?",
+    description: "Scalp health is closely related to hair growth.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+  {
+    id: "wash-frequency",
+    question: "How often do you wash your hair?",
+    description: "Select your typical hair washing frequency.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "daily", label: "Daily" },
+      { id: "every-2-3-days", label: "Every 2-3 days" },
+      { id: "once-a-week", label: "Once a week" }
+    ]
+  },
+  {
+    id: "specialized-shampoo",
+    question: "Do you use sulfate-free or hair-growth supporting shampoos?",
+    description: "These types of shampoos can be gentler on the hair and scalp.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+  
+  // Step 6: Hair Loss Treatment Preferences
   {
     id: "previous-treatments",
     question: "Have you tried any hair loss treatments before?",
@@ -120,6 +191,26 @@ export const hairLossQuestions = [
     ]
   },
   {
+    id: "topical-treatments",
+    question: "Are you open to topical hair regrowth treatments?",
+    description: "E.g., minoxidil, peptides, serums",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+  {
+    id: "oral-supplements",
+    question: "Are you interested in oral supplements for hair regrowth?",
+    description: "E.g., biotin, saw palmetto, iron, or collagen",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
+  },
+  {
     id: "long-term-commitment",
     question: "Are you comfortable committing to long-term hair regrowth treatments?",
     description: "3-6 months minimum is typically required to see results",
@@ -128,22 +219,93 @@ export const hairLossQuestions = [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
     ]
+  },
+  
+  // Step 7: Medical Eligibility Confirmation
+  {
+    id: "doctor-consultation",
+    question: "Are you willing to consult a doctor before starting any new hair loss treatment?",
+    description: "Medical guidance is important for safe and effective treatment.",
+    type: QuestionType.SingleSelect,
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" }
+    ]
   }
 ];
 
-// Calculate progress percentage based on current question offset
+// Calculate progress percentage based on current question index
 export const getProgressPercentage = (currentOffset: number): number => {
+  // Offset 0 is introduction (20%), max should be 95% for the last question
   const totalQuestions = hairLossQuestions.length;
-  // Calculate a percentage with a minimum of 5% and max of 100%
-  const percentage = Math.min(100, Math.max(5, (currentOffset / totalQuestions) * 100));
-  return Math.round(percentage); // Round to nearest integer
+  
+  if (currentOffset === 0) return 20;
+  
+  // First actual question starts at 25%, increases proportionally to last question
+  const questionIndex = currentOffset - 1; // Since offset 1 = first question
+  return 25 + (questionIndex / totalQuestions * 70);
 };
 
-// Simplified eligibility check function - no conditional logic
+// Determine eligibility based on responses
 export const checkEligibility = (responses: FormResponse): { eligible: boolean; reason: string } => {
-  // Simple eligibility check - everyone is eligible now
+  // Check for disqualifying conditions based on the answers
+
+  // Age under 18
+  if (responses["age-group"] === "under-18") {
+    return {
+      eligible: false,
+      reason: "You are not eligible for hair loss treatments. Our treatments are designed for individuals 18 years and older."
+    };
+  }
+
+  // Gender not female
+  if (responses["gender"] === "no") {
+    return {
+      eligible: false,
+      reason: "Our products are specifically designed for women's hair loss needs. We recommend consulting with a healthcare provider for treatments better suited to your needs."
+    };
+  }
+
+  // No noticeable hair loss
+  if (responses["affected-areas"] && 
+      Array.isArray(responses["affected-areas"]) && 
+      responses["affected-areas"].includes("no-noticeable-loss") && 
+      responses["affected-areas"].length === 1) {
+    return {
+      eligible: false,
+      reason: "Based on your responses, you may not need hair loss treatment at this time. We recommend monitoring your hair and consulting with a doctor if you notice changes."
+    };
+  }
+
+  // Autoimmune disorder
+  if (responses["medical-conditions"] && 
+      Array.isArray(responses["medical-conditions"]) && 
+      responses["medical-conditions"].includes("autoimmune-disorder")) {
+    return {
+      eligible: false,
+      reason: "You may need medical consultation before using hair loss treatments. Autoimmune conditions can affect both hair loss and treatment effectiveness."
+    };
+  }
+
+  // Hair loss medications
+  if (responses["hair-loss-medications"] === "yes") {
+    return {
+      eligible: false,
+      reason: "Your hair loss may be medication-induced. We recommend consulting your doctor before starting any hair loss treatment."
+    };
+  }
+
+  // Not willing to consult doctor
+  if (responses["doctor-consultation"] === "no") {
+    return {
+      eligible: false,
+      reason: "A medical consultation is required before starting our hair loss treatments to ensure they're safe and appropriate for you."
+    };
+  }
+
+  // All checks passed, user is eligible
   return {
     eligible: true,
-    reason: "Based on your responses, you appear to be eligible for our hair loss treatments. Please note that a medical consultation is still recommended before starting treatment."
+    reason: "Based on your responses, you appear to be eligible for our hair loss treatments. Please note that a medical consultation is still required before starting treatment."
   };
 };

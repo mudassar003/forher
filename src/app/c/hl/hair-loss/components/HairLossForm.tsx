@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useHLFormStore } from "@/store/hlFormStore";
 import ProgressBar from "@/app/c/hl/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
-import { hairLossQuestions, getProgressPercentage } from "../data/questions";
+import { hairLossQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
 import { FormResponse } from "../types";
 
 export default function HairLossForm() {
@@ -16,6 +16,7 @@ export default function HairLossForm() {
   // Get the current offset from URL directly instead of using useSearchParams hook
   const [offset, setOffset] = useState(1); // Default to 1
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
   
   // Use an effect to get the search params (safely in browser environment)
   useEffect(() => {
@@ -37,8 +38,11 @@ export default function HairLossForm() {
   // Form state for responses
   const [responses, setResponses] = useState<FormResponse>({});
   
-  // All questions are shown - no filtering based on conditional display
-  const filteredQuestions = hairLossQuestions;
+  // Filter questions based on conditional display
+  const filteredQuestions = hairLossQuestions.filter(question => {
+    if (!question.conditionalDisplay) return true;
+    return question.conditionalDisplay(responses);
+  });
   
   // Get the current question based on offset
   const currentQuestionIndex = offset - 1; // Adjust for 0-based array index
@@ -80,6 +84,15 @@ export default function HairLossForm() {
     };
     
     setResponses(updatedResponses);
+    
+    // Check for eligibility criteria if needed
+    const eligibility = checkEligibility(updatedResponses);
+    
+    if (!eligibility.eligible) {
+      setIneligibilityReason(eligibility.reason);
+    } else {
+      setIneligibilityReason(null);
+    }
   };
   
   // Store the current responses
@@ -104,12 +117,28 @@ export default function HairLossForm() {
     // Store current screen's responses
     storeResponses();
     
+    // If user is ineligible, redirect to a dedicated ineligible page
+    if (ineligibilityReason) {
+      // Store the ineligibility reason for the results page
+      sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
+      
+      // Mark step as completed
+      markStepCompleted(pathname);
+      
+      // Set transitioning state
+      setIsTransitioning(true);
+      
+      // Navigate to the results page directly
+      window.location.href = "/c/hl/results";
+      return;
+    }
+    
     // If this is the last screen
     if (currentQuestionIndex >= filteredQuestions.length - 1) {
       // Mark step as completed
       markStepCompleted(pathname);
       
-      // Set transitioning state
+      // Set transitioning state (will be reset when the new page loads)
       setIsTransitioning(true);
       
       // Navigate to the next step in the flow
@@ -196,6 +225,18 @@ export default function HairLossForm() {
           </p>
         )}
         
+        {/* Display ineligibility warning if applicable */}
+        {ineligibilityReason && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
+            <p className="font-medium text-red-700">Eligibility Notice:</p>
+            <p className="text-red-600">{ineligibilityReason}</p>
+            <p className="text-sm mt-2 text-gray-600">
+              You can continue with the assessment, but based on your responses, 
+              our products may not be suitable for you.
+            </p>
+          </div>
+        )}
+        
         {/* Render the appropriate question component */}
         <QuestionRenderer 
           question={currentQuestion}
@@ -218,7 +259,7 @@ export default function HairLossForm() {
             isContinueEnabled() && !isTransitioning ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          {currentQuestionIndex >= filteredQuestions.length - 1 ? "Submit" : "Continue"}
+          {ineligibilityReason ? "Continue to Results" : "Continue"}
         </button>
       </div>
     </div>

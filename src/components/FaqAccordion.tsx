@@ -65,7 +65,7 @@ const FaqAccordion = () => {
         {faqData.map((item, index) => (
           <div 
             key={index} 
-            ref={el => accordionRefs.current[index] = el}
+            ref={(el) => { accordionRefs.current[index] = el; }}
             className="border border-gray-100 rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md"
           >
             <h3>

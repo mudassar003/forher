@@ -124,8 +124,8 @@
           
 //           // If the recommendation has a product ID but not the product data,
 //           // find it in the products we fetched
-//           if (parsedRecommendation.eligible && 
-//               parsedRecommendation.recommendedProductId && 
+//           if (parsedRecommendation.eligible &&
+//               parsedRecommendation.recommendedProductId &&
 //               !parsedRecommendation.product) {
 //             const recommendedProduct = products.find((p: Product) => p._id === parsedRecommendation.recommendedProductId);
 //             if (recommendedProduct) {
@@ -183,7 +183,7 @@
 //           <div className="w-full max-w-2xl text-center">
 //             <h2 className="text-3xl font-semibold text-[#fe92b5] mb-6">Oops! Something went wrong</h2>
 //             <p className="text-xl mb-8">{error}</p>
-//             <button 
+//             <button
 //               onClick={() => router.push("/c/aa/submit")}
 //               className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-gray-900"
 //             >
@@ -218,11 +218,11 @@
 //                   <div className="md:w-1/3">
 //                     {recommendation.product.mainImage ? (
 //                       <div className="relative h-64 w-full rounded-lg overflow-hidden">
-//                         <Image 
-//                           src={urlFor(recommendation.product.mainImage).url()} 
-//                           alt={recommendation.product.title} 
-//                           fill 
-//                           style={{objectFit: 'cover'}} 
+//                         <Image
+//                           src={urlFor(recommendation.product.mainImage).url()}
+//                           alt={recommendation.product.title}
+//                           fill
+//                           style={{objectFit: 'cover'}}
 //                         />
 //                       </div>
 //                     ) : (
@@ -254,7 +254,7 @@
 //                           Learn More
 //                         </button>
 //                       </Link>
-//                       <button 
+//                       <button
 //                         onClick={startOver}
 //                         className="flex-1 border-2 border-black text-black text-lg font-medium px-6 py-3 rounded-full hover:bg-gray-100"
 //                       >
@@ -280,14 +280,14 @@
 //                 </div>
                 
 //                 <div className="flex flex-col sm:flex-row gap-4">
-//                   <button 
+//                   <button
 //                     onClick={startOver}
 //                     className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-gray-900 flex-1"
 //                   >
 //                     Retake Assessment
 //                   </button>
-//                   <Link 
-//                     href="/consultation" 
+//                   <Link
+//                     href="/consultation"
 //                     className="bg-[#fe92b5] text-white text-lg font-medium px-6 py-3 rounded-full text-center hover:bg-[#fe92b5]/90 flex-1"
 //                   >
 //                     Book a Consultation
@@ -304,20 +304,20 @@
           
 //           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 //             {allProducts.slice(0, 4).map((product: Product) => (
-//               <Link 
-//                 href={`/products/${product.slug?.current}`} 
-//                 key={product._id} 
+//               <Link
+//                 href={`/products/${product.slug?.current}`}
+//                 key={product._id}
 //                 className="group"
 //               >
 //                 <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col">
 //                   {/* Product Image */}
 //                   <div className="relative h-48 w-full bg-gray-100">
 //                     {product.mainImage ? (
-//                       <Image 
-//                         src={urlFor(product.mainImage).url()} 
-//                         alt={product.title} 
-//                         fill 
-//                         style={{objectFit: 'cover'}} 
+//                       <Image
+//                         src={urlFor(product.mainImage).url()}
+//                         alt={product.title}
+//                         fill
+//                         style={{objectFit: 'cover'}}
 //                       />
 //                     ) : (
 //                       <div className="h-full w-full flex items-center justify-center">
@@ -346,8 +346,8 @@
 //           </div>
           
 //           <div className="text-center mt-10">
-//             <Link 
-//               href="/products" 
+//             <Link
+//               href="/products"
 //               className="inline-block bg-black text-white font-medium px-6 py-3 rounded-full hover:bg-gray-900"
 //             >
 //               View All Products
@@ -360,3 +360,10 @@
 //     </div>
 //   );
 // }
+
+
+function HelloWorld() {
+  return <h1>Hello World</h1>;
+}
+
+export default HelloWorld;

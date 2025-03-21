@@ -5,8 +5,8 @@ import { FiPlus, FiMinus } from "react-icons/fi";
 
 const faqData = [
   {
-    question: "What is Direct2Her?",
-    answer: `Direct2Her is a 100% online platform with over 1 million subscribers that connects patients to licensed 
+    question: "What is Lily’s?",
+    answer: `Lily’s is a 100% online platform with over 1 million subscribers that connects patients to licensed 
     healthcare professionals in all 50 states. We offer support for weight loss, hair regrowth, mental health, 
     and skincare.
 
@@ -15,14 +15,14 @@ const faqData = [
     right to your door.`,
   },
   {
-    question: "How does Direct2Her work?",
-    answer: `Direct2Her works by connecting you to healthcare professionals through an easy online process. 
+    question: "How does Lily’s work?",
+    answer: `Lily’s works by connecting you to healthcare professionals through an easy online process. 
     You fill out a health questionnaire, and a licensed provider will review it to recommend personalized 
     treatments. If prescribed, your treatment is delivered directly to your door.`,
   },
   {
-    question: "Who are the providers at Direct2Her?",
-    answer: `Direct2Her partners with licensed healthcare professionals who specialize in weight loss, hair regrowth, 
+    question: "Who are the providers at Lily’s?",
+    answer: `Lily’s partners with licensed healthcare professionals who specialize in weight loss, hair regrowth, 
     mental health, and skincare. These providers are fully licensed and experienced in delivering online 
     healthcare services.`,
   },

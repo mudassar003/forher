@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import RotatingHeadline from "@/components/RotatingHeadline";
 // import Categories from "@/components/Categories";
 import RotatingSection from "@/components/RotatingSection";
-import VideoSection from "@/components/VideoSection";
+// import VideoSection from "@/components/VideoSection";
 import HairLoss from "@/components/HairLoss";
 // import HairRegrowCard from "@/components/HairRegrowCard";
 import FaqAccordion from "@/components/FaqAccordion";
@@ -18,18 +18,12 @@ export default function HomePage() {
   return (
     <main>
       <div>
-      
-        
         <RotatingHeadline />
         <HowItWorks />
         <RotatingSection />
-        <VideoSection />
         <HairLoss />
-       
         <FaqAccordion />
         <SubscribeSection />
-
-        {/* Other sections of the homepage */}
       </div>
     </main>
   );

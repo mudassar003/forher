@@ -1,29 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent, useMemo } from 'react';
 
-const BMICalculator = () => {
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
+type DisplayMode = 'imperial' | 'metric';
+type BMICategory = 'Underweight' | 'Normal weight' | 'Overweight' | 'Obesity' | '';
+
+const BMICalculator: React.FC = () => {
+  const [height, setHeight] = useState<string>('');
+  const [weight, setWeight] = useState<string>('');
   const [bmi, setBmi] = useState<string | null>(null);
-  const [bmiCategory, setBmiCategory] = useState('');
-  const [displayMode, setDisplayMode] = useState('imperial'); // 'imperial' or 'metric'
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [showResult, setShowResult] = useState(false);
+  const [bmiCategory, setBmiCategory] = useState<BMICategory>('');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('imperial');
+  const [isCalculating, setIsCalculating] = useState<boolean>(false);
+  const [showResult, setShowResult] = useState<boolean>(false);
+  
+  // Create color utilities for BMI categories using Tailwind classes
+  const bmiColorClasses = useMemo(() => ({
+    'Underweight': {
+      text: 'text-blue-500',
+      bg: 'bg-blue-100',
+      border: 'border-blue-500',
+      fill: 'bg-blue-500'
+    },
+    'Normal weight': {
+      text: 'text-green-500',
+      bg: 'bg-green-100',
+      border: 'border-green-500',
+      fill: 'bg-green-500'
+    },
+    'Overweight': {
+      text: 'text-yellow-500',
+      bg: 'bg-yellow-100',
+      border: 'border-yellow-500',
+      fill: 'bg-yellow-500'
+    },
+    'Obesity': {
+      text: 'text-red-600',
+      bg: 'bg-red-100',
+      border: 'border-red-600',
+      fill: 'bg-red-600'
+    }
+  }), []);
+
+  // Get Tailwind color class for current BMI category
+  const getBmiColorClass = (type: 'text' | 'bg' | 'border' | 'fill'): string => {
+    if (!bmiCategory || !(bmiCategory in bmiColorClasses)) {
+      // Default color class if category not recognized
+      return type === 'text' ? 'text-gray-700' : 
+             type === 'bg' ? 'bg-gray-100' : 
+             type === 'border' ? 'border-gray-400' : 'bg-gray-500';
+    }
+    
+    return bmiColorClasses[bmiCategory][type];
+  };
+
+  // Calculate the slider position for BMI indicator
+  const calculateSliderPosition = (): number => {
+    if (!bmi) return 0;
+    const bmiValue = parseFloat(bmi);
+    if (isNaN(bmiValue)) return 0;
+    
+    // Calculate position (clamped between 0-100)
+    return Math.min(Math.max((bmiValue - 15) / 25 * 100, 0), 100);
+  };
+
+  // Get the appropriate left positioning Tailwind class based on BMI value
+  const getSliderPositionClass = (): string => {
+    const position = calculateSliderPosition();
+    
+    // Map percentage to appropriate Tailwind positioning classes
+    if (position < 15) return 'left-[10%] -ml-3';
+    if (position < 30) return 'left-[25%] -ml-3';
+    if (position < 60) return 'left-[50%] -ml-3';
+    if (position < 85) return 'left-[75%] -ml-3';
+    return 'left-[90%] -ml-3';
+  };
 
   // Add animation for calculation
   useEffect(() => {
     if (isCalculating) {
       const timer = setTimeout(() => {
         // Define calculateBMI inside the effect
-        const calculateBMI = () => {
+        const calculateBMI = (): void => {
           if (!height || !weight) return;
 
-          let calculatedBMI;
+          const heightNum = parseFloat(height);
+          const weightNum = parseFloat(weight);
+
+          // Check for valid numbers
+          if (isNaN(heightNum) || isNaN(weightNum) || heightNum <= 0 || weightNum <= 0) return;
+
+          let calculatedBMI: string;
           if (displayMode === 'imperial') {
             // Imperial: BMI = (weight in pounds * 703) / (height in inches)²
-            calculatedBMI = ((parseFloat(weight) * 703) / (parseFloat(height) * parseFloat(height))).toFixed(1);
+            calculatedBMI = ((weightNum * 703) / (heightNum * heightNum)).toFixed(1);
           } else {
             // Metric: BMI = (weight in kg) / (height in m)²
-            calculatedBMI = (parseFloat(weight) / ((parseFloat(height) / 100) * (parseFloat(height) / 100))).toFixed(1);
+            calculatedBMI = (weightNum / ((heightNum / 100) * (heightNum / 100))).toFixed(1);
           }
 
           setBmi(calculatedBMI);
@@ -47,16 +118,16 @@ const BMICalculator = () => {
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [isCalculating, height, weight, displayMode]); // Include any variables used by calculateBMI
+  }, [isCalculating, height, weight, displayMode]);
 
-  const handleCalculateClick = () => {
+  const handleCalculateClick = (): void => {
     if (!height || !weight) return;
     setIsCalculating(true);
     // Hide previous results during calculation
     setShowResult(false);
   };
 
-  const toggleDisplayMode = () => {
+  const toggleDisplayMode = (): void => {
     setDisplayMode(prevMode => prevMode === 'imperial' ? 'metric' : 'imperial');
     setHeight('');
     setWeight('');
@@ -65,22 +136,15 @@ const BMICalculator = () => {
     setShowResult(false);
   };
 
-  const getResultColor = () => {
-    switch (bmiCategory) {
-      case 'Underweight':
-        return '#3b82f6'; // Blue
-      case 'Normal weight':
-        return '#10b981'; // Green
-      case 'Overweight':
-        return '#f59e0b'; // Amber
-      case 'Obesity':
-        return '#e63946'; // Brand red
-      default:
-        return '#333333';
-    }
+  const handleHeightChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    setHeight(e.target.value);
   };
 
-  const getResultMessage = () => {
+  const handleWeightChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    setWeight(e.target.value);
+  };
+
+  const getResultMessage = (): string => {
     switch (bmiCategory) {
       case 'Underweight':
         return '';
@@ -93,13 +157,6 @@ const BMICalculator = () => {
       default:
         return '';
     }
-  };
-
-  const getSliderPosition = () => {
-    if (!bmi) return 0;
-    const bmiValue = parseFloat(bmi);
-    // Calculate position (clamped between 0-100%)
-    return Math.min(Math.max((bmiValue - 15) / 25 * 100, 0), 100) + '%';
   };
 
   return (
@@ -128,7 +185,7 @@ const BMICalculator = () => {
                 type="number"
                 placeholder={`Enter your height in ${displayMode === 'imperial' ? 'inches' : 'cm'}`}
                 value={height}
-                onChange={(e) => setHeight(e.target.value)}
+                onChange={handleHeightChange}
                 className="w-full px-4 py-3 bg-gray-50 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 border border-gray-200 transition-all"
                 min="0"
               />
@@ -145,7 +202,7 @@ const BMICalculator = () => {
                 type="number"
                 placeholder={`Enter your weight in ${displayMode === 'imperial' ? 'pounds' : 'kilograms'}`}
                 value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+                onChange={handleWeightChange}
                 className="w-full px-4 py-3 bg-gray-50 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 border border-gray-200 transition-all"
                 min="0"
               />
@@ -191,10 +248,9 @@ const BMICalculator = () => {
           </div>
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-3 mb-1">
-              <span className="text-4xl font-bold" style={{ color: getResultColor() }}>{bmi}</span>
+              <span className={`text-4xl font-bold ${getBmiColorClass('text')}`}>{bmi}</span>
               <span 
-                className="px-3 py-1 text-sm font-medium rounded-full" 
-                style={{ backgroundColor: `${getResultColor()}20`, color: getResultColor() }}
+                className={`px-3 py-1 text-sm font-medium rounded-full ${getBmiColorClass('bg')} ${getBmiColorClass('text')}`}
               >
                 {bmiCategory}
               </span>
@@ -212,26 +268,20 @@ const BMICalculator = () => {
               <span>40</span>
             </div>
             <div className="relative h-3 mb-1">
-              <div className="absolute w-full h-full bg-gradient-to-r from-blue-400 via-green-400 via-yellow-400 to-[#e63946] rounded-full"></div>
+              <div className="absolute w-full h-full bg-gradient-to-r from-blue-400 via-green-400 via-yellow-400 to-red-600 rounded-full"></div>
               <div 
-                className="absolute w-6 h-6 rounded-full border-2 border-white shadow-lg transform -translate-y-1/4 transition-all duration-500 ease-out" 
-                style={{ 
-                  backgroundColor: getResultColor(),
-                  left: getSliderPosition(),
-                  marginLeft: '-10px'
-                }}
+                className={`absolute w-6 h-6 rounded-full border-2 border-white shadow-lg transform -translate-y-1/4 transition-all duration-500 ease-out ${getBmiColorClass('fill')} ${getSliderPositionClass()}`}
               ></div>
             </div>
             <div className="flex justify-between text-xs font-medium mt-1">
-              <span className="text-blue-500">Underweight</span>
-              <span className="text-green-500">Normal</span>
-              <span className="text-yellow-500">Overweight</span>
-              <span className="text-[#e63946]">Obesity</span>
+              <span className={bmiColorClasses['Underweight'].text}>Underweight</span>
+              <span className={bmiColorClasses['Normal weight'].text}>Normal</span>
+              <span className={bmiColorClasses['Overweight'].text}>Overweight</span>
+              <span className={bmiColorClasses['Obesity'].text}>Obesity</span>
             </div>
           </div>
         </div>
       )}
-      
       
       <div className="mt-5 text-xs text-gray-500 text-center">
         <p>BMI is a screening tool, not a diagnostic of health.</p>

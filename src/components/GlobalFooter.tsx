@@ -131,7 +131,7 @@ const GlobalFooter = () => {
       <div className="border-t border-gray-200 pt-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-center">
           <p className="text-sm text-gray-500 text-center">
-            © 2025 Lily's. All rights reserved.
+            © 2025 Lilys. All rights reserved.
           </p>
         </div>
       </div>

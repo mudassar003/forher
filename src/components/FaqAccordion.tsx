@@ -71,7 +71,7 @@ const FaqAccordion = () => {
             <h3>
               <button
                 id={`faq-button-${index}`}
-                aria-expanded={openIndex === index}
+                aria-expanded={openIndex === index ? "true" : "false"} {/* This line is fixed */}
                 aria-controls={`faq-panel-${index}`}
                 className="w-full flex justify-between items-center px-6 py-5 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-400"
                 onClick={() => toggleAccordion(index)}
@@ -81,13 +81,12 @@ const FaqAccordion = () => {
                   {item.question}
                 </span>
                 <span 
-                  className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-300
-                            md:w-12 md:h-12"
-                  style={{
-                    backgroundColor: openIndex === index ? "#fc4e87" : "#fff1f8",
-                    color: openIndex === index ? "white" : "#fc4e87",
-                    transform: openIndex === index ? "rotate(0deg)" : "rotate(0deg)"
-                  }}
+                  className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-300
+                              md:w-12 md:h-12 ${
+                                openIndex === index 
+                                  ? "bg-[#fc4e87] text-white" 
+                                  : "bg-[#fff1f8] text-[#fc4e87]"
+                              }`}
                   aria-hidden="true"
                 >
                   {openIndex === index ? (

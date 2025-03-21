@@ -12,7 +12,7 @@ interface Treatment {
   price: string;
   regularPrice: string;
   ctaText: string;
-  isBestValue?: boolean;
+  isBestValue?: boolean; // Optional property with proper type
 }
 
 export default function HairLoss() {
@@ -33,7 +33,8 @@ export default function HairLoss() {
       ],
       price: "$49",
       regularPrice: "$69",
-      ctaText: "Book Consultation"
+      ctaText: "Book Consultation",
+      isBestValue: false // Explicitly set to false
     },
     finasteride: {
       title: "Finasteride",
@@ -48,14 +49,15 @@ export default function HairLoss() {
       ],
       price: "$59",
       regularPrice: "$79",
-      ctaText: "Start Treatment"
+      ctaText: "Start Treatment",
+      isBestValue: false // Explicitly set to false
     },
     combo: {
       title: "Complete Care",
       description: "Our most comprehensive solution for maximum hair regrowth and retention.",
       tags: ["Minoxidil", "Finasteride", "Biotin"],
       timeline: "100%", // Full effectiveness
-      isBestValue: true,
+      isBestValue: true, // This one is the best value
       features: [
         "Minoxidil + Finasteride combination therapy",
         "Targets hair loss from multiple angles",
@@ -102,11 +104,14 @@ export default function HairLoss() {
           viewport={{ once: true }}
           transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          <h2 id="hair-growth-heading" className="text-3xl md:text-5xl font-bold mb-4" style={{ color: "#e63946" }}>
+          <h2 
+            id="hair-growth-heading" 
+            className="text-3xl md:text-5xl font-bold mb-4 text-[#e63946]"
+          >
             Grow Hair Like Never Before
           </h2>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            Lily's clinically proven treatments tailored to your unique hair restoration journey
+            Lily&apos;s clinically proven treatments tailored to your unique hair restoration journey
           </p>
         </motion.div>
 
@@ -119,7 +124,7 @@ export default function HairLoss() {
           transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
         >
           {/* Tabs - Improved for mobile */}
-          <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-200 bg-white">
+          <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-200 bg-white" role="tablist">
             {Object.entries(treatments).map(([id, treatment]) => (
               <button 
                 key={id}
@@ -129,8 +134,10 @@ export default function HairLoss() {
                     ? "text-[#e63946] border-b-2 border-[#e63946]" 
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
-                aria-selected={activeTab === id}
+                {...{ 'aria-selected': activeTab === id ? 'true' : 'false' }}
                 role="tab"
+                id={`tab-${id}`}
+                aria-controls={`panel-${id}`}
               >
                 {treatment.title}
               </button>
@@ -141,10 +148,16 @@ export default function HairLoss() {
           <div className="bg-white p-6 md:p-8">
             {Object.entries(treatments).map(([id, treatment]) => (
               activeTab === id && (
-                <div key={id} className="flex flex-col md:flex-row gap-8">
+                <div 
+                  key={id} 
+                  className="flex flex-col md:flex-row gap-8"
+                  role="tabpanel"
+                  id={`panel-${id}`}
+                  aria-labelledby={`tab-${id}`}
+                >
                   <div className="md:w-1/2">
                     <div className="relative p-6 bg-gray-50 rounded-2xl border border-gray-100 h-full shadow-sm">
-                      {treatment.isBestValue && (
+                      {treatment.isBestValue === true && (
                         <div className="absolute -top-4 -right-4 md:-top-6 md:-right-6 bg-[#e63946] text-white text-sm font-bold px-4 py-1 rounded-full shadow-lg z-10">
                           BEST VALUE
                         </div>
@@ -166,10 +179,9 @@ export default function HairLoss() {
                         <div className="mt-6">
                           <span className="text-gray-600 text-sm">Result Timeline</span>
                           <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
-                            <div className="h-full rounded-full bg-[#e63946]" 
-                                 style={{
-                                   width: treatment.timeline
-                                 }}></div>
+                            <div 
+                              className={`h-full rounded-full bg-[#e63946] w-[${treatment.timeline}]`}
+                            ></div>
                           </div>
                           <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>3 months</span>
@@ -228,7 +240,7 @@ export default function HairLoss() {
           viewport={{ once: true, amount: 0.3 }}
         >
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold mb-2" style={{ color: "#e63946" }}>
+            <h3 className="text-2xl font-bold mb-2 text-[#e63946]">
               <span className="inline-block">
                 <span className="inline-block mr-2">✨</span>Backed by science
               </span>

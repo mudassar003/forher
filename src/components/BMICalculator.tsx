@@ -13,46 +13,47 @@ const BMICalculator = () => {
   useEffect(() => {
     if (isCalculating) {
       const timer = setTimeout(() => {
+        // Define calculateBMI inside the effect
+        const calculateBMI = () => {
+          if (!height || !weight) return;
+
+          let calculatedBMI;
+          if (displayMode === 'imperial') {
+            // Imperial: BMI = (weight in pounds * 703) / (height in inches)²
+            calculatedBMI = ((parseFloat(weight) * 703) / (parseFloat(height) * parseFloat(height))).toFixed(1);
+          } else {
+            // Metric: BMI = (weight in kg) / (height in m)²
+            calculatedBMI = (parseFloat(weight) / ((parseFloat(height) / 100) * (parseFloat(height) / 100))).toFixed(1);
+          }
+
+          setBmi(calculatedBMI);
+
+          // Determine BMI category
+          const bmiValue = parseFloat(calculatedBMI);
+          if (bmiValue < 18.5) {
+            setBmiCategory('Underweight');
+          } else if (bmiValue >= 18.5 && bmiValue < 25) {
+            setBmiCategory('Normal weight');
+          } else if (bmiValue >= 25 && bmiValue < 30) {
+            setBmiCategory('Overweight');
+          } else {
+            setBmiCategory('Obesity');
+          }
+        };
+        
         calculateBMI();
         setIsCalculating(false);
         setShowResult(true);
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [isCalculating]);
+  }, [isCalculating, height, weight, displayMode]); // Include any variables used by calculateBMI
 
   const handleCalculateClick = () => {
     if (!height || !weight) return;
     setIsCalculating(true);
     // Hide previous results during calculation
     setShowResult(false);
-  };
-
-  const calculateBMI = () => {
-    if (!height || !weight) return;
-
-    let calculatedBMI;
-    if (displayMode === 'imperial') {
-      // Imperial: BMI = (weight in pounds * 703) / (height in inches)²
-      calculatedBMI = ((parseFloat(weight) * 703) / (parseFloat(height) * parseFloat(height))).toFixed(1);
-    } else {
-      // Metric: BMI = (weight in kg) / (height in m)²
-      calculatedBMI = (parseFloat(weight) / ((parseFloat(height) / 100) * (parseFloat(height) / 100))).toFixed(1);
-    }
-
-    setBmi(calculatedBMI);
-
-    // Determine BMI category
-    const bmiValue = parseFloat(calculatedBMI);
-    if (bmiValue < 18.5) {
-      setBmiCategory('Underweight');
-    } else if (bmiValue >= 18.5 && bmiValue < 25) {
-      setBmiCategory('Normal weight');
-    } else if (bmiValue >= 25 && bmiValue < 30) {
-      setBmiCategory('Overweight');
-    } else {
-      setBmiCategory('Obesity');
-    }
   };
 
   const toggleDisplayMode = () => {

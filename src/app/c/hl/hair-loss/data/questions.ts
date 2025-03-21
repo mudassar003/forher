@@ -1,14 +1,23 @@
 // src/app/c/hl/hair-loss/data/questions.ts
-import { Question, QuestionType, FormResponse } from "../types";
+import { FormResponse } from "../types";
 
 // Define all questions for the hair loss form
-export const hairLossQuestions: Question[] = [
+export const hairLossQuestions: Array<{
+  id: string;
+  question: string;
+  description: string;
+  type: "single" | "multiple";
+  options: Array<{
+    id: string;
+    label: string;
+  }>;
+}> = [
   // Step 1: Basic Demographics
   {
     id: "age-group",
     question: "What is your age group?",
     description: "Please select your current age range.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "under-18", label: "Under 18" },
       { id: "18-24", label: "18-24" },
@@ -22,7 +31,7 @@ export const hairLossQuestions: Question[] = [
     id: "gender",
     question: "Are you female?",
     description: "Our products are designed specifically for women's hair loss needs.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -34,7 +43,7 @@ export const hairLossQuestions: Question[] = [
     id: "hair-loss-duration",
     question: "When did you first notice hair thinning or hair loss?",
     description: "Please select when you first started experiencing noticeable hair loss.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "less-than-6-months", label: "Less than 6 months ago" },
       { id: "6-months-to-1-year", label: "6 months – 1 year ago" },
@@ -45,7 +54,7 @@ export const hairLossQuestions: Question[] = [
     id: "affected-areas",
     question: "What areas of your scalp are affected?",
     description: "Select all areas where you notice hair thinning or loss.",
-    type: QuestionType.MultiSelect,
+    type: "multiple",
     options: [
       { id: "general-thinning", label: "General thinning all over" },
       { id: "thinning-crown", label: "Thinning at the crown" },
@@ -58,7 +67,7 @@ export const hairLossQuestions: Question[] = [
     id: "excessive-shedding",
     question: "Do you experience excessive hair shedding (losing more than 100 hairs per day)?",
     description: "Excessive shedding is when you notice significantly more hair falling out than usual.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -70,7 +79,7 @@ export const hairLossQuestions: Question[] = [
     id: "medical-conditions",
     question: "Do you have any of the following medical conditions?",
     description: "Select all conditions that apply to you.",
-    type: QuestionType.MultiSelect,
+    type: "multiple",
     options: [
       { id: "pcos", label: "PCOS (Polycystic Ovary Syndrome)" },
       { id: "thyroid-disorder", label: "Thyroid disorder (hypothyroidism, hyperthyroidism)" },
@@ -83,7 +92,7 @@ export const hairLossQuestions: Question[] = [
     id: "hair-loss-medications",
     question: "Are you currently taking any medications known to cause hair loss?",
     description: "E.g., chemotherapy, beta-blockers, hormonal medications",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -93,7 +102,7 @@ export const hairLossQuestions: Question[] = [
     id: "family-history",
     question: "Do you have a family history of hair loss?",
     description: "Such as female pattern baldness or male pattern baldness",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -105,7 +114,7 @@ export const hairLossQuestions: Question[] = [
     id: "balanced-diet",
     question: "Do you have a balanced diet with sufficient protein and vitamins?",
     description: "A balanced diet is important for hair health.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -115,7 +124,7 @@ export const hairLossQuestions: Question[] = [
     id: "recent-changes",
     question: "Have you experienced recent stress, illness, or hormonal changes?",
     description: "E.g., post-pregnancy, menopause, major life events",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -125,7 +134,7 @@ export const hairLossQuestions: Question[] = [
     id: "heat-styling",
     question: "How often do you use heat styling tools?",
     description: "E.g., blow dryers, straighteners, curling irons",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "rarely", label: "Rarely" },
       { id: "occasionally", label: "Occasionally" },
@@ -136,7 +145,7 @@ export const hairLossQuestions: Question[] = [
     id: "chemical-treatments",
     question: "Do you regularly dye or chemically treat your hair?",
     description: "Including color treatments, perms, relaxers, etc.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -148,7 +157,7 @@ export const hairLossQuestions: Question[] = [
     id: "scalp-issues",
     question: "Do you experience dandruff, scalp irritation, or itchiness?",
     description: "Scalp health is closely related to hair growth.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -158,7 +167,7 @@ export const hairLossQuestions: Question[] = [
     id: "wash-frequency",
     question: "How often do you wash your hair?",
     description: "Select your typical hair washing frequency.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "daily", label: "Daily" },
       { id: "every-2-3-days", label: "Every 2-3 days" },
@@ -169,7 +178,7 @@ export const hairLossQuestions: Question[] = [
     id: "specialized-shampoo",
     question: "Do you use sulfate-free or hair-growth supporting shampoos?",
     description: "These types of shampoos can be gentler on the hair and scalp.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -181,7 +190,7 @@ export const hairLossQuestions: Question[] = [
     id: "previous-treatments",
     question: "Have you tried any hair loss treatments before?",
     description: "Select all treatments you have tried.",
-    type: QuestionType.MultiSelect,
+    type: "multiple",
     options: [
       { id: "minoxidil", label: "Minoxidil (Topical Treatment)" },
       { id: "prp-therapy", label: "PRP Therapy (Platelet-Rich Plasma)" },
@@ -194,7 +203,7 @@ export const hairLossQuestions: Question[] = [
     id: "topical-treatments",
     question: "Are you open to topical hair regrowth treatments?",
     description: "E.g., minoxidil, peptides, serums",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -204,7 +213,7 @@ export const hairLossQuestions: Question[] = [
     id: "oral-supplements",
     question: "Are you interested in oral supplements for hair regrowth?",
     description: "E.g., biotin, saw palmetto, iron, or collagen",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -214,7 +223,7 @@ export const hairLossQuestions: Question[] = [
     id: "long-term-commitment",
     question: "Are you comfortable committing to long-term hair regrowth treatments?",
     description: "3-6 months minimum is typically required to see results",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -226,7 +235,7 @@ export const hairLossQuestions: Question[] = [
     id: "doctor-consultation",
     question: "Are you willing to consult a doctor before starting any new hair loss treatment?",
     description: "Medical guidance is important for safe and effective treatment.",
-    type: QuestionType.SingleSelect,
+    type: "single",
     options: [
       { id: "yes", label: "Yes" },
       { id: "no", label: "No" }
@@ -234,20 +243,18 @@ export const hairLossQuestions: Question[] = [
   }
 ];
 
-// Calculate progress percentage based on current question index
-export const getProgressPercentage = (currentOffset: number): number => {
-  // Offset 0 is introduction (20%), max should be 95% for the last question
-  const totalQuestions = hairLossQuestions.length;
-  
-  if (currentOffset === 0) return 20;
-  
-  // First actual question starts at 25%, increases proportionally to last question
-  const questionIndex = currentOffset - 1; // Since offset 1 = first question
-  return 25 + (questionIndex / totalQuestions * 70);
+// Define the eligibility check function with proper type safety
+interface EligibilityResponse {
+  eligible: boolean;
+  reason: string;
+}
+
+// Type guard for string arrays
+const isStringArray = (value: unknown): value is string[] => {
+  return Array.isArray(value) && value.every(item => typeof item === 'string');
 };
 
-// Determine eligibility based on responses
-export const checkEligibility = (responses: FormResponse): { eligible: boolean; reason: string } => {
+export const checkEligibility = (responses: FormResponse): EligibilityResponse => {
   // Check for conditions and provide guidance, but allow all users to proceed
 
   // Age under 18
@@ -267,10 +274,10 @@ export const checkEligibility = (responses: FormResponse): { eligible: boolean; 
   }
 
   // No noticeable hair loss
-  if (responses["affected-areas"] && 
-      Array.isArray(responses["affected-areas"]) && 
-      responses["affected-areas"].includes("no-noticeable-loss") && 
-      responses["affected-areas"].length === 1) {
+  const affectedAreas = responses["affected-areas"];
+  if (isStringArray(affectedAreas) && 
+      affectedAreas.includes("no-noticeable-loss") && 
+      affectedAreas.length === 1) {
     return {
       eligible: true,
       reason: "While you may not notice significant hair loss, you can still proceed. We recommend monitoring your hair and consulting with a doctor if you notice changes."
@@ -278,9 +285,9 @@ export const checkEligibility = (responses: FormResponse): { eligible: boolean; 
   }
 
   // Autoimmune disorder
-  if (responses["medical-conditions"] && 
-      Array.isArray(responses["medical-conditions"]) && 
-      responses["medical-conditions"].includes("autoimmune-disorder")) {
+  const medicalConditions = responses["medical-conditions"];
+  if (isStringArray(medicalConditions) && 
+      medicalConditions.includes("autoimmune-disorder")) {
     return {
       eligible: true,
       reason: "While you have an autoimmune condition, you can still proceed. We strongly recommend consulting your doctor before starting any hair loss treatments."

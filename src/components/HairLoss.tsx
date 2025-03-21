@@ -3,11 +3,23 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 
+interface Treatment {
+  title: string;
+  description: string;
+  tags: string[];
+  timeline: string;
+  features: string[];
+  price: string;
+  regularPrice: string;
+  ctaText: string;
+  isBestValue?: boolean;
+}
+
 export default function HairLoss() {
   const [activeTab, setActiveTab] = useState("minoxidil");
 
   // Treatment data for better maintenance
-  const treatments = {
+  const treatments: Record<string, Treatment> = {
     minoxidil: {
       title: "Minoxidil",
       description: "The most widely used treatment for hair regrowth with proven results.",

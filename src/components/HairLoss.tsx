@@ -2,98 +2,247 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function HairLoss() {
+  const [activeTab, setActiveTab] = useState("minoxidil");
+
+  // Add keyframes for animations
+  const animationKeyframes = `
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  `;
+
   return (
-    <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
-      {/* High-quality background image - Fixed gradient overlay for consistent look regardless of image quality */}
+    <section className="relative w-full min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
+      {/* Inject the keyframes animation */}
+      <style>{animationKeyframes}</style>
+      {/* Background with improved overlay - matched to your site's color scheme */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/70 to-pink-600/70 z-10 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#e63946]/70 to-[#ff4d6d]/70 z-10 mix-blend-multiply" />
         <Image
           src="/images/picture3.png"
-          alt="Beautiful hair background"
+          alt="Hair treatment background"
           fill
           priority
           sizes="100vw"
           style={{ objectFit: 'cover', objectPosition: 'center' }}
-          className="brightness-110 contrast-105"
+          className="brightness-105 contrast-105 saturate-105"
         />
       </div>
 
       {/* Content container */}
-      <div className="relative z-20 w-full max-w-6xl mx-auto px-4 py-16 flex flex-col items-center">
-        {/* Heading with enhanced text shadow for better readability */}
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 md:px-8 py-16 flex flex-col items-center">
+        {/* Animated headline with better typography */}
         <motion.div 
-          className="text-center mb-8 md:mb-12"
+          className="text-center mb-10 md:mb-14"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-            Grow hair like
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-tight text-white drop-shadow-[0_3px_5px_rgba(0,0,0,0.3)]">
+            Regain Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-200 to-white">Confidence</span>
           </h1>
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-            never before
-          </h2>
+          <p className="mt-4 text-xl md:text-2xl text-pink-100/90 max-w-3xl mx-auto font-medium">
+            Clinically proven treatments tailored to your unique hair restoration journey
+          </p>
         </motion.div>
 
-        {/* Regrow card - Completely redesigned */}
+        {/* Treatment options with tabs */}
         <motion.div 
-          className="w-80 md:w-96 rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.25)] mb-12 md:mb-16"
-          initial={{ opacity: 0, y: 20 }}
+          className="w-full max-w-4xl bg-white/10 backdrop-blur-md rounded-3xl overflow-hidden shadow-[0_15px_50px_rgba(0,0,0,0.25)] mb-12 md:mb-16"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
         >
-          <div className="bg-gradient-to-br from-[#ff5b8d] to-[#f83d7b] p-6 relative">
-        
-            {/* Hand with pill image (centered between text and button) */}
-            <div className="relative w-full h-[400px] rounded-2xl bg-white/10 backdrop-blur-md shadow-lg overflow-hidden">
-                        <Image
-                          src="/images/Regrow_Hair.webp"
-                          alt="Regrow Hair"
-                          layout="fill"
-                          objectFit="cover"
-                        />
-                        <div className="absolute top-6 left-6 text-white font-semibold text-lg max-w-[60%]">
-                          <p>Regrow hair in</p>
-                          <p>3–6 months with</p>
-                          <p className="font-bold">Minoxidil</p>
-                        </div>
-                        <button className="absolute bottom-6 right-6 bg-white/30 text-white px-5 py-2 rounded-full backdrop-blur-lg shadow-md">
-                          Get started
-                        </button>
-                      </div>
+          {/* Tabs */}
+          <div className="flex border-b border-white/20">
+            <button 
+              onClick={() => setActiveTab("minoxidil")}
+              className={`flex-1 py-4 px-6 text-center font-semibold text-lg transition-all ${activeTab === "minoxidil" 
+                ? "text-white bg-gradient-to-r from-pink-600/80 to-purple-600/80" 
+                : "text-white/70 hover:text-white hover:bg-white/10"}`}
+            >
+              Minoxidil
+            </button>
+            <button 
+              onClick={() => setActiveTab("finasteride")}
+              className={`flex-1 py-4 px-6 text-center font-semibold text-lg transition-all ${activeTab === "finasteride" 
+                ? "text-white bg-gradient-to-r from-pink-600/80 to-purple-600/80" 
+                : "text-white/70 hover:text-white hover:bg-white/10"}`}
+            >
+              Finasteride
+            </button>
+            <button 
+              onClick={() => setActiveTab("combo")}
+              className={`flex-1 py-4 px-6 text-center font-semibold text-lg transition-all ${activeTab === "combo" 
+                ? "text-white bg-gradient-to-r from-pink-600/80 to-purple-600/80" 
+                : "text-white/70 hover:text-white hover:bg-white/10"}`}
+            >
+              Complete Care
+            </button>
+          </div>
+
+          {/* Content based on active tab */}
+          <div className="p-8 md:p-10">
+            {activeTab === "minoxidil" && (
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="md:w-1/2 relative h-[300px] md:h-[380px] rounded-2xl overflow-hidden">
+                  <Image
+                    src="/images/Regrow_Hair.webp"
+                    alt="Minoxidil Treatment"
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                </div>
+                <div className="md:w-1/2 text-white">
+                  <h3 className="text-3xl font-bold mb-4">Minoxidil Treatment</h3>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Regrow hair in as little as 3–6 months</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>FDA-approved for both men and women</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Easy-to-apply topical solution</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Proven to increase hair count by up to 25%</span>
+                    </li>
+                  </ul>
+                  <div className="flex items-center mb-6">
+                    <div className="mr-4">
+                      <span className="text-3xl font-bold">$49</span>
+                      <span className="text-pink-200">/month</span>
+                    </div>
+                    <span className="line-through text-white/50">$69</span>
+                  </div>
+                  <motion.button 
+                    className="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Start Treatment
+                  </motion.button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "finasteride" && (
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="md:w-1/2 relative h-[300px] md:h-[380px] rounded-2xl overflow-hidden">
+                  <Image
+                    src="/images/Regrow_Hair.webp"
+                    alt="Finasteride Treatment"
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                </div>
+                <div className="md:w-1/2 text-white">
+                  <h3 className="text-3xl font-bold mb-4">Finasteride Treatment</h3>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Prevents further hair loss at the source</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Reduces DHT, the hormone causing hair loss</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Once-daily oral medication</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Results visible within 3-6 months</span>
+                    </li>
+                  </ul>
+                  <div className="flex items-center mb-6">
+                    <div className="mr-4">
+                      <span className="text-3xl font-bold">$59</span>
+                      <span className="text-pink-200">/month</span>
+                    </div>
+                    <span className="line-through text-white/50">$79</span>
+                  </div>
+                  <motion.button 
+                    className="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Start Treatment
+                  </motion.button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "combo" && (
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="md:w-1/2 relative h-[300px] md:h-[380px] rounded-2xl overflow-hidden">
+                  <Image
+                    src="/images/Regrow_Hair.webp"
+                    alt="Complete Hair Care"
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                  <div className="absolute top-3 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-bold px-3 py-1 rounded-full">
+                    BEST VALUE
+                  </div>
+                </div>
+                <div className="md:w-1/2 text-white">
+                  <h3 className="text-3xl font-bold mb-4">Complete Hair Care</h3>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Minoxidil + Finasteride combination therapy</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Targets hair loss from multiple angles</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Biotin supplement for hair health</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-pink-300 mr-2">✓</span>
+                      <span>Quarterly follow-ups with hair specialists</span>
+                    </li>
+                  </ul>
+                  <div className="flex items-center mb-6">
+                    <div className="mr-4">
+                      <span className="text-3xl font-bold">$89</span>
+                      <span className="text-pink-200">/month</span>
+                    </div>
+                    <span className="line-through text-white/50">$129</span>
+                  </div>
+                  <motion.button 
+                    className="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Start Treatment
+                  </motion.button>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Action buttons - Enhanced with better styling */}
-        <motion.div 
-          className="flex gap-5 w-full max-w-md justify-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <motion.button 
-            className="w-1/2 py-4 bg-white text-[#222] rounded-full font-bold text-base md:text-lg shadow-lg hover:shadow-xl transition-all"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            Get started
-          </motion.button>
-          <motion.button 
-            className="w-1/2 py-4 bg-[#d13964] text-white rounded-full font-bold text-base md:text-lg shadow-lg hover:shadow-xl transition-all"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            See if I'm eligible
-          </motion.button>
-        </motion.div>
       </div>
 
-      {/* Wave SVG at bottom */}
+      {/* Wave SVG at bottom - Smooth wave transition */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden z-10">
         <svg
-          className="relative block w-full h-16 md:h-24"
+          className="relative block w-full h-24"
           viewBox="0 0 1200 120" 
           preserveAspectRatio="none"
           fill="white"

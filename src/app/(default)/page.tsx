@@ -5,7 +5,7 @@ import RotatingHeadline from "@/components/RotatingHeadline";
 import RotatingSection from "@/components/RotatingSection";
 import VideoSection from "@/components/VideoSection";
 import HairLoss from "@/components/HairLoss";
-import HairRegrowCard from "@/components/HairRegrowCard";
+// import HairRegrowCard from "@/components/HairRegrowCard";
 import FaqAccordion from "@/components/FaqAccordion";
 import SubscribeSection from "@/components/SubscribeSection";
 import AuthCallback from "@/components/Auth/AuthCallback";
@@ -24,7 +24,7 @@ export default function HomePage() {
         <RotatingSection />
         <VideoSection />
         <HairLoss />
-        <HairRegrowCard />
+       
         <FaqAccordion />
         <SubscribeSection />
 

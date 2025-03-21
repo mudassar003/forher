@@ -5,8 +5,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import BMICalculator from "./BMICalculator";
 
 const RedesignedWeightLossSection = () => {
-  // activeCategory state removed as it's no longer needed
+  // State for animated words
   const [wordIndex, setWordIndex] = useState(0);
+  
+  // State for mobile view
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Detect mobile view on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Check on resize
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const animatedWords = [
     { text: "healthier", color: "#10b981" }, // Green for health
@@ -22,8 +39,6 @@ const RedesignedWeightLossSection = () => {
     
     return () => clearInterval(interval);
   }, []);
-
-  // Categories removed as requested
 
   return (
     <section className="relative w-full py-16 bg-gradient-to-b from-white to-[#fdfafa] overflow-hidden">
@@ -54,140 +69,291 @@ const RedesignedWeightLossSection = () => {
           </motion.p>
         </div>
         
-        {/* Main content area */}
-        <div className="flex flex-col lg:flex-row items-stretch justify-between gap-10 md:gap-12">
-          {/* Left column - more engaging, cleaner layout */}
-          <motion.div 
-            className="w-full lg:w-6/12 flex flex-col justify-center"
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            {/* Animated headline with improved typography */}
-            <div className="mb-6 md:mb-8">
-              <h3 className="text-2xl md:text-3xl font-medium mb-1">
-                <span className="text-gray-700">Be </span>
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={wordIndex}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -20, opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                    style={{ color: animatedWords[wordIndex].color }}
-                    className="font-bold relative inline-block"
+        {/* Mobile View - Stacked Layout */}
+        {isMobile ? (
+          <div className="flex flex-col">
+            {/* BMI Calculator First on Mobile */}
+            <motion.div 
+              className="w-full relative mb-10 flex justify-center"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* Decorative elements */}
+              <div className="absolute -top-5 -right-5 w-16 h-16 rounded-full bg-[#ffedf0] opacity-70 z-0"></div>
+              <div className="absolute -bottom-5 -left-5 w-12 h-12 rounded-full bg-[#f0f7ff] opacity-60 z-0"></div>
+              
+              {/* Calculator - centered with max-width */}
+              <div className="relative z-10 transform hover:-translate-y-1 transition-transform duration-300 w-full max-w-md">
+                <BMICalculator />
+              </div>
+            </motion.div>
+            
+            {/* Content Section */}
+            <motion.div 
+              className="w-full"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              {/* Animated headline with improved typography */}
+              <div className="mb-6 text-center">
+                <h3 className="text-2xl md:text-3xl font-medium mb-3">
+                  <span className="text-gray-700">Be </span>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={wordIndex}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -20, opacity: 0 }}
+                      transition={{ duration: 0.5 }}
+                      style={{ color: animatedWords[wordIndex].color }}
+                      className="font-bold relative inline-block"
+                    >
+                      {animatedWords[wordIndex].text}
+                      <span className="absolute bottom-0 left-0 w-full h-1 rounded opacity-40" style={{ backgroundColor: animatedWords[wordIndex].color }}></span>
+                    </motion.span>
+                  </AnimatePresence>
+                  <span className="text-gray-700"> today</span>
+                </h3>
+                <p className="text-gray-600 mt-3 mx-auto px-4">
+                  Our clinically-backed approach helps you achieve sustainable results with personalized support.
+                </p>
+              </div>
+              
+              {/* Benefits Cards - Mobile Optimized */}
+              <div className="space-y-3 mb-8 px-2">
+                <motion.div 
+                  className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
+                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#e6f5ff] text-[#0284c7]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">Save 30% with FSA & HSA</h4>
+                    <p className="text-sm text-gray-600">Use pre-tax dollars to save on your health journey</p>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
+                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#ecfdf5] text-[#10b981]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">No Insurance Needed</h4>
+                    <p className="text-sm text-gray-600">Direct access to quality care without insurance hassles</p>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
+                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#fff1f2] text-[#e63946]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">Medical Expertise</h4>
+                    <p className="text-sm text-gray-600">Board-certified professionals guide your weight loss journey</p>
+                  </div>
+                </motion.div>
+              </div>
+              
+              {/* Mobile Action buttons in a card-like container */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="p-5 rounded-xl bg-white shadow-sm border border-gray-100"
+              >
+                <p className="text-center text-gray-700 font-medium mb-4">Ready to start your journey?</p>
+                <div className="space-y-3">
+                  <motion.a 
+                    href="/products"
+                    className="w-full px-6 py-3 rounded-lg font-medium text-white bg-gradient-to-r from-[#e63946] to-[#ff4d6d] shadow-sm flex items-center justify-center hover:shadow-md transition-all duration-300"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ y: 0 }}
                   >
-                    {animatedWords[wordIndex].text}
-                    <span className="absolute bottom-0 left-0 w-full h-1 rounded opacity-40" style={{ backgroundColor: animatedWords[wordIndex].color }}></span>
-                  </motion.span>
-                </AnimatePresence>
-                <span className="text-gray-700"> today</span>
-              </h3>
-              <p className="text-gray-600 mt-3 md:pr-10">
-                Our clinically-backed approach helps you achieve sustainable results with personalized support.
-              </p>
-            </div>
-            
-            {/* Benefits with enhanced visual presentation */}
-            <div className="grid grid-cols-1 gap-4 mb-8">
-              <motion.div 
-                className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
-                whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#e6f5ff] text-[#0284c7]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-800">Save 30% with FSA & HSA</h4>
-                  <p className="text-sm text-gray-600">Use pre-tax dollars to save on your health journey</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    See Products
+                  </motion.a>
+                  <motion.a 
+                    href="/booking"
+                    className="w-full px-6 py-3 rounded-lg font-medium text-[#e63946] bg-white border border-[#e63946] shadow-sm flex items-center justify-center hover:bg-[#fff5f6] transition-all duration-300"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ y: 0 }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                    </svg>
+                    Book Appointment
+                  </motion.a>
                 </div>
               </motion.div>
+            </motion.div>
+          </div>
+        ) : (
+          /* Desktop View - Original Layout */
+          <div className="flex flex-col lg:flex-row items-stretch justify-between gap-10 md:gap-12">
+            {/* Left column - more engaging, cleaner layout */}
+            <motion.div 
+              className="w-full lg:w-6/12 flex flex-col justify-center"
+              initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* Animated headline with improved typography */}
+              <div className="mb-6 md:mb-8">
+                <h3 className="text-2xl md:text-3xl font-medium mb-1">
+                  <span className="text-gray-700">Be </span>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={wordIndex}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -20, opacity: 0 }}
+                      transition={{ duration: 0.5 }}
+                      style={{ color: animatedWords[wordIndex].color }}
+                      className="font-bold relative inline-block"
+                    >
+                      {animatedWords[wordIndex].text}
+                      <span className="absolute bottom-0 left-0 w-full h-1 rounded opacity-40" style={{ backgroundColor: animatedWords[wordIndex].color }}></span>
+                    </motion.span>
+                  </AnimatePresence>
+                  <span className="text-gray-700"> today</span>
+                </h3>
+                <p className="text-gray-600 mt-3 md:pr-10">
+                  Our clinically-backed approach helps you achieve sustainable results with personalized support.
+                </p>
+              </div>
               
-              <motion.div 
-                className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
-                whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#ecfdf5] text-[#10b981]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-800">No Insurance Needed</h4>
-                  <p className="text-sm text-gray-600">Direct access to quality care without insurance hassles</p>
-                </div>
-              </motion.div>
+              {/* Benefits with enhanced visual presentation */}
+              <div className="grid grid-cols-1 gap-4 mb-8">
+                <motion.div 
+                  className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
+                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#e6f5ff] text-[#0284c7]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">Save 30% with FSA & HSA</h4>
+                    <p className="text-sm text-gray-600">Use pre-tax dollars to save on your health journey</p>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
+                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#ecfdf5] text-[#10b981]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">No Insurance Needed</h4>
+                    <p className="text-sm text-gray-600">Direct access to quality care without insurance hassles</p>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
+                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#fff1f2] text-[#e63946]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">Medical Expertise</h4>
+                    <p className="text-sm text-gray-600">Board-certified professionals guide your weight loss journey</p>
+                  </div>
+                </motion.div>
+              </div>
               
-              <motion.div 
-                className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
-                whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.05)" }}
-                transition={{ duration: 0.2 }}
+              {/* Action buttons moved to left column for better integration */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="space-y-3 md:space-y-0 md:flex md:gap-4 mt-2"
               >
-                <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-[#fff1f2] text-[#e63946]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <motion.a 
+                  href="/products"
+                  className="w-full md:w-auto px-6 py-3 rounded-lg font-medium text-white bg-gradient-to-r from-[#e63946] to-[#ff4d6d] shadow-sm flex items-center justify-center hover:shadow-md transition-all duration-300"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 0 }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                   </svg>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-800">Medical Expertise</h4>
-                  <p className="text-sm text-gray-600">Board-certified professionals guide your weight loss journey</p>
-                </div>
+                  See Products
+                </motion.a>
+                <motion.a 
+                  href="/booking"
+                  className="w-full md:w-auto px-6 py-3 rounded-lg font-medium text-[#e63946] bg-white border border-[#e63946] shadow-sm flex items-center justify-center hover:bg-[#fff5f6] transition-all duration-300"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 0 }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                  </svg>
+                  Book Appointment
+                </motion.a>
               </motion.div>
-            </div>
+            </motion.div>
             
-            {/* Category selection removed as requested */}
-          </motion.div>
-          
-          {/* Right column - Enhanced BMI calculator */}
-          <motion.div 
-            className="w-full lg:w-5/12 relative"
-            initial={{ opacity: 0, x: 10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            {/* Decorative elements */}
-            <div className="absolute -top-10 -right-10 w-20 h-20 rounded-full bg-[#ffedf0] opacity-70 z-0"></div>
-            <div className="absolute -bottom-8 -left-8 w-16 h-16 rounded-full bg-[#f0f7ff] opacity-60 z-0"></div>
-            
-            {/* Calculator with shadow and positioning effects */}
-            <div className="relative z-10 transform hover:-translate-y-1 transition-transform duration-300">
-              <BMICalculator />
-            </div>
-          </motion.div>
-        </div>
-        
-        {/* Action buttons centered below section */}
-        <div className="flex flex-wrap gap-4 justify-center mt-12">
-          <motion.a 
-            href="/products"
-            className="px-6 py-3 rounded-lg font-medium text-white bg-gradient-to-r from-[#e63946] to-[#ff4d6d] shadow-sm flex items-center justify-center min-w-32 hover:shadow-md transition-all duration-300"
-            whileHover={{ y: -2 }}
-            whileTap={{ y: 0 }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-            </svg>
-            See Products
-          </motion.a>
-          <motion.a 
-            href="/booking"
-            className="px-6 py-3 rounded-lg font-medium text-[#e63946] bg-white border border-[#e63946] shadow-sm flex items-center justify-center min-w-32 hover:bg-[#fff5f6] transition-all duration-300"
-            whileHover={{ y: -2 }}
-            whileTap={{ y: 0 }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-            </svg>
-            Book Appointment
-          </motion.a>
-        </div>
+            {/* Right column - Enhanced BMI calculator */}
+            <motion.div 
+              className="w-full lg:w-5/12 relative"
+              initial={{ opacity: 0, x: 10 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              {/* Decorative elements */}
+              <div className="absolute -top-10 -right-10 w-20 h-20 rounded-full bg-[#ffedf0] opacity-70 z-0"></div>
+              <div className="absolute -bottom-8 -left-8 w-16 h-16 rounded-full bg-[#f0f7ff] opacity-60 z-0"></div>
+              
+              {/* Calculator with shadow and positioning effects */}
+              <div className="relative z-10 transform hover:-translate-y-1 transition-transform duration-300">
+                <BMICalculator />
+              </div>
+              
+              {/* Visual connector element that ties the calculator to the overall theme */}
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-32 h-2 bg-gradient-to-r from-[#e63946] to-[#ff4d6d] rounded-full opacity-60 hidden lg:block"></div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </section>
   );

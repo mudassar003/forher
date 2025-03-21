@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import React from "react";
 
 // Define types for our data
 interface Solution {
@@ -45,7 +46,7 @@ const solutions: Solution[] = [
   }
 ];
 
-export default function NewHairLossSection(): JSX.Element {
+export default function NewHairLossSection(): React.ReactElement {
   const [activeSolution, setActiveSolution] = useState<string>("minoxidil");
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [beforeAfterValue, setBeforeAfterValue] = useState<number>(50);

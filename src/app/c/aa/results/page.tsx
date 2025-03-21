@@ -46,8 +46,15 @@ export default function ResultsPage() {
   const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
   const [skinType, setSkinType] = useState<string | null>(null);
   const [userResponses, setUserResponses] = useState<Record<string, any>>({});
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
     // Check if we have a stored ineligibility reason
     const storedIneligibilityReason = sessionStorage.getItem("skinIneligibilityReason");
     if (storedIneligibilityReason) {
@@ -174,7 +181,7 @@ export default function ResultsPage() {
     };
     
     fetchData();
-  }, [router]);
+  }, [router, isClient]);
 
   // Function to clear recommendation and start over
   const startOver = () => {
@@ -417,9 +424,6 @@ export default function ResultsPage() {
                   
                   {/* Product Details */}
                   <div className="md:w-2/3">
-                    // src/app/c/aa/results/page.tsx (continued)
-// Product Details section continuation
-
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">{recommendation.product.title}</h3>
                     <div className="flex items-center mb-4">
                       <span className="text-xl font-bold text-black">${recommendation.product.price}</span>

@@ -71,7 +71,7 @@ const FaqAccordion = () => {
             <h3>
               <button
                 id={`faq-button-${index}`}
-                aria-expanded={openIndex === index ? "true" : "false"}
+                {...{"aria-expanded": openIndex === index ? "true" : "false"}}
                 aria-controls={`faq-panel-${index}`}
                 className="w-full flex justify-between items-center px-6 py-5 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-400"
                 onClick={() => toggleAccordion(index)}

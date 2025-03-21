@@ -16,16 +16,28 @@ import {
   MultiSelectQuestion 
 } from "../skin/types";
 
+type SkinType = 'oily' | 'dry' | 'combination' | 'sensitive' | 'normal';
+type ProductType = 'OTC' | 'Prescription';
+type AdministrationType = 'oral' | 'topical';
+
+interface SanityImage {
+  asset: {
+    _ref: string;
+    _type: string;
+  };
+  alt?: string;
+}
+
 interface Product {
   _id: string;
   title: string;
   slug: { current: string };
   price: number;
   description: string;
-  mainImage?: any;
-  productType?: string;
-  administrationType?: string;
-  suitableForSkinTypes?: string[];
+  mainImage?: SanityImage;
+  productType?: ProductType;
+  administrationType?: AdministrationType;
+  suitableForSkinTypes?: SkinType[];
   targetConcerns?: string[];
   ingredients?: string[];
 }
@@ -37,16 +49,34 @@ interface Recommendation {
   product?: Product;
 }
 
-export default function ResultsPage() {
+interface UserResponse {
+  'skin-type'?: SkinType;
+  'skin-concerns'?: string[];
+  'skincare-frequency'?: string;
+  'sunscreen-usage'?: 'rarely' | 'sometimes' | 'daily';
+  'stress-levels'?: 'high' | 'medium' | 'low';
+  'water-intake'?: 'less-than-1' | '1-2' | 'more-than-2';
+  'smoking-alcohol'?: 'both' | 'smoking-only' | 'alcohol-only' | 'neither';
+  'diet'?: 'processed' | 'balanced' | 'healthy';
+  'sun-exposure'?: 'yes' | 'no';
+}
+
+interface Insight {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export default function ResultsPage(): React.ReactElement {
   const router = useRouter();
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
-  const [skinType, setSkinType] = useState<string | null>(null);
-  const [userResponses, setUserResponses] = useState<Record<string, any>>({});
-  const [isClient, setIsClient] = useState(false);
+  const [skinType, setSkinType] = useState<SkinType | null>(null);
+  const [userResponses, setUserResponses] = useState<UserResponse>({});
+  const [isClient, setIsClient] = useState<boolean>(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -65,7 +95,7 @@ export default function ResultsPage() {
     const storedResponses = sessionStorage.getItem("finalSkinResponses");
     if (storedResponses) {
       try {
-        const parsedResponses = JSON.parse(storedResponses);
+        const parsedResponses = JSON.parse(storedResponses) as UserResponse;
         setUserResponses(parsedResponses);
         
         // Set skin type if available
@@ -80,7 +110,7 @@ export default function ResultsPage() {
     // Check if we already have a recommendation in localStorage
     const savedRecommendation = localStorage.getItem('skinRecommendation');
     
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
         // Fetch all skin products regardless of recommendation
         const products: Product[] = await client.fetch(`
@@ -109,7 +139,7 @@ export default function ResultsPage() {
         
         // If we have a saved recommendation, use it
         if (savedRecommendation) {
-          setRecommendation(JSON.parse(savedRecommendation));
+          setRecommendation(JSON.parse(savedRecommendation) as Recommendation);
           setIsLoading(false);
           return;
         }
@@ -122,7 +152,7 @@ export default function ResultsPage() {
           return;
         }
         
-        const responses = JSON.parse(storedResponses);
+        const responses = JSON.parse(storedResponses) as UserResponse;
         
         // Call the API to get recommendations
         const response = await fetch('/api/aa-recommendations', {
@@ -184,7 +214,7 @@ export default function ResultsPage() {
   }, [router, isClient]);
 
   // Function to clear recommendation and start over
-  const startOver = () => {
+  const startOver = (): void => {
     localStorage.removeItem('skinRecommendation');
     sessionStorage.removeItem('finalSkinResponses');
     sessionStorage.removeItem('skinResponses');
@@ -193,7 +223,7 @@ export default function ResultsPage() {
   };
   
   // Helper function to get readable label for user response
-  const getResponseLabel = (questionId: string, value: any): string => {
+  const getResponseLabel = (questionId: string, value: string | string[]): string => {
     const question = skinQuestions.find(q => q.id === questionId);
     if (!question) return String(value);
     
@@ -216,8 +246,8 @@ export default function ResultsPage() {
   };
   
   // Get key insights from user responses for display
-  const getUserInsights = () => {
-    const insights: { icon: string; title: string; description: string }[] = [];
+  const getUserInsights = (): Insight[] => {
+    const insights: Insight[] = [];
     
     // Skin type
     if (userResponses['skin-type']) {
@@ -230,7 +260,7 @@ export default function ResultsPage() {
     }
     
     // Top concern
-    if (userResponses['skin-concerns'] && Array.isArray(userResponses['skin-concerns']) && userResponses['skin-concerns'].length > 0) {
+    if (userResponses['skin-concerns'] && userResponses['skin-concerns'].length > 0) {
       const topConcern = userResponses['skin-concerns'][0];
       const topConcernLabel = getResponseLabel('skin-concerns', [topConcern]);
       insights.push({
@@ -261,7 +291,7 @@ export default function ResultsPage() {
     }
     
     // Lifestyle factors
-    const lifestyleFactors = [];
+    const lifestyleFactors: string[] = [];
     if (userResponses['stress-levels'] === 'high') {
       lifestyleFactors.push("high stress");
     }

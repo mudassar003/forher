@@ -89,7 +89,7 @@ export default function Packages({ showHeading = true }: PackagesProps) {
     initial: { scale: 1 },
     pulse: { 
       scale: [1, 1.1, 1],
-      transition: { duration: 1.5, repeat: Infinity, repeatType: "loop" }
+      transition: { duration: 1.5, repeat: Infinity, repeatType: "loop" as const }
     }
   };
 
@@ -166,7 +166,7 @@ export default function Packages({ showHeading = true }: PackagesProps) {
         >
           <AnimatePresence mode="wait">
             {packageOptions.map((pkg) => (
-              ((selectedPackage === pkg.id) || window.innerWidth >= 768) && (
+              ((selectedPackage === pkg.id) || typeof window !== 'undefined' && window.innerWidth >= 768) && (
                 <motion.div
                   key={pkg.id}
                   className={`rounded-xl overflow-hidden bg-white relative transition-all duration-300 ${

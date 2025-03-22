@@ -14,8 +14,8 @@ export default function HomePage() {
         <RotatingHeadline />
         <HowItWorks />
         <RotatingSection />
-        
-        {/* Adding the Packages component with custom heading */}
+        <NewHairLossSection />
+              {/* Adding the Packages component with custom heading */}
         <div className="bg-gradient-to-b from-white to-gray-50">
           <div className="py-16 px-4 sm:px-6 md:px-8 max-w-6xl mx-auto">
             <div className="text-center mb-8">
@@ -30,8 +30,6 @@ export default function HomePage() {
             <Packages showHeading={false} />
           </div>
         </div>
-        
-        <NewHairLossSection />
         <FaqAccordion />
         <SubscribeSection />
       </div>

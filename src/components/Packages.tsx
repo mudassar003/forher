@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PackageOption {
@@ -24,6 +24,25 @@ export default function Packages({ showHeading = true }: PackagesProps) {
   const [hoveredPackage, setHoveredPackage] = useState<string | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<string>("compounded");
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Add useEffect to handle window resize and set initial mobile state
+  useEffect(() => {
+    // Set initial value
+    setIsMobile(window.innerWidth < 768);
+    
+    // Add event listener for window resize
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const packageOptions: PackageOption[] = [
     {
@@ -166,7 +185,7 @@ export default function Packages({ showHeading = true }: PackagesProps) {
         >
           <AnimatePresence mode="wait">
             {packageOptions.map((pkg) => (
-              ((selectedPackage === pkg.id) || typeof window !== 'undefined' && window.innerWidth >= 768) && (
+              ((selectedPackage === pkg.id) || !isMobile) && (
                 <motion.div
                   key={pkg.id}
                   className={`rounded-xl overflow-hidden bg-white relative transition-all duration-300 ${

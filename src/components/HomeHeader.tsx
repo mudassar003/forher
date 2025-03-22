@@ -142,22 +142,28 @@ const HomeHeader = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-6 lg:space-x-8">
-            <Link href="/" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            <Link href="/" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Home
             </Link>
-            <Link href="/c/wm" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            <Link href="/c/wm" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Weight Loss
             </Link>
-            <Link href="/c/mh" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Mental Health
+            <Link href="/c/hl" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+              Hair Care
             </Link>
-            <Link href="/c/hl" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Hair Regrowth
+            <Link href="/c/mh" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+              Anxiety Relief
             </Link>
-            <Link href="/products" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            <Link href="/c/aa" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+              Skin Care
+            </Link>
+            <Link href="/c/b" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+              Cycle Management
+            </Link>
+            <Link href="/products" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Products
             </Link>
-            <Link href="/studio" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            <Link href="/studio" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Studio
             </Link>
           </nav>
@@ -225,18 +231,25 @@ const HomeHeader = () => {
                 Weight Loss
               </Link>
               <Link 
-                href="/c/mh" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Mental Health
-              </Link>
-              <Link 
                 href="/c/hl" 
                 className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Hair Regrowth
+                Hair Care
+              </Link>
+              <Link 
+                href="/c/mh" 
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Anxiety Relief
+              </Link>
+              <Link 
+                href="/c/b" 
+                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Cycle Management
               </Link>
               <Link 
                 href="/products" 

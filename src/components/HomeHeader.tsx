@@ -142,10 +142,10 @@ const HomeHeader = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-6 lg:space-x-8">
-            <Link href="/" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            <Link href="/" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Home
             </Link>
-            <Link href="/c/wm" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            {/* <Link href="/c/wm" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Weight Loss
             </Link>
             <Link href="/c/hl" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
@@ -159,11 +159,17 @@ const HomeHeader = () => {
             </Link>
             <Link href="/c/b" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Cycle Management
-            </Link>
-            <Link href="/products" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            </Link> */}
+            <Link href="/products" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Products
             </Link>
-            <Link href="/studio" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+            <Link href="/c/b" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+              About Us
+            </Link>
+            <Link href="/c/b" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
+              Contact Us
+            </Link>
+            <Link href="/studio" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Studio
             </Link>
           </nav>

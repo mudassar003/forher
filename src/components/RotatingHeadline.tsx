@@ -6,11 +6,12 @@ import React from "react";
 
 // Define strict TypeScript types
 type CategoryId = "weight-loss" | "hair-care" | "anxiety" | "skin" | "cycle";
-type Stage = "initial" | "selected" | "quiz";
+type Stage = "initial" | "selected";
 
 interface Category {
   id: CategoryId;
   text: string;
+  assessmentUrl: string;
 }
 
 interface CategoryContent {
@@ -34,13 +35,13 @@ interface GradientTextStyle {
   animation?: string;
 }
 
-// Categories with consistent naming but we'll use a gradient instead of individual colors
+// Categories with consistent naming and assessment URLs
 const categories: Category[] = [
-  { id: "weight-loss", text: "Weight Loss" },
-  { id: "hair-care", text: "Hair Care" },
-  { id: "anxiety", text: "Anxiety Relief" },
-  { id: "skin", text: "Skin Care" },
-  { id: "cycle", text: "Cycle Management" },
+  { id: "weight-loss", text: "Weight Loss", assessmentUrl: "/c/wm" },
+  { id: "hair-care", text: "Hair Care", assessmentUrl: "/c/hl" },
+  { id: "anxiety", text: "Anxiety Relief", assessmentUrl: "/c/mh" },
+  { id: "skin", text: "Skin Care", assessmentUrl: "/c/aa" },
+  { id: "cycle", text: "Cycle Management", assessmentUrl: "/c/b" },
 ];
 
 // Content for each category that appears after selection
@@ -74,7 +75,7 @@ const categoryContent: Record<CategoryId, CategoryContent> = {
 
 export default function PersonalizedHeroSection(): React.ReactElement {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
-  const [stage, setStage] = useState<Stage>("initial"); // initial, selected, quiz
+  const [stage, setStage] = useState<Stage>("initial"); // initial, selected
   const [wordIndex, setWordIndex] = useState<number>(0);
   
   const animatedWords: AnimatedWord[] = [
@@ -105,9 +106,14 @@ export default function PersonalizedHeroSection(): React.ReactElement {
     setStage("initial");
   };
 
-  // Start personalization quiz
-  const handleStartQuiz = (): void => {
-    setStage("quiz");
+  // Navigate to assessment URL based on category
+  const handleAssessment = (): void => {
+    if (selectedCategory) {
+      const category = categories.find(c => c.id === selectedCategory);
+      if (category) {
+        window.location.href = category.assessmentUrl;
+      }
+    }
   };
 
   // Add keyframes for animations
@@ -304,7 +310,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 </motion.button>
                 <motion.button 
                   className="px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-base sm:text-lg transition-all hover:shadow-lg"
-                  onClick={handleStartQuiz}
+                  onClick={handleAssessment}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -312,91 +318,6 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 </motion.button>
               </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-        
-        {stage === "quiz" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8"
-          >
-            {/* Simple quiz start */}
-            <div className="text-center mb-6">
-              <motion.h2 
-                className="text-2xl sm:text-3xl font-normal mb-4"
-                style={{ color: "#e63946" }}
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                Let's personalize your {selectedCategory && categories.find(c => c.id === selectedCategory)?.text.toLowerCase()} plan
-              </motion.h2>
-              <motion.p 
-                className="text-gray-600 text-sm sm:text-base"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                Answer a few questions so we can tailor our recommendations
-              </motion.p>
-            </div>
-            
-            {/* Quiz would continue here - this is just the starting point */}
-            <motion.div 
-              className="space-y-6 mb-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div className="text-left">
-                <label className="block text-gray-700 mb-2 text-sm sm:text-base" htmlFor="concerns">How would you describe your current concerns?</label>
-                <select 
-                  id="concerns"
-                  className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg text-sm sm:text-base"
-                  aria-label="Current concerns"
-                >
-                  <option>Select an option</option>
-                  <option>Just starting my journey</option>
-                  <option>Tried other solutions without success</option>
-                  <option>Looking to maintain my progress</option>
-                </select>
-              </div>
-              
-              <div className="text-left">
-                <label className="block text-gray-700 mb-2 text-sm sm:text-base" htmlFor="priority">What's your top priority right now?</label>
-                <select 
-                  id="priority"
-                  className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg text-sm sm:text-base"
-                  aria-label="Top priority"
-                >
-                  <option>Select an option</option>
-                  <option>Quick results</option>
-                  <option>Sustainable long-term approach</option>
-                  <option>Addressing specific health concerns</option>
-                </select>
-              </div>
-            </motion.div>
-            
-            <div className="flex justify-between">
-              <motion.button 
-                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-sm sm:text-base transition-all hover:shadow-md"
-                onClick={() => setStage("selected")}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Back
-              </motion.button>
-              <motion.button 
-                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base transition-all hover:shadow-md"
-                style={{ backgroundColor: "#e63946" }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Continue
-              </motion.button>
-            </div>
           </motion.div>
         )}
       </div>

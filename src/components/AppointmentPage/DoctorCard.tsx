@@ -84,11 +84,10 @@ export default function DoctorCard({ doctor, onSelect, isSelected }: DoctorCardP
   return (
     <motion.div 
       className={`relative rounded-xl overflow-hidden transition-all duration-300 h-full ${
-        isSelected ? 'ring-4 ring-offset-2' : 'hover:shadow-xl'
+        isSelected ? 'ring-4 ring-offset-2 ring-[#e63946]' : 'hover:shadow-xl'
       }`}
       style={{ 
-        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-        ringColor: "#e63946" 
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)"
       }}
       whileHover={{ y: -5 }}
       initial={{ opacity: 0, y: 20 }}

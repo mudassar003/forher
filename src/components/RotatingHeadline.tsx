@@ -11,7 +11,6 @@ type Stage = "initial" | "selected" | "quiz";
 interface Category {
   id: CategoryId;
   text: string;
-  icon: string;
 }
 
 interface CategoryContent {
@@ -37,11 +36,11 @@ interface GradientTextStyle {
 
 // Categories with consistent naming but we'll use a gradient instead of individual colors
 const categories: Category[] = [
-  { id: "weight-loss", text: "Weight Loss", icon: "🍃" },
-  { id: "hair-care", text: "Hair Care", icon: "✨" },
-  { id: "anxiety", text: "Anxiety Relief", icon: "🧘" },
-  { id: "skin", text: "Skin Care", icon: "✨" },
-  { id: "cycle", text: "Cycle Management", icon: "🔄" },
+  { id: "weight-loss", text: "Weight Loss" },
+  { id: "hair-care", text: "Hair Care" },
+  { id: "anxiety", text: "Anxiety Relief" },
+  { id: "skin", text: "Skin Care" },
+  { id: "cycle", text: "Cycle Management" },
 ];
 
 // Content for each category that appears after selection
@@ -200,7 +199,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               {categories.map((category, index) => (
                 <motion.button
                   key={category.id}
-                  className="w-full sm:w-auto px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-full text-white font-medium text-base sm:text-lg md:text-xl transition-all hover:shadow-lg flex items-center justify-center sm:justify-start gap-2"
+                  className="w-full sm:w-auto px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-full text-white font-medium text-base sm:text-lg md:text-xl transition-all hover:shadow-lg flex items-center justify-center sm:justify-start"
                   style={{ 
                     background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
                     backgroundSize: "200% auto",
@@ -219,8 +218,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   }}
                   aria-label={`Select ${category.text}`}
                 >
-                  <span role="img" aria-hidden="true">{category.icon}</span>
-                  <span>{category.text}</span>
+                  {category.text}
                 </motion.button>
               ))}
             </motion.div>

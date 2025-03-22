@@ -12,7 +12,7 @@ const GlobalFooter = () => {
           {/* Brand Column */}
           <div className="col-span-1">
             <div className="text-3xl font-semibold mb-4">
-              <span className="text-black">Direct2her</span>
+              <span className="text-black">Lily's</span>
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Empowering you to look and feel your best every day.

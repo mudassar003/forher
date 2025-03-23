@@ -26,6 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Qualiphy stylesheet */}
+        <link 
+          rel="stylesheet" 
+          href="https://firebasestorage.googleapis.com/v0/b/qualiphy-web-d918b.appspot.com/o/style-v4.css?alt=media&token=34735782-16e8-4a2f-9eaa-426d65af48b2" 
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} bg-[#F7F7F7] antialiased`}>
         <AuthProvider>
           {children}

@@ -1,4 +1,4 @@
-//src/app/checkout/page.tsx
+//src/app/(checkout)/checkout/page.tsx
 'use client';
 
 import { useCartStore } from "@/store/cartStore";
@@ -9,8 +9,10 @@ import { countries } from "countries-list";
 import CheckoutAuth from '@/components/Checkout/CheckoutAuth';
 import { useAuthStore } from "@/store/authStore";
 import StripePaymentForm from '@/components/Checkout/StripePaymentForm';
-import StripeCheckoutButton from '@/components/Checkout/StripeCheckoutButton';
-import { useStripeCheckout } from '@/hooks/useStripeCheckout';
+import { loadStripe } from '@stripe/stripe-js';
+
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface ValidationErrors {
   [key: string]: string;
@@ -115,6 +117,7 @@ export default function CheckoutPage() {
     if (isSubmitting) return;
     if (!isFormValid) return;
     setIsSubmitting(true);
+    
     try {
       // Create order data object to match API expectations
       const orderData = {
@@ -139,14 +142,7 @@ export default function CheckoutPage() {
         }))
       };
       
-      // If Stripe is selected, don't process the order here
-      // The StripeCheckoutButton will handle this
-      if (paymentMethod === 'card') {
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Send order to API (for non-Stripe payment methods)
+      // Create the order in the database
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -154,47 +150,84 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify(orderData),
       });
+      
       const result = await response.json();
-      if (result.success) {
-        // Store order ID in localStorage for the confirmation page to access
-        localStorage.setItem("lastOrderId", result.orderId);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create order");
+      }
+      
+      console.log("Order created successfully:", result);
+      
+      // Store the order ID for the confirmation page
+      // Prefer Supabase ID if available, otherwise use Sanity ID
+      const orderId = result.supabaseId || result.orderId;
+      localStorage.setItem("lastOrderId", result.orderId);
+      
+      // For COD orders, proceed directly to confirmation page
+      if (paymentMethod === 'cod') {
+        // Clear the cart
+        clearCart();
+        // Redirect to confirmation page
+        window.location.href = '/checkout/order-confirmation';
+        return;
+      }
+      
+      // For Stripe payments, redirect to Stripe checkout
+      if (paymentMethod === 'card') {
+        const stripe = await stripePromise;
+        
+        if (!stripe) {
+          throw new Error("Failed to initialize Stripe");
+        }
+        
+        // Create a payment session for this order
+        const paymentResponse = await fetch('/api/stripe/payment-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: result.supabaseId || result.orderId, // Prefer Supabase ID
+            cart: cart.map(item => ({
+              id: item.id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              image: item.image
+            }))
+          }),
+        });
+        
+        const paymentResult = await paymentResponse.json();
+        
+        if (!paymentResult.success) {
+          throw new Error(paymentResult.error || "Failed to create payment session");
+        }
         
         // Clear the cart
         clearCart();
         
-        // Redirect to confirmation page
-        window.location.href = '/checkout/order-confirmation';
-      } else {
-        // Handle API error
-        console.error("Order placement failed:", result.error);
-        alert(`Order placement failed: ${result.error}`);
-        setIsSubmitting(false);
+        // Redirect to Stripe checkout
+        const { error } = await stripe.redirectToCheckout({
+          sessionId: paymentResult.sessionId
+        });
+        
+        if (error) {
+          throw new Error(error.message || "Failed to redirect to Stripe");
+        }
+        
+        return;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error placing order:", error);
-      alert("An error occurred while placing your order. Please try again.");
+      alert(`An error occurred while placing your order: ${error.message}`);
       setIsSubmitting(false);
     }
   };
 
   const handleBlur = () => {
     // Validation happens automatically in the useEffect
-  };
-  
-  // Create checkout data for Stripe
-  const checkoutData = {
-    email,
-    firstName,
-    lastName,
-    address,
-    apartment,
-    city,
-    country,
-    postalCode,
-    phone,
-    paymentMethod,
-    shippingMethod,
-    billingAddressType
   };
 
   if (!isClient) {
@@ -382,7 +415,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Payment Methods - Now using the StripePaymentForm component */}
+            {/* Payment Methods */}
             <StripePaymentForm 
               onSelectPaymentMethod={setPaymentMethod}
               selectedMethod={paymentMethod}
@@ -505,23 +538,16 @@ export default function CheckoutPage() {
               </div>
             </div>
             
-            {/* Complete Order Button - Conditional based on payment method */}
-            {paymentMethod === 'card' ? (
-              <StripeCheckoutButton 
-                checkoutData={checkoutData}
-                isFormValid={isFormValid}
-              />
-            ) : (
-              <button 
-                onClick={handlePlaceOrder}
-                disabled={isSubmitting || !isFormValid}
-                className={`w-full mt-6 ${
-                  isSubmitting || !isFormValid ? "bg-gray-400 cursor-not-allowed" : "bg-black hover:bg-gray-800"
-                } text-white py-4 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-lg font-medium transition-colors`}
-              >
-                {isSubmitting ? "Processing..." : "Complete order"}
-              </button>
-            )}
+            {/* Unified checkout button for all payment methods */}
+            <button 
+              onClick={handlePlaceOrder}
+              disabled={isSubmitting || !isFormValid}
+              className={`w-full mt-6 ${
+                isSubmitting || !isFormValid ? "bg-gray-400 cursor-not-allowed" : "bg-black hover:bg-gray-800"
+              } text-white py-4 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-lg font-medium transition-colors`}
+            >
+              {isSubmitting ? "Processing..." : `Complete order ${paymentMethod === 'card' ? 'with Stripe' : ''}`}
+            </button>
           </div>
         </div>
       </div>

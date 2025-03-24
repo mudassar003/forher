@@ -47,6 +47,7 @@ interface SanityOrder extends SanityDocumentStub {
   paymentMethod: string;
   shippingMethod: string;
   cart: {
+    // Removed _key field as Sanity will handle it automatically
     productId: string;
     name: string;
     quantity: number;
@@ -57,6 +58,7 @@ interface SanityOrder extends SanityDocumentStub {
   total: number;
   subtotal: number;
   shippingCost: number;
+  paymentStatus: string; 
 }
 
 interface SupabaseOrder {
@@ -75,6 +77,7 @@ interface SupabaseOrder {
   subtotal: number;
   shipping_cost: number;
   sanity_id?: string;
+  payment_status: string; 
 }
 
 interface SupabaseOrderItem {
@@ -115,10 +118,13 @@ export async function POST(req: Request) {
 
     // Calculate totals
     const subtotal = data.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const shippingCost = 150;
+    const shippingCost = 15; // Updated to match checkout page ($15)
     const total = subtotal + shippingCost;
 
-    // Create Sanity document
+    // Initial payment status based on payment method
+    const initialPaymentStatus = data.paymentMethod === 'cod' ? 'awaiting' : 'awaiting';
+
+    // Create Sanity document - WITHOUT explicitly setting _key
     const order: SanityOrder = {
       _type: "order",
       email: data.email,
@@ -132,6 +138,7 @@ export async function POST(req: Request) {
       paymentMethod: data.paymentMethod,
       shippingMethod: data.shippingMethod,
       cart: data.cart.map((item) => ({
+        // Let Sanity handle the _key automatically
         productId: item.productId,
         name: item.name,
         quantity: item.quantity,
@@ -141,12 +148,17 @@ export async function POST(req: Request) {
       status: "pending",
       total,
       subtotal,
-      shippingCost
+      shippingCost,
+      paymentStatus: initialPaymentStatus
     };
+
+    console.log("Creating order in Sanity");
 
     // Create document in Sanity
     const sanityResponse = await client.create(order);
     const sanityId = sanityResponse._id;
+
+    console.log(`✅ Created Sanity order: ${sanityId}`);
 
     // Prepare Supabase order data
     const supabaseOrder: SupabaseOrder = {
@@ -164,7 +176,8 @@ export async function POST(req: Request) {
       total,
       subtotal,
       shipping_cost: shippingCost,
-      sanity_id: sanityId
+      sanity_id: sanityId,
+      payment_status: initialPaymentStatus
     };
 
     // Insert into Supabase using a transaction approach
@@ -181,6 +194,8 @@ export async function POST(req: Request) {
 
     // Get the order ID from Supabase
     const orderId = supabaseOrderData.id;
+    
+    console.log(`✅ Created Supabase order: ${orderId}`);
 
     // Prepare order items for Supabase
     const orderItems: SupabaseOrderItem[] = data.cart.map(item => ({

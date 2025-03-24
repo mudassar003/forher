@@ -8,12 +8,14 @@ import { useCartStore } from "@/store/cartStore";
 
 export default function OrderConfirmationPage() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
+  // FIX: Check for both session_id (from Stripe redirect) and sessionId (from internal redirect)
+  const sessionId = searchParams.get('session_id') || searchParams.get('sessionId');
   const { clearCart } = useCartStore();
   const [orderId, setOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [maxRetries] = useState(10); // Increased max retries for webhook processing
 
   useEffect(() => {
     // Clear the cart regardless of payment method
@@ -41,15 +43,23 @@ export default function OrderConfirmationPage() {
       const response = await fetch(`/api/orders/by-session?sessionId=${sessionId}`);
       const data = await response.json();
       
-      if (response.ok && data.success) {
+      if (response.ok && data.success && data.orderId) {
         setOrderId(data.orderId);
         setLoading(false);
-      } else if (response.ok && data.message && retryCount < 3) {
+      } else if (response.ok && data.message && retryCount < maxRetries) {
         // Webhook processing might be delayed, retry after a short delay
+        // Increase delay with each retry
+        const delayMs = 2000 + (retryCount * 1000);
         setRetryCount(prev => prev + 1);
-        setTimeout(fetchOrderDetailsBySession, 2000); // Retry after 2 seconds
+        
+        console.log(`Waiting for webhook to process order (attempt ${retryCount + 1}/${maxRetries})...`);
+        setTimeout(fetchOrderDetailsBySession, delayMs);
       } else {
-        setError(data.error || "Failed to retrieve order details");
+        if (retryCount >= maxRetries) {
+          setError("Your payment was successful, but we're still processing your order. Please check your email for confirmation.");
+        } else {
+          setError(data.error || "Failed to retrieve order details");
+        }
         setLoading(false);
       }
     } catch (err) {
@@ -71,7 +81,11 @@ export default function OrderConfirmationPage() {
       {loading ? (
         <div className="my-8">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your order details...</p>
+          <p className="mt-4 text-gray-600">
+            {retryCount > 0 
+              ? `Processing your order... (attempt ${retryCount}/${maxRetries})`
+              : "Loading your order details..."}
+          </p>
         </div>
       ) : (
         <>

@@ -1,155 +1,26 @@
 // src/app/api/stripe/webhook/route.ts
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { constructWebhookEvent, retrieveCheckoutSession } from "@/lib/stripe";
-import { client } from "@/sanity/lib/client";
-import { createClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
+import { createClient } from "@supabase/supabase-js";
+import { client as sanityClient } from "@/sanity/lib/client";
+
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16',
+});
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// This is needed to disable body parsing since we need the raw body for Stripe signature verification
+// This is needed to disable body parsing for Stripe signature verification
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
-// Helper to process successful payments
-async function processSuccessfulPayment(session: Stripe.Checkout.Session) {
-  try {
-    const { temporaryOrderId } = session.metadata || {};
-    
-    if (!temporaryOrderId) {
-      throw new Error("No temporary order ID found in session metadata");
-    }
-    
-    // Retrieve the temporary order data
-    const { data: tempOrderData, error: fetchError } = await supabase
-      .from('temp_orders')
-      .select('order_data')
-      .eq('id', temporaryOrderId)
-      .single();
-    
-    if (fetchError || !tempOrderData) {
-      throw new Error(`Failed to retrieve temporary order: ${fetchError?.message || 'Not found'}`);
-    }
-
-    const orderData = tempOrderData.order_data;
-    
-    // Calculate totals
-    const subtotal = orderData.cart.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
-    const shippingCost = 15; // Same as in checkout
-    const total = subtotal + shippingCost;
-
-    // Create order in Sanity
-    const sanityOrder = {
-      _type: "order",
-      email: orderData.email,
-      customerName: `${orderData.firstName} ${orderData.lastName}`.trim(),
-      address: orderData.address,
-      apartment: orderData.apartment,
-      city: orderData.city,
-      country: orderData.country,
-      postalCode: orderData.postalCode,
-      phone: orderData.phone,
-      paymentMethod: "stripe",
-      shippingMethod: orderData.shippingMethod,
-      cart: orderData.cart.map((item: any) => ({
-        productId: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        image: item.image
-      })),
-      stripeSessionId: session.id,
-      stripePaymentIntentId: session.payment_intent as string,
-      status: "paid", // Mark as paid since payment is confirmed
-      total,
-      subtotal,
-      shippingCost
-    };
-
-    // Create document in Sanity
-    const sanityResponse = await client.create(sanityOrder);
-    const sanityId = sanityResponse._id;
-
-    // Prepare Supabase order data
-    const supabaseOrder = {
-      email: orderData.email,
-      customer_name: `${orderData.firstName} ${orderData.lastName}`.trim(),
-      address: orderData.address,
-      apartment: orderData.apartment,
-      city: orderData.city,
-      country: orderData.country,
-      postal_code: orderData.postalCode,
-      phone: orderData.phone,
-      payment_method: "stripe",
-      shipping_method: orderData.shippingMethod,
-      status: "paid",
-      total,
-      subtotal,
-      shipping_cost: shippingCost,
-      sanity_id: sanityId,
-      stripe_session_id: session.id,
-      stripe_payment_intent_id: session.payment_intent as string
-    };
-
-    // Insert into Supabase orders table
-    const { data: supabaseOrderData, error: orderError } = await supabase
-      .from('orders')
-      .insert(supabaseOrder)
-      .select('id')
-      .single();
-
-    if (orderError) {
-      throw new Error(`Failed to create order in Supabase: ${orderError.message}`);
-    }
-
-    // Get the order ID from Supabase
-    const orderId = supabaseOrderData.id;
-
-    // Prepare order items for Supabase
-    const orderItems = orderData.cart.map((item: any) => ({
-      order_id: orderId,
-      product_id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-      image: item.image
-    }));
-
-    // Insert order items
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
-
-    if (itemsError) {
-      throw new Error(`Failed to create order items in Supabase: ${itemsError.message}`);
-    }
-
-    // Clean up the temporary order data
-    await supabase
-      .from('temp_orders')
-      .delete()
-      .eq('id', temporaryOrderId);
-
-    return {
-      success: true,
-      sanityId,
-      supabaseId: orderId
-    };
-  } catch (error: any) {
-    console.error("Error processing payment:", error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
 
 export async function POST(req: Request) {
   try {
@@ -160,37 +31,235 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No Stripe signature found" }, { status: 400 });
     }
 
-    // Verify webhook signature and parse event
-    const event = await constructWebhookEvent(body, signature);
+    // Verify webhook signature
+    const event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+
+    console.log(`⚡ Received Stripe webhook event: ${event.type}`);
 
     // Handle specific event types
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log(`🔍 Processing checkout session: ${session.id}`);
         
-        // Process the successful payment
-        const result = await processSuccessfulPayment(session);
+        // Get the order ID from the session metadata
+        const orderId = session.metadata?.orderId;
+        const sanityId = session.metadata?.sanityId;
         
-        if (result.success) {
-          return NextResponse.json({
-            success: true,
-            message: "Payment processed successfully",
-            orderId: result.sanityId
-          });
-        } else {
-          throw new Error(`Failed to process payment: ${result.error}`);
+        if (!orderId && !sanityId) {
+          console.error("No order ID found in session metadata");
+          return NextResponse.json(
+            { success: false, error: "No order ID found in session metadata" },
+            { status: 400 }
+          );
         }
+        
+        // Get customer information if available
+        let customerId = session.customer as string;
+        if (!customerId && session.customer_details?.email) {
+          // Try to find or create a customer based on email
+          try {
+            const customers = await stripe.customers.list({
+              email: session.customer_details.email,
+              limit: 1
+            });
+            
+            if (customers.data.length > 0) {
+              customerId = customers.data[0].id;
+            } else {
+              const newCustomer = await stripe.customers.create({
+                email: session.customer_details.email,
+                name: session.customer_details.name || undefined,
+                phone: session.customer_details.phone || undefined
+              });
+              customerId = newCustomer.id;
+            }
+          } catch (error) {
+            console.error("Error creating/finding Stripe customer:", error);
+          }
+        }
+        
+        // Update Supabase order if we have a Supabase ID
+        let supabaseOrder;
+        let supabaseUpdateSuccess = false;
+        
+        if (orderId) {
+          console.log(`Looking for Supabase order with ID: ${orderId}`);
+          
+          // Get the order from Supabase
+          const { data: orderData, error: fetchError } = await supabase
+            .from('orders')
+            .select('id, sanity_id')
+            .eq('id', orderId)
+            .single();
+          
+          if (fetchError) {
+            console.error(`Error fetching order from Supabase: ${fetchError.message}`);
+          } else {
+            supabaseOrder = orderData;
+            
+            // Update Supabase order status
+            const { error: updateError } = await supabase
+              .from('orders')
+              .update({
+                status: 'paid',
+                payment_method: 'stripe', // Ensure payment method is set correctly
+                payment_status: 'paid',
+                stripe_session_id: session.id,
+                stripe_payment_intent_id: session.payment_intent as string,
+                stripe_customer_id: customerId || null,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', orderId);
+            
+            if (updateError) {
+              console.error(`Failed to update order in Supabase: ${updateError.message}`);
+            } else {
+              supabaseUpdateSuccess = true;
+              console.log(`✅ Supabase order ${orderId} marked as paid`);
+            }
+          }
+        }
+        
+        // Try to update Sanity as well
+        const sanityOrderId = sanityId || supabaseOrder?.sanity_id;
+        let sanityUpdateSuccess = false;
+        
+        if (sanityOrderId) {
+          try {
+            console.log(`Updating Sanity order ${sanityOrderId} with payment status`);
+            
+            // Use immediate commit to ensure the update is processed right away
+            await sanityClient
+              .patch(sanityOrderId)
+              .set({
+                status: 'paid', // Update order status
+                paymentMethod: 'stripe', // Ensure payment method is set correctly
+                paymentStatus: 'paid', // Update payment status to paid
+                stripeSessionId: session.id,
+                stripePaymentIntentId: session.payment_intent as string,
+                stripeCustomerId: customerId || undefined
+              })
+              .commit({visibility: 'sync'}); // Use sync commit for immediate update
+            
+            sanityUpdateSuccess = true;
+            console.log(`✅ Sanity order ${sanityOrderId} marked as paid`);
+            
+            // Double check the update was successful
+            const updatedDoc = await sanityClient.getDocument(sanityOrderId);
+            console.log(`Sanity order payment status after update: ${updatedDoc.paymentStatus}`);
+          } catch (sanityError: any) {
+            console.error(`Failed to update Sanity order: ${sanityError.message}`);
+            console.error(sanityError);
+          }
+        }
+        
+        // If we couldn't update either database, return an error
+        if (!supabaseUpdateSuccess && !sanityUpdateSuccess) {
+          return NextResponse.json(
+            { success: false, error: "Failed to update order in any database" },
+            { status: 500 }
+          );
+        }
+        
+        return NextResponse.json({
+          success: true,
+          message: "Payment processed successfully",
+          orderId: sanityOrderId || orderId
+        });
       }
       
       case 'payment_intent.succeeded': {
-        // Optional: Additional handling for payment intent success
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log(`💰 Payment intent succeeded: ${paymentIntent.id}`);
+        
+        // If we have the metadata with order ID, double-check it's marked as paid
+        const orderId = paymentIntent.metadata?.orderId;
+        const sanityId = paymentIntent.metadata?.sanityId;
+        
+        if (orderId) {
+          // Update Supabase
+          const { error } = await supabase
+            .from('orders')
+            .update({
+              payment_status: 'paid',
+              payment_method: 'stripe',
+              stripe_payment_intent_id: paymentIntent.id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+          
+          if (error) {
+            console.error(`Failed to update Supabase order payment status: ${error.message}`);
+          }
+        }
+        
+        if (sanityId) {
+          // Update Sanity
+          try {
+            await sanityClient
+              .patch(sanityId)
+              .set({
+                paymentStatus: 'paid',
+                paymentMethod: 'stripe',
+                stripePaymentIntentId: paymentIntent.id
+              })
+              .commit({visibility: 'sync'});
+              
+            console.log(`✅ Sanity order payment intent updated: ${sanityId}`);
+          } catch (error: any) {
+            console.error(`Failed to update Sanity order payment status: ${error.message}`);
+          }
+        }
+        
         return NextResponse.json({ received: true });
       }
       
       case 'payment_intent.payment_failed': {
-        // Optional: Handle failed payments
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log(`❌ Payment failed: ${paymentIntent.id}`);
+        
+        // If we have the metadata with order ID, update the order status
+        const orderId = paymentIntent.metadata?.orderId;
+        const sanityId = paymentIntent.metadata?.sanityId;
+        
+        if (orderId) {
+          // Update Supabase
+          const { error } = await supabase
+            .from('orders')
+            .update({
+              payment_status: 'failed',
+              stripe_payment_intent_id: paymentIntent.id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+          
+          if (error) {
+            console.error(`Failed to update Supabase order payment status: ${error.message}`);
+          }
+        }
+        
+        if (sanityId) {
+          // Update Sanity
+          try {
+            await sanityClient
+              .patch(sanityId)
+              .set({
+                paymentStatus: 'failed',
+                stripePaymentIntentId: paymentIntent.id
+              })
+              .commit({visibility: 'sync'});
+              
+            console.log(`✅ Sanity order payment failure updated: ${sanityId}`);
+          } catch (error: any) {
+            console.error(`Failed to update Sanity order payment status: ${error.message}`);
+          }
+        }
+        
         return NextResponse.json({ received: true });
       }
       

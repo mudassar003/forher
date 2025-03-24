@@ -4,6 +4,47 @@ export const orderType = {
   title: "Orders",
   type: "document",
   fields: [
+    // Add a display field for the Order ID at the top
+    {
+      name: "displayId",
+      title: "Order ID",
+      type: "string",
+      readOnly: true,
+      description: "This is the Order ID shown to customers",
+      // This field gets populated automatically in document creation
+      hidden: ({ document }) => !document?._id,
+      options: {
+        // Custom input component that shows the document ID
+        inputComponent: ({ value, readOnly }) => {
+          // If this is a new document without an ID yet
+          if (!value) {
+            return {
+              reactElement: {
+                component: 'div',
+                props: {
+                  children: 'ID will be available after saving'
+                }
+              }
+            };
+          }
+          
+          return {
+            reactElement: {
+              component: 'div',
+              props: {
+                style: {
+                  padding: '0.5rem',
+                  backgroundColor: '#f3f3f3',
+                  borderRadius: '4px',
+                  fontFamily: 'monospace'
+                },
+                children: value
+              }
+            }
+          };
+        }
+      }
+    },
     {
       name: "email",
       title: "Email",
@@ -84,7 +125,20 @@ export const orderType = {
             { name: "quantity", title: "Quantity", type: "number", validation: (Rule: any) => Rule.required().min(1) },
             { name: "price", title: "Price", type: "number", validation: (Rule: any) => Rule.required().min(0) },
             { name: "image", title: "Image", type: "string" }
-          ]
+          ],
+          preview: {
+            select: {
+              name: 'name',
+              quantity: 'quantity',
+              price: 'price'
+            },
+            prepare({ name, quantity, price }) {
+              return {
+                title: name || 'Product',
+                subtitle: `${quantity || 0} × $${price || 0} = $${(quantity || 0) * (price || 0)}`
+              };
+            }
+          }
         }
       ],
       validation: (Rule: any) => Rule.required().min(1)
@@ -124,7 +178,7 @@ export const orderType = {
       type: "number",
       validation: (Rule: any) => Rule.required().min(0)
     },
-    // New Stripe-specific fields
+    // Stripe-specific fields
     {
       name: "stripeSessionId",
       title: "Stripe Session ID",
@@ -158,26 +212,38 @@ export const orderType = {
         ]
       },
       initialValue: "awaiting"
+    },
+    {
+      name: "orderDate",
+      title: "Order Date",
+      type: "datetime",
+      readOnly: true,
+      description: "When the order was placed",
     }
   ],
   initialValue: {
     status: "pending",
-    paymentStatus: "awaiting"
+    paymentStatus: "awaiting",
+    orderDate: (new Date()).toISOString()
   },
   preview: {
     select: {
-      title: '_id',
-      customerName: 'customerName',
+      name: 'customerName',
+      email: 'email',
+      id: '_id',
       status: 'status',
       paymentStatus: 'paymentStatus',
       paymentMethod: 'paymentMethod',
       total: 'total'
     },
-    prepare(selection: any) {
-      const { title, customerName, status, paymentStatus, paymentMethod, total } = selection;
+    prepare(selection) {
+      const { name, email, id, status, paymentStatus, paymentMethod, total } = selection;
       return {
-        title: `Order ${title.substring(0, 8)}`,
-        subtitle: `${customerName} - ${paymentMethod} - ${status} - ${paymentStatus} - $${total}`
+        title: `${name || 'Customer'} - ${email || 'No Email'}`,
+        subtitle: `ID: ${id} | ${paymentMethod || 'Unknown'} | ${status || 'Unknown'} | ${paymentStatus || 'Unknown'} | $${total || 0}`,
+        media: paymentMethod === 'stripe' 
+          ? { emoji: '💳' } 
+          : { emoji: '💵' }
       };
     }
   }

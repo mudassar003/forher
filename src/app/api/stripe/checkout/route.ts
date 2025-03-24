@@ -128,7 +128,8 @@ export async function POST(req: Request) {
     // Create Stripe checkout session
     const session = await createCheckoutSession({
       lineItems,
-      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      // FIX: Change success URL to match your confirmation page path
+      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`,
       metadata: {
         temporaryOrderId,

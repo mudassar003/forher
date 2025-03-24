@@ -1,3 +1,4 @@
+//src/components/Checkout/CheckoutAuth.tsx
 'use client';
 
 import { useState, useEffect } from "react";

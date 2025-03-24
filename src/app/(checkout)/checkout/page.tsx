@@ -1,3 +1,4 @@
+//src/app/checkout/page.tsx
 'use client';
 
 import { useCartStore } from "@/store/cartStore";

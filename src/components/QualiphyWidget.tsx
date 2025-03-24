@@ -1,3 +1,4 @@
+//src/components/QualiphyWidget.tsx
 "use client";
 
 import React, { useEffect } from 'react';

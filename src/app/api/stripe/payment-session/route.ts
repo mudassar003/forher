@@ -28,6 +28,42 @@ interface PaymentSessionRequest {
   cart: CartItem[];
 }
 
+interface SupabaseOrder {
+  id: string;
+  email: string;
+  sanity_id?: string;
+  [key: string]: unknown;
+}
+
+// Define Stripe line item interface
+interface LineItem {
+  price_data: {
+    currency: string;
+    product_data: {
+      name: string;
+      images?: string[] | undefined;
+    };
+    unit_amount: number;
+  };
+  quantity: number;
+}
+
+// Define error response interface
+interface ErrorResponse {
+  message: string;
+  code?: string;
+  details?: unknown;
+}
+
+// Define Sanity document type
+interface SanityDocument {
+  _id: string;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  stripeSessionId?: string;
+  [key: string]: unknown;
+}
+
 export async function POST(req: Request) {
   try {
     const data: PaymentSessionRequest = await req.json();
@@ -50,8 +86,8 @@ export async function POST(req: Request) {
     // Determine if this is a Sanity ID or a Supabase ID
     const isSanityId = !data.orderId.includes('-'); // Sanity IDs don't have hyphens, UUID does
     
-    let supabaseOrderData;
-    let sanityId;
+    let supabaseOrderData: SupabaseOrder;
+    let sanityId: string | undefined;
     
     if (isSanityId) {
       // Store the Sanity ID
@@ -80,7 +116,7 @@ export async function POST(req: Request) {
         );
       }
       
-      supabaseOrderData = orderData;
+      supabaseOrderData = orderData as SupabaseOrder;
     } else {
       // Direct lookup by Supabase ID
       console.log(`Looking up order by Supabase ID: ${data.orderId}`);
@@ -98,8 +134,8 @@ export async function POST(req: Request) {
         );
       }
       
-      supabaseOrderData = orderData;
-      sanityId = orderData.sanity_id;
+      supabaseOrderData = orderData as SupabaseOrder;
+      sanityId = supabaseOrderData.sanity_id;
     }
     
     // Calculate totals
@@ -108,7 +144,7 @@ export async function POST(req: Request) {
     const total = subtotal + shippingCost;
     
     // Format for Stripe (prices must be in cents)
-    const lineItems = data.cart.map(item => ({
+    const lineItems: LineItem[] = data.cart.map(item => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -127,6 +163,7 @@ export async function POST(req: Request) {
           currency: 'usd',
           product_data: {
             name: 'Shipping',
+            images: undefined, // Add this to match the type requirement
           },
           unit_amount: shippingCost * 100, // Convert to cents
         },
@@ -171,9 +208,10 @@ export async function POST(req: Request) {
         console.log(`✅ Updated Sanity order ${sanityId} payment method to stripe`);
         
         // Verify the update
-        const updatedDoc = await sanityClient.getDocument(sanityId);
+        const updatedDoc = await sanityClient.getDocument(sanityId) as SanityDocument;
         console.log(`Sanity order payment method after update: ${updatedDoc.paymentMethod}`);
-      } catch (sanityError: any) {
+      } catch (error) {
+        const sanityError = error as ErrorResponse;
         console.error("Failed to update Sanity order payment method:", sanityError);
         console.error(sanityError);
         // Continue anyway as this is not critical
@@ -194,6 +232,10 @@ export async function POST(req: Request) {
         customer_email: customerEmail  // Store email in metadata
       },
     });
+    
+    if (!session || !session.id || !session.url) {
+      throw new Error("Failed to create Stripe session");
+    }
     
     // Update the order with the Stripe session ID
     const { error: sessionUpdateError } = await supabase
@@ -225,9 +267,10 @@ export async function POST(req: Request) {
         console.log(`✅ Updated Sanity order with session ID`);
         
         // Verify the update
-        const updatedDoc = await sanityClient.getDocument(sanityId);
+        const updatedDoc = await sanityClient.getDocument(sanityId) as SanityDocument;
         console.log(`Sanity order session ID after update: ${updatedDoc.stripeSessionId}`);
-      } catch (sanityError: any) {
+      } catch (error) {
+        const sanityError = error as ErrorResponse;
         console.error("Failed to update Sanity order with session ID:", sanityError);
         console.error(sanityError);
         // Continue anyway as this is not critical
@@ -242,12 +285,17 @@ export async function POST(req: Request) {
       url: session.url
     });
     
-  } catch (error: any) {
-    console.error("Error creating Stripe payment session:", error);
+  } catch (error) {
+    const errorResponse: ErrorResponse = error instanceof Error 
+      ? { message: error.message || "Failed to create payment session" }
+      : { message: "Unknown error occurred" };
+      
+    console.error("Error creating Stripe payment session:", errorResponse);
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || "Failed to create payment session"
+        error: errorResponse.message
       }, 
       { status: 500 }
     );

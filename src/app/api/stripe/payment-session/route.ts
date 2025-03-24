@@ -6,7 +6,7 @@ import { client as sanityClient } from "@/sanity/lib/client";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16', // Use the latest API version available to you
+  apiVersion: '2025-02-24.acacia', // Use the required API version
 });
 
 // Initialize Supabase client

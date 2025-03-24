@@ -57,7 +57,7 @@ export const orderType = {
       options: {
         list: [
           { title: "Cash on Delivery", value: "cod" },
-          { title: "Card Payment", value: "card" }
+          { title: "Stripe", value: "stripe" }
         ]
       },
       validation: (Rule: any) => Rule.required()
@@ -96,6 +96,7 @@ export const orderType = {
       options: {
         list: [
           { title: "Pending", value: "pending" },
+          { title: "Paid", value: "paid" },
           { title: "Processing", value: "processing" },
           { title: "Shipped", value: "shipped" },
           { title: "Delivered", value: "delivered" },
@@ -122,9 +123,62 @@ export const orderType = {
       title: "Shipping Cost",
       type: "number",
       validation: (Rule: any) => Rule.required().min(0)
+    },
+    // New Stripe-specific fields
+    {
+      name: "stripeSessionId",
+      title: "Stripe Session ID",
+      type: "string",
+      description: "The ID of the Stripe checkout session"
+    },
+    {
+      name: "stripePaymentIntentId",
+      title: "Stripe Payment Intent ID",
+      type: "string",
+      description: "The ID of the Stripe payment intent"
+    },
+    {
+      name: "stripeCustomerId",
+      title: "Stripe Customer ID",
+      type: "string",
+      description: "The ID of the Stripe customer for recurring payments"
+    },
+    {
+      name: "paymentStatus",
+      title: "Payment Status",
+      type: "string",
+      options: {
+        list: [
+          { title: "Awaiting Payment", value: "awaiting" },
+          { title: "Payment Processing", value: "processing" },
+          { title: "Payment Failed", value: "failed" },
+          { title: "Paid", value: "paid" },
+          { title: "Refunded", value: "refunded" },
+          { title: "Partially Refunded", value: "partially_refunded" }
+        ]
+      },
+      initialValue: "awaiting"
     }
   ],
   initialValue: {
-    status: "pending"
+    status: "pending",
+    paymentStatus: "awaiting"
+  },
+  preview: {
+    select: {
+      title: '_id',
+      customerName: 'customerName',
+      status: 'status',
+      paymentStatus: 'paymentStatus',
+      paymentMethod: 'paymentMethod',
+      total: 'total'
+    },
+    prepare(selection: any) {
+      const { title, customerName, status, paymentStatus, paymentMethod, total } = selection;
+      return {
+        title: `Order ${title.substring(0, 8)}`,
+        subtitle: `${customerName} - ${paymentMethod} - ${status} - ${paymentStatus} - $${total}`
+      };
+    }
   }
 };

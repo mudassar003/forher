@@ -2,16 +2,28 @@
 'use client';
 
 import { useCartStore } from "@/store/cartStore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { countries } from "countries-list";
 import CheckoutAuth from '@/components/Checkout/CheckoutAuth';
 import { useAuthStore } from "@/store/authStore";
+import StripePaymentForm from '@/components/Checkout/StripePaymentForm';
+import StripeCheckoutButton from '@/components/Checkout/StripeCheckoutButton';
+import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 
 interface ValidationErrors {
   [key: string]: string;
 }
+
+// Moved validation patterns outside the component to avoid recreation on each render
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^\+?[1-9]\d{1,14}$/;
+const POSTAL_CODE_PATTERNS = {
+  "United States": /^\d{5}(-\d{4})?$/,
+  "Canada": /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
+  default: /^.{3,10}$/
+};
 
 export default function CheckoutPage() {
   const { cart, clearCart } = useCartStore();
@@ -19,6 +31,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isClient, setIsClient] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -54,23 +67,13 @@ export default function CheckoutPage() {
     }).format(amount);
   };
 
-  // Validation patterns
-  const validationPatterns = {
-    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    phone: /^\+?[1-9]\d{1,14}$/,
-    postalCode: {
-      "United States": /^\d{5}(-\d{4})?$/,
-      "Canada": /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
-      default: /^.{3,10}$/
-    }
-  };
-
+  // Validate form function
   const validateForm = () => {
     const errors: ValidationErrors = {};
 
     if (!email) {
       errors.email = "Email is required";
-    } else if (!validationPatterns.email.test(email)) {
+    } else if (!EMAIL_PATTERN.test(email)) {
       errors.email = "Invalid email address";
     }
 
@@ -88,23 +91,29 @@ export default function CheckoutPage() {
 
     if (!phone) {
       errors.phone = "Phone number is required";
-    } else if (!validationPatterns.phone.test(phone)) {
+    } else if (!PHONE_PATTERN.test(phone)) {
       errors.phone = "Invalid phone number format";
     }
 
-    const countryPostalPattern = validationPatterns.postalCode[country as keyof typeof validationPatterns.postalCode] 
-      || validationPatterns.postalCode.default;
+    const countryPostalPattern = POSTAL_CODE_PATTERNS[country as keyof typeof POSTAL_CODE_PATTERNS] 
+      || POSTAL_CODE_PATTERNS.default;
     if (postalCode && !countryPostalPattern.test(postalCode)) {
       errors.postalCode = "Invalid postal code format";
     }
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
+
+  // Update validation status when form fields change
+  useEffect(() => {
+    const errors = validateForm();
+    setValidationErrors(errors);
+    setIsFormValid(Object.keys(errors).length === 0);
+  }, [email, lastName, address, city, phone, postalCode, country]);
 
   const handlePlaceOrder = async () => {
     if (isSubmitting) return;
-    if (!validateForm()) return;
+    if (!isFormValid) return;
     setIsSubmitting(true);
     try {
       // Create order data object to match API expectations
@@ -129,7 +138,15 @@ export default function CheckoutPage() {
           image: item.image
         }))
       };
-      // Send order to API
+      
+      // If Stripe is selected, don't process the order here
+      // The StripeCheckoutButton will handle this
+      if (paymentMethod === 'card') {
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Send order to API (for non-Stripe payment methods)
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -160,7 +177,25 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleBlur = (field: string) => validateForm();
+  const handleBlur = () => {
+    // Validation happens automatically in the useEffect
+  };
+  
+  // Create checkout data for Stripe
+  const checkoutData = {
+    email,
+    firstName,
+    lastName,
+    address,
+    apartment,
+    city,
+    country,
+    postalCode,
+    phone,
+    paymentMethod,
+    shippingMethod,
+    billingAddressType
+  };
 
   if (!isClient) {
     return (
@@ -228,7 +263,7 @@ export default function CheckoutPage() {
                     type="text" 
                     value={lastName} 
                     onChange={(e) => setLastName(e.target.value)}
-                    onBlur={() => handleBlur("lastName")}
+                    onBlur={handleBlur}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
                       validationErrors.lastName ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     }`}
@@ -245,7 +280,7 @@ export default function CheckoutPage() {
                   type="text" 
                   value={address} 
                   onChange={(e) => setAddress(e.target.value)}
-                  onBlur={() => handleBlur("address")}
+                  onBlur={handleBlur}
                   className={`w-full p-3 border rounded-md focus:outline-none ${
                     validationErrors.address ? "border-red-500" : "focus:ring-1 focus:ring-black"
                   }`}
@@ -272,7 +307,7 @@ export default function CheckoutPage() {
                     type="text" 
                     value={city} 
                     onChange={(e) => setCity(e.target.value)}
-                    onBlur={() => handleBlur("city")}
+                    onBlur={handleBlur}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
                       validationErrors.city ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     }`}
@@ -287,7 +322,7 @@ export default function CheckoutPage() {
                     type="text" 
                     value={postalCode} 
                     onChange={(e) => setPostalCode(e.target.value)}
-                    onBlur={() => handleBlur("postalCode")}
+                    onBlur={handleBlur}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
                       validationErrors.postalCode ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     }`}
@@ -305,7 +340,7 @@ export default function CheckoutPage() {
                     type="tel" 
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)}
-                    onBlur={() => handleBlur("phone")}
+                    onBlur={handleBlur}
                     className={`w-full p-3 border rounded-md focus:outline-none ${
                       validationErrors.phone ? "border-red-500" : "focus:ring-1 focus:ring-black"
                     } pr-10`}
@@ -347,56 +382,11 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Payment Methods */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4">Payment</h2>
-              <p className="text-gray-600 mb-4">All transactions are secure and encrypted.</p>
-              <div className="border rounded-md overflow-hidden">
-                <div className="border-b">
-                  <div className="p-4 flex items-center">
-                    <input 
-                      type="radio" 
-                      id="codPayment" 
-                      name="paymentMethod" 
-                      value="cod" 
-                      checked={paymentMethod === "cod"} 
-                      onChange={() => setPaymentMethod("cod")} 
-                      className="mr-2" 
-                    />
-                    <label htmlFor="codPayment" className="flex items-center">
-                      <span>Cash on Delivery (COD)</span>
-                      <svg className="ml-2" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M17 9V7C17 4.2 14.8 2 12 2C9.2 2 7 4.2 7 7V9" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M12 14.5C13.1046 14.5 14 13.6046 14 12.5C14 11.3954 13.1046 10.5 12 10.5C10.8954 10.5 10 11.3954 10 12.5C10 13.6046 10.8954 14.5 12 14.5Z" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M19 15.6V8.4C19 7.08 17.92 6 16.6 6H7.4C6.08 6 5 7.08 5 8.4V15.6C5 16.92 6.08 18 7.4 18H16.6C17.92 18 19 16.92 19 15.6Z" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </label>
-                  </div>
-                </div>
-                <div>
-                  <div className="p-4 flex items-center">
-                    <input 
-                      type="radio" 
-                      id="cardPayment" 
-                      name="paymentMethod" 
-                      value="bank" 
-                      checked={paymentMethod === "bank"} 
-                      onChange={() => setPaymentMethod("bank")} 
-                      className="mr-2" 
-                    />
-                    <label htmlFor="cardPayment" className="flex items-center">
-                      <span>Card Payment</span>
-                      <svg className="ml-2" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M2 8.5H22" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M6 16.5H8" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M10.5 16.5H14.5" stroke="black" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M22 12.03V16.11C22 19.62 21.11 20.5 17.56 20.5H6.44C2.89 20.5 2 19.62 2 16.11V7.89C2 4.38 2.89 3.5 6.44 3.5H17.56C21.11 3.5 22 4.38 22 7.89V8.98" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Payment Methods - Now using the StripePaymentForm component */}
+            <StripePaymentForm 
+              onSelectPaymentMethod={setPaymentMethod}
+              selectedMethod={paymentMethod}
+            />
 
             {/* Billing Address */}
             <div className="mb-8">
@@ -515,16 +505,23 @@ export default function CheckoutPage() {
               </div>
             </div>
             
-            {/* Complete Order Button */}
-            <button 
-              onClick={handlePlaceOrder}
-              disabled={isSubmitting}
-              className={`w-full mt-6 ${
-                isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-black hover:bg-gray-800"
-              } text-white py-4 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-lg font-medium transition-colors`}
-            >
-              {isSubmitting ? "Processing..." : "Complete order"}
-            </button>
+            {/* Complete Order Button - Conditional based on payment method */}
+            {paymentMethod === 'card' ? (
+              <StripeCheckoutButton 
+                checkoutData={checkoutData}
+                isFormValid={isFormValid}
+              />
+            ) : (
+              <button 
+                onClick={handlePlaceOrder}
+                disabled={isSubmitting || !isFormValid}
+                className={`w-full mt-6 ${
+                  isSubmitting || !isFormValid ? "bg-gray-400 cursor-not-allowed" : "bg-black hover:bg-gray-800"
+                } text-white py-4 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-lg font-medium transition-colors`}
+              >
+                {isSubmitting ? "Processing..." : "Complete order"}
+              </button>
+            )}
           </div>
         </div>
       </div>

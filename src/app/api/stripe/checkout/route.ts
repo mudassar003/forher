@@ -32,6 +32,7 @@ interface CheckoutData {
   shippingMethod: string;
   billingAddressType: string;
   cart: CartItem[];
+  [key: string]: any; // Add index signature to allow string indexing
 }
 
 export async function POST(req: Request) {
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
       'email', 'firstName', 'lastName', 
       'address', 'city', 'country', 'phone',
       'paymentMethod', 'shippingMethod', 'cart'
-    ];
+    ] as const; // Use const assertion
     
     const missingFields = requiredFields.filter(field => !data[field]);
     if (missingFields.length > 0) {

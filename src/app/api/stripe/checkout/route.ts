@@ -1,7 +1,6 @@
 // src/app/api/stripe/checkout/route.ts
 import { NextResponse } from "next/server";
 import { createCheckoutSession } from "@/lib/stripe";
-import { client } from "@/sanity/lib/client";
 import { createClient } from "@supabase/supabase-js";
 
 // Initialize Supabase client
@@ -18,6 +17,11 @@ interface CartItem {
   image?: string;
 }
 
+// Define a type for required fields to ensure type safety
+type RequiredField = 'email' | 'firstName' | 'lastName' | 
+                     'address' | 'city' | 'country' | 'phone' |
+                     'paymentMethod' | 'shippingMethod' | 'cart';
+
 interface CheckoutData {
   email: string;
   firstName: string;
@@ -32,7 +36,27 @@ interface CheckoutData {
   shippingMethod: string;
   billingAddressType: string;
   cart: CartItem[];
-  [key: string]: any; // Add index signature to allow string indexing
+  [key: string]: unknown; // Use unknown instead of any for better type safety
+}
+
+// Define Stripe-related types
+interface LineItem {
+  price_data: {
+    currency: string;
+    product_data: {
+      name: string;
+      images?: string[] | undefined;
+    };
+    unit_amount: number;
+  };
+  quantity: number;
+}
+
+// Define error type
+interface ErrorResponse {
+  message: string;
+  stack?: string;
+  details?: unknown;
 }
 
 export async function POST(req: Request) {
@@ -40,11 +64,11 @@ export async function POST(req: Request) {
     const data: CheckoutData = await req.json();
     
     // Validate required fields
-    const requiredFields = [
+    const requiredFields: RequiredField[] = [
       'email', 'firstName', 'lastName', 
       'address', 'city', 'country', 'phone',
       'paymentMethod', 'shippingMethod', 'cart'
-    ] as const; // Use const assertion
+    ];
     
     const missingFields = requiredFields.filter(field => !data[field]);
     if (missingFields.length > 0) {
@@ -100,7 +124,7 @@ export async function POST(req: Request) {
     const total = subtotal + shippingCost;
 
     // Format for Stripe (prices must be in cents)
-    const lineItems = data.cart.map(item => ({
+    const lineItems: LineItem[] = data.cart.map(item => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -119,6 +143,7 @@ export async function POST(req: Request) {
           currency: 'usd',
           product_data: {
             name: 'Shipping',
+            images: undefined,
           },
           unit_amount: shippingCost * 100, // Convert to cents
         },
@@ -129,7 +154,6 @@ export async function POST(req: Request) {
     // Create Stripe checkout session
     const session = await createCheckoutSession({
       lineItems,
-      // FIX: Change success URL to match your confirmation page path
       successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`,
       metadata: {
@@ -138,21 +162,31 @@ export async function POST(req: Request) {
       customerEmail: data.email,
     });
 
+    if (!session || !session.url) {
+      throw new Error("Failed to create Stripe session");
+    }
+
     return NextResponse.json({ 
       success: true, 
       url: session.url,
       sessionId: session.id,
     });
 
-  } catch (error: any) {
-    console.error("Stripe checkout error:", error);
+  } catch (error) {
+    // Type guard for error
+    const errorResponse: ErrorResponse = error instanceof Error 
+      ? { message: error.message || "Failed to create checkout session" }
+      : { message: "Unknown error occurred" };
+
+    console.error("Stripe checkout error:", errorResponse);
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || "Failed to create checkout session",
+        error: errorResponse.message,
         ...(process.env.NODE_ENV === 'development' && {
-          stack: error.stack,
-          details: error.details
+          stack: errorResponse instanceof Error ? errorResponse.stack : undefined,
+          details: (errorResponse as any).details // Cast only here where necessary
         })
       }, 
       { status: 500 }

@@ -4,6 +4,28 @@ import { AiFillCreditCard } from "react-icons/ai";
 import { AiFillDollarCircle } from "react-icons/ai";
 import React from 'react';
 
+// Create a proper custom component for the display ID
+// Define the props interface for type safety
+interface OrderIdDisplayProps {
+  value?: string;
+  readOnly?: boolean;
+}
+
+const OrderIdDisplay = ({ value }: OrderIdDisplayProps) => {
+  if (!value) {
+    return React.createElement('div', {}, 'ID will be available after saving');
+  }
+  
+  return React.createElement('div', {
+    style: {
+      padding: '0.5rem',
+      backgroundColor: '#f3f3f3',
+      borderRadius: '4px',
+      fontFamily: 'monospace'
+    }
+  }, value);
+};
+
 export const orderType = defineType({
   name: "order",
   title: "Orders",
@@ -19,36 +41,8 @@ export const orderType = defineType({
       description: "This is the Order ID shown to customers",
       // This field gets populated automatically in document creation
       hidden: ({ document }) => !document?._id,
-      options: {
-        // Custom input component that shows the document ID
-        inputComponent: ({ value, readOnly }) => {
-          // If this is a new document without an ID yet
-          if (!value) {
-            return {
-              reactElement: {
-                component: 'div',
-                props: {
-                  children: 'ID will be available after saving'
-                }
-              }
-            };
-          }
-          
-          return {
-            reactElement: {
-              component: 'div',
-              props: {
-                style: {
-                  padding: '0.5rem',
-                  backgroundColor: '#f3f3f3',
-                  borderRadius: '4px',
-                  fontFamily: 'monospace'
-                },
-                children: value
-              }
-            }
-          };
-        }
+      components: {
+        input: OrderIdDisplay
       }
     }),
     defineField({

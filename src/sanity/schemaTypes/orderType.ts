@@ -1,11 +1,15 @@
 // src/sanity/schemaTypes/orderType.ts
-export const orderType = {
+import { defineType, defineField } from 'sanity';
+import { TagIcon, CreditCardIcon, DollarIcon } from '@sanity/icons';
+
+export const orderType = defineType({
   name: "order",
   title: "Orders",
   type: "document",
+  icon: TagIcon,
   fields: [
     // Add a display field for the Order ID at the top
-    {
+    defineField({
       name: "displayId",
       title: "Order ID",
       type: "string",
@@ -44,54 +48,54 @@ export const orderType = {
           };
         }
       }
-    },
-    {
+    }),
+    defineField({
       name: "email",
       title: "Email",
       type: "string",
-      validation: (Rule: any) => Rule.required().email()
-    },
-    {
+      validation: (Rule) => Rule.required().email()
+    }),
+    defineField({
       name: "customerName",
       title: "Customer Name",
       type: "string",
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "address",
       title: "Address",
       type: "string",
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "apartment",
       title: "Apartment/Suite",
       type: "string"
-    },
-    {
+    }),
+    defineField({
       name: "city",
       title: "City",
       type: "string",
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "country",
       title: "Country",
       type: "string",
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "postalCode",
       title: "Postal Code",
       type: "string"
-    },
-    {
+    }),
+    defineField({
       name: "phone",
       title: "Phone",
       type: "string",
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "paymentMethod",
       title: "Payment Method",
       type: "string",
@@ -101,18 +105,18 @@ export const orderType = {
           { title: "Stripe", value: "stripe" }
         ]
       },
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "shippingMethod",
       title: "Shipping Method",
       type: "string",
       options: {
         list: [{ title: "Standard Delivery", value: "standard" }]
       },
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "cart",
       title: "Cart Items",
       type: "array",
@@ -120,10 +124,10 @@ export const orderType = {
         {
           type: "object",
           fields: [
-            { name: "productId", title: "Product ID", type: "string", validation: (Rule: any) => Rule.required() },
-            { name: "name", title: "Product Name", type: "string", validation: (Rule: any) => Rule.required() },
-            { name: "quantity", title: "Quantity", type: "number", validation: (Rule: any) => Rule.required().min(1) },
-            { name: "price", title: "Price", type: "number", validation: (Rule: any) => Rule.required().min(0) },
+            { name: "productId", title: "Product ID", type: "string", validation: (Rule) => Rule.required() },
+            { name: "name", title: "Product Name", type: "string", validation: (Rule) => Rule.required() },
+            { name: "quantity", title: "Quantity", type: "number", validation: (Rule) => Rule.required().min(1) },
+            { name: "price", title: "Price", type: "number", validation: (Rule) => Rule.required().min(0) },
             { name: "image", title: "Image", type: "string" }
           ],
           preview: {
@@ -141,9 +145,9 @@ export const orderType = {
           }
         }
       ],
-      validation: (Rule: any) => Rule.required().min(1)
-    },
-    {
+      validation: (Rule) => Rule.required().min(1)
+    }),
+    defineField({
       name: "status",
       title: "Order Status",
       type: "string",
@@ -158,46 +162,46 @@ export const orderType = {
         ]
       },
       initialValue: "pending",
-      validation: (Rule: any) => Rule.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: "total",
       title: "Total Amount",
       type: "number",
-      validation: (Rule: any) => Rule.required().min(0)
-    },
-    {
+      validation: (Rule) => Rule.required().min(0)
+    }),
+    defineField({
       name: "subtotal",
       title: "Subtotal",
       type: "number",
-      validation: (Rule: any) => Rule.required().min(0)
-    },
-    {
+      validation: (Rule) => Rule.required().min(0)
+    }),
+    defineField({
       name: "shippingCost",
       title: "Shipping Cost",
       type: "number",
-      validation: (Rule: any) => Rule.required().min(0)
-    },
+      validation: (Rule) => Rule.required().min(0)
+    }),
     // Stripe-specific fields
-    {
+    defineField({
       name: "stripeSessionId",
       title: "Stripe Session ID",
       type: "string",
       description: "The ID of the Stripe checkout session"
-    },
-    {
+    }),
+    defineField({
       name: "stripePaymentIntentId",
       title: "Stripe Payment Intent ID",
       type: "string",
       description: "The ID of the Stripe payment intent"
-    },
-    {
+    }),
+    defineField({
       name: "stripeCustomerId",
       title: "Stripe Customer ID",
       type: "string",
       description: "The ID of the Stripe customer for recurring payments"
-    },
-    {
+    }),
+    defineField({
       name: "paymentStatus",
       title: "Payment Status",
       type: "string",
@@ -212,14 +216,14 @@ export const orderType = {
         ]
       },
       initialValue: "awaiting"
-    },
-    {
+    }),
+    defineField({
       name: "orderDate",
       title: "Order Date",
       type: "datetime",
       readOnly: true,
       description: "When the order was placed",
-    }
+    })
   ],
   initialValue: {
     status: "pending",
@@ -240,11 +244,10 @@ export const orderType = {
       const { name, email, id, status, paymentStatus, paymentMethod, total } = selection;
       return {
         title: `${name || 'Customer'} - ${email || 'No Email'}`,
-        subtitle: `ID: ${id} | ${paymentMethod || 'Unknown'} | ${status || 'Unknown'} | ${paymentStatus || 'Unknown'} | $${total || 0}`,
-        media: paymentMethod === 'stripe' 
-          ? { emoji: '💳' } 
-          : { emoji: '💵' }
+        subtitle: `ID: ${id} | ${paymentMethod || 'Unknown'} | ${status || 'Unknown'} | ${paymentStatus || 'Unknown'} | ${total || 0}`,
+        // Using Sanity icons instead of emojis
+        media: paymentMethod === 'stripe' ? CreditCardIcon : DollarIcon
       };
     }
   }
-};
+});

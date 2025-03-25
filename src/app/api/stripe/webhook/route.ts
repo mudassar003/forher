@@ -5,14 +5,12 @@ import { Stripe } from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-});
+// Initialize Stripe without explicitly setting API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 // Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // This is needed to disable body parsing for Stripe signature verification
@@ -35,7 +33,7 @@ export async function POST(req: Request) {
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET as string
     );
 
     console.log(`⚡ Received Stripe webhook event: ${event.type}`);
@@ -152,8 +150,9 @@ export async function POST(req: Request) {
             // Double check the update was successful
             const updatedDoc = await sanityClient.getDocument(sanityOrderId);
             console.log(`Sanity order payment status after update: ${updatedDoc.paymentStatus}`);
-          } catch (sanityError: any) {
-            console.error(`Failed to update Sanity order: ${sanityError.message}`);
+          } catch (sanityError) {
+            const errorMessage = sanityError instanceof Error ? sanityError.message : "Unknown error";
+            console.error(`Failed to update Sanity order: ${errorMessage}`);
             console.error(sanityError);
           }
         }
@@ -211,8 +210,9 @@ export async function POST(req: Request) {
               .commit({visibility: 'sync'});
               
             console.log(`✅ Sanity order payment intent updated: ${sanityId}`);
-          } catch (error: any) {
-            console.error(`Failed to update Sanity order payment status: ${error.message}`);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            console.error(`Failed to update Sanity order payment status: ${errorMessage}`);
           }
         }
         
@@ -255,8 +255,9 @@ export async function POST(req: Request) {
               .commit({visibility: 'sync'});
               
             console.log(`✅ Sanity order payment failure updated: ${sanityId}`);
-          } catch (error: any) {
-            console.error(`Failed to update Sanity order payment status: ${error.message}`);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            console.error(`Failed to update Sanity order payment status: ${errorMessage}`);
           }
         }
         
@@ -268,12 +269,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true });
       }
     }
-  } catch (error: any) {
-    console.error(`Webhook Error: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Webhook handler failed";
+    console.error(`Webhook Error: ${errorMessage}`);
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || "Webhook handler failed",
+        error: errorMessage
       }, 
       { status: 400 }
     );

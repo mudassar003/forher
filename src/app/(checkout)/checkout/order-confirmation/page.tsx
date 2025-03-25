@@ -2,11 +2,12 @@
 'use client';
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 
-export default function OrderConfirmationPage() {
+// Create a client component that uses useSearchParams
+function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   // FIX: Check for both session_id (from Stripe redirect) and sessionId (from internal redirect)
   const sessionId = searchParams.get('session_id') || searchParams.get('sessionId');
@@ -112,5 +113,27 @@ export default function OrderConfirmationPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for the Suspense boundary
+function OrderConfirmationFallback() {
+  return (
+    <div className="max-w-4xl mx-auto text-center py-12 px-6">
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">Loading Order Details</h1>
+      <div className="my-8">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading your order information...</p>
+      </div>
+    </div>
+  );
+}
+
+// The main page component that uses Suspense
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={<OrderConfirmationFallback />}>
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }

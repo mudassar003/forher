@@ -3,14 +3,27 @@ import { type SchemaTypeDefinition } from 'sanity'
 import {blockContentType} from './blockContentType'
 import {categoryType} from './categoryType'
 import {postType} from './postType'
-import { authorType } from './authorType'
-import { productType } from './productType'
-import { productCategoryType } from './productCategoryType'
-import { orderType } from './orderType'
-
-
-
+import {authorType} from './authorType'
+import {productType} from './productType'
+import {productCategoryType} from './productCategoryType'
+import {orderType} from './orderType'
+import {subscriptionType} from './subscriptionType'
+import {appointmentType} from './appointmentType'
+import {userSubscriptionType} from './userSubscriptionType'
+import {userAppointmentType} from './userAppointmentType'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [blockContentType, categoryType, postType, authorType, productType, productCategoryType, orderType],
+  types: [
+    blockContentType, 
+    categoryType, 
+    postType, 
+    authorType, 
+    productType, 
+    productCategoryType, 
+    orderType,
+    subscriptionType,
+    appointmentType,
+    userSubscriptionType,
+    userAppointmentType
+  ],
 }

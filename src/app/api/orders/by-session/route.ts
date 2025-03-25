@@ -3,13 +3,29 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { retrieveCheckoutSession } from "@/lib/stripe";
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
 export async function GET(req: Request) {
   try {
+    // Initialize Supabase client inside the function to ensure environment variables are loaded
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // Validate environment variables
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase environment variables");
+      return NextResponse.json(
+        { success: false, error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
+    // Create Supabase client with proper authentication
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId');
 
@@ -28,6 +44,10 @@ export async function GET(req: Request) {
       .select('id, sanity_id, stripe_session_id')
       .eq('stripe_session_id', sessionId)
       .single();
+
+    if (orderError) {
+      console.error("Error querying Supabase:", orderError);
+    }
 
     if (orderData) {
       console.log(`✅ Found order in database: ${JSON.stringify(orderData)}`);
@@ -63,13 +83,15 @@ export async function GET(req: Request) {
       message: "Payment confirmed, but order details are still being processed. Please check your email for confirmation."
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error retrieving order by session:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to retrieve order details";
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || "Failed to retrieve order details" 
-      }, 
+        error: errorMessage
+      },
       { status: 500 }
     );
   }

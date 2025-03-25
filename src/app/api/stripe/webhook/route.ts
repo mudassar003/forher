@@ -5,7 +5,7 @@ import { Stripe } from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 
-// Initialize Stripe without explicitly setting API version
+// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 // Initialize Supabase client
@@ -23,7 +23,7 @@ export const config = {
 export async function POST(req: Request) {
   try {
     const body = await req.text();
-    const headersList = await headers();
+    const headersList = headers();
     const signature = headersList.get("stripe-signature") as string;
 
     if (!signature) {
@@ -45,18 +45,18 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log(`🔍 Processing checkout session: ${session.id}`);
         
-        // Get the order ID from the session metadata
+        // Extract metadata
+        const userId = session.metadata?.userId;
+        const userEmail = session.metadata?.userEmail;
+        const subscriptionId = session.metadata?.subscriptionId;
+        const appointmentId = session.metadata?.appointmentId;
+        const appointmentType = session.metadata?.appointmentType;
+        const fromSubscription = session.metadata?.fromSubscription === 'true';
+        const userSubscriptionId = session.metadata?.userSubscriptionId;
+        const qualiphyExamId = session.metadata?.qualiphyExamId;
         const orderId = session.metadata?.orderId;
         const sanityId = session.metadata?.sanityId;
-        
-        if (!orderId && !sanityId) {
-          console.error("No order ID found in session metadata");
-          return NextResponse.json(
-            { success: false, error: "No order ID found in session metadata" },
-            { status: 400 }
-          );
-        }
-        
+
         // Get customer information if available
         let customerId = session.customer as string;
         if (!customerId && session.customer_details?.email) {
@@ -82,123 +82,533 @@ export async function POST(req: Request) {
           }
         }
         
-        // Update Supabase order if we have a Supabase ID
-        let supabaseOrder;
-        let supabaseUpdateSuccess = false;
+        // Check what type of purchase this is
+        const isSubscription = session.mode === 'subscription';
+        const isAppointment = appointmentType === 'oneTime';
+        const isRegularOrder = orderId || sanityId;
         
-        if (orderId) {
-          console.log(`Looking for Supabase order with ID: ${orderId}`);
+        // Handle different purchase types
+        if (isSubscription && subscriptionId) {
+          // Handle subscription purchase
+          console.log(`Processing subscription purchase for ${subscriptionId}`);
           
-          // Get the order from Supabase
-          const { data: orderData, error: fetchError } = await supabase
-            .from('orders')
-            .select('id, sanity_id')
-            .eq('id', orderId)
+          // Get Stripe subscription ID from the session
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          );
+          
+          // Update Sanity user subscription
+          const { data: sanityUserSub, error } = await supabase
+            .from('user_subscriptions')
+            .select('sanity_id')
+            .eq('stripe_session_id', session.id)
             .single();
           
-          if (fetchError) {
-            console.error(`Error fetching order from Supabase: ${fetchError.message}`);
+          if (error) {
+            console.error("Error fetching user subscription:", error);
+          }
+          
+          const userSubscriptionSanityId = sanityUserSub?.sanity_id;
+
+          if (userSubscriptionSanityId) {
+            // Calculate end date based on billing period
+            const startDate = new Date();
+            let endDate = new Date(startDate);
+            
+            // Default to next month, but this will be overridden by actual subscription end date
+            endDate.setMonth(endDate.getMonth() + 1);
+            
+            if (subscription.current_period_end) {
+              endDate = new Date(subscription.current_period_end * 1000);
+            }
+            
+            try {
+              // Update Sanity user subscription
+              await sanityClient
+                .patch(userSubscriptionSanityId)
+                .set({
+                  isActive: true,
+                  status: 'active',
+                  stripeSubscriptionId: subscription.id,
+                  startDate: startDate.toISOString(),
+                  endDate: endDate.toISOString(),
+                  nextBillingDate: endDate.toISOString()
+                })
+                .commit();
+                
+              console.log(`✅ Updated Sanity user subscription: ${userSubscriptionSanityId}`);
+            } catch (sanityError) {
+              console.error("Error updating Sanity subscription:", sanityError);
+            }
+            
+            // Update Supabase user subscription
+            try {
+              await supabase
+                .from('user_subscriptions')
+                .update({
+                  status: 'active',
+                  is_active: true,
+                  stripe_subscription_id: subscription.id,
+                  start_date: startDate.toISOString(),
+                  end_date: endDate.toISOString(),
+                  next_billing_date: endDate.toISOString()
+                })
+                .eq('stripe_session_id', session.id);
+              
+              console.log(`✅ Updated Supabase user subscription for session: ${session.id}`);
+            } catch (supabaseError) {
+              console.error("Error updating Supabase subscription:", supabaseError);
+            }
           } else {
-            supabaseOrder = orderData;
+            console.error(`No user subscription found for session ID: ${session.id}`);
+          }
+
+          } else if (isAppointment && appointmentId) {
+          // Handle one-time appointment purchase
+          console.log(`Processing appointment purchase for ${appointmentId}`);
+          
+          // Find the appointment in Supabase
+          const { data: appointmentData, error } = await supabase
+            .from('user_appointments')
+            .select('id, sanity_id')
+            .eq('stripe_session_id', session.id)
+            .single();
             
-            // Update Supabase order status
-            const { error: updateError } = await supabase
-              .from('orders')
-              .update({
-                status: 'paid',
-                payment_method: 'stripe', // Ensure payment method is set correctly
-                payment_status: 'paid',
-                stripe_session_id: session.id,
-                stripe_payment_intent_id: session.payment_intent as string,
-                stripe_customer_id: customerId || null,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', orderId);
+          if (error) {
+            console.error("Error fetching appointment:", error);
+          }
+          
+          const sanityAppointmentId = appointmentData?.sanity_id;
+          
+          if (sanityAppointmentId) {
+            // Schedule default date (tomorrow)
+            const scheduledDate = new Date();
+            scheduledDate.setDate(scheduledDate.getDate() + 1);
             
-            if (updateError) {
-              console.error(`Failed to update order in Supabase: ${updateError.message}`);
-            } else {
-              supabaseUpdateSuccess = true;
+            try {
+              // Update Sanity user appointment
+              await sanityClient
+                .patch(sanityAppointmentId)
+                .set({
+                  status: 'scheduled',
+                  scheduledDate: scheduledDate.toISOString()
+                })
+                .commit();
+                
+              console.log(`✅ Updated Sanity user appointment: ${sanityAppointmentId}`);
+            } catch (sanityError) {
+              console.error("Error updating Sanity appointment:", sanityError);
+            }
+            
+            // Update Supabase user appointment
+            try {
+              await supabase
+                .from('user_appointments')
+                .update({
+                  status: 'scheduled',
+                  scheduled_date: scheduledDate.toISOString(),
+                  stripe_customer_id: customerId || null
+                })
+                .eq('stripe_session_id', session.id);
+                
+              console.log(`✅ Updated Supabase user appointment for session: ${session.id}`);
+            } catch (supabaseError) {
+              console.error("Error updating Supabase appointment:", supabaseError);
+            }
+
+            // If this appointment is from a subscription, update the subscription usage
+            if (fromSubscription && userSubscriptionId) {
+              try {
+                // Get current appointments used count from Supabase
+                const { data: subscriptionData, error } = await supabase
+                  .from('user_subscriptions')
+                  .select('appointments_used, sanity_id')
+                  .eq('id', userSubscriptionId)
+                  .single();
+                
+                if (error) {
+                  console.error("Error fetching subscription:", error);
+                } else {
+                  const appointmentsUsed = (subscriptionData.appointments_used || 0) + 1;
+                  const subscriptionSanityId = subscriptionData.sanity_id;
+                  
+                  // Update appointment usage in Supabase
+                  await supabase
+                    .from('user_subscriptions')
+                    .update({ appointments_used: appointmentsUsed })
+                    .eq('id', userSubscriptionId);
+                    
+                  // Update appointment usage in Sanity if we have the Sanity ID
+                  if (subscriptionSanityId) {
+                    await sanityClient
+                      .patch(subscriptionSanityId)
+                      .set({ appointmentsUsed })
+                      .commit();
+                  }
+                  
+                  console.log(`✅ Updated subscription appointment usage: ${appointmentsUsed}`);
+                }
+              } catch (error) {
+                console.error("Failed to update subscription appointment usage:", error);
+              }
+            }
+            
+            // Create Qualiphy appointment if exam ID is available
+            if (qualiphyExamId && parseInt(qualiphyExamId) > 0) {
+              try {
+                // We'll need to create this in the Qualiphy system later
+                // This is usually handled by a separate endpoint or when the user accesses
+                // the Qualiphy widget for the first time
+                console.log(`Will handle Qualiphy exam ID: ${qualiphyExamId} when user accesses widget`);
+              } catch (error) {
+                console.error("Failed to handle Qualiphy integration:", error);
+              }
+            }
+          } else {
+            console.error(`No user appointment found for session ID: ${session.id}`);
+          }
+
+          } else if (isRegularOrder) {
+          // Handle regular order completion (from existing webhook)
+          console.log(`Processing regular order for ID: ${orderId || sanityId}`);
+          
+          // Update Supabase order if we have a Supabase ID
+          if (orderId) {
+            try {
+              await supabase
+                .from('orders')
+                .update({
+                  status: 'paid',
+                  payment_method: 'stripe',
+                  payment_status: 'paid',
+                  stripe_session_id: session.id,
+                  stripe_payment_intent_id: session.payment_intent as string,
+                  stripe_customer_id: customerId || null,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', orderId);
+              
               console.log(`✅ Supabase order ${orderId} marked as paid`);
+            } catch (error) {
+              console.error(`Failed to update order in Supabase:`, error);
             }
           }
-        }
-        
-        // Try to update Sanity as well
-        const sanityOrderId = sanityId || supabaseOrder?.sanity_id;
-        let sanityUpdateSuccess = false;
-        
-        if (sanityOrderId) {
-          try {
-            console.log(`Updating Sanity order ${sanityOrderId} with payment status`);
-            
-            // Use immediate commit to ensure the update is processed right away
-            await sanityClient
-              .patch(sanityOrderId)
-              .set({
-                status: 'paid', // Update order status
-                paymentMethod: 'stripe', // Ensure payment method is set correctly
-                paymentStatus: 'paid', // Update payment status to paid
-                stripeSessionId: session.id,
-                stripePaymentIntentId: session.payment_intent as string,
-                stripeCustomerId: customerId || undefined
-              })
-              .commit({visibility: 'sync'}); // Use sync commit for immediate update
-            
-            sanityUpdateSuccess = true;
-            console.log(`✅ Sanity order ${sanityOrderId} marked as paid`);
-            
-            // Double check the update was successful
-            const updatedDoc = await sanityClient.getDocument(sanityOrderId);
-            if (updatedDoc) {
-              console.log(`Sanity order payment status after update: ${updatedDoc.paymentStatus}`);
-            } else {
-              console.log(`Could not retrieve updated Sanity document for order: ${sanityOrderId}`);
+          
+          // Update Sanity order if we have a Sanity ID
+          if (sanityId) {
+            try {
+              await sanityClient
+                .patch(sanityId)
+                .set({
+                  status: 'paid',
+                  paymentMethod: 'stripe',
+                  paymentStatus: 'paid',
+                  stripeSessionId: session.id,
+                  stripePaymentIntentId: session.payment_intent as string,
+                  stripeCustomerId: customerId || undefined
+                })
+                .commit({visibility: 'sync'});
+              
+              console.log(`✅ Sanity order ${sanityId} marked as paid`);
+            } catch (error) {
+              console.error(`Failed to update Sanity order:`, error);
             }
-          } catch (sanityError) {
-            const errorMessage = sanityError instanceof Error ? sanityError.message : "Unknown error";
-            console.error(`Failed to update Sanity order: ${errorMessage}`);
-            console.error(sanityError);
           }
+        } else {
+          console.log("Unidentified checkout session type or missing ID:", session.metadata);
         }
-        
-        // If we couldn't update either database, return an error
-        if (!supabaseUpdateSuccess && !sanityUpdateSuccess) {
-          return NextResponse.json(
-            { success: false, error: "Failed to update order in any database" },
-            { status: 500 }
-          );
-        }
-        
+
         return NextResponse.json({
           success: true,
-          message: "Payment processed successfully",
-          orderId: sanityOrderId || orderId
+          message: "Checkout session processed successfully"
         });
       }
       
+      case 'invoice.payment_succeeded': {
+        // Handle successful subscription renewal
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId = invoice.subscription as string;
+        
+        if (!subscriptionId) {
+          return NextResponse.json({ 
+            success: false, 
+            error: "No subscription ID in invoice" 
+          }, { status: 400 });
+        }
+        
+        console.log(`Processing subscription renewal for ${subscriptionId}`);
+        
+        try {
+          // Get subscription details
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          
+          // Find the user subscription in Supabase
+          const { data: userSubscription, error } = await supabase
+            .from('user_subscriptions')
+            .select('id, sanity_id')
+            .eq('stripe_subscription_id', subscriptionId)
+            .single();
+          
+          if (error) {
+            console.error("Error finding user subscription:", error);
+            return NextResponse.json({ success: false, error: "Subscription not found" });
+          }
+          
+          // Calculate new end date
+          const endDate = new Date(subscription.current_period_end * 1000);
+          
+          // Update Supabase user subscription
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              end_date: endDate.toISOString(),
+              next_billing_date: endDate.toISOString(),
+              status: 'active',
+              is_active: true,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userSubscription.id);
+            
+          console.log(`✅ Updated Supabase user subscription for renewal`);
+          // Update Sanity if we have the ID
+          if (userSubscription.sanity_id) {
+            await sanityClient
+              .patch(userSubscription.sanity_id)
+              .set({
+                endDate: endDate.toISOString(),
+                nextBillingDate: endDate.toISOString(),
+                status: 'active',
+                isActive: true
+              })
+              .commit();
+              
+            console.log(`✅ Updated Sanity user subscription for renewal: ${userSubscription.sanity_id}`);
+          }
+        } catch (error) {
+          console.error("Error processing invoice payment:", error);
+          return NextResponse.json({ success: false, error: "Failed to process invoice payment" });
+        }
+        
+        return NextResponse.json({ received: true });
+      }
+      
+      case 'invoice.payment_failed': {
+        // Handle failed subscription payment
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId = invoice.subscription as string;
+        
+        if (!subscriptionId) {
+          return NextResponse.json({ 
+            success: false, 
+            error: "No subscription ID in invoice" 
+          }, { status: 400 });
+        }
+
+        console.log(`Processing failed payment for subscription ${subscriptionId}`);
+        
+        try {
+          // Find the user subscription in Supabase
+          const { data: userSubscription, error } = await supabase
+            .from('user_subscriptions')
+            .select('id, sanity_id')
+            .eq('stripe_subscription_id', subscriptionId)
+            .single();
+          
+          if (error) {
+            console.error("Error finding user subscription:", error);
+            return NextResponse.json({ success: false, error: "Subscription not found" });
+          }
+          
+          // Update Supabase user subscription
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              status: 'past_due',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userSubscription.id);
+              
+          console.log(`✅ Updated Supabase user subscription to past_due`);
+          
+          // Update Sanity if we have the ID
+          if (userSubscription.sanity_id) {
+            await sanityClient
+              .patch(userSubscription.sanity_id)
+              .set({
+                status: 'past_due'
+              })
+              .commit();
+                
+            console.log(`✅ Updated Sanity user subscription to past_due: ${userSubscription.sanity_id}`);
+          }
+        } catch (error) {
+          console.error("Error processing invoice payment failure:", error);
+          return NextResponse.json({ success: false, error: "Failed to process payment failure" });
+        }
+        
+        return NextResponse.json({ received: true });
+      }
+        
+        case 'customer.subscription.updated': {
+        // Handle subscription updates (e.g., paused, resumed)
+        const subscription = event.data.object as Stripe.Subscription;
+        
+        console.log(`Processing subscription update for ${subscription.id}`);
+        console.log(`Subscription status: ${subscription.status}`);
+        
+        // Map Stripe status to our status
+        let status = 'active';
+        let isActive = true;
+        
+        switch (subscription.status) {
+          case 'active':
+            status = 'active';
+            isActive = true;
+            break;
+          case 'past_due':
+            status = 'past_due';
+            isActive = true; // Still give access but flag it
+            break;
+          case 'canceled':
+            status = 'cancelled';
+            isActive = false;
+            break;
+          case 'unpaid':
+            status = 'unpaid';
+            isActive = false;
+            break;
+          case 'paused':
+            status = 'paused';
+            isActive = false;
+            break;
+          default:
+            status = subscription.status;
+            isActive = subscription.status === 'active';
+        }
+        
+        try {
+          // Find the user subscription in Supabase
+          const { data: userSubscription, error } = await supabase
+            .from('user_subscriptions')
+            .select('id, sanity_id')
+            .eq('stripe_subscription_id', subscription.id)
+            .single();
+          
+          if (error) {
+            console.error("Error finding user subscription:", error);
+            return NextResponse.json({ success: false, error: "Subscription not found" });
+          }
+
+          // Update Supabase user subscription
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              status,
+              is_active: isActive,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userSubscription.id);
+            
+          console.log(`✅ Updated Supabase user subscription status: ${status}`);
+          
+          // Update Sanity if we have the ID
+          if (userSubscription.sanity_id) {
+            await sanityClient
+              .patch(userSubscription.sanity_id)
+              .set({
+                status,
+                isActive
+              })
+              .commit();
+              
+            console.log(`✅ Updated Sanity user subscription status: ${status}`);
+          }
+        } catch (error) {
+          console.error("Error processing subscription update:", error);
+          return NextResponse.json({ success: false, error: "Failed to process subscription update" });
+        }
+        
+        return NextResponse.json({ received: true });
+      }
+      
+      case 'customer.subscription.deleted': {
+        // Handle subscription cancellation/expiration
+        const subscription = event.data.object as Stripe.Subscription;
+        
+        console.log(`Processing subscription deletion for ${subscription.id}`);
+        
+        try {
+          // Find the user subscription in Supabase
+          const { data: userSubscription, error } = await supabase
+            .from('user_subscriptions')
+            .select('id, sanity_id')
+            .eq('stripe_subscription_id', subscription.id)
+            .single();
+          
+          if (error) {
+            console.error("Error finding user subscription:", error);
+            return NextResponse.json({ success: false, error: "Subscription not found" });
+          }
+
+          // Update Supabase user subscription
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              status: 'cancelled',
+              is_active: false,
+              end_date: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userSubscription.id);
+            
+          console.log(`✅ Updated Supabase user subscription: marked as cancelled`);
+          
+          // Update Sanity if we have the ID
+          if (userSubscription.sanity_id) {
+            await sanityClient
+              .patch(userSubscription.sanity_id)
+              .set({
+                status: 'cancelled',
+                isActive: false,
+                endDate: new Date().toISOString()
+              })
+              .commit();
+              
+            console.log(`✅ Updated Sanity user subscription: marked as cancelled`);
+          }
+        } catch (error) {
+          console.error("Error processing subscription deletion:", error);
+          return NextResponse.json({ success: false, error: "Failed to process subscription deletion" });
+        }
+        
+        return NextResponse.json({ received: true });
+      }
+      
       case 'payment_intent.succeeded': {
+        // Handle successful payment intent for regular orders
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log(`💰 Payment intent succeeded: ${paymentIntent.id}`);
         
         // If we have the metadata with order ID, double-check it's marked as paid
         const orderId = paymentIntent.metadata?.orderId;
         const sanityId = paymentIntent.metadata?.sanityId;
-        
+
         if (orderId) {
           // Update Supabase
-          const { error } = await supabase
-            .from('orders')
-            .update({
-              payment_status: 'paid',
-              payment_method: 'stripe',
-              stripe_payment_intent_id: paymentIntent.id,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', orderId);
-          
-          if (error) {
-            console.error(`Failed to update Supabase order payment status: ${error.message}`);
+          try {
+            await supabase
+              .from('orders')
+              .update({
+                payment_status: 'paid',
+                payment_method: 'stripe',
+                stripe_payment_intent_id: paymentIntent.id,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', orderId);
+              
+            console.log(`✅ Updated Supabase order payment status: ${orderId}`);
+          } catch (error) {
+            console.error("Error updating order payment status:", error);
           }
         }
         
@@ -214,10 +624,9 @@ export async function POST(req: Request) {
               })
               .commit({visibility: 'sync'});
               
-            console.log(`✅ Sanity order payment intent updated: ${sanityId}`);
+            console.log(`✅ Updated Sanity order payment status: ${sanityId}`);
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            console.error(`Failed to update Sanity order payment status: ${errorMessage}`);
+            console.error("Error updating Sanity order payment status:", error);
           }
         }
         
@@ -225,6 +634,7 @@ export async function POST(req: Request) {
       }
       
       case 'payment_intent.payment_failed': {
+        // Handle failed payment intent
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log(`❌ Payment failed: ${paymentIntent.id}`);
         
@@ -234,17 +644,19 @@ export async function POST(req: Request) {
         
         if (orderId) {
           // Update Supabase
-          const { error } = await supabase
-            .from('orders')
-            .update({
-              payment_status: 'failed',
-              stripe_payment_intent_id: paymentIntent.id,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', orderId);
-          
-          if (error) {
-            console.error(`Failed to update Supabase order payment status: ${error.message}`);
+          try {
+            await supabase
+              .from('orders')
+              .update({
+                payment_status: 'failed',
+                stripe_payment_intent_id: paymentIntent.id,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', orderId);
+              
+            console.log(`✅ Updated Supabase order payment status to failed: ${orderId}`);
+          } catch (error) {
+            console.error("Error updating order payment status:", error);
           }
         }
         
@@ -259,10 +671,9 @@ export async function POST(req: Request) {
               })
               .commit({visibility: 'sync'});
               
-            console.log(`✅ Sanity order payment failure updated: ${sanityId}`);
+            console.log(`✅ Updated Sanity order payment status to failed: ${sanityId}`);
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            console.error(`Failed to update Sanity order payment status: ${errorMessage}`);
+            console.error("Error updating Sanity order payment status:", error);
           }
         }
         
@@ -271,12 +682,18 @@ export async function POST(req: Request) {
       
       default: {
         // Handle other events or ignore them
+        console.log(`Ignoring unhandled event type: ${event.type}`);
         return NextResponse.json({ received: true });
       }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Webhook handler failed";
     console.error(`Webhook Error: ${errorMessage}`);
+    
+    if (error instanceof Error) {
+      console.error(error.stack);
+    }
+    
     return NextResponse.json(
       { 
         success: false, 

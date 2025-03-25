@@ -19,12 +19,8 @@ export async function GET(req: Request) {
     }
 
     // Create Supabase client with proper authentication
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
+    // Explicit API key is required in Vercel environment
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId');

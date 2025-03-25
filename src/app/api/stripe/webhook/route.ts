@@ -23,7 +23,8 @@ export const config = {
 export async function POST(req: Request) {
   try {
     const body = await req.text();
-    const signature = headers().get("stripe-signature") as string;
+    const headersList = await headers();
+    const signature = headersList.get("stripe-signature") as string;
 
     if (!signature) {
       return NextResponse.json({ error: "No Stripe signature found" }, { status: 400 });

@@ -150,7 +150,11 @@ export async function POST(req: Request) {
             
             // Double check the update was successful
             const updatedDoc = await sanityClient.getDocument(sanityOrderId);
-            console.log(`Sanity order payment status after update: ${updatedDoc.paymentStatus}`);
+            if (updatedDoc) {
+              console.log(`Sanity order payment status after update: ${updatedDoc.paymentStatus}`);
+            } else {
+              console.log(`Could not retrieve updated Sanity document for order: ${sanityOrderId}`);
+            }
           } catch (sanityError) {
             const errorMessage = sanityError instanceof Error ? sanityError.message : "Unknown error";
             console.error(`Failed to update Sanity order: ${errorMessage}`);

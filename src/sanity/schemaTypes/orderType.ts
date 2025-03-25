@@ -1,12 +1,14 @@
 // src/sanity/schemaTypes/orderType.ts
 import { defineType, defineField } from 'sanity';
-import { TagIcon, CreditCardIcon, DollarIcon } from '@sanity/icons';
+import { AiFillCreditCard } from "react-icons/ai";
+import { AiFillDollarCircle } from "react-icons/ai";
+import React from 'react';
 
 export const orderType = defineType({
   name: "order",
   title: "Orders",
   type: "document",
-  icon: TagIcon,
+  icon: () => React.createElement('span', {}, '📦'),
   fields: [
     // Add a display field for the Order ID at the top
     defineField({
@@ -246,7 +248,7 @@ export const orderType = defineType({
         title: `${name || 'Customer'} - ${email || 'No Email'}`,
         subtitle: `ID: ${id} | ${paymentMethod || 'Unknown'} | ${status || 'Unknown'} | ${paymentStatus || 'Unknown'} | ${total || 0}`,
         // Using Sanity icons instead of emojis
-        media: paymentMethod === 'stripe' ? CreditCardIcon : DollarIcon
+        media: paymentMethod === 'stripe' ? AiFillCreditCard : AiFillDollarCircle
       };
     }
   }

@@ -3,9 +3,7 @@ import Stripe from 'stripe';
 
 // Initialize Stripe with your secret key
 // Use environment variable for security
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16', // Specify the Stripe API version
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 // Types
 export interface CreateCheckoutSessionParams {
@@ -60,7 +58,7 @@ export async function retrieveCheckoutSession(sessionId: string) {
  * Constructs the Stripe webhook event
  */
 export async function constructWebhookEvent(payload: string, signature: string) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
   return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
 }
 

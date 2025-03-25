@@ -3,25 +3,27 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { retrieveCheckoutSession } from "@/lib/stripe";
 
+// Initialize Supabase client outside the handler function - this will be evaluated at build time
+// Let's make it a function to delay the execution until runtime
+const createSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Validate environment variables
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error("Missing Supabase environment variables");
+    throw new Error("Server configuration error");
+  }
+
+  // Create Supabase client with proper authentication
+  return createClient(supabaseUrl, supabaseServiceKey);
+};
+
 export async function GET(req: Request) {
   try {
-    // Initialize Supabase client inside the function to ensure environment variables are loaded
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    // Validate environment variables
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Missing Supabase environment variables");
-      return NextResponse.json(
-        { success: false, error: "Server configuration error" },
-        { status: 500 }
-      );
-    }
-
-    // Create Supabase client with proper authentication
-    // Explicit API key is required in Vercel environment
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
+    // Create the Supabase client only when the function is called
+    const supabase = createSupabaseClient();
+    
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId');
 

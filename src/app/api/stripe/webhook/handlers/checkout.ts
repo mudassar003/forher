@@ -89,9 +89,16 @@ async function getOrCreateCustomer(
   customerDetails: Stripe.Checkout.Session.CustomerDetails
 ): Promise<string> {
   try {
-    // Try to find an existing customer
+    const email = customerDetails.email;
+    
+    // Make sure we have an email
+    if (!email) {
+      throw new Error("Customer email is required");
+    }
+    
+    // Try to find an existing customer - fixed params structure
     const customers = await stripe.customers.list({
-      email: customerDetails.email,
+      email: email,
       limit: 1
     });
     
@@ -100,11 +107,20 @@ async function getOrCreateCustomer(
     }
     
     // If not found, create a new one
-    const newCustomer = await stripe.customers.create({
-      email: customerDetails.email,
-      name: customerDetails.name || undefined,
-      phone: customerDetails.phone || undefined
-    });
+    const customerParams: Stripe.CustomerCreateParams = {
+      email: email,
+    };
+    
+    // Add optional parameters only if they exist
+    if (customerDetails.name) {
+      customerParams.name = customerDetails.name;
+    }
+    
+    if (customerDetails.phone) {
+      customerParams.phone = customerDetails.phone;
+    }
+    
+    const newCustomer = await stripe.customers.create(customerParams);
     
     return newCustomer.id;
   } catch (error) {

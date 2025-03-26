@@ -57,52 +57,20 @@ export default function SubscriptionsPage() {
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
-      // Simulated data - replace with actual API call in production
-      setTimeout(() => {
-        setSubscriptions([
-          {
-            id: "sub_1",
-            plan_name: "Hair Growth Premium",
-            status: "Active",
-            billing_amount: 89.99,
-            billing_period: "monthly",
-            next_billing_date: "2025-04-15",
-            start_date: "2025-01-15",
-            products: [
-              {
-                id: "prod_1",
-                name: "Hair Growth Serum",
-                quantity: 1,
-                image: null,
-              },
-              {
-                id: "prod_2",
-                name: "Biotin Supplement",
-                quantity: 1,
-                image: null,
-              }
-            ]
-          },
-          {
-            id: "sub_2",
-            plan_name: "Weight Management",
-            status: "Paused",
-            billing_amount: 59.99,
-            billing_period: "monthly",
-            next_billing_date: "2025-04-10",
-            start_date: "2025-02-10",
-            products: [
-              {
-                id: "prod_3",
-                name: "Metabolism Booster",
-                quantity: 1,
-                image: null,
-              }
-            ]
-          }
-        ]);
+      try {
+        // TODO: Replace with actual API call to fetch user subscriptions
+        // Example:
+        // const response = await fetch('/api/subscriptions');
+        // const data = await response.json();
+        // setSubscriptions(data);
+        
+        // Simulate API call
+        setSubscriptions([]);
         setLoading(false);
-      }, 1000);
+      } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+        setLoading(false);
+      }
     };
 
     fetchSubscriptions();
@@ -153,10 +121,10 @@ export default function SubscriptionsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 9.563C9 9.252 9.252 9 9.563 9h4.874c.311 0 .563.252.563.563v4.874c0 .311-.252.563-.563.563H9.564A.562.562 0 019 14.437V9.564z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">No active subscriptions</h3>
-            <p className="text-gray-600 mb-6">Subscribe to your favorite products for regular delivery and save.</p>
-            <Link href="/shop/subscriptions" className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
-              Browse Subscription Plans
+            <h3 className="text-lg font-medium text-gray-800 mb-2">No Subscriptions</h3>
+            <p className="text-gray-600 mb-6">You haven't booked any subscription yet.</p>
+            <Link href="/subscriptions" className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+              Book Subscription
             </Link>
           </div>
         ) : (
@@ -205,7 +173,7 @@ export default function SubscriptionsPage() {
         )}
       </div>
 
-      {/* Subscription Management Info */}
+      {/* Subscription Benefits Section */}
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h2 className="text-lg font-semibold text-gray-800">Subscription Benefits</h2>

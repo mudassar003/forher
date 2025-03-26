@@ -8,6 +8,9 @@ export interface SubscriptionUpdateData {
   updated_at: string;
   end_date?: string;
   next_billing_date?: string;
+  stripe_subscription_id?: string;
+  start_date?: string;
+  appointments_used?: number;
 }
 
 export interface SanitySubscriptionUpdateData {
@@ -15,6 +18,7 @@ export interface SanitySubscriptionUpdateData {
   isActive: boolean;
   endDate?: string;
   nextBillingDate?: string;
+  appointmentsUsed?: number;
 }
 
 export interface OrderUpdateData {

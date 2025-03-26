@@ -8,6 +8,14 @@ interface AppointmentPurchaseOptions {
   subscriptionId?: string;
 }
 
+interface AppointmentPurchaseParams {
+  appointmentId: string;
+  userId: string;
+  userEmail: string;
+  userName?: any;
+  subscriptionId?: string;
+}
+
 interface AppointmentPurchaseResult {
   success: boolean;
   appointmentId?: string;
@@ -24,8 +32,7 @@ export function useAppointmentPurchase() {
 
   // Function to purchase an appointment
   const purchaseAppointment = async (
-    appointmentId: string,
-    options: AppointmentPurchaseOptions = {}
+    params: AppointmentPurchaseParams
   ): Promise<AppointmentPurchaseResult> => {
     // Check if user is authenticated
     if (!user) {
@@ -38,19 +45,7 @@ export function useAppointmentPurchase() {
     setError(null);
     
     try {
-      // Determine if using a subscription
-      let subscriptionId = options.subscriptionId || undefined;
-      
-      // If useSubscription is true but no subscriptionId provided, try to find an active one
-      if (options.useSubscription && !subscriptionId) {
-        const activeSubscription = subscriptions.find(sub => 
-          sub.status.toLowerCase() === 'active' && sub.appointmentsIncluded > sub.appointmentsUsed
-        );
-        
-        if (activeSubscription) {
-          subscriptionId = activeSubscription.id;
-        }
-      }
+      const { appointmentId, userId, userEmail, userName, subscriptionId } = params;
       
       // Make API request to create appointment purchase
       const response = await fetch('/api/stripe/appointments', {
@@ -59,11 +54,11 @@ export function useAppointmentPurchase() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          appointmentId: appointmentId,
-          userId: user.id,
-          userEmail: user.email,
-          userName: user.user_metadata?.full_name || user.user_metadata?.name,
-          subscriptionId: subscriptionId
+          appointmentId,
+          userId,
+          userEmail,
+          userName: userName || user.user_metadata?.full_name || user.user_metadata?.name,
+          subscriptionId
         }),
       });
       

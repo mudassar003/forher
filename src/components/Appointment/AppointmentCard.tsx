@@ -72,13 +72,18 @@ const AppointmentCard: React.FC<AppointmentProps> = ({
     if (!user) return;
     
     try {
-      await purchaseAppointment({
+      const result = await purchaseAppointment({
         appointmentId: id,
         userId: user.id,
         userEmail: user.email || '',
         userName: user.user_metadata?.name,
         subscriptionId: eligibleSubscription ? eligibleSubscription.id : undefined
       });
+      
+      // If successful and we have a URL, redirect to Stripe
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      }
     } catch (err) {
       console.error('Error purchasing appointment:', err);
     }

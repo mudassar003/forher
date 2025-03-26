@@ -1,44 +1,59 @@
 // src/components/Appointment/AppointmentCard.tsx
-'use client';
-
-import { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
-import { urlFor } from '@/sanity/lib/image';
-import { useAppointmentPurchase } from '@/hooks/useAppointmentPurchase';
 import { useAuthStore } from '@/store/authStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { SanityImageSource } from '@sanity/image-url/lib/types/types';
+import { Subscription, useSubscriptionStore } from '@/store/subscriptionStore';
+import { useAppointmentPurchase } from '@/hooks/useAppointmentPurchase';
+import { urlForImage } from '@/sanity/lib/image-builder';
 
-interface AppointmentCardProps {
+// Define the appointment props interface
+interface AppointmentProps {
   id: string;
   title: string;
   description?: string;
   price: number;
   duration: number;
-  image?: SanityImageSource;
+  imageSrc?: string;
   qualiphyExamId?: number;
 }
 
-const AppointmentCard: React.FC<AppointmentCardProps> = ({
+// Extend the Subscription type to include the missing properties
+interface SubscriptionWithDiscount extends Subscription {
+  appointmentDiscountPercentage: number;
+}
+
+const AppointmentCard: React.FC<AppointmentProps> = ({
   id,
   title,
   description,
   price,
   duration,
-  image,
+  imageSrc,
   qualiphyExamId
 }) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [useSubscription, setUseSubscription] = useState(false);
-  const { isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const { subscriptions } = useSubscriptionStore();
   const { purchaseAppointment, isLoading, error } = useAppointmentPurchase();
-  const { subscriptions, hasActiveSubscription } = useSubscriptionStore();
 
-  // Find eligible subscription with appointment access and available appointments
-  const eligibleSubscription = subscriptions.find(sub => 
-    sub.status.toLowerCase() === 'active' && 
-    sub.appointmentsIncluded > sub.appointmentsUsed
-  );
+  // Find user's active subscription with the highest discount
+  const eligibleSubscription = React.useMemo(() => {
+    if (!subscriptions.length) return null;
+    
+    // Filter active subscriptions
+    const activeSubscriptions = subscriptions.filter(
+      sub => sub.status.toLowerCase() === 'active'
+    );
+    
+    if (!activeSubscriptions.length) return null;
+    
+    // Sort by discount percentage (highest first) and return the first one
+    return activeSubscriptions.sort((a, b) => {
+      // Cast to SubscriptionWithDiscount to ensure TypeScript knows about the property
+      const aDiscount = (a as unknown as SubscriptionWithDiscount).appointmentDiscountPercentage || 0;
+      const bDiscount = (b as unknown as SubscriptionWithDiscount).appointmentDiscountPercentage || 0;
+      return bDiscount - aDiscount;
+    })[0] as unknown as SubscriptionWithDiscount;
+  }, [subscriptions]);
 
   // Calculate discounted price if applicable
   const getDiscountedPrice = () => {
@@ -49,48 +64,32 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
     return price;
   };
 
-  const displayPrice = useSubscription ? getDiscountedPrice() : price;
+  const finalPrice = getDiscountedPrice();
+  const hasDiscount = finalPrice < price;
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Handle appointment booking
-  const handleBookAppointment = async () => {
-    if (isProcessing || isLoading) return;
-    
-    setIsProcessing(true);
+  // Handle appointment purchase
+  const handlePurchase = async () => {
+    if (!user) return;
     
     try {
-      const result = await purchaseAppointment(id, {
-        useSubscription: useSubscription,
-        subscriptionId: useSubscription && eligibleSubscription ? eligibleSubscription.id : undefined
+      await purchaseAppointment({
+        appointmentId: id,
+        userId: user.id,
+        userEmail: user.email || '',
+        userName: user.user_metadata?.name,
+        subscriptionId: eligibleSubscription ? eligibleSubscription.id : undefined
       });
-      
-      if (result.success && result.url) {
-        // Redirect to Stripe checkout
-        window.location.href = result.url;
-      }
     } catch (err) {
-      console.error('Failed to initiate appointment booking:', err);
-    } finally {
-      setIsProcessing(false);
+      console.error('Error purchasing appointment:', err);
     }
   };
 
   return (
-    <div className="flex flex-col bg-white border rounded-lg shadow-sm overflow-hidden h-full">
-      {/* Header with image if available */}
-      {image && (
-        <div className="relative h-32 w-full overflow-hidden">
+    <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+      {imageSrc && (
+        <div className="relative h-48 w-full">
           <Image
-            src={urlFor(image).width(600).url()}
+            src={imageSrc ? urlForImage(imageSrc).url() : '/images/placeholder-image.png'}
             alt={title}
             fill
             className="object-cover"
@@ -98,142 +97,62 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
         </div>
       )}
       
-      {/* Content */}
-      <div className="p-6 flex flex-col h-full">
-        {/* Title and price */}
-        <div className="mb-4">
-          <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
-          <div className="mt-2 flex items-baseline">
-            <span className="text-3xl font-bold text-gray-900">{formatCurrency(displayPrice)}</span>
-            <span className="ml-1 text-gray-500">for {duration} minutes</span>
-          </div>
-        </div>
+      <div className="p-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">{title}</h3>
         
-        {/* Description */}
         {description && (
           <p className="text-gray-600 mb-4">{description}</p>
         )}
         
-        {/* Subscription discount option */}
-        {hasActiveSubscription && eligibleSubscription && (
-          <div className="mt-4 mb-4">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={useSubscription}
-                onChange={() => setUseSubscription(!useSubscription)}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <span className="text-sm text-gray-700">
-                {eligibleSubscription.appointmentDiscountPercentage > 0 ? (
-                  `Use my subscription (${eligibleSubscription.appointmentDiscountPercentage}% discount)`
-                ) : (
-                  'Use my subscription'
-                )}
+        <div className="flex items-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+          </svg>
+          <span className="text-gray-700">{duration} minutes</span>
+        </div>
+        
+        <div className="flex items-baseline mb-6">
+          {hasDiscount ? (
+            <>
+              <span className="text-2xl font-bold text-pink-600 mr-2">
+                ${finalPrice.toFixed(2)}
               </span>
-            </label>
-            
-            {useSubscription && eligibleSubscription.appointmentDiscountPercentage > 0 && (
-              <div className="mt-2 text-sm text-green-600">
-                <p>Original price: {formatCurrency(price)}</p>
-                <p>You save: {formatCurrency(price - displayPrice)}</p>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Features */}
-        <ul className="mt-4 space-y-3 flex-grow">
-          <li className="flex">
-            <svg
-              className="h-5 w-5 text-green-500 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="ml-2 text-gray-600">{duration} minute consultation</span>
-          </li>
-          <li className="flex">
-            <svg
-              className="h-5 w-5 text-green-500 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="ml-2 text-gray-600">Licensed healthcare provider</span>
-          </li>
-          <li className="flex">
-            <svg
-              className="h-5 w-5 text-green-500 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="ml-2 text-gray-600">Convenient telehealth</span>
-          </li>
-          {qualiphyExamId && (
-            <li className="flex">
-              <svg
-                className="h-5 w-5 text-green-500 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="ml-2 text-gray-600">Professional medical advice</span>
-            </li>
-          )}
-        </ul>
-        
-        {/* Book button */}
-        <div className="mt-6">
-          <button
-            onClick={handleBookAppointment}
-            disabled={isProcessing || isLoading || !isAuthenticated}
-            className={`w-full px-4 py-2 rounded-md text-white font-medium ${
-              isProcessing || isLoading || !isAuthenticated
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-pink-600 hover:bg-pink-700'
-            } transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50`}
-          >
-            {isProcessing || isLoading ? 'Processing...' : 'Book Appointment'}
-          </button>
-          
-          {!isAuthenticated && (
-            <p className="mt-2 text-sm text-gray-500 text-center">
-              Please log in to book an appointment
-            </p>
-          )}
-          
-          {error && (
-            <p className="mt-2 text-sm text-red-600 text-center">
-              {error}
-            </p>
+              <span className="text-lg text-gray-500 line-through">
+                ${price.toFixed(2)}
+              </span>
+              <span className="ml-2 text-sm text-green-600 font-medium">
+                {eligibleSubscription.appointmentDiscountPercentage}% off with subscription
+              </span>
+            </>
+          ) : (
+            <span className="text-2xl font-bold text-pink-600">
+              ${price.toFixed(2)}
+            </span>
           )}
         </div>
+        
+        <button
+          onClick={handlePurchase}
+          disabled={isLoading || !isAuthenticated}
+          className={`w-full py-2 px-4 rounded-md font-medium text-white ${
+            isLoading 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : isAuthenticated 
+                ? 'bg-pink-600 hover:bg-pink-700' 
+                : 'bg-gray-400 cursor-not-allowed'
+          }`}
+        >
+          {isLoading 
+            ? 'Processing...' 
+            : isAuthenticated 
+              ? 'Book Appointment' 
+              : 'Sign in to Book'
+          }
+        </button>
+        
+        {error && (
+          <p className="mt-2 text-sm text-red-600">{error}</p>
+        )}
       </div>
     </div>
   );

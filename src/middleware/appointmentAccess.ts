@@ -1,13 +1,11 @@
 // src/middleware/appointmentAccess.ts
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 // This middleware checks if the user can access appointment pages
 export async function appointmentAccessMiddleware(request: NextRequest) {
   // Create a Supabase client for auth
-  const cookieStore = cookies();
-  const supabase = createMiddlewareClient({ cookies: () => cookieStore });
+  const supabase = createMiddlewareClient({ req: request, res: NextResponse.next() });
 
   // Get the current session
   const { data: { session } } = await supabase.auth.getSession();

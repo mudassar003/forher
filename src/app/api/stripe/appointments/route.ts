@@ -57,7 +57,7 @@ interface SupabaseUserAppointment {
   user_email: string;
   customer_name: string;
   sanity_id: string;
-  sanity_appointment_type_id: string;
+  appointment_type_id: string; // Changed from sanity_appointment_type_id to match DB schema
   treatment_name: string;
   stripe_session_id: string;
   stripe_customer_id: string;
@@ -66,7 +66,7 @@ interface SupabaseUserAppointment {
   price: number;
   duration: number;
   is_from_subscription: boolean;
-  user_subscription_id: string | null;
+  subscription_id: string | null;
   qualiphy_exam_id: number | null;
 }
 
@@ -421,7 +421,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       user_email: data.userEmail,
       customer_name: data.userName || data.userEmail.split('@')[0],
       sanity_id: sanityResponse._id,
-      sanity_appointment_type_id: appointment._id,
+      appointment_type_id: appointment._id, // Changed to match DB schema
       treatment_name: appointment.title,
       stripe_session_id: session.id,
       stripe_customer_id: stripeCustomerId,
@@ -430,7 +430,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       price: appointmentPrice,
       duration: appointment.duration,
       is_from_subscription: fromSubscription,
-      user_subscription_id: fromSubscription && data.subscriptionId ? data.subscriptionId : null,
+      subscription_id: fromSubscription && data.subscriptionId ? data.subscriptionId : null,
       qualiphy_exam_id: appointment.qualiphyExamId || null
     };
     
@@ -460,5 +460,4 @@ export async function POST(req: Request): Promise<NextResponse> {
       }, 
       { status: 500 }
     );
-  }
-}
+  }}

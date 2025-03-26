@@ -51,6 +51,8 @@ interface SupabaseUserSubscription {
   sanity_id: string;
   sanity_subscription_id: string;
   subscription_name: string;
+  plan_id: string; // This is the missing field
+  plan_name: string;
   stripe_session_id: string;
   stripe_customer_id: string;
   billing_amount: number;
@@ -295,6 +297,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       sanity_id: sanityResponse._id,
       sanity_subscription_id: subscription._id,
       subscription_name: subscription.title,
+      plan_id: subscription._id, // Using Sanity subscription ID as plan_id
+      plan_name: subscription.title, // Using subscription title as plan_name
       stripe_session_id: session.id,
       stripe_customer_id: stripeCustomerId,
       billing_amount: subscription.price,
@@ -311,7 +315,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       .insert(supabaseSubscription);
       
     if (insertError) {
-      console.error("Error inserting subscription into Supabase:", insertError);
+      console.error("Supabase order creation error:", insertError);
       throw new Error(`Failed to create Supabase record: ${insertError.message}`);
     }
     

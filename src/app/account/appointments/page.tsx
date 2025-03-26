@@ -2,16 +2,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-
-// Define the Appointment interface
-interface Appointment {
-  id: string;
-  treatment_name: string;
-  appointment_date: string;
-  status: string;
-  created_at: string;
-  notes?: string;
-}
+import { useSubscriptionStore } from "@/store/subscriptionStore";
+import { useAuthStore } from "@/store/authStore";
 
 // Format date with time
 const formatDateTime = (dateString: string) => {
@@ -46,6 +38,9 @@ const StatusBadge = ({ status }: { status: string }) => {
     case "rescheduled":
       bgColor = "bg-yellow-100 text-yellow-800";
       break;
+    case "deferred":
+      bgColor = "bg-orange-100 text-orange-800";
+      break;
     default:
       bgColor = "bg-gray-100 text-gray-800";
   }
@@ -58,49 +53,17 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const { appointments, fetchUserAppointments, loading, error } = useSubscriptionStore();
+  const { user } = useAuthStore();
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      // In the future, integrate with Supabase
-      // For now, use static data
-      setTimeout(() => {
-        setAppointments([
-          {
-            id: "1",
-            treatment_name: "Hair Regrowth Consultation",
-            appointment_date: "2025-03-20T10:00:00",
-            status: "Scheduled",
-            created_at: "2025-03-01T15:00:00",
-            notes: "Initial consultation for hair regrowth treatment. Please arrive 15 minutes early to complete paperwork."
-          },
-          {
-            id: "2",
-            treatment_name: "Weight Loss Consultation",
-            appointment_date: "2025-03-25T14:00:00",
-            status: "Confirmed",
-            created_at: "2025-03-02T16:00:00",
-            notes: "Follow-up appointment to discuss progress and adjust treatment plan if necessary."
-          },
-          {
-            id: "3",
-            treatment_name: "Skin Care Treatment",
-            appointment_date: "2025-03-10T13:30:00",
-            status: "Completed",
-            created_at: "2025-02-28T09:15:00",
-            notes: "Completed facial treatment with recommended products for continued home care."
-          },
-        ]);
-        setLoading(false);
-      }, 1000);
-    };
+    if (user?.id) {
+      fetchUserAppointments(user.id);
+    }
+  }, [user, fetchUserAppointments]);
 
-    fetchAppointments();
-  }, []);
-
-  const viewAppointmentDetails = (appointment: Appointment) => {
+  const viewAppointmentDetails = (appointment) => {
     setSelectedAppointment(appointment);
     document.getElementById("appointmentDetailsModal")?.classList.remove("hidden");
   };
@@ -110,7 +73,8 @@ export default function AppointmentsPage() {
     setSelectedAppointment(null);
   };
 
-  const isUpcoming = (dateString: string) => {
+  const isUpcoming = (dateString) => {
+    if (!dateString) return false;
     const appointmentDate = new Date(dateString);
     const now = new Date();
     return appointmentDate > now;
@@ -120,6 +84,20 @@ export default function AppointmentsPage() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <div className="text-red-500 mb-4">Error loading appointments: {error}</div>
+        <button
+          onClick={() => user?.id && fetchUserAppointments(user.id)}
+          className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -138,7 +116,7 @@ export default function AppointmentsPage() {
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-800">Upcoming Appointments</h2>
-          <Link href="/book-appointment" className="px-4 py-2 bg-pink-500 text-white text-sm rounded-md hover:bg-pink-600 transition-colors">
+          <Link href="/appointments" className="px-4 py-2 bg-pink-500 text-white text-sm rounded-md hover:bg-pink-600 transition-colors">
             Book New Appointment
           </Link>
         </div>
@@ -152,7 +130,7 @@ export default function AppointmentsPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-800 mb-2">No upcoming appointments</h3>
             <p className="text-gray-600 mb-6">You don't have any scheduled appointments at this time.</p>
-            <Link href="/book-appointment" className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+            <Link href="/appointments" className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
               Book an Appointment
             </Link>
           </div>
@@ -189,9 +167,24 @@ export default function AppointmentsPage() {
                       >
                         Details
                       </button>
-                      <button className="px-3 py-1 border border-pink-500 bg-white text-pink-500 text-sm rounded hover:bg-pink-50">
-                        Reschedule
-                      </button>
+                      {appointment.qualiphyMeetingUrl && (
+                        <a 
+                          href={appointment.qualiphyMeetingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 border border-pink-500 bg-white text-pink-500 text-sm rounded hover:bg-pink-50"
+                        >
+                          Join Meeting
+                        </a>
+                      )}
+                      {!appointment.qualiphyMeetingUrl && appointment.status.toLowerCase() !== "completed" && (
+                        <Link 
+                          href="/appointment"
+                          className="px-3 py-1 border border-pink-500 bg-white text-pink-500 text-sm rounded hover:bg-pink-50"
+                        >
+                          Access Telehealth
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -207,7 +200,7 @@ export default function AppointmentsPage() {
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-lg font-semibold text-gray-800">Past Appointments</h2>
           </div>
-          <div className="p-6">
+          <div className="p-6 overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -232,7 +225,7 @@ export default function AppointmentsPage() {
                       {appointment.treatment_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDateTime(appointment.appointment_date)}
+                      {appointment.appointment_date ? formatDateTime(appointment.appointment_date) : 'Not scheduled'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={appointment.status} />
@@ -284,7 +277,7 @@ export default function AppointmentsPage() {
                       {selectedAppointment.treatment_name}
                     </h4>
                     <p className="text-center text-gray-600 mb-4">
-                      {formatDateTime(selectedAppointment.appointment_date)}
+                      {selectedAppointment.appointment_date ? formatDateTime(selectedAppointment.appointment_date) : 'Not scheduled yet'}
                     </p>
                     
                     <div className="flex justify-center mb-4">
@@ -295,8 +288,17 @@ export default function AppointmentsPage() {
                   {selectedAppointment.notes && (
                     <div className="mb-6">
                       <h5 className="font-medium text-gray-700 mb-1">Notes</h5>
-                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded whitespace-pre-line">
                         {selectedAppointment.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedAppointment.qualiphyProviderName && (
+                    <div className="mb-4">
+                      <h5 className="font-medium text-gray-700 mb-1">Provider</h5>
+                      <p className="text-sm text-gray-600">
+                        {selectedAppointment.qualiphyProviderName}
                       </p>
                     </div>
                   )}
@@ -320,7 +322,7 @@ export default function AppointmentsPage() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>The appointment will last approximately 45-60 minutes</span>
+                        <span>The appointment will last approximately {selectedAppointment.duration || 45}-{selectedAppointment.duration ? selectedAppointment.duration + 15 : 60} minutes</span>
                       </li>
                     </ul>
                   </div>
@@ -332,9 +334,23 @@ export default function AppointmentsPage() {
                       <button className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50">
                         Cancel
                       </button>
-                      <button className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600">
-                        Reschedule
-                      </button>
+                      {selectedAppointment.qualiphyMeetingUrl ? (
+                        <a 
+                          href={selectedAppointment.qualiphyMeetingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600"
+                        >
+                          Join Meeting
+                        </a>
+                      ) : (
+                        <Link 
+                          href="/appointment"
+                          className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600"
+                        >
+                          Access Telehealth
+                        </Link>
+                      )}
                     </>
                   ) : (
                     <button 
@@ -353,3 +369,4 @@ export default function AppointmentsPage() {
     </div>
   );
 }
+                    

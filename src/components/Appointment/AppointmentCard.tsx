@@ -113,7 +113,7 @@ const AppointmentCard: React.FC<AppointmentProps> = ({
         </div>
         
         <div className="flex items-baseline mb-6">
-          {hasDiscount ? (
+          {hasDiscount && eligibleSubscription ? (
             <>
               <span className="text-2xl font-bold text-pink-600 mr-2">
                 ${finalPrice.toFixed(2)}

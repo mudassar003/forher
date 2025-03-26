@@ -1,3 +1,4 @@
+// src/store/subscriptionStore.ts
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 
@@ -65,7 +66,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     set({ loading: true, error: null });
     
     try {
-      // First, try to fetch from Supabase
+      // Fetch from Supabase
       const { data: supabaseData, error: supabaseError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -75,66 +76,32 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         throw new Error(supabaseError.message);
       }
       
-      // If we have data from Supabase, use it
-      if (supabaseData && supabaseData.length > 0) {
-        // Transform data to our Subscription format
-        const subscriptionsData: Subscription[] = supabaseData.map(sub => ({
-          id: sub.id,
-          plan_name: sub.plan_name,
-          status: sub.status,
-          billing_amount: sub.billing_amount,
-          billing_period: sub.billing_period,
-          next_billing_date: sub.next_billing_date,
-          start_date: sub.start_date,
-          totalUsers: 0, // This is just a placeholder
-          products: [], // Fetch products if needed
-          appointmentsIncluded: sub.appointments_included || 0,
-          appointmentsUsed: sub.appointments_used || 0
-        }));
-        
-        set({ 
-          subscriptions: subscriptionsData,
-          hasActiveSubscription: subscriptionsData.some(sub => sub.status.toLowerCase() === 'active')
-        });
-      } else {
-        // If no data from Supabase, fallback to static data for development
-        // In production, you'd want to handle this differently
-        set({
-          subscriptions: [
-            {
-              id: "sub_1",
-              plan_name: "Hair Growth Premium",
-              status: "Active",
-              billing_amount: 89.99,
-              billing_period: "monthly",
-              next_billing_date: "2025-04-15",
-              start_date: "2025-01-15",
-              totalUsers: 2854,
-              appointmentsIncluded: 1,
-              appointmentsUsed: 0,
-              products: [
-                {
-                  id: "prod_1",
-                  name: "Hair Growth Serum",
-                  quantity: 1,
-                  image: null,
-                },
-                {
-                  id: "prod_2",
-                  name: "Biotin Supplement",
-                  quantity: 1,
-                  image: null,
-                }
-              ]
-            }
-          ],
-          hasActiveSubscription: true // For development
-        });
-      }
+      // Transform data to our Subscription format
+      const subscriptionsData: Subscription[] = (supabaseData || []).map(sub => ({
+        id: sub.id,
+        plan_name: sub.plan_name || sub.subscription_name || 'Subscription',
+        status: sub.status || 'Unknown',
+        billing_amount: sub.billing_amount || 0,
+        billing_period: sub.billing_period || 'monthly',
+        next_billing_date: sub.next_billing_date || new Date().toISOString(),
+        start_date: sub.start_date || new Date().toISOString(),
+        totalUsers: 0, // Optional metadata
+        products: [], // Could be populated from another query if needed
+        appointmentsIncluded: sub.appointments_included || 0,
+        appointmentsUsed: sub.appointments_used || 0
+      }));
+      
+      set({ 
+        subscriptions: subscriptionsData,
+        hasActiveSubscription: subscriptionsData.some(sub => sub.status.toLowerCase() === 'active')
+      });
       
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
-      set({ error: error instanceof Error ? error.message : 'Unknown error' });
+      set({ 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        subscriptions: []
+      });
     } finally {
       set({ loading: false });
     }
@@ -144,7 +111,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     set({ loading: true, error: null });
     
     try {
-      // First, try to fetch from Supabase
+      // Fetch from Supabase
       const { data: supabaseData, error: supabaseError } = await supabase
         .from('user_appointments')
         .select('*')
@@ -155,74 +122,43 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         throw new Error(supabaseError.message);
       }
       
-      // If we have data from Supabase, use it
-      if (supabaseData && supabaseData.length > 0) {
-        // Transform data to our Appointment format
-        const appointmentsData: Appointment[] = supabaseData.map(apt => ({
-          id: apt.id,
-          treatment_name: apt.treatment_name,
-          appointment_date: apt.appointment_date,
-          status: apt.status,
-          created_at: apt.created_at,
-          notes: apt.notes,
-          qualiphyMeetingUrl: apt.qualiphy_meeting_url,
-          qualiphyMeetingUuid: apt.qualiphy_meeting_uuid,
-          qualiphyPatientExamId: apt.qualiphy_patient_exam_id,
-          qualiphyExamId: apt.qualiphy_exam_id,
-          qualiphyExamStatus: apt.qualiphy_exam_status
-        }));
-        
-        const hasActive = appointmentsData.some(apt => 
-          apt.status.toLowerCase() !== 'completed' && 
-          apt.status.toLowerCase() !== 'cancelled'
-        );
-        
-        set({ 
-          appointments: appointmentsData,
-          hasActiveAppointment: hasActive
-        });
-      } else {
-        // If no data from Supabase, fallback to static data for development
-        set({
-          appointments: [
-            {
-              id: "1",
-              treatment_name: "Hair Regrowth Consultation",
-              appointment_date: "2025-03-20T10:00:00",
-              status: "Scheduled",
-              created_at: "2025-03-01T15:00:00",
-              notes: "Initial consultation for hair regrowth treatment. Please arrive 15 minutes early to complete paperwork."
-            },
-            {
-              id: "2",
-              treatment_name: "Weight Loss Consultation",
-              appointment_date: "2025-03-25T14:00:00",
-              status: "Confirmed",
-              created_at: "2025-03-02T16:00:00",
-              notes: "Follow-up appointment to discuss progress and adjust treatment plan if necessary."
-            },
-            {
-              id: "3",
-              treatment_name: "Skin Care Treatment",
-              appointment_date: "2025-03-10T13:30:00",
-              status: "Completed",
-              created_at: "2025-02-28T09:15:00",
-              notes: "Completed facial treatment with recommended products for continued home care."
-            },
-          ],
-          hasActiveAppointment: true // For development
-        });
-      }
+      // Transform data to our Appointment format
+      const appointmentsData: Appointment[] = (supabaseData || []).map(apt => ({
+        id: apt.id,
+        treatment_name: apt.treatment_name || 'Consultation',
+        appointment_date: apt.appointment_date || apt.scheduled_date || new Date().toISOString(),
+        status: apt.status || 'scheduled',
+        created_at: apt.created_at || new Date().toISOString(),
+        notes: apt.notes,
+        qualiphyMeetingUrl: apt.qualiphy_meeting_url,
+        qualiphyMeetingUuid: apt.qualiphy_meeting_uuid,
+        qualiphyPatientExamId: apt.qualiphy_patient_exam_id,
+        qualiphyExamId: apt.qualiphy_exam_id,
+        qualiphyExamStatus: apt.qualiphy_exam_status
+      }));
+      
+      const hasActive = appointmentsData.some(apt => 
+        apt.status.toLowerCase() !== 'completed' && 
+        apt.status.toLowerCase() !== 'cancelled'
+      );
+      
+      set({ 
+        appointments: appointmentsData,
+        hasActiveAppointment: hasActive
+      });
       
       // After fetching both subscriptions and appointments, determine if user can access appointment page
-      const { hasActiveSubscription, hasActiveAppointment } = get();
+      const { hasActiveSubscription } = get();
       set({
-        canAccessAppointmentPage: hasActiveSubscription || hasActiveAppointment
+        canAccessAppointmentPage: hasActiveSubscription || hasActive
       });
       
     } catch (error) {
       console.error('Error fetching appointments:', error);
-      set({ error: error instanceof Error ? error.message : 'Unknown error' });
+      set({ 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        appointments: []
+      });
     } finally {
       set({ loading: false });
     }

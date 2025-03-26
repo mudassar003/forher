@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { Stripe } from "stripe";
 import stripe from "./utils/stripe-client";
-import { StripeEventMap } from "./utils/types";
 
 // Import handlers
 import { handleCheckoutSession } from "./handlers/checkout";
@@ -30,8 +29,9 @@ export const config = {
 export async function POST(req: Request) {
   try {
     const body = await req.text();
-    const headerList = headers();
-    const signature = headerList.get("stripe-signature");
+    
+    // In Next.js 15, headers() returns the headers object directly
+    const signature = headers().get("stripe-signature");
 
     if (!signature) {
       return NextResponse.json({ error: "No Stripe signature found" }, { status: 400 });

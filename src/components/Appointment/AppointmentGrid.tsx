@@ -159,7 +159,7 @@ const AppointmentGrid: React.FC = () => {
             description={appointment.description}
             price={appointment.price}
             duration={appointment.duration}
-            image={appointment.image}
+            imageSrc={appointment.image}
             qualiphyExamId={appointment.qualiphyExamId}
           />
         ))}

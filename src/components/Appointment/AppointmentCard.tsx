@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useAuthStore } from '@/store/authStore';
 import { Subscription, useSubscriptionStore } from '@/store/subscriptionStore';
 import { useAppointmentPurchase } from '@/hooks/useAppointmentPurchase';
-import { urlForImage } from '@/sanity/lib/image-builder';
+import { urlFor } from '@/sanity/lib/image'; // Fixed import path
 
 // Define the appointment props interface
 interface AppointmentProps {
@@ -89,7 +89,7 @@ const AppointmentCard: React.FC<AppointmentProps> = ({
       {imageSrc && (
         <div className="relative h-48 w-full">
           <Image
-            src={imageSrc ? urlForImage(imageSrc).url() : '/images/placeholder-image.png'}
+            src={imageSrc ? urlFor(imageSrc).url() : '/images/placeholder-image.png'}
             alt={title}
             fill
             className="object-cover"

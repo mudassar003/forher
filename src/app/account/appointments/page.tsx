@@ -25,10 +25,14 @@ const StatusBadge = ({ qualiphyStatus }: { qualiphyStatus?: string }) => {
       color: 'bg-gray-100 text-gray-800', 
       description: 'No Consultation' 
     }
-  };
+  } as const; // Add 'as const' to make it a const assertion
 
-  // Default to Pending if no status or unknown status
-  const statusInfo = statusMap[qualiphyStatus] || statusMap['Pending'];
+  // Type-safe way to get status info
+  type StatusKey = keyof typeof statusMap;
+  const defaultStatus: StatusKey = 'Pending';
+  const statusInfo = qualiphyStatus && (qualiphyStatus in statusMap)
+    ? statusMap[qualiphyStatus as StatusKey]
+    : statusMap[defaultStatus];
 
   return (
     <div className="flex items-center space-x-2">
@@ -45,7 +49,7 @@ const StatusBadge = ({ qualiphyStatus }: { qualiphyStatus?: string }) => {
 export default function AppointmentsPage() {
   const { appointments, fetchUserAppointments, loading, error } = useSubscriptionStore();
   const { user } = useAuthStore();
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -54,7 +58,7 @@ export default function AppointmentsPage() {
   }, [user, fetchUserAppointments]);
 
   // Detailed appointment view modal
-  const viewAppointmentDetails = (appointment) => {
+  const viewAppointmentDetails = (appointment: any) => {
     setSelectedAppointment(appointment);
     document.getElementById("appointmentDetailsModal")?.classList.remove("hidden");
   };
@@ -168,8 +172,85 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      {/* Appointment Details Modal - Similar to previous implementation */}
-      {/* ... (keep the existing modal code) */}
+      {/* Appointment Details Modal */}
+      <div 
+        id="appointmentDetailsModal" 
+        className="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto"
+      >
+        <div className="flex items-center justify-center min-h-screen p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl overflow-hidden">
+            {selectedAppointment && (
+              <>
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Consultation Details
+                  </h3>
+                  <button 
+                    onClick={closeAppointmentDetails} 
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="p-6">
+                  <div className="mb-4">
+                    <h4 className="text-xl font-semibold text-gray-800 mb-2">
+                      {selectedAppointment.treatment_name}
+                    </h4>
+                    <StatusBadge 
+                      qualiphyStatus={selectedAppointment.qualiphyExamStatus || 'Pending'} 
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-600">Booked on:</p>
+                      <p className="font-medium">
+                        {new Date(selectedAppointment.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    
+                    {selectedAppointment.qualiphyProviderName && (
+                      <div>
+                        <p className="text-gray-600">Provider:</p>
+                        <p className="font-medium">
+                          {selectedAppointment.qualiphyProviderName}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {selectedAppointment.notes && (
+                      <div className="md:col-span-2">
+                        <p className="text-gray-600">Notes:</p>
+                        <p className="font-medium">
+                          {selectedAppointment.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Qualiphy Meeting Link */}
+                  {selectedAppointment.qualiphyMeetingUrl && (
+                    <div className="mt-6">
+                      <a 
+                        href={selectedAppointment.qualiphyMeetingUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700"
+                      >
+                        Join Telehealth Consultation
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

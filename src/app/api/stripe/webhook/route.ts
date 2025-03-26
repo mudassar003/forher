@@ -79,8 +79,9 @@ export async function POST(req: Request) {
         console.log(`Ignoring unhandled event type: ${event.type}`);
         return NextResponse.json({ received: true });
     }
-  } catch (error) {
-    console.error(`❌ Error processing webhook: ${error.message}`);
-    return NextResponse.json({ error: "Webhook error: " + error.message }, { status: 400 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error(`❌ Error processing webhook: ${errorMessage}`);
+    return NextResponse.json({ error: "Webhook error: " + errorMessage }, { status: 400 });
   }
 }

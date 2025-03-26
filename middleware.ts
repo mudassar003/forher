@@ -1,7 +1,7 @@
 // src/middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { appointmentAccessMiddleware } from './middleware/appointmentAccess';
+import { appointmentAccessMiddleware } from './src/middleware/appointmentAccess';
 
 export async function middleware(request: NextRequest) {
   // Create a response that we'll use to pass along

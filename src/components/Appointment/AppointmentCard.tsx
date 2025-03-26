@@ -4,7 +4,8 @@ import Image from 'next/image';
 import { useAuthStore } from '@/store/authStore';
 import { Subscription, useSubscriptionStore } from '@/store/subscriptionStore';
 import { useAppointmentPurchase } from '@/hooks/useAppointmentPurchase';
-import { urlFor } from '@/sanity/lib/image'; // Fixed import path
+import { urlFor } from '@/sanity/lib/image';
+import { SanityImageSource } from '@sanity/image-url/lib/types/types';
 
 // Define the appointment props interface
 interface AppointmentProps {
@@ -13,7 +14,7 @@ interface AppointmentProps {
   description?: string;
   price: number;
   duration: number;
-  imageSrc?: string;
+  imageSrc?: SanityImageSource;
   qualiphyExamId?: number;
 }
 
@@ -72,18 +73,13 @@ const AppointmentCard: React.FC<AppointmentProps> = ({
     if (!user) return;
     
     try {
-      const result = await purchaseAppointment({
+      await purchaseAppointment({
         appointmentId: id,
         userId: user.id,
         userEmail: user.email || '',
         userName: user.user_metadata?.name,
         subscriptionId: eligibleSubscription ? eligibleSubscription.id : undefined
       });
-      
-      // If successful and we have a URL, redirect to Stripe
-      if (result.success && result.url) {
-        window.location.href = result.url;
-      }
     } catch (err) {
       console.error('Error purchasing appointment:', err);
     }
@@ -94,7 +90,7 @@ const AppointmentCard: React.FC<AppointmentProps> = ({
       {imageSrc && (
         <div className="relative h-48 w-full">
           <Image
-            src={imageSrc ? urlFor(imageSrc).url() : '/images/placeholder-image.png'}
+            src={urlFor(imageSrc).url()}
             alt={title}
             fill
             className="object-cover"
@@ -117,7 +113,7 @@ const AppointmentCard: React.FC<AppointmentProps> = ({
         </div>
         
         <div className="flex items-baseline mb-6">
-          {hasDiscount && eligibleSubscription ? (
+          {hasDiscount ? (
             <>
               <span className="text-2xl font-bold text-pink-600 mr-2">
                 ${finalPrice.toFixed(2)}

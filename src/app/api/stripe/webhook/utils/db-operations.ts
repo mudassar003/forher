@@ -14,7 +14,7 @@ import {
  */
 export async function updateSupabaseSubscription(
   id: string,
-  data: SubscriptionUpdateData,
+  data: Partial<SubscriptionUpdateData>,
   matchField: 'id' | 'stripe_subscription_id' | 'stripe_session_id' = 'id'
 ): Promise<void> {
   const { error } = await supabase
@@ -35,7 +35,7 @@ export async function updateSupabaseSubscription(
  */
 export async function updateSanitySubscription(
   id: string,
-  data: SanitySubscriptionUpdateData
+  data: Partial<SanitySubscriptionUpdateData>
 ): Promise<void> {
   try {
     await sanityClient
@@ -55,7 +55,7 @@ export async function updateSanitySubscription(
  */
 export async function updateSupabaseOrder(
   id: string,
-  data: OrderUpdateData,
+  data: Partial<OrderUpdateData>,
   matchField: 'id' | 'stripe_session_id' = 'id'
 ): Promise<void> {
   const { error } = await supabase
@@ -76,7 +76,7 @@ export async function updateSupabaseOrder(
  */
 export async function updateSanityOrder(
   id: string,
-  data: SanityOrderUpdateData
+  data: Partial<SanityOrderUpdateData>
 ): Promise<void> {
   try {
     await sanityClient
@@ -96,7 +96,7 @@ export async function updateSanityOrder(
  */
 export async function updateSupabaseAppointment(
   id: string,
-  data: AppointmentUpdateData,
+  data: Partial<AppointmentUpdateData>,
   matchField: 'id' | 'stripe_session_id' = 'id'
 ): Promise<void> {
   const { error } = await supabase
@@ -117,7 +117,7 @@ export async function updateSupabaseAppointment(
  */
 export async function updateSanityAppointment(
   id: string,
-  data: SanityAppointmentUpdateData
+  data: Partial<SanityAppointmentUpdateData>
 ): Promise<void> {
   try {
     await sanityClient

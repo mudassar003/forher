@@ -1,6 +1,7 @@
 // src/app/api/stripe/webhook/route.ts
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { Stripe } from "stripe";
 import stripe from "./utils/stripe-client";
 import { StripeEventMap } from "./utils/types";
 
@@ -29,7 +30,7 @@ export const config = {
 export async function POST(req: Request) {
   try {
     const body = await req.text();
-    const headerList = await headers();
+    const headerList = headers();
     const signature = headerList.get("stripe-signature");
 
     if (!signature) {
@@ -49,36 +50,32 @@ export async function POST(req: Request) {
 
     console.log(`⚡ Received Stripe webhook event: ${event.type}`);
 
-    // Type the event data for enhanced type safety
-    const eventType = event.type as keyof StripeEventMap;
-    const eventData = event.data.object as StripeEventMap[typeof eventType];
-
-    // Route the event to the appropriate handler
-    switch (eventType) {
+    // Handle the event based on its type
+    switch (event.type) {
       case 'checkout.session.completed':
-        return await handleCheckoutSession(eventData);
+        return await handleCheckoutSession(event.data.object as Stripe.Checkout.Session);
       
       case 'invoice.payment_succeeded':
-        return await handleInvoicePaymentSucceeded(eventData);
+        return await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
       
       case 'invoice.payment_failed':
-        return await handleInvoicePaymentFailed(eventData);
+        return await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
       
       case 'customer.subscription.updated':
-        return await handleSubscriptionUpdated(eventData);
+        return await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
       
       case 'customer.subscription.deleted':
-        return await handleSubscriptionDeleted(eventData);
+        return await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
       
       case 'payment_intent.succeeded':
-        return await handlePaymentIntentSucceeded(eventData);
+        return await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
       
       case 'payment_intent.payment_failed':
-        return await handlePaymentIntentFailed(eventData);
+        return await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
       
       default:
         // Handle unimplemented event types
-        console.log(`Ignoring unhandled event type: ${eventType}`);
+        console.log(`Ignoring unhandled event type: ${event.type}`);
         return NextResponse.json({ received: true });
     }
   } catch (error) {

@@ -23,8 +23,8 @@ export const config = {
 export async function POST(req: Request) {
   try {
     const body = await req.text();
-    const headersList = headers();
-    const signature = headersList.get("stripe-signature") as string;
+    const headerList = await headers();
+    const signature = headerList.get("stripe-signature") as string;
 
     if (!signature) {
       return NextResponse.json({ error: "No Stripe signature found" }, { status: 400 });
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         console.log(`🔍 Processing checkout session: ${session.id}`);
         
         // Extract metadata
-        const userId = session.metadata?.userId;
+        const userId = session.metadata?.userId; 
         const userEmail = session.metadata?.userEmail;
         const subscriptionId = session.metadata?.subscriptionId;
         const appointmentId = session.metadata?.appointmentId;

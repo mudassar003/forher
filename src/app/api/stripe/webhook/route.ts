@@ -30,8 +30,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.text();
     
-    // In Next.js 15, headers() returns the headers object directly
-    const signature = headers().get("stripe-signature");
+    // Await the headers() function to get the ReadonlyHeaders object
+    const headerList = await headers();
+    const signature = headerList.get("stripe-signature");
 
     if (!signature) {
       return NextResponse.json({ error: "No Stripe signature found" }, { status: 400 });
@@ -79,19 +80,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true });
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Webhook handler failed";
-    console.error(`Webhook Error: ${errorMessage}`);
-    
-    if (error instanceof Error) {
-      console.error(error.stack);
-    }
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: errorMessage
-      }, 
-      { status: 400 }
-    );
+    console.error(`❌ Error processing webhook: ${error.message}`);
+    return NextResponse.json({ error: "Webhook error: " + error.message }, { status: 400 });
   }
 }

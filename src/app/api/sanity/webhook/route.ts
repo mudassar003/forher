@@ -1,4 +1,4 @@
-//src/app/api/sanity/webhook/route.ts
+// src/app/api/sanity/webhook/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
@@ -22,20 +22,26 @@ interface SanityWebhookPayload {
   [key: string]: any;
 }
 
+// Table-related interfaces
+interface SupabaseUpdateResult {
+  data: any | null;
+  error: Error | null;
+}
+
 /**
  * Webhook handler for Sanity events
  */
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
   try {
     // Get the request body as text for signature verification
     const body = await req.text();
     const payload: SanityWebhookPayload = JSON.parse(body);
     
-    // Check for Sanity webhook secret (you should set this up in your Sanity project and in your environment)
+    // Check for Sanity webhook secret
     const headersList = headers();
     const webhookSecret = headersList.get('x-sanity-webhook-secret');
     
-    // Verify the webhook secret (in production, you'd want to set up proper signature verification)
+    // Verify the webhook secret
     if (webhookSecret !== process.env.SANITY_WEBHOOK_SECRET) {
       console.error('Invalid webhook secret');
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

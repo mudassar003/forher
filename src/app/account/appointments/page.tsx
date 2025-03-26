@@ -156,7 +156,7 @@ export default function AppointmentsPage() {
                   <p className="text-sm text-gray-600">
                     Booked on: {new Date(appointment.created_at).toLocaleDateString()}
                   </p>
-                  {/* Update the property check to match the interface */}
+                  {/* Show provider name if available */}
                   {appointment.qualiphyProviderName && (
                     <p className="text-sm text-gray-500 mt-1">
                       Provider: {appointment.qualiphyProviderName}

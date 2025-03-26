@@ -31,8 +31,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     const body = await req.text();
     const payload: SanityWebhookPayload = JSON.parse(body);
     
-    // Get the headers
-    const headersList = headers();
+    // Get the headers - await the headers() function to get the ReadonlyHeaders object
+    const headersList = await headers();
     // Get the webhook secret from headers
     const webhookSecret = headersList.get('x-sanity-webhook-secret');
     

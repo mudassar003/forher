@@ -22,12 +22,6 @@ interface SanityWebhookPayload {
   [key: string]: any;
 }
 
-// Table-related interfaces
-interface SupabaseUpdateResult {
-  data: any | null;
-  error: Error | null;
-}
-
 /**
  * Webhook handler for Sanity events
  */
@@ -37,8 +31,9 @@ export async function POST(req: Request): Promise<NextResponse> {
     const body = await req.text();
     const payload: SanityWebhookPayload = JSON.parse(body);
     
-    // Check for Sanity webhook secret
+    // Get the headers
     const headersList = headers();
+    // Get the webhook secret from headers
     const webhookSecret = headersList.get('x-sanity-webhook-secret');
     
     // Verify the webhook secret

@@ -113,6 +113,14 @@ export const subscriptionType = defineType({
         hotspot: true,
       },
     }),
+    defineField({
+      name: 'isDeleted',
+      title: 'Deleted',
+      type: 'boolean',
+      description: 'Soft deletion flag',
+      initialValue: false,
+      hidden: true, // Hide in the UI by default
+    }),
   ],
   preview: {
     select: {
@@ -120,10 +128,11 @@ export const subscriptionType = defineType({
       subtitle: 'billingPeriod',
       media: 'image',
       price: 'price',
+      isDeleted: 'isDeleted',
     },
-    prepare({title, subtitle, media, price}) {
+    prepare({title, subtitle, media, price, isDeleted}) {
       return {
-        title,
+        title: isDeleted ? `${title} (Deleted)` : title,
         subtitle: `$${price} / ${subtitle}`,
         media,
       }

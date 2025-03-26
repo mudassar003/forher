@@ -106,6 +106,14 @@ export const userSubscriptionType = defineType({
       description: 'Percentage discount on appointments for this user',
       initialValue: 0,
     }),
+    defineField({
+      name: 'isDeleted',
+      title: 'Deleted',
+      type: 'boolean',
+      description: 'Soft deletion flag',
+      initialValue: false,
+      hidden: true, // Hide in the UI by default
+    }),
   ],
   preview: {
     select: {
@@ -113,10 +121,11 @@ export const userSubscriptionType = defineType({
       status: 'status',
       startDate: 'startDate',
       subscriptionTitle: 'subscription.title',
+      isDeleted: 'isDeleted',
     },
-    prepare({userEmail, status, startDate, subscriptionTitle}) {
+    prepare({userEmail, status, startDate, subscriptionTitle, isDeleted}) {
       return {
-        title: userEmail,
+        title: isDeleted ? `${userEmail} (Deleted)` : userEmail,
         subtitle: `${subscriptionTitle || 'Unknown plan'} | ${status || 'Unknown'} | Started: ${
           startDate ? new Date(startDate).toLocaleDateString() : 'Unknown'
         }`,

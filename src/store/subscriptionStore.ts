@@ -75,7 +75,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       const { data: supabaseData, error: supabaseError } = await supabase
         .from('user_subscriptions')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('is_deleted', false); // Only fetch non-deleted subscriptions
       
       if (supabaseError) {
         throw new Error(supabaseError.message);
@@ -124,6 +125,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         .from('user_appointments')
         .select('*')
         .eq('user_id', userId)
+        .eq('is_deleted', false) // Only fetch non-deleted appointments
         .order('created_at', { ascending: false });
       
       if (supabaseError) {

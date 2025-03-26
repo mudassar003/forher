@@ -126,6 +126,14 @@ export const userAppointmentType = defineType({
       type: 'string',
       description: 'Name of the provider from Qualiphy',
     }),
+    defineField({
+      name: 'isDeleted',
+      title: 'Deleted',
+      type: 'boolean',
+      description: 'Soft deletion flag',
+      initialValue: false,
+      hidden: true, // Hide in the UI by default
+    }),
   ],
   preview: {
     select: {
@@ -133,10 +141,11 @@ export const userAppointmentType = defineType({
       subtitle: 'status',
       date: 'scheduledDate',
       appointmentTitle: 'appointmentType.title',
+      isDeleted: 'isDeleted',
     },
-    prepare({title, subtitle, date, appointmentTitle}) {
+    prepare({title, subtitle, date, appointmentTitle, isDeleted}) {
       return {
-        title: title || 'No email',
+        title: isDeleted ? `${title || 'No email'} (Deleted)` : (title || 'No email'),
         subtitle: `${appointmentTitle || 'Unknown type'} | ${subtitle || 'Unknown'} | ${
           date ? new Date(date).toLocaleString() : 'Not scheduled'
         }`,

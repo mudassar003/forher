@@ -25,6 +25,7 @@ export async function appointmentAccessMiddleware(request: NextRequest) {
     .from('user_appointments')
     .select('id')
     .eq('user_id', userId)
+    .eq('is_deleted', false) // Only consider non-deleted appointments
     .or('status.eq.scheduled,status.eq.confirmed')
     .limit(1);
 
@@ -40,6 +41,7 @@ export async function appointmentAccessMiddleware(request: NextRequest) {
     .eq('user_id', userId)
     .eq('is_active', true)
     .eq('has_appointment_access', true)
+    .eq('is_deleted', false) // Only consider non-deleted subscriptions
     .limit(1);
 
   if (subscriptionData && subscriptionData.length > 0) {

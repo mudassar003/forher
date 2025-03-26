@@ -1,6 +1,7 @@
 // src/store/subscriptionStore.ts
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
+import { cancelSubscription } from '@/services/subscriptionService';
 
 // Define types for our subscription and appointment data
 export interface Subscription {
@@ -15,6 +16,7 @@ export interface Subscription {
   products: SubscriptionProduct[];
   appointmentsIncluded: number;
   appointmentsUsed: number;
+  stripe_subscription_id?: string;
 }
 
 export interface SubscriptionProduct {
@@ -46,11 +48,13 @@ interface UserSubscriptionState {
   canAccessAppointmentPage: boolean;
   loading: boolean;
   error: string | null;
+  cancellingId: string | null;
   
   // Actions
   fetchUserSubscriptions: (userId: string) => Promise<void>;
   fetchUserAppointments: (userId: string) => Promise<void>;
   checkUserAccess: (userId: string) => Promise<boolean>;
+  cancelUserSubscription: (subscriptionId: string) => Promise<boolean>;
 }
 
 export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => ({
@@ -61,6 +65,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
   canAccessAppointmentPage: false,
   loading: false,
   error: null,
+  cancellingId: null,
   
   fetchUserSubscriptions: async (userId: string) => {
     set({ loading: true, error: null });
@@ -88,12 +93,15 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         totalUsers: 0, // Optional metadata
         products: [], // Could be populated from another query if needed
         appointmentsIncluded: sub.appointments_included || 0,
-        appointmentsUsed: sub.appointments_used || 0
+        appointmentsUsed: sub.appointments_used || 0,
+        stripe_subscription_id: sub.stripe_subscription_id
       }));
       
       set({ 
         subscriptions: subscriptionsData,
-        hasActiveSubscription: subscriptionsData.some(sub => sub.status.toLowerCase() === 'active')
+        hasActiveSubscription: subscriptionsData.some(sub => 
+          ['active', 'trialing', 'past_due', 'cancelling'].includes(sub.status.toLowerCase())
+        )
       });
       
     } catch (error) {
@@ -188,6 +196,50 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       set({ 
         error: error instanceof Error ? error.message : 'Unknown error',
         canAccessAppointmentPage: false 
+      });
+      return false;
+    }
+  },
+  
+  cancelUserSubscription: async (subscriptionId: string) => {
+    try {
+      set({ cancellingId: subscriptionId, error: null });
+      
+      // Get the subscription
+      const subscription = get().subscriptions.find(sub => sub.id === subscriptionId);
+      if (!subscription) {
+        throw new Error('Subscription not found');
+      }
+      
+      // Call the service to cancel
+      const result = await cancelSubscription(subscriptionId);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to cancel subscription');
+      }
+      
+      // Update the subscription in our store
+      const updatedSubscriptions = get().subscriptions.map(sub => {
+        if (sub.id === subscriptionId) {
+          return {
+            ...sub,
+            status: 'cancelling'
+          };
+        }
+        return sub;
+      });
+      
+      set({ 
+        subscriptions: updatedSubscriptions,
+        cancellingId: null
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      set({ 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        cancellingId: null
       });
       return false;
     }

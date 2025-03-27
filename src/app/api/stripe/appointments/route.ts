@@ -1,4 +1,5 @@
 // src/app/api/stripe/appointments/route.ts
+
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
@@ -265,30 +266,64 @@ export async function POST(req: Request): Promise<NextResponse> {
     
     // Check if user has a subscription and apply discounts if applicable
     if (userSubscriptionId) {
-      const userSubscription = await sanityClient.fetch<SanityUserSubscription>(
-        `*[_type == "userSubscription" && _id == $id && userId == $userId && isActive == true][0]{
-          _id,
-          subscription->{
-            _id,
-            title,
-            appointmentAccess,
-            appointmentDiscountPercentage
-          },
-          hasAppointmentAccess,
-          appointmentDiscountPercentage
-        }`,
-        { id: userSubscriptionId, userId: data.userId }
-      );
+      // First try to fetch by Supabase UUID
+      const { data: supabaseSubscription, error } = await supabase
+        .from('user_subscriptions')
+        .select('id, sanity_id, has_appointment_access, appointment_discount_percentage, is_active, status')
+        .eq('id', userSubscriptionId)
+        .eq('user_id', data.userId)
+        .single();
       
-      if (userSubscription && userSubscription.hasAppointmentAccess) {
-        console.log(`User has active subscription with appointment access`);
+      if (supabaseSubscription && supabaseSubscription.is_active && 
+          ['active', 'trialing', 'cancelling'].includes(supabaseSubscription.status) && 
+          supabaseSubscription.has_appointment_access) {
+        
+        console.log(`User has active subscription with appointment access (Supabase ID: ${userSubscriptionId})`);
         fromSubscription = true;
         
-        // Apply discount if available
-        if (userSubscription.appointmentDiscountPercentage > 0) {
-          appointmentDiscount = userSubscription.appointmentDiscountPercentage;
+        // Apply discount if available from Supabase record
+        if (supabaseSubscription.appointment_discount_percentage > 0) {
+          appointmentDiscount = supabaseSubscription.appointment_discount_percentage;
           appointmentPrice = appointment.price * (1 - (appointmentDiscount / 100));
           console.log(`Applied ${appointmentDiscount}% discount to appointment price: $${appointmentPrice}`);
+        }
+        
+        // Set Sanity ID for reference
+        if (supabaseSubscription.sanity_id) {
+          userSubscriptionId = supabaseSubscription.sanity_id;
+        }
+      } else {
+        // If not found or not active in Supabase, try Sanity as fallback
+        console.log(`Subscription not found in Supabase or not active, trying Sanity lookup`);
+        
+        const userSubscription = await sanityClient.fetch<SanityUserSubscription>(
+          `*[_type == "userSubscription" && userId == $userId && isActive == true][0]{
+            _id,
+            subscription->{
+              _id,
+              title,
+              appointmentAccess,
+              appointmentDiscountPercentage
+            },
+            hasAppointmentAccess,
+            appointmentDiscountPercentage
+          }`,
+          { userId: data.userId }
+        );
+        
+        if (userSubscription && userSubscription.hasAppointmentAccess) {
+          console.log(`User has active subscription with appointment access (Sanity ID: ${userSubscription._id})`);
+          fromSubscription = true;
+          
+          // Apply discount if available
+          if (userSubscription.appointmentDiscountPercentage > 0) {
+            appointmentDiscount = userSubscription.appointmentDiscountPercentage;
+            appointmentPrice = appointment.price * (1 - (appointmentDiscount / 100));
+            console.log(`Applied ${appointmentDiscount}% discount to appointment price: $${appointmentPrice}`);
+          }
+          
+          // Update the subscription ID to use the Sanity ID
+          userSubscriptionId = userSubscription._id;
         }
       }
     }

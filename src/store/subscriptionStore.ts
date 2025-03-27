@@ -69,7 +69,7 @@ interface UserSubscriptionState {
   checkUserAccess: (userId: string) => Promise<boolean>;
   cancelUserSubscription: (subscriptionId: string) => Promise<boolean>;
   syncSubscriptionStatuses: (userId: string) => Promise<boolean>;
-  syncAppointmentStatuses: (appointmentId?: string) => Promise<boolean>;
+  syncAppointmentStatuses: (appointmentId?: string, userId?: string) => Promise<boolean>;
 }
 
 export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => ({
@@ -213,6 +213,14 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         apt.payment_status === 'paid'
       );
       
+      // Check if we have any appointments that need syncing (pending payment or missing status)
+      const needsSyncing = appointmentsData.some(apt => 
+        (apt.payment_status === 'pending' && apt.stripe_session_id) ||
+        (apt.payment_status === 'paid' && 
+         (!apt.qualiphyExamStatus || apt.qualiphyExamStatus === 'N/A') && 
+         apt.qualiphyExamId)
+      );
+      
       set({ 
         appointments: appointmentsData,
         hasActiveAppointment
@@ -223,6 +231,13 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       set({
         canAccessAppointmentPage: hasActiveSubscription || hasActiveAppointment
       });
+      
+      // If we detected appointments that need syncing, trigger a sync in the background
+      if (needsSyncing) {
+        console.log("Found appointments that need syncing, syncing in background");
+        // Don't await this to keep the UI responsive
+        get().syncAppointmentStatuses(undefined, userId);
+      }
       
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -451,6 +466,51 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       
       const result = await response.json();
       console.log("Appointment sync result:", result);
+      
+      // Check if we had any status changes that warrant a refresh
+      const hasChanges = result.results?.some((r: any) => 
+        r.success && (r.changes?.stripe || r.changes?.qualiphy)
+      );
+      
+      if (hasChanges && currentUserId) {
+        console.log("Found status changes, refreshing appointments");
+        // Wait a short time to ensure backend updates are committed
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Refetch appointments with the updated statuses
+        const { data: refreshedData, error: refreshError } = await supabase
+          .from('user_appointments')
+          .select('*')
+          .eq('user_id', currentUserId)
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: false });
+          
+        if (!refreshError && refreshedData) {
+          // Transform and update appointment data
+          const appointmentsData: Appointment[] = refreshedData.map(apt => ({
+            id: apt.id,
+            treatment_name: apt.treatment_name || 'Consultation',
+            appointment_date: apt.appointment_date || apt.scheduled_date,
+            status: apt.status || 'scheduled',
+            created_at: apt.created_at || new Date().toISOString(),
+            notes: apt.notes,
+            qualiphyMeetingUrl: apt.qualiphy_meeting_url,
+            qualiphyMeetingUuid: apt.qualiphy_meeting_uuid,
+            qualiphyPatientExamId: apt.qualiphy_patient_exam_id,
+            qualiphyExamId: apt.qualiphy_exam_id,
+            qualiphyExamStatus: apt.qualiphy_exam_status,
+            qualiphyProviderName: apt.qualiphy_provider_name,
+            payment_status: apt.payment_status,
+            payment_method: apt.payment_method,
+            stripe_payment_intent_id: apt.stripe_payment_intent_id,
+            stripe_session_id: apt.stripe_session_id,
+            requires_subscription: apt.requires_subscription || false
+          }));
+          
+          // Update appointments in the store
+          set({ appointments: appointmentsData });
+        }
+      }
       
       return true;
     } catch (error) {

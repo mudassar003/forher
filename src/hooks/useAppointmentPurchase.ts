@@ -40,7 +40,24 @@ export function useAppointmentPurchase() {
 
       // Add subscription ID if using subscription
       if (options.useSubscription && options.subscriptionId) {
-        params.subscriptionId = options.subscriptionId;
+        // Check if the subscription ID is a Sanity ID (non-UUID format)
+        if (options.subscriptionId && !options.subscriptionId.includes('-')) {
+          // Try to find the corresponding subscription in our loaded subscriptions
+          const matchingSubscription = subscriptions.find(sub => 
+            sub.sanity_id === options.subscriptionId
+          );
+          
+          if (matchingSubscription) {
+            // Use the Supabase UUID instead of Sanity ID
+            params.subscriptionId = matchingSubscription.id;
+          } else {
+            console.warn(`Couldn't find subscription with Sanity ID: ${options.subscriptionId}`);
+            // Continue without a subscription ID
+          }
+        } else {
+          // It's already a UUID format, use as is
+          params.subscriptionId = options.subscriptionId;
+        }
       } else if (options.useSubscription && !options.subscriptionId) {
         // Find the first active subscription
         const activeSubscription = subscriptions.find(sub => 

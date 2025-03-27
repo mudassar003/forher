@@ -1,4 +1,4 @@
-// src/app/account/appointments/page.tsx
+//src/app/account/appointments/page.tsx
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -9,16 +9,31 @@ import AppointmentDetailsModal from "./components/AppointmentDetailsModal";
 import RefreshAppointmentsButton from "./components/RefreshAppointmentsButton";
 
 export default function AppointmentsPage() {
-  const { appointments, fetchUserAppointments, loading, error } = useSubscriptionStore();
+  const { appointments, fetchUserAppointments, refreshUserAppointments, loading, error } = useSubscriptionStore();
   const { user } = useAuthStore();
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
+      // First fetch the appointments
       fetchUserAppointments(user.id);
+      
+      // Then refresh them to sync with external services
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasSuccessParam = urlParams.get('success') === 'true';
+      
+      // Auto-refresh if we have a success parameter or if this is a regular page load
+      if (hasSuccessParam) {
+        // Short delay to ensure the initial fetch completes
+        const timer = setTimeout(() => {
+          refreshUserAppointments(user.id);
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
     }
-  }, [user, fetchUserAppointments]);
+  }, [user, fetchUserAppointments, refreshUserAppointments]);
 
   // Detailed appointment view modal
   const viewAppointmentDetails = (appointment: Appointment) => {

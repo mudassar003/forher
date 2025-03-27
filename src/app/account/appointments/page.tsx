@@ -99,7 +99,7 @@ export default function AppointmentsPage() {
         </div>
         <h3 className="text-lg font-medium text-gray-800 mb-2">No Appointments</h3>
         <p className="text-gray-600 mb-6">You haven't booked any consultations yet.</p>
-        <Link href="/appointments" className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+        <Link href="/book-appointments" className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
           Book an Appointment
         </Link>
       </div>

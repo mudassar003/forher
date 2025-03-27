@@ -1,4 +1,4 @@
-// src/app/appointments/page.tsx
+// src/app/book-appointments/page.tsx
 import AppointmentGrid from '@/components/Appointment/AppointmentGrid';
 
 export const metadata = {

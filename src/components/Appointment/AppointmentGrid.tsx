@@ -13,10 +13,11 @@ interface Appointment {
   title: string;
   description?: string;
   price: number;
-  duration: number;
+  duration?: number;
   image?: SanityImageSource;
   qualiphyExamId?: number;
   isActive: boolean;
+  requiresSubscription: boolean;
 }
 
 const AppointmentGrid: React.FC = () => {
@@ -41,7 +42,8 @@ const AppointmentGrid: React.FC = () => {
           duration,
           image,
           qualiphyExamId,
-          isActive
+          isActive,
+          requiresSubscription
         } | order(price asc)`;
         
         const data = await client.fetch<Appointment[]>(query);
@@ -81,11 +83,11 @@ const AppointmentGrid: React.FC = () => {
           <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h2 className="text-lg font-medium text-red-800 mb-2">Something went wrong</h2>
-          <p className="text-red-600">{error}</p>
+          <h2 className="text-xl font-medium text-red-800 mb-3">Something went wrong</h2>
+          <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
           >
             Try Again
           </button>
@@ -134,15 +136,15 @@ const AppointmentGrid: React.FC = () => {
                   ? 'You have an active appointment' 
                   : hasActiveSubscription 
                     ? 'You have an active subscription with appointment access' 
-                    : 'You need an active appointment or subscription'}
+                    : 'Some appointments require an active subscription'}
               </h3>
               <div className={`mt-2 text-sm ${hasActiveAppointment || hasActiveSubscription ? 'text-green-700' : 'text-yellow-700'}`}>
                 {hasActiveAppointment ? (
                   <p>You have an active appointment scheduled. You can book additional appointments below.</p>
                 ) : hasActiveSubscription ? (
-                  <p>Your subscription includes appointment access. You can book appointments below.</p>
+                  <p>Your subscription includes appointment access. You can book any appointment below.</p>
                 ) : (
-                  <p>You need to purchase an appointment or a subscription with appointment access to book a consultation.</p>
+                  <p>Some appointments require a subscription with appointment access. Look for the subscription badge on appointment cards.</p>
                 )}
               </div>
             </div>
@@ -161,6 +163,8 @@ const AppointmentGrid: React.FC = () => {
             duration={appointment.duration}
             imageSrc={appointment.image}
             qualiphyExamId={appointment.qualiphyExamId}
+            requiresSubscription={appointment.requiresSubscription}
+            hasActiveSubscription={hasActiveSubscription}
           />
         ))}
       </div>

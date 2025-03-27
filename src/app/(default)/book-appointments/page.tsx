@@ -1,4 +1,4 @@
-// src/app/book-appointments/page.tsx
+// src/app/(default)/book-appointments/page.tsx
 import AppointmentGrid from '@/components/Appointment/AppointmentGrid';
 
 export const metadata = {
@@ -63,6 +63,14 @@ export default function AppointmentsPage() {
         <div className="bg-indigo-50 rounded-lg p-6 mt-12">
           <h2 className="text-xl font-bold text-indigo-900 mb-4">Important Information</h2>
           <div className="space-y-6">
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <h3 className="text-base font-medium text-indigo-800 mb-2">Subscription-Required Appointments</h3>
+              <p className="text-sm text-indigo-700">
+                Some appointments require an active subscription. These appointments are marked with a "Subscription Required" badge. 
+                You can view our subscription options on the <a href="/subscriptions" className="underline hover:text-indigo-900">subscriptions page</a>.
+              </p>
+            </div>
+            
             <div>
               <h3 className="text-base font-medium text-indigo-800">Telehealth Consultations</h3>
               <p className="mt-2 text-sm text-indigo-700">

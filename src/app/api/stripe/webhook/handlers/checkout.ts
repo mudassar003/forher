@@ -1,4 +1,4 @@
-// src/app/api/stripe/webhook/handlers/checkout.ts
+// Updated version of src/app/api/stripe/webhook/handlers/checkout.ts
 import { NextResponse } from "next/server";
 import { Stripe } from "stripe";
 import stripe from "../utils/stripe-client";
@@ -50,7 +50,7 @@ export async function handleCheckoutSession(
     
     // Handle different purchase types
     if (isSubscription && subscriptionId) {
-      await handleSubscriptionPurchase(session, subscriptionId);
+      await handleSubscriptionPurchase(session, subscriptionId, userId);
     } else if (isAppointment && appointmentId) {
       await handleAppointmentPurchase(
         session, 
@@ -134,7 +134,8 @@ async function getOrCreateCustomer(
  */
 async function handleSubscriptionPurchase(
   session: Stripe.Checkout.Session,
-  subscriptionId: string
+  subscriptionId: string,
+  userId?: string
 ): Promise<void> {
   console.log(`Processing subscription purchase for ${subscriptionId}`);
   
@@ -147,7 +148,7 @@ async function handleSubscriptionPurchase(
   try {
     const { data: sanityUserSub, error } = await supabase
       .from('user_subscriptions')
-      .select('sanity_id')
+      .select('sanity_id, id')
       .eq('stripe_session_id', session.id)
       .single();
     
@@ -157,6 +158,7 @@ async function handleSubscriptionPurchase(
     }
     
     const userSubscriptionSanityId = sanityUserSub?.sanity_id;
+    const supabaseSubscriptionId = sanityUserSub?.id;
 
     if (userSubscriptionSanityId) {
       // Calculate end date based on billing period
@@ -173,24 +175,70 @@ async function handleSubscriptionPurchase(
       // Update Sanity user subscription
       await updateSanitySubscription(userSubscriptionSanityId, {
         isActive: true,
-        status: 'active',
+        status: 'active', // Important! Ensure status is set to 'active'
         endDate: endDate.toISOString(),
-        nextBillingDate: endDate.toISOString()
+        nextBillingDate: endDate.toISOString(),
+        stripeSubscriptionId: subscription.id // Ensure Stripe subscription ID is set
       });
       
+      console.log(`✅ Activated subscription in Sanity with ID: ${userSubscriptionSanityId}`);
+      
       // Update Supabase user subscription
-      await updateSupabaseSubscription(session.id, {
-        status: 'active',
+      await updateSupabaseSubscription(supabaseSubscriptionId, {
+        status: 'active', // Important! Ensure status is set to 'active'
         is_active: true,
         stripe_subscription_id: subscription.id,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         next_billing_date: endDate.toISOString(),
         updated_at: new Date().toISOString()
-      }, 'stripe_session_id');
+      });
+
+      console.log(`✅ Activated subscription in Supabase with ID: ${supabaseSubscriptionId}`);
     } else {
       console.error(`No user subscription found for session ID: ${session.id}`);
-      throw new Error(`No user subscription found for session ID: ${session.id}`);
+      
+      // If we have a userId, try to find the subscription by user ID
+      if (userId) {
+        console.log(`Attempting to find subscription for user ID: ${userId}`);
+        
+        // Find the most recent subscription for this user
+        const { data: userSubscriptions, error: userSubError } = await supabase
+          .from('user_subscriptions')
+          .select('id, sanity_id, status, is_active')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (userSubError || !userSubscriptions?.length) {
+          console.error("Failed to find subscription by user ID:", userSubError || "No subscriptions found");
+        } else {
+          const userSub = userSubscriptions[0];
+          
+          // Update this subscription to be active if it's not already
+          if (userSub.status !== 'active' || !userSub.is_active) {
+            await updateSupabaseSubscription(userSub.id, {
+              status: 'active',
+              is_active: true,
+              stripe_subscription_id: subscription.id,
+              updated_at: new Date().toISOString()
+            });
+            
+            console.log(`✅ Activated fallback subscription in Supabase with ID: ${userSub.id}`);
+            
+            // Update Sanity if we have a Sanity ID
+            if (userSub.sanity_id) {
+              await updateSanitySubscription(userSub.sanity_id, {
+                status: 'active',
+                isActive: true,
+                stripeSubscriptionId: subscription.id
+              });
+              
+              console.log(`✅ Activated fallback subscription in Sanity with ID: ${userSub.sanity_id}`);
+            }
+          }
+        }
+      }
     }
   } catch (error) {
     console.error("Error handling subscription purchase:", error);

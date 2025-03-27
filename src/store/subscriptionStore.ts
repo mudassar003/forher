@@ -1,4 +1,4 @@
-// src/store/subscriptionStore.ts
+// Updated version of src/store/subscriptionStore.ts
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import { cancelSubscription } from '@/services/subscriptionService';
@@ -17,6 +17,7 @@ export interface Subscription {
   appointmentsIncluded: number;
   appointmentsUsed: number;
   stripe_subscription_id?: string;
+  sanity_id?: string;
 }
 
 export interface SubscriptionProduct {
@@ -49,12 +50,14 @@ interface UserSubscriptionState {
   loading: boolean;
   error: string | null;
   cancellingId: string | null;
+  syncingSubscriptions: boolean;
   
   // Actions
   fetchUserSubscriptions: (userId: string) => Promise<void>;
   fetchUserAppointments: (userId: string) => Promise<void>;
   checkUserAccess: (userId: string) => Promise<boolean>;
   cancelUserSubscription: (subscriptionId: string) => Promise<boolean>;
+  syncSubscriptionStatuses: (userId: string) => Promise<boolean>;
 }
 
 export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => ({
@@ -66,6 +69,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
   loading: false,
   error: null,
   cancellingId: null,
+  syncingSubscriptions: false,
   
   fetchUserSubscriptions: async (userId: string) => {
     set({ loading: true, error: null });
@@ -76,7 +80,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', userId)
-        .eq('is_deleted', false); // Only fetch non-deleted subscriptions
+        .eq('is_deleted', false) // Only fetch non-deleted subscriptions
+        .order('created_at', { ascending: false }); // Get most recent first
       
       if (supabaseError) {
         throw new Error(supabaseError.message);
@@ -95,8 +100,19 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         products: [], // Could be populated from another query if needed
         appointmentsIncluded: sub.appointments_included || 0,
         appointmentsUsed: sub.appointments_used || 0,
-        stripe_subscription_id: sub.stripe_subscription_id
+        stripe_subscription_id: sub.stripe_subscription_id,
+        sanity_id: sub.sanity_id
       }));
+      
+      // Check if any subscription has a pending status but should be active
+      const hasPendingSubscriptions = subscriptionsData.some(sub => 
+        sub.status.toLowerCase() === 'pending'
+      );
+      
+      // Check if any subscription has stripe_subscription_id but still shows pending status
+      const hasInconsistentSubscriptions = subscriptionsData.some(sub => 
+        sub.status.toLowerCase() === 'pending' && !!sub.stripe_subscription_id
+      );
       
       set({ 
         subscriptions: subscriptionsData,
@@ -104,6 +120,19 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
           ['active', 'trialing', 'past_due', 'cancelling'].includes(sub.status.toLowerCase())
         )
       });
+      
+      // If there are inconsistent subscriptions, immediately try to sync status
+      if (hasInconsistentSubscriptions) {
+        console.log("Found inconsistent subscriptions, syncing status");
+        // This will trigger in the background, we don't await it
+        get().syncSubscriptionStatuses(userId);
+      }
+      // If there are just regular pending subscriptions, also try to sync
+      else if (hasPendingSubscriptions) {
+        console.log("Found pending subscriptions, syncing status");
+        // This will trigger in the background, we don't await it
+        get().syncSubscriptionStatuses(userId);
+      }
       
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
@@ -242,6 +271,44 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       set({ 
         error: error instanceof Error ? error.message : 'Unknown error',
         cancellingId: null
+      });
+      return false;
+    }
+  },
+  
+  // New method to fix subscription statuses
+    
+  syncSubscriptionStatuses: async (userId: string) => {
+    try {
+      set({ syncingSubscriptions: true, error: null });
+      
+      // Call the status sync API
+      const response = await fetch('/api/stripe/subscriptions/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync subscription statuses');
+      }
+      
+      const result = await response.json();
+      console.log("Sync result:", result);
+      
+      // Refresh subscriptions after sync
+      await get().fetchUserSubscriptions(userId);
+      
+      set({ syncingSubscriptions: false });
+      return true;
+    } catch (error) {
+      console.error('Error syncing subscription statuses:', error);
+      set({ 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        syncingSubscriptions: false
       });
       return false;
     }

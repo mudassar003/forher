@@ -6,6 +6,7 @@ import SubscriptionCard from "./SubscriptionCard";
 import EmptyState from "./EmptyState";
 import LoadingState from "./LoadingState";
 import ErrorState from "./ErrorState";
+import StatusSyncButton from "./StatusSyncButton";
 import { useState } from "react";
 
 export const SubscriptionsList = () => {
@@ -20,6 +21,11 @@ export const SubscriptionsList = () => {
   
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Check if there are any pending subscriptions that might need syncing
+  const hasPendingSubscriptions = subscriptions.some(
+    subscription => subscription.status.toLowerCase() === 'pending'
+  );
   
   const handleCancelSubscription = async (subscriptionId: string) => {
     // Clear any existing messages
@@ -114,6 +120,9 @@ export const SubscriptionsList = () => {
           </div>
         </div>
       )}
+
+      {/* Status sync button - only shown when pending subscriptions exist */}
+      <StatusSyncButton hasPendingSubscriptions={hasPendingSubscriptions} />
 
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">

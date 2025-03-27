@@ -2,7 +2,8 @@
 "use client";
 
 import Link from 'next/link';
-import { AppointmentStatusBadges } from './AppointmentStatusBadges';
+// Update this import in src/components/Appointment/AppointmentCard.tsx
+import { AppointmentStatusBadges } from '@/app/account/appointments/components/AppointmentStatusBadges';
 import { Appointment } from '@/store/subscriptionStore';
 import { formatDate } from '@/utils/dateUtils';
 

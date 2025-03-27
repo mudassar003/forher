@@ -12,10 +12,8 @@ interface AppointmentDetailsModalProps {
 }
 
 export const AppointmentDetailsModal = ({ appointment, onClose }: AppointmentDetailsModalProps) => {
-  // Check if user can access the telehealth portal based on appointment status
-  const canAccessTelehealth = 
-    appointment.payment_status === 'paid' && 
-    (appointment.qualiphyExamStatus === 'Pending' || appointment.qualiphyExamStatus === 'Deferred');
+  // Check if user can access the telehealth portal based on payment status only
+  const canAccessTelehealth = appointment.payment_status === 'paid';
   
   // Format the creation date
   const formattedDate = formatDate(appointment.created_at, 'long');
@@ -96,6 +94,7 @@ export const AppointmentDetailsModal = ({ appointment, onClose }: AppointmentDet
                 <AppointmentStatusBadges 
                   qualiphyStatus={appointment.qualiphyExamStatus} 
                   paymentStatus={appointment.payment_status}
+                  appointmentStatus={appointment.status}
                   requiresSubscription={appointment.requires_subscription}
                 />
               </div>

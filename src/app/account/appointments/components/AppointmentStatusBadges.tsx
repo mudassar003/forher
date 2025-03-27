@@ -1,17 +1,19 @@
 // src/app/account/appointments/components/AppointmentStatusBadges.tsx
 "use client";
 
-import { QualiphyExamStatus, PaymentStatus } from '@/types/appointment';
+import { QualiphyExamStatus, PaymentStatus, AppointmentStatus } from '@/types/appointment';
 
 interface StatusBadgesProps {
   qualiphyStatus?: QualiphyExamStatus;
   paymentStatus?: PaymentStatus;
+  appointmentStatus?: AppointmentStatus;
   requiresSubscription?: boolean;
 }
 
 export const AppointmentStatusBadges = ({ 
   qualiphyStatus, 
   paymentStatus,
+  appointmentStatus,
   requiresSubscription
 }: StatusBadgesProps) => {
   // Define color and text mapping for Qualiphy statuses
@@ -58,14 +60,51 @@ export const AppointmentStatusBadges = ({
     }
   };
 
+  // Define color and text mapping for appointment statuses
+  const appointmentStatusMap = {
+    'pending': {
+      color: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+      description: 'Pending Setup'
+    },
+    'scheduled': {
+      color: 'bg-blue-100 text-blue-800 border border-blue-200',
+      description: 'Scheduled'
+    },
+    'confirmed': {
+      color: 'bg-indigo-100 text-indigo-800 border border-indigo-200',
+      description: 'Confirmed'
+    },
+    'completed': {
+      color: 'bg-green-100 text-green-800 border border-green-200',
+      description: 'Completed'
+    },
+    'cancelled': {
+      color: 'bg-gray-100 text-gray-800 border border-gray-200',
+      description: 'Cancelled'
+    },
+    'rescheduled': {
+      color: 'bg-purple-100 text-purple-800 border border-purple-200',
+      description: 'Rescheduled'
+    },
+    'no-show': {
+      color: 'bg-red-100 text-red-800 border border-red-200',
+      description: 'No Show'
+    }
+  };
+
   // Default to Pending if no status or unknown status
   const qualiphyInfo = qualiphyStatus ? 
     qualiphyStatusMap[qualiphyStatus as keyof typeof qualiphyStatusMap] || qualiphyStatusMap['Pending'] 
-    : null;
+    : { color: 'bg-gray-100 text-gray-800 border border-gray-200', description: 'Not Started' };
     
   const paymentInfo = paymentStatus ? 
     paymentStatusMap[paymentStatus as keyof typeof paymentStatusMap] || 
     paymentStatusMap['pending'] 
+    : null;
+
+  const appointmentInfo = appointmentStatus ?
+    appointmentStatusMap[appointmentStatus as keyof typeof appointmentStatusMap] ||
+    appointmentStatusMap['pending']
     : null;
 
   return (
@@ -82,17 +121,15 @@ export const AppointmentStatusBadges = ({
         </div>
       )}
       
-      {/* Qualiphy Status - Now more prominent */}
-      {qualiphyInfo && (
-        <div className="flex items-center space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${qualiphyInfo.color}`}>
-            Consultation: {qualiphyStatus || 'Pending'}
-          </span>
-          <span className="text-sm text-gray-600">
-            {qualiphyInfo.description}
-          </span>
-        </div>
-      )}
+      {/* Qualiphy Status */}
+      <div className="flex items-center space-x-2">
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${qualiphyInfo.color}`}>
+          Consultation: {qualiphyStatus || 'Not Started'}
+        </span>
+        <span className="text-sm text-gray-600">
+          {qualiphyInfo.description}
+        </span>
+      </div>
 
       {/* Subscription Requirement */}
       {requiresSubscription && (

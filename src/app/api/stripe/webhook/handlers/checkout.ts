@@ -40,6 +40,7 @@ export async function handleCheckoutSession(
     const qualiphyExamId = metadata?.qualiphyExamId;
     const orderId = metadata?.orderId;
     const sanityId = metadata?.sanityId;
+    const requiresSubscription = metadata?.requiresSubscription === 'true';
 
     // Get customer information if available
     let customerId = session.customer as string;
@@ -62,7 +63,8 @@ export async function handleCheckoutSession(
         fromSubscription, 
         userSubscriptionId, 
         qualiphyExamId, 
-        customerId
+        customerId,
+        requiresSubscription
       );
     } else if (isRegularOrder) {
       await handleRegularOrderPurchase(session, orderId, sanityId, customerId);
@@ -262,7 +264,8 @@ async function handleAppointmentPurchase(
   fromSubscription: boolean,
   userSubscriptionId?: string,
   qualiphyExamId?: string,
-  customerId?: string
+  customerId?: string,
+  requiresSubscription?: boolean
 ): Promise<void> {
   console.log(`Processing appointment purchase for ${appointmentId}`);
   
@@ -284,7 +287,8 @@ async function handleAppointmentPurchase(
       // Update Sanity user appointment
       await updateSanityAppointment(sanityAppointmentId, {
         status: 'scheduled',
-        scheduledDate: scheduledDate.toISOString()
+        scheduledDate: scheduledDate.toISOString(),
+        paymentStatus: 'paid'
       });
       
       // Update Supabase user appointment
@@ -292,6 +296,9 @@ async function handleAppointmentPurchase(
         status: 'scheduled',
         scheduled_date: scheduledDate.toISOString(),
         stripe_customer_id: customerId || null,
+        payment_status: 'paid', // Set payment to paid
+        payment_method: 'stripe',
+        stripe_payment_intent_id: session.payment_intent as string,
         updated_at: new Date().toISOString()
       }, 'stripe_session_id');
 
@@ -303,7 +310,17 @@ async function handleAppointmentPurchase(
       // Handle Qualiphy integration if applicable
       if (qualiphyExamId && parseInt(qualiphyExamId) > 0) {
         console.log(`Will handle Qualiphy exam ID: ${qualiphyExamId} when user accesses widget`);
-        // Actual integration with Qualiphy would happen elsewhere
+        
+        // Update Qualiphy status to pending
+        await updateSupabaseAppointment(appointmentData.id, {
+          qualiphy_exam_status: 'Pending',
+          updated_at: new Date().toISOString()
+        });
+        
+        // Update Sanity Qualiphy status
+        await updateSanityAppointment(sanityAppointmentId, {
+          qualiphyExamStatus: 'Pending'
+        });
       }
     } else {
       throw new Error(`No sanity ID found for appointment with session ID: ${session.id}`);

@@ -1,7 +1,7 @@
-// src/middleware.ts
+// middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { appointmentAccessMiddleware } from './src//middleware/appointmentAccess';
+import { appointmentAccessMiddleware } from './src/middleware/appointmentAccess';
 
 export async function middleware(request: NextRequest) {
   // Create a response that we'll use to pass along
@@ -16,9 +16,21 @@ export async function middleware(request: NextRequest) {
   // Get the pathname
   const path = request.nextUrl.pathname;
   
-  // Handle appointment access restrictions
-  if (path.startsWith('/appointment') || path.startsWith('/appointments')) {
+  // Handle appointment access restrictions for the single appointment page
+  if (path.startsWith('/appointment')) {
     return appointmentAccessMiddleware(request);
+  }
+  
+  // Handle appointments routes - require authentication
+  if (path.startsWith('/appointments')) {
+    // Get the current session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // If no session, redirect to login
+    if (!session) {
+      const returnUrl = encodeURIComponent(path);
+      return NextResponse.redirect(new URL(`/login?returnUrl=${returnUrl}`, request.url));
+    }
   }
   
   // For auth protected routes that aren't appointment specific

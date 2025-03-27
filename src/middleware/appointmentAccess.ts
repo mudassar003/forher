@@ -20,13 +20,15 @@ export async function appointmentAccessMiddleware(request: NextRequest) {
   // User is authenticated, now check if they have appointment access
   const userId = session.user.id;
 
-  // Check for active appointments
+  // Check for active appointments with paid status
   const { data: appointmentData, error: appointmentError } = await supabase
     .from('user_appointments')
     .select('id')
     .eq('user_id', userId)
     .eq('is_deleted', false) // Only consider non-deleted appointments
-    .or('status.eq.scheduled,status.eq.confirmed')
+    .eq('payment_status', 'paid') // Must be paid
+    .or('status.eq.scheduled,status.eq.confirmed,status.eq.pending')
+    .or('qualiphy_exam_status.eq.Pending,qualiphy_exam_status.eq.Deferred')
     .limit(1);
 
   if (appointmentData && appointmentData.length > 0) {
@@ -42,6 +44,7 @@ export async function appointmentAccessMiddleware(request: NextRequest) {
     .eq('is_active', true)
     .eq('has_appointment_access', true)
     .eq('is_deleted', false) // Only consider non-deleted subscriptions
+    .or('status.eq.active,status.eq.trialing,status.eq.cancelling')
     .limit(1);
 
   if (subscriptionData && subscriptionData.length > 0) {

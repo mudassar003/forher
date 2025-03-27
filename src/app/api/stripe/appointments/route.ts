@@ -13,6 +13,7 @@ interface SanityAppointment {
   stripePriceId?: string;
   stripeProductId?: string;
   qualiphyExamId?: number;
+  requiresSubscription: boolean;
 }
 
 interface SanityUserSubscription {
@@ -25,6 +26,8 @@ interface SanityUserSubscription {
   };
   hasAppointmentAccess: boolean;
   appointmentDiscountPercentage: number;
+  isActive: boolean;
+  status: string;
 }
 
 interface SanityUserAppointment {
@@ -40,6 +43,8 @@ interface SanityUserAppointment {
   status: string;
   createdDate: string;
   notes: string;
+  requiresSubscription: boolean;
+  paymentStatus: string;
   subscriptionId?: {
     _type: string;
     _ref: string;
@@ -57,7 +62,7 @@ interface SupabaseUserAppointment {
   user_email: string;
   customer_name: string;
   sanity_id: string;
-  appointment_type_id: string; // Changed from sanity_appointment_type_id to match DB schema
+  appointment_type_id: string;
   treatment_name: string;
   stripe_session_id: string;
   stripe_customer_id: string;
@@ -68,14 +73,16 @@ interface SupabaseUserAppointment {
   is_from_subscription: boolean;
   subscription_id: string | null;
   qualiphy_exam_id: number | null;
+  payment_status: string;
+  requires_subscription: boolean;
 }
 
 interface AppointmentRequest {
-  appointmentId: string;  // Sanity appointment ID
-  userId: string;         // Supabase user ID
-  userEmail: string;      // User's email
-  userName?: string;      // User's name (optional)
-  subscriptionId?: string; // Sanity userSubscription ID (if using subscription)
+  appointmentId: string;
+  userId: string;
+  userEmail: string;
+  userName?: string;
+  subscriptionId?: string;
 }
 
 interface QualiphyPatientExam {
@@ -202,7 +209,8 @@ export async function POST(req: Request): Promise<NextResponse> {
         duration,
         stripePriceId,
         stripeProductId,
-        qualiphyExamId
+        qualiphyExamId,
+        requiresSubscription
       }`,
       { id: data.appointmentId }
     );
@@ -216,15 +224,48 @@ export async function POST(req: Request): Promise<NextResponse> {
     
     console.log(`Fetched appointment: ${appointment.title}`);
     
-    // 2. Check if user has an active subscription with appointment access
-    let userSubscription: SanityUserSubscription | null = null;
+    // 2. If appointment requires subscription, check if user has an active subscription
+    if (appointment.requiresSubscription) {
+      // Check if user has an active subscription with appointment access
+      const userSubscription = await sanityClient.fetch<SanityUserSubscription>(
+        `*[_type == "userSubscription" && userId == $userId && isActive == true][0]{
+          _id,
+          subscription->{
+            _id,
+            title,
+            appointmentAccess,
+            appointmentDiscountPercentage
+          },
+          hasAppointmentAccess,
+          appointmentDiscountPercentage,
+          isActive,
+          status
+        }`,
+        { userId: data.userId }
+      );
+      
+      // If no active subscription or subscription doesn't have appointment access
+      if (!userSubscription || !userSubscription.isActive || 
+          userSubscription.status !== 'active' || !userSubscription.hasAppointmentAccess) {
+        return NextResponse.json(
+          { success: false, error: "This appointment requires an active subscription with appointment access" },
+          { status: 403 }
+        );
+      }
+      
+      console.log(`User has active subscription with appointment access`);
+      data.subscriptionId = userSubscription._id;
+    }
+    
+    // 3. Proceed with regular appointment creation flow...
+    let fromSubscription = false;
     let appointmentPrice = appointment.price;
     let appointmentDiscount = 0;
-    let fromSubscription = false;
+    let userSubscriptionId = data.subscriptionId;
     
-    // If subscription ID is provided, check if it's valid and active
-    if (data.subscriptionId) {
-      userSubscription = await sanityClient.fetch<SanityUserSubscription>(
+    // Check if user has a subscription and apply discounts if applicable
+    if (userSubscriptionId) {
+      const userSubscription = await sanityClient.fetch<SanityUserSubscription>(
         `*[_type == "userSubscription" && _id == $id && userId == $userId && isActive == true][0]{
           _id,
           subscription->{
@@ -236,7 +277,7 @@ export async function POST(req: Request): Promise<NextResponse> {
           hasAppointmentAccess,
           appointmentDiscountPercentage
         }`,
-        { id: data.subscriptionId, userId: data.userId }
+        { id: userSubscriptionId, userId: data.userId }
       );
       
       if (userSubscription && userSubscription.hasAppointmentAccess) {
@@ -252,7 +293,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       }
     }
     
-    // 3. Create or get Stripe product and price IDs
+    // 4. Create or get Stripe product and price IDs
     let stripeProductId = appointment.stripeProductId;
     let stripePriceId = appointment.stripePriceId;
     
@@ -263,7 +304,8 @@ export async function POST(req: Request): Promise<NextResponse> {
         name: appointment.title,
         description: `${appointment.title} - ${appointment.duration} minute appointment`,
         metadata: {
-          sanityId: appointment._id
+          sanityId: appointment._id,
+          requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
         }
       });
       
@@ -283,14 +325,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (!stripePriceId || appointmentDiscount > 0) {
       console.log(`Creating new Stripe price for amount: $${appointmentPrice}`);
       
-      const price = await stripe.prices.create({
-        product: stripeProductId,
-        unit_amount: priceAmount,
-        currency: 'usd',
+      const price = await stripe.products.create({
+        name: appointment.title,
+        description: `${appointment.title} - ${appointment.duration} minute appointment`,
         metadata: {
           sanityId: appointment._id,
-          discounted: appointmentDiscount > 0 ? 'true' : 'false',
-          discountPercentage: appointmentDiscount.toString()
+          requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
         }
       });
       
@@ -308,7 +348,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       }
     }
     
-    // 4. Check if customer exists, if not create one
+    // 5. Check if customer exists, if not create one
     const { data: customerData, error: customerError } = await supabase
       .from('stripe_customers')
       .select('stripe_customer_id, user_id, email')
@@ -358,12 +398,23 @@ export async function POST(req: Request): Promise<NextResponse> {
       console.log(`Using existing Stripe customer: ${stripeCustomerId}`);
     }
     
-    // 5. Create a checkout session
+    // 6. Create a checkout session
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: stripePriceId,
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: appointment.title,
+              description: `${appointment.duration} minute appointment${appointment.requiresSubscription ? ' (Requires Subscription)' : ''}`,
+              metadata: {
+                appointmentId: appointment._id,
+                requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
+              }
+            },
+            unit_amount: priceAmount,
+          },
           quantity: 1,
         },
       ],
@@ -378,7 +429,8 @@ export async function POST(req: Request): Promise<NextResponse> {
         appointmentType: "oneTime",
         fromSubscription: fromSubscription.toString(),
         userSubscriptionId: data.subscriptionId || "",
-        qualiphyExamId: appointment.qualiphyExamId?.toString() || ""
+        qualiphyExamId: appointment.qualiphyExamId?.toString() || "",
+        requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
       },
       client_reference_id: data.userId,
     };
@@ -387,7 +439,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     
     console.log(`Created checkout session: ${session.id}`);
     
-    // 6. Create a pending appointment in Sanity
+    // 7. Create a pending appointment in Sanity
     const createdDate = new Date().toISOString();
     const userAppointment: SanityUserAppointment = {
       _type: 'userAppointment',
@@ -401,7 +453,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       isFromSubscription: fromSubscription,
       status: 'pending',
       createdDate: createdDate,
-      notes: `Booking created on ${new Date().toLocaleDateString()}. Payment pending.`
+      notes: `Booking created on ${new Date().toLocaleDateString()}. Payment pending.`,
+      requiresSubscription: appointment.requiresSubscription,
+      paymentStatus: 'pending'
     };
     
     // Add subscription reference if applicable
@@ -415,13 +469,13 @@ export async function POST(req: Request): Promise<NextResponse> {
     const sanityResponse = await sanityClient.create(userAppointment);
     console.log(`Created pending Sanity user appointment: ${sanityResponse._id}`);
     
-    // 7. Create pending appointment in Supabase
+    // 8. Create pending appointment in Supabase
     const supabaseAppointment: SupabaseUserAppointment = {
       user_id: data.userId,
       user_email: data.userEmail,
       customer_name: data.userName || data.userEmail.split('@')[0],
       sanity_id: sanityResponse._id,
-      appointment_type_id: appointment._id, // Changed to match DB schema
+      appointment_type_id: appointment._id,
       treatment_name: appointment.title,
       stripe_session_id: session.id,
       stripe_customer_id: stripeCustomerId,
@@ -431,7 +485,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       duration: appointment.duration,
       is_from_subscription: fromSubscription,
       subscription_id: fromSubscription && data.subscriptionId ? data.subscriptionId : null,
-      qualiphy_exam_id: appointment.qualiphyExamId || null
+      qualiphy_exam_id: appointment.qualiphyExamId || null,
+      payment_status: 'pending',
+      requires_subscription: appointment.requiresSubscription
     };
     
     const { error: appointmentError } = await supabase
@@ -460,4 +516,5 @@ export async function POST(req: Request): Promise<NextResponse> {
       }, 
       { status: 500 }
     );
-  }}
+  }
+}

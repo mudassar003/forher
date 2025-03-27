@@ -1,3 +1,4 @@
+// src/sanity/schemaTypes/appointmentType.ts
 import {CalendarIcon} from '@sanity/icons'
 import {defineField, defineType} from 'sanity'
 
@@ -38,7 +39,15 @@ export const appointmentType = defineType({
       name: 'duration',
       title: 'Duration (minutes)',
       type: 'number',
-      validation: (Rule) => Rule.required().positive().integer(),
+      description: 'Optional: Typical duration of this appointment type',
+      validation: (Rule) => Rule.positive().integer(),
+    }),
+    defineField({
+      name: 'requiresSubscription',
+      title: 'Requires Subscription',
+      description: 'Check this box if user needs an active subscription to purchase this appointment',
+      type: 'boolean',
+      initialValue: false,
     }),
     defineField({
       name: 'stripePriceId',
@@ -80,11 +89,12 @@ export const appointmentType = defineType({
       duration: 'duration',
       media: 'image',
       price: 'price',
+      requiresSubscription: 'requiresSubscription',
     },
-    prepare({title, duration, media, price}) {
+    prepare({title, duration, media, price, requiresSubscription}) {
       return {
         title,
-        subtitle: `$${price} / ${duration} min`,
+        subtitle: `$${price}${duration ? ` / ${duration} min` : ''} ${requiresSubscription ? '(Subscription Required)' : ''}`,
         media,
       }
     },

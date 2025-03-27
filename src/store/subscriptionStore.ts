@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import { cancelSubscription } from '@/services/subscriptionService';
-import { SubscriptionStatus, BillingPeriod } from '@/types/subscription';
+import { AppointmentStatus, PaymentStatus, QualiphyExamStatus } from '@/types/appointment';
 
 // Define types for our subscription and appointment data
 export interface Subscription {
@@ -32,15 +32,21 @@ export interface SubscriptionProduct {
 export interface Appointment {
   id: string;
   treatment_name: string;
-  appointment_date: string;
-  status: string;
+  appointment_date?: string;
+  status: AppointmentStatus;
   created_at: string;
   notes?: string;
   qualiphyMeetingUrl?: string;
   qualiphyMeetingUuid?: string;
   qualiphyPatientExamId?: number;
   qualiphyExamId?: number;
-  qualiphyExamStatus?: string;
+  qualiphyExamStatus?: QualiphyExamStatus;
+  qualiphyProviderName?: string;
+  payment_status?: PaymentStatus;
+  payment_method?: string;
+  stripe_payment_intent_id?: string;
+  stripe_session_id?: string;
+  requires_subscription: boolean;
 }
 
 interface UserSubscriptionState {
@@ -50,6 +56,7 @@ interface UserSubscriptionState {
   hasActiveAppointment: boolean;
   canAccessAppointmentPage: boolean;
   loading: boolean;
+  refreshingAppointments: boolean;
   error: string | null;
   cancellingId: string | null;
   syncingSubscriptions: boolean;
@@ -57,9 +64,11 @@ interface UserSubscriptionState {
   // Actions
   fetchUserSubscriptions: (userId: string) => Promise<void>;
   fetchUserAppointments: (userId: string) => Promise<void>;
+  refreshUserAppointments: (userId: string) => Promise<void>;
   checkUserAccess: (userId: string) => Promise<boolean>;
   cancelUserSubscription: (subscriptionId: string) => Promise<boolean>;
   syncSubscriptionStatuses: (userId: string) => Promise<boolean>;
+  syncAppointmentStatuses: (appointmentId?: string) => Promise<boolean>;
 }
 
 export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => ({
@@ -69,6 +78,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
   hasActiveAppointment: false,
   canAccessAppointmentPage: false,
   loading: false,
+  refreshingAppointments: false,
   error: null,
   cancellingId: null,
   syncingSubscriptions: false,
@@ -178,7 +188,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       const appointmentsData: Appointment[] = (supabaseData || []).map(apt => ({
         id: apt.id,
         treatment_name: apt.treatment_name || 'Consultation',
-        appointment_date: apt.appointment_date || apt.scheduled_date || new Date().toISOString(),
+        appointment_date: apt.appointment_date || apt.scheduled_date,
         status: apt.status || 'scheduled',
         created_at: apt.created_at || new Date().toISOString(),
         notes: apt.notes,
@@ -186,12 +196,19 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         qualiphyMeetingUuid: apt.qualiphy_meeting_uuid,
         qualiphyPatientExamId: apt.qualiphy_patient_exam_id,
         qualiphyExamId: apt.qualiphy_exam_id,
-        qualiphyExamStatus: apt.qualiphy_exam_status
+        qualiphyExamStatus: apt.qualiphy_exam_status,
+        qualiphyProviderName: apt.qualiphy_provider_name,
+        payment_status: apt.payment_status,
+        payment_method: apt.payment_method,
+        stripe_payment_intent_id: apt.stripe_payment_intent_id,
+        stripe_session_id: apt.stripe_session_id,
+        requires_subscription: apt.requires_subscription || false
       }));
       
       const hasActiveAppointment = appointmentsData.some(apt => 
-        apt.status.toLowerCase() !== 'completed' && 
-        apt.status.toLowerCase() !== 'cancelled'
+        apt.status !== 'completed' && 
+        apt.status !== 'cancelled' &&
+        apt.payment_status === 'paid'
       );
       
       set({ 
@@ -213,6 +230,73 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       });
     } finally {
       set({ loading: false });
+    }
+  },
+  
+  refreshUserAppointments: async (userId: string) => {
+    set({ refreshingAppointments: true });
+    
+    try {
+      // First sync appointment statuses with Qualiphy and Stripe
+      await get().syncAppointmentStatuses();
+      
+      // Then fetch the updated appointment data
+      const { data: supabaseData, error: supabaseError } = await supabase
+        .from('user_appointments')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
+      
+      if (supabaseError) {
+        throw new Error(supabaseError.message);
+      }
+      
+      // Transform data with the same logic as fetchUserAppointments
+      const appointmentsData: Appointment[] = (supabaseData || []).map(apt => ({
+        id: apt.id,
+        treatment_name: apt.treatment_name || 'Consultation',
+        appointment_date: apt.appointment_date || apt.scheduled_date,
+        status: apt.status || 'scheduled',
+        created_at: apt.created_at || new Date().toISOString(),
+        notes: apt.notes,
+        qualiphyMeetingUrl: apt.qualiphy_meeting_url,
+        qualiphyMeetingUuid: apt.qualiphy_meeting_uuid,
+        qualiphyPatientExamId: apt.qualiphy_patient_exam_id,
+        qualiphyExamId: apt.qualiphy_exam_id,
+        qualiphyExamStatus: apt.qualiphy_exam_status,
+        qualiphyProviderName: apt.qualiphy_provider_name,
+        payment_status: apt.payment_status,
+        payment_method: apt.payment_method,
+        stripe_payment_intent_id: apt.stripe_payment_intent_id,
+        stripe_session_id: apt.stripe_session_id,
+        requires_subscription: apt.requires_subscription || false
+      }));
+      
+      const hasActiveAppointment = appointmentsData.some(apt => 
+        apt.status !== 'completed' && 
+        apt.status !== 'cancelled' &&
+        apt.payment_status === 'paid'
+      );
+      
+      set({ 
+        appointments: appointmentsData,
+        hasActiveAppointment,
+        refreshingAppointments: false
+      });
+      
+      // Update canAccessAppointmentPage flag
+      const { hasActiveSubscription } = get();
+      set({
+        canAccessAppointmentPage: hasActiveSubscription || hasActiveAppointment
+      });
+      
+    } catch (error) {
+      console.error('Error refreshing appointments:', error);
+      set({ 
+        error: error instanceof Error ? error.message : 'Unknown error refreshing appointments',
+        refreshingAppointments: false
+      });
     }
   },
   
@@ -309,7 +393,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       }
       
       const result = await response.json();
-      console.log("Sync result:", result);
+      console.log("Subscription sync result:", result);
       
       // Refresh subscriptions after sync
       await get().fetchUserSubscriptions(userId);
@@ -322,6 +406,37 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         error: error instanceof Error ? error.message : 'Unknown error syncing statuses',
         syncingSubscriptions: false
       });
+      return false;
+    }
+  },
+  
+  syncAppointmentStatuses: async (appointmentId?: string) => {
+    try {
+      // Create the request body based on whether we're syncing a specific appointment
+      const requestBody = appointmentId 
+        ? JSON.stringify({ appointmentId }) 
+        : JSON.stringify({}); // Sync all appointments if no ID provided
+      
+      // Call the appointment status sync API
+      const response = await fetch('/api/appointments/sync-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: requestBody,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync appointment statuses');
+      }
+      
+      const result = await response.json();
+      console.log("Appointment sync result:", result);
+      
+      return true;
+    } catch (error) {
+      console.error('Error syncing appointment statuses:', error);
       return false;
     }
   }

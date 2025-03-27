@@ -1,7 +1,8 @@
-// Updated version of src/store/subscriptionStore.ts
+// src/store/subscriptionStore.ts
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import { cancelSubscription } from '@/services/subscriptionService';
+import { SubscriptionStatus, BillingPeriod } from '@/types/subscription';
 
 // Define types for our subscription and appointment data
 export interface Subscription {
@@ -12,12 +13,13 @@ export interface Subscription {
   billing_period: string;
   next_billing_date: string;
   start_date: string;
-  totalUsers: number;
-  products: SubscriptionProduct[];
+  totalUsers?: number;
+  products?: SubscriptionProduct[];
   appointmentsIncluded: number;
   appointmentsUsed: number;
   stripe_subscription_id?: string;
   sanity_id?: string;
+  is_active: boolean;
 }
 
 export interface SubscriptionProduct {
@@ -92,9 +94,10 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         id: sub.id,
         plan_name: sub.plan_name || sub.subscription_name || 'Subscription',
         status: sub.status || 'Unknown',
+        is_active: sub.is_active || false,
         billing_amount: sub.billing_amount || 0,
         billing_period: sub.billing_period || 'monthly',
-        next_billing_date: sub.next_billing_date || new Date().toISOString(),
+        next_billing_date: sub.next_billing_date || sub.end_date || new Date().toISOString(),
         start_date: sub.start_date || new Date().toISOString(),
         totalUsers: 0, // Optional metadata
         products: [], // Could be populated from another query if needed
@@ -109,21 +112,31 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         sub.status.toLowerCase() === 'pending'
       );
       
-      // Check if any subscription has stripe_subscription_id but still shows pending status
+      // Check for any inconsistencies between status and is_active
       const hasInconsistentSubscriptions = subscriptionsData.some(sub => 
+        (sub.status.toLowerCase() === 'active' && !sub.is_active) ||
+        (sub.status.toLowerCase() !== 'active' && sub.is_active)
+      );
+      
+      // Check if any subscription has stripe_subscription_id but still shows pending status
+      const hasUnprocessedSubscriptions = subscriptionsData.some(sub => 
         sub.status.toLowerCase() === 'pending' && !!sub.stripe_subscription_id
       );
       
       set({ 
         subscriptions: subscriptionsData,
         hasActiveSubscription: subscriptionsData.some(sub => 
-          ['active', 'trialing', 'past_due', 'cancelling'].includes(sub.status.toLowerCase())
+          (sub.status.toLowerCase() === 'active' || 
+           sub.status.toLowerCase() === 'trialing' || 
+           sub.status.toLowerCase() === 'past_due' || 
+           sub.status.toLowerCase() === 'cancelling') && 
+          sub.is_active === true
         )
       });
       
-      // If there are inconsistent subscriptions, immediately try to sync status
-      if (hasInconsistentSubscriptions) {
-        console.log("Found inconsistent subscriptions, syncing status");
+      // Auto-sync if we detect issues
+      if (hasUnprocessedSubscriptions || hasInconsistentSubscriptions) {
+        console.log("Found subscription inconsistencies, automatically syncing status");
         // This will trigger in the background, we don't await it
         get().syncSubscriptionStatuses(userId);
       }
@@ -137,7 +150,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error fetching subscriptions',
         subscriptions: []
       });
     } finally {
@@ -176,26 +189,26 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         qualiphyExamStatus: apt.qualiphy_exam_status
       }));
       
-      const hasActive = appointmentsData.some(apt => 
+      const hasActiveAppointment = appointmentsData.some(apt => 
         apt.status.toLowerCase() !== 'completed' && 
         apt.status.toLowerCase() !== 'cancelled'
       );
       
       set({ 
         appointments: appointmentsData,
-        hasActiveAppointment: hasActive
+        hasActiveAppointment
       });
       
       // After fetching both subscriptions and appointments, determine if user can access appointment page
       const { hasActiveSubscription } = get();
       set({
-        canAccessAppointmentPage: hasActiveSubscription || hasActive
+        canAccessAppointmentPage: hasActiveSubscription || hasActiveAppointment
       });
       
     } catch (error) {
       console.error('Error fetching appointments:', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error fetching appointments',
         appointments: []
       });
     } finally {
@@ -225,7 +238,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     } catch (error) {
       console.error('Error checking user access:', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error checking access',
         canAccessAppointmentPage: false 
       });
       return false;
@@ -254,7 +267,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         if (sub.id === subscriptionId) {
           return {
             ...sub,
-            status: 'cancelling'
+            status: 'cancelling',
+            is_active: true // Still active until period ends
           };
         }
         return sub;
@@ -269,15 +283,13 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     } catch (error) {
       console.error('Error cancelling subscription:', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error cancelling subscription',
         cancellingId: null
       });
       return false;
     }
   },
   
-  // New method to fix subscription statuses
-    
   syncSubscriptionStatuses: async (userId: string) => {
     try {
       set({ syncingSubscriptions: true, error: null });
@@ -307,7 +319,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     } catch (error) {
       console.error('Error syncing subscription statuses:', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error syncing statuses',
         syncingSubscriptions: false
       });
       return false;

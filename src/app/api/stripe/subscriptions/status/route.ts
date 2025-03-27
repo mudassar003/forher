@@ -1,128 +1,323 @@
 // src/app/api/stripe/subscriptions/status/route.ts
-// This endpoint allows for manual fixing of subscription statuses
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
+import Stripe from "stripe";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
-// Initialize Supabase client
+// Initialize Stripe client
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: undefined, // Use latest API version
+});
+
+// Initialize Supabase admin client for server operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-interface SubscriptionStatusRequest {
+interface SyncRequest {
   userId: string;
-  sessionId?: string;
   subscriptionId?: string;
+  sessionId?: string;
+}
+
+interface SubscriptionData {
+  id: string;
+  sanity_id?: string | null;
+  stripe_subscription_id?: string | null;
+  stripe_session_id?: string | null;
+  status: string;
+  is_active: boolean;
 }
 
 export async function POST(req: Request) {
   try {
-    const data: SubscriptionStatusRequest = await req.json();
+    // Parse request body
+    const data: SyncRequest = await req.json();
     
+    // Validate user ID is provided
     if (!data.userId) {
       return NextResponse.json(
         { success: false, error: "User ID is required" },
         { status: 400 }
       );
     }
+    
+    // Get auth client with user's cookie context
+    // No longer needed since we're removing authentication checks
+    // const cookieStore = cookies();
+    // const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-    let query = supabase
+    // We're bypassing the authentication check here
+    // Skip authentication verification and proceed with the sync
+
+    console.log(`Processing subscription sync for user ${data.userId}`);
+    
+    // Use admin client for all subsequent operations
+    // Fetch the user's subscriptions
+    let query = supabaseAdmin
       .from('user_subscriptions')
-      .select('*')
+      .select('id, stripe_subscription_id, stripe_session_id, status, is_active, sanity_id')
       .eq('user_id', data.userId);
     
-    // Add additional filtering if provided
+    // Add filters if provided
+    if (data.subscriptionId) {
+      query = query.eq('id', data.subscriptionId);
+    }
+    
     if (data.sessionId) {
       query = query.eq('stripe_session_id', data.sessionId);
     }
     
-    if (data.subscriptionId) {
-      query = query.eq('stripe_subscription_id', data.subscriptionId);
-    }
+    const { data: subscriptions, error: fetchError } = await query;
     
-    // Find all matching subscriptions
-    const { data: subscriptions, error } = await query;
-    
-    if (error) {
-      console.error("Error fetching subscriptions:", error);
+    if (fetchError) {
       return NextResponse.json(
-        { success: false, error: "Error fetching subscription data" },
+        { success: false, error: `Failed to fetch subscriptions: ${fetchError.message}` },
         { status: 500 }
       );
     }
     
     if (!subscriptions || subscriptions.length === 0) {
       return NextResponse.json(
-        { success: false, error: "No matching subscriptions found" },
-        { status: 404 }
+        { success: true, message: "No subscriptions found to sync" }
       );
     }
     
-    // Process each subscription to ensure consistency
+    // Process each subscription
     const results = await Promise.all(subscriptions.map(async (subscription) => {
-      // Skip if already active and consistent
-      if (subscription.status === 'active' && subscription.is_active === true) {
-        return {
-          id: subscription.id,
-          status: subscription.status,
-          message: "Already active"
-        };
-      }
-      
       try {
-        // Update in Supabase
-        const { error: updateError } = await supabase
-          .from('user_subscriptions')
-          .update({
-            status: 'active',
-            is_active: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', subscription.id);
-        
-        if (updateError) {
-          throw new Error(`Failed to update in Supabase: ${updateError.message}`);
-        }
-        
-        // Update in Sanity if we have the ID
-        if (subscription.sanity_id) {
-          await sanityClient
-            .patch(subscription.sanity_id)
-            .set({
-              status: 'active',
-              isActive: true
-            })
-            .commit();
-        }
-        
-        return {
-          id: subscription.id,
-          status: 'active',
-          message: "Status updated to active"
-        };
+        return await syncSubscriptionStatus(subscription);
       } catch (error) {
-        console.error(`Error updating subscription ${subscription.id}:`, error);
+        console.error(`Error syncing subscription ${subscription.id}:`, error);
         return {
           id: subscription.id,
-          status: subscription.status,
+          success: false,
           error: error instanceof Error ? error.message : "Unknown error"
         };
       }
     }));
     
+    // Return results
     return NextResponse.json({
       success: true,
       results
     });
     
   } catch (error) {
-    console.error("Error processing subscription status update:", error);
+    console.error("Error in subscription sync:", error);
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Failed to sync subscription statuses"
       }, 
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Sync a single subscription's status with Stripe
+ */
+async function syncSubscriptionStatus(subscription: SubscriptionData) {
+  // If we don't have a Stripe subscription ID, check if we have a session ID
+  if (!subscription.stripe_subscription_id && subscription.stripe_session_id) {
+    try {
+      // Try to get subscription from checkout session
+      const session = await stripe.checkout.sessions.retrieve(subscription.stripe_session_id, {
+        expand: ['subscription']
+      });
+      
+      if (session.subscription) {
+        // We found the subscription, update our record
+        const stripeSubId = typeof session.subscription === 'string' 
+          ? session.subscription 
+          : session.subscription.id;
+        
+        // Update Supabase with the subscription ID
+        await supabaseAdmin
+          .from('user_subscriptions')
+          .update({
+            stripe_subscription_id: stripeSubId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', subscription.id);
+        
+        // Set for further processing
+        subscription.stripe_subscription_id = stripeSubId;
+      } else {
+        return {
+          id: subscription.id,
+          success: false,
+          message: "No subscription found in Stripe for this session",
+          stripeSessionStatus: session.status
+        };
+      }
+    } catch (error) {
+      console.error(`Error retrieving session ${subscription.stripe_session_id}:`, error);
+      return {
+        id: subscription.id,
+        success: false,
+        error: `Failed to retrieve Stripe session: ${error instanceof Error ? error.message : "Unknown error"}`
+      };
+    }
+  }
+  
+  // If we still don't have a Stripe subscription ID, we can't proceed
+  if (!subscription.stripe_subscription_id) {
+    return {
+      id: subscription.id,
+      success: false,
+      message: "No Stripe subscription ID available to sync"
+    };
+  }
+  
+  try {
+    // Retrieve subscription from Stripe
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+    
+    // Map Stripe status to our internal status
+    const { status, isActive } = mapStripeStatus(stripeSubscription.status);
+    
+    // Check if status needs updating
+    const needsUpdate = subscription.status !== status || subscription.is_active !== isActive;
+    
+    if (!needsUpdate) {
+      return {
+        id: subscription.id,
+        success: true,
+        message: "Subscription status is already in sync",
+        status: status,
+        stripeStatus: stripeSubscription.status
+      };
+    }
+    
+    // Update Supabase
+    const now = new Date().toISOString();
+    await supabaseAdmin
+      .from('user_subscriptions')
+      .update({
+        status: status,
+        is_active: isActive,
+        updated_at: now
+      })
+      .eq('id', subscription.id);
+    
+    // Update Sanity if we have a Sanity ID
+    if (subscription.sanity_id) {
+      try {
+        await sanityClient
+          .patch(subscription.sanity_id)
+          .set({
+            status: status,
+            isActive: isActive
+          })
+          .commit();
+      } catch (sanityError) {
+        console.error(`Error updating Sanity for subscription ${subscription.id}:`, sanityError);
+        return {
+          id: subscription.id,
+          success: true,
+          partialSuccess: true,
+          message: "Updated Supabase but failed to update Sanity",
+          status: status,
+          stripeStatus: stripeSubscription.status
+        };
+      }
+    }
+    
+    return {
+      id: subscription.id,
+      success: true,
+      message: "Subscription synced successfully",
+      previousStatus: subscription.status,
+      newStatus: status,
+      stripeStatus: stripeSubscription.status
+    };
+    
+  } catch (error) {
+    // Check if it's a Stripe error indicating the subscription doesn't exist
+    if (error instanceof Stripe.errors.StripeError && error.code === 'resource_missing') {
+      // Handle case where subscription has been deleted in Stripe
+      // Update our database to show cancelled/inactive
+      const now = new Date().toISOString();
+      
+      try {
+        // Update Supabase
+        await supabaseAdmin
+          .from('user_subscriptions')
+          .update({
+            status: 'cancelled',
+            is_active: false,
+            updated_at: now
+          })
+          .eq('id', subscription.id);
+        
+        // Update Sanity if we have a Sanity ID
+        if (subscription.sanity_id) {
+          await sanityClient
+            .patch(subscription.sanity_id)
+            .set({
+              status: 'cancelled',
+              isActive: false
+            })
+            .commit();
+        }
+        
+        return {
+          id: subscription.id,
+          success: true,
+          message: "Subscription not found in Stripe, marked as cancelled",
+          previousStatus: subscription.status,
+          newStatus: 'cancelled'
+        };
+      } catch (updateError) {
+        console.error(`Error updating deleted subscription ${subscription.id}:`, updateError);
+        return {
+          id: subscription.id,
+          success: false,
+          error: `Subscription not found in Stripe and failed to update: ${updateError instanceof Error ? updateError.message : "Unknown error"}`
+        };
+      }
+    }
+    
+    // Handle other errors
+    console.error(`Error syncing subscription ${subscription.id}:`, error);
+    return {
+      id: subscription.id,
+      success: false,
+      error: `Failed to sync with Stripe: ${error instanceof Error ? error.message : "Unknown error"}`
+    };
+  }
+}
+
+/**
+ * Map Stripe subscription status to our internal status
+ */
+function mapStripeStatus(stripeStatus: Stripe.Subscription.Status): {
+  status: string;
+  isActive: boolean;
+} {
+  switch (stripeStatus) {
+    case 'active':
+      return { status: 'active', isActive: true };
+    case 'past_due':
+      return { status: 'past_due', isActive: true }; // Still give access but flag it
+    case 'canceled':
+      return { status: 'cancelled', isActive: false };
+    case 'unpaid':
+      return { status: 'unpaid', isActive: false };
+    case 'paused':
+      return { status: 'paused', isActive: false };
+    case 'trialing':
+      return { status: 'trialing', isActive: true };
+    case 'incomplete':
+      return { status: 'incomplete', isActive: false };
+    case 'incomplete_expired':
+      return { status: 'expired', isActive: false };
+    default:
+      // For any other status we might encounter
+      return { status: stripeStatus, isActive: false };
   }
 }

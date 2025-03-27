@@ -19,6 +19,7 @@ export interface SanitySubscriptionUpdateData {
   endDate?: string;
   nextBillingDate?: string;
   appointmentsUsed?: number;
+  stripeSubscriptionId?: string; // Added this field to match what's used in checkout.ts
 }
 
 export interface OrderUpdateData {

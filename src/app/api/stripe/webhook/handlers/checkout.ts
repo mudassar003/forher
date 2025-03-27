@@ -1,9 +1,13 @@
-// Updated version of src/app/api/stripe/webhook/handlers/checkout.ts
+// src/app/api/stripe/webhook/handlers/checkout.ts
 import { NextResponse } from "next/server";
 import { Stripe } from "stripe";
 import stripe from "../utils/stripe-client";
 import { supabase, sanityClient } from "../utils/db-clients";
-import { WebhookResponse, CheckoutSessionMetadata } from "../utils/types";
+import { 
+  WebhookResponse, 
+  CheckoutSessionMetadata,
+  SanitySubscriptionUpdateData 
+} from "../utils/types";
 import {
   getSupabaseSubscription,
   getSupabaseAppointment,
@@ -172,20 +176,23 @@ async function handleSubscriptionPurchase(
         endDate = new Date(subscription.current_period_end * 1000);
       }
       
-      // Update Sanity user subscription
-      await updateSanitySubscription(userSubscriptionSanityId, {
+      // Create the Sanity update data with the correct type
+      const sanityUpdateData: SanitySubscriptionUpdateData = {
         isActive: true,
-        status: 'active', // Important! Ensure status is set to 'active'
+        status: 'active',
         endDate: endDate.toISOString(),
         nextBillingDate: endDate.toISOString(),
-        stripeSubscriptionId: subscription.id // Ensure Stripe subscription ID is set
-      });
+        stripeSubscriptionId: subscription.id // Now this is properly typed
+      };
+      
+      // Update Sanity user subscription
+      await updateSanitySubscription(userSubscriptionSanityId, sanityUpdateData);
       
       console.log(`✅ Activated subscription in Sanity with ID: ${userSubscriptionSanityId}`);
       
       // Update Supabase user subscription
       await updateSupabaseSubscription(supabaseSubscriptionId, {
-        status: 'active', // Important! Ensure status is set to 'active'
+        status: 'active',
         is_active: true,
         stripe_subscription_id: subscription.id,
         start_date: startDate.toISOString(),

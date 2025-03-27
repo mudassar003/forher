@@ -6,25 +6,30 @@ import { QualiphyExamStatus, PaymentStatus } from '@/types/appointment';
 interface StatusBadgesProps {
   qualiphyStatus?: QualiphyExamStatus;
   paymentStatus?: PaymentStatus;
+  requiresSubscription?: boolean;
 }
 
-export const AppointmentStatusBadges = ({ qualiphyStatus, paymentStatus }: StatusBadgesProps) => {
+export const AppointmentStatusBadges = ({ 
+  qualiphyStatus, 
+  paymentStatus,
+  requiresSubscription
+}: StatusBadgesProps) => {
   // Define color and text mapping for Qualiphy statuses
   const qualiphyStatusMap = {
     'Approved': { 
-      color: 'bg-green-100 text-green-800', 
+      color: 'bg-green-100 text-green-800 border border-green-200', 
       description: 'Consultation Completed' 
     },
     'Deferred': { 
-      color: 'bg-yellow-100 text-yellow-800', 
+      color: 'bg-yellow-100 text-yellow-800 border border-yellow-200', 
       description: 'Consultation Pending Review' 
     },
     'Pending': { 
-      color: 'bg-blue-100 text-blue-800', 
+      color: 'bg-blue-100 text-blue-800 border border-blue-200', 
       description: 'Awaiting Consultation' 
     },
     'N/A': { 
-      color: 'bg-gray-100 text-gray-800', 
+      color: 'bg-gray-100 text-gray-800 border border-gray-200', 
       description: 'No Consultation' 
     }
   };
@@ -32,23 +37,23 @@ export const AppointmentStatusBadges = ({ qualiphyStatus, paymentStatus }: Statu
   // Define color and text mapping for payment statuses
   const paymentStatusMap = {
     'paid': {
-      color: 'bg-green-100 text-green-800',
+      color: 'bg-green-100 text-green-800 border border-green-200',
       description: 'Payment Confirmed'
     },
     'pending': {
-      color: 'bg-yellow-100 text-yellow-800',
+      color: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
       description: 'Payment Pending'
     },
     'failed': {
-      color: 'bg-red-100 text-red-800',
+      color: 'bg-red-100 text-red-800 border border-red-200',
       description: 'Payment Failed'
     },
     'refunded': {
-      color: 'bg-purple-100 text-purple-800',
+      color: 'bg-purple-100 text-purple-800 border border-purple-200',
       description: 'Payment Refunded'
     },
     'cancelled': {
-      color: 'bg-gray-100 text-gray-800',
+      color: 'bg-gray-100 text-gray-800 border border-gray-200',
       description: 'Payment Cancelled'
     }
   };
@@ -65,9 +70,10 @@ export const AppointmentStatusBadges = ({ qualiphyStatus, paymentStatus }: Statu
 
   return (
     <div className="flex flex-col space-y-2">
+      {/* Payment Status */}
       {paymentInfo && (
         <div className="flex items-center space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentInfo.color}`}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${paymentInfo.color}`}>
             Payment: {paymentStatus || 'Pending'}
           </span>
           <span className="text-sm text-gray-600">
@@ -76,13 +82,23 @@ export const AppointmentStatusBadges = ({ qualiphyStatus, paymentStatus }: Statu
         </div>
       )}
       
+      {/* Qualiphy Status - Now more prominent */}
       {qualiphyInfo && (
         <div className="flex items-center space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${qualiphyInfo.color}`}>
-            Status: {qualiphyStatus || 'Pending'}
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${qualiphyInfo.color}`}>
+            Consultation: {qualiphyStatus || 'Pending'}
           </span>
           <span className="text-sm text-gray-600">
             {qualiphyInfo.description}
+          </span>
+        </div>
+      )}
+
+      {/* Subscription Requirement */}
+      {requiresSubscription && (
+        <div className="flex items-center space-x-2">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+            Subscription Required
           </span>
         </div>
       )}

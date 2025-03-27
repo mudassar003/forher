@@ -1,554 +1,170 @@
 // src/app/api/stripe/appointments/route.ts
-
-import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
-import { client as sanityClient } from "@/sanity/lib/client";
-
-// Define types for data structures
-interface SanityAppointment {
-  _id: string;
-  title: string;
-  price: number;
-  duration: number;
-  stripePriceId?: string;
-  stripeProductId?: string;
-  qualiphyExamId?: number;
-  requiresSubscription: boolean;
-}
-
-interface SanityUserSubscription {
-  _id: string;
-  subscription: {
-    _id: string;
-    title: string;
-    appointmentAccess: boolean;
-    appointmentDiscountPercentage: number;
-  };
-  hasAppointmentAccess: boolean;
-  appointmentDiscountPercentage: number;
-  isActive: boolean;
-  status: string;
-}
-
-interface SanityUserAppointment {
-  _type: string;
-  userId: string;
-  userEmail: string;
-  customerName: string;
-  appointmentType: {
-    _type: string;
-    _ref: string;
-  };
-  isFromSubscription: boolean;
-  status: string;
-  createdDate: string;
-  notes: string;
-  requiresSubscription: boolean;
-  paymentStatus: string;
-  subscriptionId?: {
-    _type: string;
-    _ref: string;
-  };
-}
-
-interface StripeCustomer {
-  stripe_customer_id: string;
-  user_id: string;
-  email: string;
-}
-
-interface SupabaseUserAppointment {
-  user_id: string;
-  user_email: string;
-  customer_name: string;
-  sanity_id: string;
-  appointment_type_id: string;
-  treatment_name: string;
-  stripe_session_id: string;
-  stripe_customer_id: string;
-  status: string;
-  created_at: string;
-  price: number;
-  duration: number;
-  is_from_subscription: boolean;
-  subscription_id: string | null;
-  qualiphy_exam_id: number | null;
-  payment_status: string;
-  requires_subscription: boolean;
-}
-
-interface AppointmentRequest {
-  appointmentId: string;
-  userId: string;
-  userEmail: string;
-  userName?: string;
-  subscriptionId?: string;
-}
-
-interface QualiphyPatientExam {
-  id: number;
-  exam_id: number;
-  status: string;
-  patient_id: number;
-  created_at: string;
-  updated_at: string;
-  results?: string;
-}
-
-interface QualiphyResponse {
-  http_code: number;
-  meeting_url?: string;
-  meeting_uuid?: string;
-  patient_exams?: QualiphyPatientExam[];
-  error_message?: string;
-}
-
-interface QualiphyAppointmentResult {
-  meetingUrl: string;
-  meetingUuid: string;
-  patientExams: QualiphyPatientExam[];
-}
-
-// Initialize Stripe with latest API version
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: undefined, // Use latest API version
-});
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { validate as validateUUID } from 'uuid';
+import { createCheckoutSession } from '@/lib/stripe';
+import { client as sanityClient } from '@/sanity/lib/client';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error("Missing required Supabase environment variables");
-}
-
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Helper function to make Qualiphy API calls
-async function createQualiphyAppointment(
-  customerName: string, 
-  email: string, 
-  examId: number
-): Promise<QualiphyAppointmentResult> {
+export async function POST(request: NextRequest) {
   try {
-    const apiKey = process.env.QUALIPHY_API_KEY;
-    if (!apiKey) {
-      throw new Error("Qualiphy API key is not configured");
-    }
+    // Parse the request body
+    const { appointmentId, userId, userEmail, userName, subscriptionId } = await request.json();
 
-    // Format date of birth, default to adult age if not available
-    const dob = "1990-01-01"; // Default DOB
-
-    // Format phone number
-    const phoneNumber = "1234567890"; // Default phone number
-
-    // Create the payload
-    const payload = {
-      api_key: apiKey,
-      exams: [examId],
-      first_name: customerName.split(' ')[0] || "Customer",
-      last_name: customerName.split(' ').slice(1).join(' ') || "User",
-      email: email,
-      dob: dob,
-      phone_number: phoneNumber,
-      // Optional webhook for receiving results
-      webhook_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/qualiphy/webhook`
-    };
-
-    // Make the API call to Qualiphy
-    const response = await fetch("https://api.qualiphy.me/api/exam_invite/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json() as QualiphyResponse;
-    
-    if (!response.ok || result.http_code !== 200) {
-      throw new Error(result.error_message || "Failed to create Qualiphy appointment");
-    }
-    
-    if (!result.meeting_url || !result.meeting_uuid || !result.patient_exams) {
-      throw new Error("Invalid response from Qualiphy API");
-    }
-    
-    return {
-      meetingUrl: result.meeting_url,
-      meetingUuid: result.meeting_uuid,
-      patientExams: result.patient_exams
-    };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error creating Qualiphy appointment";
-    console.error("Error creating Qualiphy appointment:", error);
-    throw new Error(errorMessage);
-  }
-}
-
-export async function POST(req: Request): Promise<NextResponse> {
-  try {
-    const data: AppointmentRequest = await req.json();
-    
     // Validate required fields
-    if (!data.appointmentId || !data.userId || !data.userEmail) {
+    if (!appointmentId || !userId || !userEmail) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
-    
-    console.log(`Creating appointment for user ${data.userId} with appointment type ${data.appointmentId}`);
-    
-    // 1. Fetch appointment details from Sanity
-    const appointment = await sanityClient.fetch<SanityAppointment>(
-      `*[_type == "appointment" && _id == $id][0]{
-        _id,
-        title,
-        price,
-        duration,
-        stripePriceId,
-        stripeProductId,
-        qualiphyExamId,
-        requiresSubscription
-      }`,
-      { id: data.appointmentId }
-    );
-    
+
+    // Validate UUID format if a subscription ID is provided
+    if (subscriptionId && !validateUUID(subscriptionId)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Invalid subscription ID format: ${subscriptionId} is not a valid UUID` 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Fetch the appointment details from Sanity
+    const appointmentQuery = `*[_type == "appointment" && _id == $appointmentId][0] {
+      _id,
+      title,
+      price,
+      description,
+      duration,
+      stripePriceId,
+      qualiphyExamId,
+      requiresSubscription
+    }`;
+
+    const appointment = await sanityClient.fetch(appointmentQuery, { appointmentId });
+
     if (!appointment) {
       return NextResponse.json(
-        { success: false, error: "Appointment type not found" },
+        { success: false, error: 'Appointment type not found' },
         { status: 404 }
       );
     }
-    
-    console.log(`Fetched appointment: ${appointment.title}`);
-    
-    // 2. If appointment requires subscription, check if user has an active subscription
+
+    // Check if this appointment requires a subscription
     if (appointment.requiresSubscription) {
-      // Check if user has an active subscription with appointment access
-      const userSubscription = await sanityClient.fetch<SanityUserSubscription>(
-        `*[_type == "userSubscription" && userId == $userId && isActive == true][0]{
-          _id,
-          subscription->{
-            _id,
-            title,
-            appointmentAccess,
-            appointmentDiscountPercentage
-          },
-          hasAppointmentAccess,
-          appointmentDiscountPercentage,
-          isActive,
-          status
-        }`,
-        { userId: data.userId }
-      );
-      
-      // If no active subscription or subscription doesn't have appointment access
-      if (!userSubscription || !userSubscription.isActive || 
-          userSubscription.status !== 'active' || !userSubscription.hasAppointmentAccess) {
+      // If it requires a subscription but none was provided
+      if (!subscriptionId) {
         return NextResponse.json(
-          { success: false, error: "This appointment requires an active subscription with appointment access" },
-          { status: 403 }
+          { success: false, error: 'This appointment requires an active subscription' },
+          { status: 400 }
         );
       }
-      
-      console.log(`User has active subscription with appointment access`);
-      data.subscriptionId = userSubscription._id;
-    }
-    
-    // 3. Proceed with regular appointment creation flow...
-    let fromSubscription = false;
-    let appointmentPrice = appointment.price;
-    let appointmentDiscount = 0;
-    let userSubscriptionId = data.subscriptionId;
-    
-    // Check if user has a subscription and apply discounts if applicable
-    if (userSubscriptionId) {
-      // First try to fetch by Supabase UUID
-      const { data: supabaseSubscription, error } = await supabase
+
+      // Verify that the subscription exists and is active
+      const { data: subscriptionData, error: subError } = await supabase
         .from('user_subscriptions')
-        .select('id, sanity_id, has_appointment_access, appointment_discount_percentage, is_active, status')
-        .eq('id', userSubscriptionId)
-        .eq('user_id', data.userId)
+        .select('*')
+        .eq('id', subscriptionId)
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .in('status', ['active', 'trialing', 'cancelling'])
         .single();
-      
-      if (supabaseSubscription && supabaseSubscription.is_active && 
-          ['active', 'trialing', 'cancelling'].includes(supabaseSubscription.status) && 
-          supabaseSubscription.has_appointment_access) {
-        
-        console.log(`User has active subscription with appointment access (Supabase ID: ${userSubscriptionId})`);
-        fromSubscription = true;
-        
-        // Apply discount if available from Supabase record
-        if (supabaseSubscription.appointment_discount_percentage > 0) {
-          appointmentDiscount = supabaseSubscription.appointment_discount_percentage;
-          appointmentPrice = appointment.price * (1 - (appointmentDiscount / 100));
-          console.log(`Applied ${appointmentDiscount}% discount to appointment price: $${appointmentPrice}`);
-        }
-        
-        // Set Sanity ID for reference
-        if (supabaseSubscription.sanity_id) {
-          userSubscriptionId = supabaseSubscription.sanity_id;
-        }
-      } else {
-        // If not found or not active in Supabase, try Sanity as fallback
-        console.log(`Subscription not found in Supabase or not active, trying Sanity lookup`);
-        
-        const userSubscription = await sanityClient.fetch<SanityUserSubscription>(
-          `*[_type == "userSubscription" && userId == $userId && isActive == true][0]{
-            _id,
-            subscription->{
-              _id,
-              title,
-              appointmentAccess,
-              appointmentDiscountPercentage
-            },
-            hasAppointmentAccess,
-            appointmentDiscountPercentage
-          }`,
-          { userId: data.userId }
+
+      if (subError || !subscriptionData) {
+        console.error('Subscription validation error:', subError);
+        return NextResponse.json(
+          { success: false, error: 'Valid active subscription not found' },
+          { status: 400 }
         );
-        
-        if (userSubscription && userSubscription.hasAppointmentAccess) {
-          console.log(`User has active subscription with appointment access (Sanity ID: ${userSubscription._id})`);
-          fromSubscription = true;
-          
-          // Apply discount if available
-          if (userSubscription.appointmentDiscountPercentage > 0) {
-            appointmentDiscount = userSubscription.appointmentDiscountPercentage;
-            appointmentPrice = appointment.price * (1 - (appointmentDiscount / 100));
-            console.log(`Applied ${appointmentDiscount}% discount to appointment price: $${appointmentPrice}`);
-          }
-          
-          // Update the subscription ID to use the Sanity ID
-          userSubscriptionId = userSubscription._id;
-        }
       }
     }
-    
-    // 4. Create or get Stripe product and price IDs
-    let stripeProductId = appointment.stripeProductId;
-    let stripePriceId = appointment.stripePriceId;
-    
-    // If no Stripe product ID exists, create one
-    if (!stripeProductId) {
-      console.log("Creating new Stripe product");
-      const product = await stripe.products.create({
-        name: appointment.title,
-        description: `${appointment.title} - ${appointment.duration} minute appointment`,
-        metadata: {
-          sanityId: appointment._id,
-          requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
-        }
-      });
-      
-      stripeProductId = product.id;
-      
-      // Update Sanity with the Stripe product ID
-      await sanityClient
-        .patch(appointment._id)
-        .set({ stripeProductId: product.id })
-        .commit();
-        
-      console.log(`Created Stripe product: ${product.id}`);
-    }
-    
-    // If no Stripe price ID exists or we have a discounted price, create one
-    const priceAmount = Math.round(appointmentPrice * 100); // Convert to cents
-    if (!stripePriceId || appointmentDiscount > 0) {
-      console.log(`Creating new Stripe price for amount: $${appointmentPrice}`);
-      
-      const price = await stripe.products.create({
-        name: appointment.title,
-        description: `${appointment.title} - ${appointment.duration} minute appointment`,
-        metadata: {
-          sanityId: appointment._id,
-          requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
-        }
-      });
-      
-      stripePriceId = price.id;
-      
-      // Only update the default price ID if this isn't a one-off discounted price
-      if (appointmentDiscount === 0) {
-        // Update Sanity with the Stripe price ID
-        await sanityClient
-          .patch(appointment._id)
-          .set({ stripePriceId: price.id })
-          .commit();
-          
-        console.log(`Updated default Stripe price ID: ${price.id}`);
-      }
-    }
-    
-    // 5. Check if customer exists, if not create one
-    const { data: customerData, error: customerError } = await supabase
-      .from('stripe_customers')
-      .select('stripe_customer_id, user_id, email')
-      .eq('user_id', data.userId)
-      .single<StripeCustomer>();
-      
-    let stripeCustomerId: string;
-    
-    if (customerError || !customerData) {
-      console.log(`Creating new customer for user ${data.userId}`);
-      
-      // Create customer params with proper typing
-      const customerParams: Stripe.CustomerCreateParams = {
-        email: data.userEmail,
-        metadata: {
-          userId: data.userId
-        }
-      };
-      
-      // Add name if provided
-      if (data.userName) {
-        customerParams.name = data.userName;
-      }
-      
-      // Create a Stripe customer
-      const customer = await stripe.customers.create(customerParams);
-      
-      stripeCustomerId = customer.id;
-      
-      // Save customer ID to Supabase
-      const { error: insertError } = await supabase
-        .from('stripe_customers')
-        .insert({
-          user_id: data.userId,
-          stripe_customer_id: customer.id,
-          email: data.userEmail
-        });
-        
-      if (insertError) {
-        console.error("Error inserting customer into Supabase:", insertError);
-        throw new Error(`Failed to create customer record: ${insertError.message}`);
-      }
-        
-      console.log(`Created Stripe customer: ${customer.id}`);
-    } else {
-      stripeCustomerId = customerData.stripe_customer_id;
-      console.log(`Using existing Stripe customer: ${stripeCustomerId}`);
-    }
-    
-    // 6. Create a checkout session
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: appointment.title,
-              description: `${appointment.duration} minute appointment${appointment.requiresSubscription ? ' (Requires Subscription)' : ''}`,
-              metadata: {
-                appointmentId: appointment._id,
-                requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
-              }
-            },
-            unit_amount: priceAmount,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',  // One-time payment for appointments
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/account/appointments?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/appointments?canceled=true`,
-      customer: stripeCustomerId,
-      metadata: {
-        userId: data.userId,
-        userEmail: data.userEmail,
-        appointmentId: appointment._id,
-        appointmentType: "oneTime",
-        fromSubscription: fromSubscription.toString(),
-        userSubscriptionId: data.subscriptionId || "",
-        qualiphyExamId: appointment.qualiphyExamId?.toString() || "",
-        requiresSubscription: appointment.requiresSubscription ? 'true' : 'false'
-      },
-      client_reference_id: data.userId,
-    };
-    
-    const session = await stripe.checkout.sessions.create(sessionParams);
-    
-    console.log(`Created checkout session: ${session.id}`);
-    
-    // 7. Create a pending appointment in Sanity
-    const createdDate = new Date().toISOString();
-    const userAppointment: SanityUserAppointment = {
-      _type: 'userAppointment',
-      userId: data.userId,
-      userEmail: data.userEmail,
-      customerName: data.userName || data.userEmail.split('@')[0],
-      appointmentType: {
-        _type: 'reference',
-        _ref: appointment._id
-      },
-      isFromSubscription: fromSubscription,
-      status: 'pending',
-      createdDate: createdDate,
-      notes: `Booking created on ${new Date().toLocaleDateString()}. Payment pending.`,
-      requiresSubscription: appointment.requiresSubscription,
-      paymentStatus: 'pending'
-    };
-    
-    // Add subscription reference if applicable
-    if (fromSubscription && data.subscriptionId) {
-      userAppointment.subscriptionId = {
-        _type: 'reference',
-        _ref: data.subscriptionId
-      };
-    }
-    
-    const sanityResponse = await sanityClient.create(userAppointment);
-    console.log(`Created pending Sanity user appointment: ${sanityResponse._id}`);
-    
-    // 8. Create pending appointment in Supabase
-    const supabaseAppointment: SupabaseUserAppointment = {
-      user_id: data.userId,
-      user_email: data.userEmail,
-      customer_name: data.userName || data.userEmail.split('@')[0],
-      sanity_id: sanityResponse._id,
-      appointment_type_id: appointment._id,
-      treatment_name: appointment.title,
-      stripe_session_id: session.id,
-      stripe_customer_id: stripeCustomerId,
-      status: 'pending',
-      created_at: createdDate,
-      price: appointmentPrice,
-      duration: appointment.duration,
-      is_from_subscription: fromSubscription,
-      subscription_id: fromSubscription && data.subscriptionId ? data.subscriptionId : null,
-      qualiphy_exam_id: appointment.qualiphyExamId || null,
-      payment_status: 'pending',
-      requires_subscription: appointment.requiresSubscription
-    };
-    
-    const { error: appointmentError } = await supabase
+
+    // Create a new appointment record in the database
+    const { data: appointmentData, error: appointmentError } = await supabase
       .from('user_appointments')
-      .insert(supabaseAppointment);
-      
+      .insert([
+        {
+          user_id: userId,
+          user_email: userEmail,
+          customer_name: userName || userEmail.split('@')[0],
+          treatment_name: appointment.title,
+          appointment_type_id: appointment._id,
+          sanity_appointment_id: appointment._id,
+          status: 'pending',
+          subscription_id: subscriptionId || null,
+          is_from_subscription: !!subscriptionId,
+          qualiphy_exam_id: appointment.qualiphyExamId,
+          price: appointment.price,
+          duration: appointment.duration,
+          payment_status: 'pending',
+          requires_subscription: appointment.requiresSubscription || false
+        }
+      ])
+      .select()
+      .single();
+
     if (appointmentError) {
-      console.error("Error inserting appointment into Supabase:", appointmentError);
-      throw new Error(`Failed to create appointment record: ${appointmentError.message}`);
+      console.error('Error creating appointment record:', appointmentError);
+      return NextResponse.json(
+        { success: false, error: `Failed to create appointment record: ${appointmentError.message}` },
+        { status: 500 }
+      );
     }
-    
+
+    // Always create a Stripe checkout session for payment, regardless of subscription status
+    const lineItems = [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: appointment.title,
+            description: appointment.description || 'Telehealth Consultation',
+          },
+          unit_amount: Math.round(appointment.price * 100), // Convert to cents
+        },
+        quantity: 1,
+      },
+    ];
+
+    const baseUrl = request.headers.get('origin') || 'http://localhost:3000';
+    const session = await createCheckoutSession({
+      lineItems,
+      successUrl: `${baseUrl}/account/appointments?success=true&appointment_id=${appointmentData.id}`,
+      cancelUrl: `${baseUrl}/appointments?cancelled=true`,
+      metadata: {
+        appointmentId: appointmentData.id,
+        userId,
+        userEmail,
+        appointmentType: appointment._id,
+        subscriptionId: subscriptionId || null,
+      },
+      customerEmail: userEmail,
+    });
+
+    // Update the appointment with the Stripe session ID
+    await supabase
+      .from('user_appointments')
+      .update({
+        stripe_session_id: session.id,
+      })
+      .eq('id', appointmentData.id);
+
     return NextResponse.json({
       success: true,
-      appointmentId: sanityResponse._id,
+      appointmentId: appointmentData.id,
       sessionId: session.id,
-      url: session.url
+      url: session.url,
     });
     
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error creating appointment:", error);
+  } catch (error: any) {
+    console.error('Appointment creation error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: errorMessage || "Failed to create appointment"
-      }, 
+      { success: false, error: error.message || 'An unexpected error occurred' },
       { status: 500 }
     );
   }

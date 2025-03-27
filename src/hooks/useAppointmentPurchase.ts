@@ -39,41 +39,63 @@ export function useAppointmentPurchase() {
       };
 
       // Add subscription ID if using subscription
-      if (options.useSubscription && options.subscriptionId) {
-        // Check if the subscription ID is a Sanity ID (non-UUID format)
-        if (options.subscriptionId && !options.subscriptionId.includes('-')) {
-          // Try to find the corresponding subscription in our loaded subscriptions
-          const matchingSubscription = subscriptions.find(sub => 
-            sub.sanity_id === options.subscriptionId
-          );
-          
-          if (matchingSubscription) {
-            // Use the Supabase UUID instead of Sanity ID
-            params.subscriptionId = matchingSubscription.id;
+      if (options.useSubscription) {
+        // If a specific subscription ID was provided
+        if (options.subscriptionId) {
+          // Check if it's a Sanity ID (non-UUID format)
+          if (!options.subscriptionId.includes('-')) {
+            // Try to find the corresponding subscription in our loaded subscriptions
+            const matchingSubscription = subscriptions.find(sub => 
+              sub.sanity_id === options.subscriptionId
+            );
+            
+            if (matchingSubscription) {
+              // Use the Supabase UUID instead of Sanity ID
+              params.subscriptionId = matchingSubscription.id;
+            } else {
+              console.warn(`Couldn't find subscription with Sanity ID: ${options.subscriptionId}`);
+              // Find the first active subscription instead of continuing without a subscription ID
+              const activeSubscription = findActiveSubscription();
+              if (activeSubscription) {
+                params.subscriptionId = activeSubscription.id;
+              } else {
+                const errorMessage = "Required subscription not found. Please refresh the page and try again.";
+                setError(errorMessage);
+                setIsLoading(false);
+                return { success: false, error: errorMessage };
+              }
+            }
           } else {
-            console.warn(`Couldn't find subscription with Sanity ID: ${options.subscriptionId}`);
-            // Continue without a subscription ID
+            // It's already a UUID format, use as is
+            params.subscriptionId = options.subscriptionId;
           }
         } else {
-          // It's already a UUID format, use as is
-          params.subscriptionId = options.subscriptionId;
+          // No specific subscription ID provided, find the first active one
+          const activeSubscription = findActiveSubscription();
+          
+          if (activeSubscription) {
+            params.subscriptionId = activeSubscription.id;
+          } else if (hasActiveSubscription) {
+            // This case handles when subscriptions data isn't fully loaded yet but we know user has one
+            const errorMessage = "Your subscription details couldn't be loaded. Please try again.";
+            setError(errorMessage);
+            setIsLoading(false);
+            return { success: false, error: errorMessage };
+          } else {
+            const errorMessage = "Active subscription required but not found.";
+            setError(errorMessage);
+            setIsLoading(false);
+            return { success: false, error: errorMessage };
+          }
         }
-      } else if (options.useSubscription && !options.subscriptionId) {
-        // Find the first active subscription
-        const activeSubscription = subscriptions.find(sub => 
+      }
+      
+      // Helper function to find an active subscription
+      function findActiveSubscription() {
+        return subscriptions.find(sub => 
           sub.is_active === true && 
           (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'cancelling')
         );
-        
-        if (activeSubscription) {
-          params.subscriptionId = activeSubscription.id;
-        } else if (hasActiveSubscription) {
-          // This case handles when subscriptions data isn't fully loaded yet but we know user has one
-          const errorMessage = "Your subscription details couldn't be loaded. Please try again.";
-          setError(errorMessage);
-          setIsLoading(false);
-          return { success: false, error: errorMessage };
-        }
       }
       
       // Make API request to create appointment purchase
@@ -88,6 +110,7 @@ export function useAppointmentPurchase() {
       const result = await response.json();
       
       if (!response.ok || !result.success) {
+        console.error("Appointment purchase error:", result);
         throw new Error(result.error || 'Failed to create appointment');
       }
       
@@ -100,6 +123,7 @@ export function useAppointmentPurchase() {
       };
     } catch (error: any) {
       const errorMessage = error.message || 'An error occurred during appointment booking';
+      console.error('Appointment purchase error:', error);
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

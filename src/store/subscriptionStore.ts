@@ -7,6 +7,7 @@ import { AppointmentStatus, PaymentStatus, QualiphyExamStatus } from '@/types/ap
 // Define types for our subscription and appointment data
 export interface Subscription {
   id: string;
+  user_id: string;
   plan_name: string;
   status: string;
   billing_amount: number;
@@ -102,6 +103,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       // Transform data to our Subscription format
       const subscriptionsData: Subscription[] = (supabaseData || []).map(sub => ({
         id: sub.id,
+        user_id: sub.user_id,
         plan_name: sub.plan_name || sub.subscription_name || 'Subscription',
         status: sub.status || 'Unknown',
         is_active: sub.is_active || false,
@@ -238,7 +240,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     
     try {
       // First sync appointment statuses with Qualiphy and Stripe
-      await get().syncAppointmentStatuses();
+      await get().syncAppointmentStatuses(undefined, userId);
       
       // Then fetch the updated appointment data
       const { data: supabaseData, error: supabaseError } = await supabase
@@ -387,12 +389,20 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         body: JSON.stringify({ userId }),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to sync subscription statuses');
+      let result;
+      
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.error("Error parsing subscription sync response:", parseError);
+        throw new Error('Failed to parse server response');
       }
       
-      const result = await response.json();
+      if (!response.ok) {
+        console.error("Subscription sync error details:", result);
+        throw new Error(result?.error || `Server returned ${response.status}: Failed to sync subscription statuses`);
+      }
+      
       console.log("Subscription sync result:", result);
       
       // Refresh subscriptions after sync
@@ -410,12 +420,17 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
     }
   },
   
-  syncAppointmentStatuses: async (appointmentId?: string) => {
+  syncAppointmentStatuses: async (appointmentId?: string, userId?: string) => {
     try {
+      // Get the current user ID if not provided
+      const currentUserId = userId || get().subscriptions[0]?.user_id;
+      
       // Create the request body based on whether we're syncing a specific appointment
       const requestBody = appointmentId 
         ? JSON.stringify({ appointmentId }) 
-        : JSON.stringify({}); // Sync all appointments if no ID provided
+        : currentUserId 
+          ? JSON.stringify({ userId: currentUserId }) 
+          : JSON.stringify({}); // Fallback
       
       // Call the appointment status sync API
       const response = await fetch('/api/appointments/sync-status', {
@@ -428,7 +443,10 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to sync appointment statuses');
+        console.error("Appointment sync error details:", errorData);
+        // Don't throw error to avoid breaking the UI, but log it
+        console.error(`Failed to sync appointment statuses: ${errorData.error || 'Unknown error'}`);
+        return false;
       }
       
       const result = await response.json();

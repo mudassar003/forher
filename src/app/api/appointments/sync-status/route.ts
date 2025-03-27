@@ -3,8 +3,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 import Stripe from "stripe";
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -17,6 +15,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 interface SyncRequest {
+  userId?: string;
   appointmentId?: string;
 }
 
@@ -36,32 +35,30 @@ export async function POST(req: Request) {
     // Parse request body
     const data: SyncRequest = await req.json();
     
-    // Get auth client with user's cookie context
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-
-    // Verify the user is authenticated
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user) {
+    // Validate that we have either userId or appointmentId
+    if (!data.userId && !data.appointmentId) {
       return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
+        { success: false, error: "Either userId or appointmentId is required" },
+        { status: 400 }
       );
     }
     
-    console.log(`Processing appointment sync for user ${authData.user.id}`);
+    console.log(`Processing appointment sync for ${data.userId ? `user ${data.userId}` : `appointment ${data.appointmentId}`}`);
     
-    // Fetch the user's appointments
+    // Fetch the appointments based on provided parameters
     let query = supabaseAdmin
       .from('user_appointments')
-      .select('id, sanity_id, stripe_session_id, status, payment_status, qualiphy_exam_status, qualiphy_patient_exam_id, qualiphy_exam_id')
-      .eq('user_id', authData.user.id);
+      .select('id, sanity_id, stripe_session_id, status, payment_status, qualiphy_exam_status, qualiphy_patient_exam_id, qualiphy_exam_id, stripe_payment_intent_id');
     
-    // If specific appointment ID is provided, filter by it
+    // Filter by specific parameters if provided
     if (data.appointmentId) {
       query = query.eq('id', data.appointmentId);
-    } else {
-      // Otherwise, only sync recent appointments that are not completed or cancelled
+    } else if (data.userId) {
+      query = query.eq('user_id', data.userId);
+    }
+    
+    // Only sync recent appointments that are not completed or cancelled
+    if (!data.appointmentId) {
       query = query.not('status', 'in', '("completed","cancelled")');
     }
     
@@ -172,15 +169,62 @@ async function syncAppointmentStatus(appointment: AppointmentData) {
     }
   }
   
+  // Try with payment intent if session check failed
+  if (!statusChanged && appointment.stripe_payment_intent_id) {
+    try {
+      const paymentIntent = await stripe.paymentIntents.retrieve(appointment.stripe_payment_intent_id);
+      
+      let paymentStatus = appointment.payment_status;
+      if (paymentIntent.status === 'succeeded' && appointment.payment_status !== 'paid') {
+        paymentStatus = 'paid';
+        statusChanged = true;
+        stripeStatus = 'succeeded';
+      } else if (paymentIntent.status === 'requires_payment_method' && appointment.payment_status !== 'pending') {
+        paymentStatus = 'pending';
+        statusChanged = true;
+        stripeStatus = 'requires_payment_method';
+      }
+      
+      // Update payment status in Supabase if changed
+      if (statusChanged) {
+        await supabaseAdmin
+          .from('user_appointments')
+          .update({
+            payment_status: paymentStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', appointment.id);
+          
+        console.log(`✅ Updated payment status for appointment ${appointment.id} to ${paymentStatus} via payment intent`);
+        
+        // Update Sanity if we have a Sanity ID
+        if (appointment.sanity_id) {
+          try {
+            await sanityClient
+              .patch(appointment.sanity_id)
+              .set({
+                paymentStatus: paymentStatus
+              })
+              .commit();
+              
+            console.log(`✅ Updated Sanity payment status for appointment ${appointment.sanity_id}`);
+          } catch (error) {
+            console.error(`Error updating Sanity payment status: ${error}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error checking payment intent for appointment ${appointment.id}:`, error);
+      // Continue with other syncs even if this one fails
+    }
+  }
+  
   // 2. Sync Qualiphy status if we have a patient exam ID
+  let qualiphyStatusChanged = false;
   if (appointment.qualiphy_patient_exam_id) {
     try {
-      // For now, we'll simulate this as an API call to Qualiphy would be required
       // In a real implementation, you would call the Qualiphy API to check exam status
-      console.log(`Would check Qualiphy status for exam ${appointment.qualiphy_patient_exam_id}`);
-      
-      // The real implementation would update the appointment status based on the Qualiphy response
-      // For the demo, we'll check if the status needs updating from 'pending' to a default value
+      // For demo purposes, we'll check if the status needs updating from null to a default value
       if (appointment.qualiphy_exam_status === null || appointment.qualiphy_exam_status === undefined) {
         // Update the Qualiphy exam status in Supabase
         await supabaseAdmin
@@ -192,7 +236,7 @@ async function syncAppointmentStatus(appointment: AppointmentData) {
           .eq('id', appointment.id);
           
         qualiphyStatus = 'Pending';
-        statusChanged = true;
+        qualiphyStatusChanged = true;
         
         console.log(`✅ Updated Qualiphy status for appointment ${appointment.id} to Pending`);
         
@@ -219,22 +263,26 @@ async function syncAppointmentStatus(appointment: AppointmentData) {
   }
   
   // 3. Return the result
-  if (statusChanged) {
+  if (statusChanged || qualiphyStatusChanged) {
     return {
       id: appointment.id,
       success: true,
       message: "Appointment status updated successfully",
-      stripeStatus,
-      qualiphyStatus
+      changes: {
+        stripe: statusChanged ? stripeStatus : null,
+        qualiphy: qualiphyStatusChanged ? qualiphyStatus : null
+      }
     };
   } else {
     return {
       id: appointment.id,
       success: true,
       message: "Appointment status already up-to-date",
-      currentStatus: appointment.status,
-      currentPaymentStatus: appointment.payment_status,
-      currentQualiphyStatus: appointment.qualiphy_exam_status
+      currentStatus: {
+        appointment: appointment.status,
+        payment: appointment.payment_status,
+        qualiphy: appointment.qualiphy_exam_status
+      }
     };
   }
 }

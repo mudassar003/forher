@@ -1,4 +1,4 @@
-//src/app/account/subscriptions/components/SubscriptionsList.tsx
+// src/app/account/subscriptions/components/SubscriptionsList.tsx
 "use client";
 import Link from "next/link";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
@@ -121,7 +121,7 @@ export const SubscriptionsList = () => {
         </div>
       )}
 
-      {/* Status sync button - only shown when pending subscriptions exist */}
+      {/* Status sync button - always show it */}
       <StatusSyncButton hasPendingSubscriptions={hasPendingSubscriptions} />
 
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">

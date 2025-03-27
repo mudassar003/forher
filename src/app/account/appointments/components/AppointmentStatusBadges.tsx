@@ -65,17 +65,6 @@ export const AppointmentStatusBadges = ({ qualiphyStatus, paymentStatus }: Statu
 
   return (
     <div className="flex flex-col space-y-2">
-      {qualiphyInfo && (
-        <div className="flex items-center space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${qualiphyInfo.color}`}>
-            Qualiphy: {qualiphyStatus || 'Pending'}
-          </span>
-          <span className="text-sm text-gray-600">
-            {qualiphyInfo.description}
-          </span>
-        </div>
-      )}
-      
       {paymentInfo && (
         <div className="flex items-center space-x-2">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentInfo.color}`}>
@@ -83,6 +72,17 @@ export const AppointmentStatusBadges = ({ qualiphyStatus, paymentStatus }: Statu
           </span>
           <span className="text-sm text-gray-600">
             {paymentInfo.description}
+          </span>
+        </div>
+      )}
+      
+      {qualiphyInfo && (
+        <div className="flex items-center space-x-2">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${qualiphyInfo.color}`}>
+            Status: {qualiphyStatus || 'Pending'}
+          </span>
+          <span className="text-sm text-gray-600">
+            {qualiphyInfo.description}
           </span>
         </div>
       )}

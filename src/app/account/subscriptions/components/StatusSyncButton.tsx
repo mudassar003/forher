@@ -5,28 +5,32 @@ import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { useAuthStore } from "@/store/authStore";
 
 interface StatusSyncButtonProps {
-  hasPendingSubscriptions: boolean;
+  hasPendingSubscriptions?: boolean;
+  className?: string;
 }
 
-export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({ hasPendingSubscriptions }) => {
+export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({ 
+  hasPendingSubscriptions = false,
+  className = '' 
+}) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncSuccess, setSyncSuccess] = useState<boolean | null>(null);
-  const { syncSubscriptionStatuses } = useSubscriptionStore();
+  const { syncSubscriptionStatuses, syncingSubscriptions } = useSubscriptionStore();
   const { user } = useAuthStore();
 
   const handleSync = async () => {
-    if (!user?.id || isSyncing) return;
+    if (!user?.id || isSyncing || syncingSubscriptions) return;
     
     setIsSyncing(true);
-    setSyncMessage("Synchronizing with Stripe...");
+    setSyncMessage("Synchronizing subscription statuses with Stripe...");
     setSyncSuccess(null);
     
     try {
       const success = await syncSubscriptionStatuses(user.id);
       
       if (success) {
-        setSyncMessage("Subscription status synchronized successfully!");
+        setSyncMessage("Subscription statuses synchronized successfully!");
         setSyncSuccess(true);
         
         // Clear message after 5 seconds
@@ -47,14 +51,8 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({ hasPendingSu
     }
   };
 
-  // Only show the button if there are pending subscriptions 
-  // or if issues were detected that might need syncing
-  if (!hasPendingSubscriptions && syncSuccess !== false) {
-    return null;
-  }
-
   return (
-    <div className="mb-4">
+    <div className={`mb-4 ${className}`}>
       {syncMessage && (
         <div className={`p-3 rounded-md mb-3 ${
           syncSuccess === true 
@@ -77,15 +75,15 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({ hasPendingSu
           <div className="ml-3 flex-1">
             <p className="text-sm text-blue-700 mb-2">
               {hasPendingSubscriptions 
-                ? "Some of your subscriptions show a pending status, but may actually be active. Click to synchronize with Stripe."
-                : "If your subscription status seems incorrect, you can manually synchronize with Stripe."}
+                ? "Some of your subscriptions show a pending status. Click to synchronize with Stripe."
+                : "You can manually synchronize subscription status with Stripe to ensure your data is up-to-date."}
             </p>
             <button
               onClick={handleSync}
-              disabled={isSyncing}
-              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSyncing || syncingSubscriptions}
+              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isSyncing ? "Syncing..." : "Sync Subscription Status"}
+              {isSyncing || syncingSubscriptions ? "Syncing..." : "Sync Subscription Status"}
             </button>
           </div>
         </div>

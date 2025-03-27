@@ -37,7 +37,7 @@ export const RefreshAppointmentsButton = ({ className = '' }: RefreshAppointment
       }, 5000);
     } catch (error) {
       console.error("Error refreshing appointments:", error);
-      setRefreshMessage("An error occurred during synchronization.");
+      setRefreshMessage("An error occurred during synchronization. Please try again.");
       setRefreshSuccess(false);
     } finally {
       setIsRefreshing(false);
@@ -61,7 +61,7 @@ export const RefreshAppointmentsButton = ({ className = '' }: RefreshAppointment
       <button
         onClick={handleRefresh}
         disabled={isRefreshing || refreshingAppointments}
-        className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {(isRefreshing || refreshingAppointments) ? (
           <>

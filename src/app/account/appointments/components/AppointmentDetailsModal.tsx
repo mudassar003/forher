@@ -4,6 +4,7 @@
 import { AppointmentStatusBadges } from './AppointmentStatusBadges';
 import { Appointment } from '@/store/subscriptionStore';
 import { formatDate } from '@/utils/dateUtils';
+import Link from 'next/link';
 
 interface AppointmentDetailsModalProps {
   appointment: Appointment;
@@ -18,6 +19,9 @@ export const AppointmentDetailsModal = ({ appointment, onClose }: AppointmentDet
   
   // Format the creation date
   const formattedDate = formatDate(appointment.created_at, 'long');
+  const formattedAppointmentDate = appointment.appointment_date 
+    ? formatDate(appointment.appointment_date, 'full') 
+    : null;
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
@@ -42,88 +46,122 @@ export const AppointmentDetailsModal = ({ appointment, onClose }: AppointmentDet
               </p>
             </div>
             
-            <div className="mb-4">
-              <h5 className="font-medium text-gray-800 mb-2">Status</h5>
-              <AppointmentStatusBadges 
-                qualiphyStatus={appointment.qualiphyExamStatus} 
-                paymentStatus={appointment.payment_status}
-              />
-            </div>
-            
-            {/* Additional appointment details */}
-            <div className="mt-4 bg-gray-50 p-4 rounded-lg mb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {appointment.appointment_date && (
-                  <div>
-                    <span className="text-sm text-gray-500">Scheduled for:</span>
-                    <p className="font-medium">{formatDate(appointment.appointment_date, 'full')}</p>
+            <div className="mb-6">
+              <h5 className="font-medium text-gray-800 mb-2">Status Information</h5>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <AppointmentStatusBadges 
+                  qualiphyStatus={appointment.qualiphyExamStatus} 
+                  paymentStatus={appointment.payment_status}
+                />
+                
+                {/* Payment method if available */}
+                {appointment.payment_method && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Payment Method:</span> {appointment.payment_method === 'stripe' ? 'Credit Card (Stripe)' : appointment.payment_method}
+                    </p>
                   </div>
                 )}
                 
-                {appointment.qualiphyProviderName && (
-                  <div>
-                    <span className="text-sm text-gray-500">Provider:</span>
-                    <p className="font-medium">{appointment.qualiphyProviderName}</p>
-                  </div>
-                )}
-                
-                {appointment.qualiphyPatientExamId && (
-                  <div>
-                    <span className="text-sm text-gray-500">Exam ID:</span>
-                    <p className="font-medium">{appointment.qualiphyPatientExamId}</p>
-                  </div>
-                )}
-                
-                {appointment.requires_subscription && (
-                  <div>
-                    <span className="text-sm text-gray-500">Subscription requirement:</span>
-                    <p className="font-medium">Active subscription required</p>
+                {/* Stripe payment ID if available */}
+                {appointment.stripe_payment_intent_id && (
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-500">
+                      Payment ID: {appointment.stripe_payment_intent_id.substring(0, 14)}...
+                    </p>
                   </div>
                 )}
               </div>
             </div>
             
+            {/* Additional appointment details */}
+            <div className="mb-6">
+              <h5 className="font-medium text-gray-800 mb-2">Appointment Information</h5>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {formattedAppointmentDate && (
+                    <div>
+                      <span className="text-sm text-gray-500">Scheduled for:</span>
+                      <p className="font-medium">{formattedAppointmentDate}</p>
+                    </div>
+                  )}
+                  
+                  {appointment.qualiphyProviderName && (
+                    <div>
+                      <span className="text-sm text-gray-500">Provider:</span>
+                      <p className="font-medium">{appointment.qualiphyProviderName}</p>
+                    </div>
+                  )}
+                  
+                  {appointment.qualiphyPatientExamId && (
+                    <div>
+                      <span className="text-sm text-gray-500">Exam ID:</span>
+                      <p className="font-medium">{appointment.qualiphyPatientExamId}</p>
+                    </div>
+                  )}
+                  
+                  {appointment.requires_subscription !== undefined && (
+                    <div>
+                      <span className="text-sm text-gray-500">Subscription required:</span>
+                      <p className="font-medium">{appointment.requires_subscription ? 'Yes' : 'No'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
             {appointment.notes && (
-              <div className="mb-4">
-                <h5 className="font-medium text-gray-800 mb-2">Notes</h5>
-                <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="mb-6">
+                <h5 className="font-medium text-gray-800 mb-2">Consultation Notes</h5>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <p className="text-gray-600 whitespace-pre-line">{appointment.notes}</p>
                 </div>
               </div>
             )}
             
-            {canAccessTelehealth && appointment.qualiphyMeetingUrl && (
-              <div className="mt-6">
-                <a 
-                  href={appointment.qualiphyMeetingUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700"
-                >
-                  Join Consultation
-                </a>
-              </div>
-            )}
-            
-            {canAccessTelehealth && !appointment.qualiphyMeetingUrl && (
-              <div className="mt-6">
-                <a 
-                  href="/appointment" 
-                  className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700"
-                >
-                  Access Telehealth Portal
-                </a>
+            {/* Telehealth Access Section */}
+            {canAccessTelehealth && (
+              <div className="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h5 className="font-medium text-blue-800 mb-2">Telehealth Access</h5>
+                <p className="text-blue-700 mb-4">Your appointment is ready for telehealth consultation.</p>
+                
+                {appointment.qualiphyMeetingUrl ? (
+                  <a 
+                    href={appointment.qualiphyMeetingUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Join Consultation
+                  </a>
+                ) : (
+                  <Link
+                    href="/appointment" 
+                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Access Telehealth Portal
+                  </Link>
+                )}
               </div>
             )}
           </div>
           
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between">
             <button
               onClick={onClose}
               className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50"
             >
               Close
             </button>
+            
+            {appointment.payment_status === 'paid' && (
+              <Link 
+                href="/appointment"
+                className="px-4 py-2 bg-pink-500 text-white font-medium rounded-md hover:bg-pink-600"
+              >
+                Go to Telehealth
+              </Link>
+            )}
           </div>
         </div>
       </div>

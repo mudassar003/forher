@@ -14,8 +14,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title }) => {
   const navItems = [
     { name: 'Dashboard', href: '/admin' },
     { name: 'Subscriptions', href: '/admin/subscriptions' },
-    { name: 'Orders', href: '/admin/orders' },
-    { name: 'Appointments', href: '/admin/appointments' },
   ];
 
   return (

@@ -449,6 +449,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
           ? JSON.stringify({ userId: currentUserId }) 
           : JSON.stringify({}); // Fallback
       
+      console.log(`Syncing appointment statuses: ${appointmentId ? `appointmentId=${appointmentId}` : `userId=${currentUserId}`}`);
+      
       // Call the appointment status sync API
       const response = await fetch('/api/appointments/sync-status', {
         method: 'POST',
@@ -477,7 +479,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       if (hasChanges && currentUserId) {
         console.log("Found status changes, refreshing appointments");
         // Wait a short time to ensure backend updates are committed
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // Refetch appointments with the updated statuses
         const { data: refreshedData, error: refreshError } = await supabase
@@ -508,6 +510,21 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
             stripe_session_id: apt.stripe_session_id,
             requires_subscription: apt.requires_subscription || false
           }));
+          
+          console.log("Updated appointments after sync:", appointmentsData);
+          
+          // Find changed appointments for logging
+          const changedAppointments = appointmentsData.filter(apt => {
+            const oldApt = get().appointments.find(a => a.id === apt.id);
+            return oldApt && (
+              oldApt.payment_status !== apt.payment_status || 
+              oldApt.qualiphyExamStatus !== apt.qualiphyExamStatus
+            );
+          });
+          
+          if (changedAppointments.length > 0) {
+            console.log("Appointments with changed status:", changedAppointments);
+          }
           
           // Update appointments in the store
           set({ 

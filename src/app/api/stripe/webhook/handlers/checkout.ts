@@ -50,7 +50,7 @@ export async function handleCheckoutSession(
     
     // Check what type of purchase this is
     const isSubscription = session.mode === 'subscription';
-    const isAppointment = appointmentType === 'oneTime';
+    const isAppointment = !!appointmentId || appointmentType === 'oneTime';
     const isRegularOrder = orderId || sanityId;
     
     // Handle different purchase types
@@ -270,39 +270,149 @@ async function handleAppointmentPurchase(
   console.log(`Processing appointment purchase for ${appointmentId}`);
   
   try {
-    // Find the appointment in Supabase
-    const appointmentData = await getSupabaseAppointment(session.id);
+    // Find the appointment in Supabase by session ID
+    const { data: appointmentData, error: fetchError } = await supabase
+      .from('user_appointments')
+      .select('id, sanity_id, qualiphy_exam_status, status, payment_status')
+      .eq('stripe_session_id', session.id)
+      .single();
     
-    if (!appointmentData) {
-      throw new Error(`No appointment found for session ID: ${session.id}`);
+    if (fetchError || !appointmentData) {
+      console.log(`No appointment found with session ID ${session.id}, trying by ID`);
+      
+      // Try to find by appointment ID directly
+      const { data: altAppointmentData, error: altFetchError } = await supabase
+        .from('user_appointments')
+        .select('id, sanity_id, qualiphy_exam_status, status, payment_status')
+        .eq('id', appointmentId)
+        .single();
+        
+      if (altFetchError || !altAppointmentData) {
+        throw new Error(`No appointment found for ID: ${appointmentId} or session ID: ${session.id}`);
+      }
+      
+      // Use the found appointment data
+      const appointmentId = altAppointmentData.id;
+      const sanityAppointmentId = altAppointmentData.sanity_id;
+      const currQualiphy = altAppointmentData.qualiphy_exam_status;
+      const currStatus = altAppointmentData.status;
+      const currPayment = altAppointmentData.payment_status;
+      
+      // Log current status for debugging
+      console.log(`Appointment ${appointmentId} current status: ${currStatus}, payment: ${currPayment}, qualiphy: ${currQualiphy}`);
+      
+      if (sanityAppointmentId) {
+        // Schedule default date (tomorrow)
+        const scheduledDate = new Date();
+        scheduledDate.setDate(scheduledDate.getDate() + 1);
+        
+        // Update Sanity user appointment - ENSURE qualiphy_exam_status is set to N/A
+        await updateSanityAppointment(sanityAppointmentId, {
+          status: 'scheduled',
+          scheduledDate: scheduledDate.toISOString(),
+          paymentStatus: 'paid',
+          qualiphyExamStatus: 'N/A' // Critical: Set Qualiphy status to N/A for telehealth access
+        });
+        
+        console.log(`✅ Updated Sanity appointment ${sanityAppointmentId} to scheduled with N/A Qualiphy status`);
+        
+        // Update Supabase user appointment - ENSURE qualiphy_exam_status is set to N/A
+        const { error: updateError } = await supabase
+          .from('user_appointments')
+          .update({
+            status: 'scheduled',
+            scheduled_date: scheduledDate.toISOString(),
+            stripe_session_id: session.id, // Store the session ID
+            stripe_customer_id: customerId || null,
+            payment_status: 'paid', // Set payment to paid
+            payment_method: 'stripe',
+            qualiphy_exam_status: 'N/A', // Critical: Set Qualiphy status to N/A for telehealth access
+            stripe_payment_intent_id: session.payment_intent as string,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', appointmentId);
+        
+        if (updateError) {
+          console.error(`Error updating Supabase appointment ${appointmentId}:`, updateError);
+          throw updateError;
+        }
+        
+        console.log(`✅ Updated Supabase appointment ${appointmentId} to scheduled with N/A Qualiphy status`);
+
+        // Verify the update was successful
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('user_appointments')
+          .select('qualiphy_exam_status, payment_status')
+          .eq('id', appointmentId)
+          .single();
+          
+        if (!verifyError && verifyData) {
+          console.log(`✓ Verification: appointment ${appointmentId} now has payment_status=${verifyData.payment_status}, qualiphy_exam_status=${verifyData.qualiphy_exam_status}`);
+        }
+
+        // If this appointment is from a subscription, update the subscription usage
+        if (fromSubscription && userSubscriptionId) {
+          await updateSubscriptionAppointmentUsage(userSubscriptionId);
+        }
+      } else {
+        throw new Error(`No sanity ID found for appointment with ID: ${appointmentId}`);
+      }
+      
+      return;
     }
     
     const sanityAppointmentId = appointmentData.sanity_id;
+    
+    // Log current status for debugging
+    console.log(`Appointment ${appointmentData.id} current status: ${appointmentData.status}, payment: ${appointmentData.payment_status}, qualiphy: ${appointmentData.qualiphy_exam_status}`);
     
     if (sanityAppointmentId) {
       // Schedule default date (tomorrow)
       const scheduledDate = new Date();
       scheduledDate.setDate(scheduledDate.getDate() + 1);
       
-      // Update Sanity user appointment
+      // Update Sanity user appointment - ENSURE qualiphy_exam_status is set to N/A
       await updateSanityAppointment(sanityAppointmentId, {
         status: 'scheduled',
         scheduledDate: scheduledDate.toISOString(),
         paymentStatus: 'paid',
-        qualiphyExamStatus: 'N/A' // Set initial Qualiphy status to N/A
+        qualiphyExamStatus: 'N/A' // Critical: Set Qualiphy status to N/A for telehealth access
       });
       
-      // Update Supabase user appointment
-      await updateSupabaseAppointment(session.id, {
-        status: 'scheduled',
-        scheduled_date: scheduledDate.toISOString(),
-        stripe_customer_id: customerId || null,
-        payment_status: 'paid', // Set payment to paid
-        payment_method: 'stripe',
-        qualiphy_exam_status: 'N/A', // Set initial Qualiphy status to N/A
-        stripe_payment_intent_id: session.payment_intent as string,
-        updated_at: new Date().toISOString()
-      }, 'stripe_session_id');
+      console.log(`✅ Updated Sanity appointment ${sanityAppointmentId} to scheduled with N/A Qualiphy status`);
+      
+      // Update Supabase user appointment - ENSURE qualiphy_exam_status is set to N/A
+      const { error: updateError } = await supabase
+        .from('user_appointments')
+        .update({
+          status: 'scheduled',
+          scheduled_date: scheduledDate.toISOString(),
+          stripe_customer_id: customerId || null,
+          payment_status: 'paid', // Set payment to paid
+          payment_method: 'stripe',
+          qualiphy_exam_status: 'N/A', // Critical: Set Qualiphy status to N/A for telehealth access
+          stripe_payment_intent_id: session.payment_intent as string,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', appointmentData.id);
+      
+      if (updateError) {
+        console.error(`Error updating Supabase appointment ${appointmentData.id}:`, updateError);
+        throw updateError;
+      }
+      
+      console.log(`✅ Updated Supabase appointment ${appointmentData.id} to scheduled with N/A Qualiphy status`);
+
+      // Verify the update was successful
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('user_appointments')
+        .select('qualiphy_exam_status, payment_status')
+        .eq('id', appointmentData.id)
+        .single();
+        
+      if (!verifyError && verifyData) {
+        console.log(`✓ Verification: appointment ${appointmentData.id} now has payment_status=${verifyData.payment_status}, qualiphy_exam_status=${verifyData.qualiphy_exam_status}`);
+      }
 
       // If this appointment is from a subscription, update the subscription usage
       if (fromSubscription && userSubscriptionId) {
@@ -312,9 +422,6 @@ async function handleAppointmentPurchase(
       // Handle Qualiphy integration if applicable
       if (qualiphyExamId && parseInt(qualiphyExamId) > 0) {
         console.log(`Will handle Qualiphy exam ID: ${qualiphyExamId} when user accesses widget`);
-        
-        // We've already set qualiphy_exam_status to N/A above, no need to update again
-        console.log(`✅ Set initial Qualiphy status to N/A for appointment ${appointmentData.id}`);
       }
     } else {
       throw new Error(`No sanity ID found for appointment with session ID: ${session.id}`);

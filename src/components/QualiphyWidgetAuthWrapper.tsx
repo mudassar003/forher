@@ -18,10 +18,12 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     appointments, 
     hasActiveSubscription, 
     refreshUserAppointments,
+    syncAppointmentStatuses,
     loading: subscriptionLoading 
   } = useSubscriptionStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusCheckDone, setStatusCheckDone] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -56,6 +58,47 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     user, 
     router, 
     appointments.length,
+    refreshUserAppointments
+  ]);
+  
+  // Add an automatic status check
+  useEffect(() => {
+    const performStatusCheck = async () => {
+      if (!user?.id || statusCheckDone || isLoading) return;
+      
+      try {
+        // Only execute this once
+        setStatusCheckDone(true);
+        
+        // Check if any appointment needs status syncing (based on specific criteria)
+        const needsStatusSync = appointments.some(apt => 
+          // If payment is paid but qualiphy_exam_status is not N/A, needs sync
+          (apt.payment_status === 'paid' && apt.qualiphyExamStatus !== 'N/A') ||
+          // Or if this is a fresh payment (within last 10 minutes) that might need verification
+          (apt.created_at && new Date().getTime() - new Date(apt.created_at).getTime() < 10 * 60 * 1000)
+        );
+        
+        if (needsStatusSync && user.id) {
+          console.log("📊 Performing automatic appointment status check...");
+          await syncAppointmentStatuses(undefined, user.id);
+          
+          // Refresh appointments to get latest status
+          await refreshUserAppointments(user.id);
+          console.log("✅ Automatic status check complete");
+        }
+      } catch (err) {
+        console.error("Error during automatic status check:", err);
+        // Don't set error state to avoid disrupting user experience
+      }
+    };
+    
+    performStatusCheck();
+  }, [
+    user, 
+    appointments, 
+    statusCheckDone, 
+    isLoading, 
+    syncAppointmentStatuses, 
     refreshUserAppointments
   ]);
 
@@ -132,6 +175,6 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
 
   // If everything is good, render the children
   return <>{children}</>;
-};
+}
 
 export default QualiphyWidgetAuthWrapper;

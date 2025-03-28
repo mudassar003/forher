@@ -28,6 +28,7 @@ interface AppointmentData {
   qualiphy_exam_status?: string | null;
   qualiphy_patient_exam_id?: number | null;
   qualiphy_exam_id?: number | null;
+  stripe_payment_intent_id?: string | null;
 }
 
 export async function POST(req: Request) {
@@ -129,14 +130,56 @@ async function syncAppointmentStatus(appointment: AppointmentData) {
         paymentStatus = 'paid';
         statusChanged = true;
         stripeStatus = 'paid';
+        
+        // IMPORTANT: When payment is confirmed as paid, ALWAYS set Qualiphy status to N/A
+        // This ensures users can access telehealth after payment
+        const qualiphy_exam_status = 'N/A';
+        
+        // Update both payment status and Qualiphy status together
+        await supabaseAdmin
+          .from('user_appointments')
+          .update({
+            payment_status: paymentStatus,
+            qualiphy_exam_status: qualiphy_exam_status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', appointment.id);
+          
+        console.log(`✅ Updated payment status for appointment ${appointment.id} to ${paymentStatus} and set qualiphy_exam_status to ${qualiphy_exam_status}`);
+        
+        // Update Sanity if we have a Sanity ID
+        if (appointment.sanity_id) {
+          try {
+            await sanityClient
+              .patch(appointment.sanity_id)
+              .set({
+                paymentStatus: paymentStatus,
+                qualiphyExamStatus: qualiphy_exam_status
+              })
+              .commit();
+              
+            console.log(`✅ Updated Sanity payment status for appointment ${appointment.sanity_id}`);
+          } catch (error) {
+            console.error(`Error updating Sanity payment status: ${error}`);
+          }
+        }
+        
+        // Add verification step
+        const { data: verifyData, error: verifyError } = await supabaseAdmin
+          .from('user_appointments')
+          .select('payment_status, qualiphy_exam_status')
+          .eq('id', appointment.id)
+          .single();
+          
+        if (!verifyError && verifyData) {
+          console.log(`Verification after update: payment_status=${verifyData.payment_status}, qualiphy_exam_status=${verifyData.qualiphy_exam_status}`);
+        }
       } else if (session.payment_status === 'unpaid' && appointment.payment_status !== 'pending') {
         paymentStatus = 'pending';
         statusChanged = true;
         stripeStatus = 'unpaid';
-      }
-      
-      // Update payment status in Supabase if changed
-      if (statusChanged) {
+        
+        // Update payment status in Supabase
         await supabaseAdmin
           .from('user_appointments')
           .update({
@@ -179,14 +222,57 @@ async function syncAppointmentStatus(appointment: AppointmentData) {
         paymentStatus = 'paid';
         statusChanged = true;
         stripeStatus = 'succeeded';
+        
+        // IMPORTANT: When payment is confirmed as paid, ALWAYS set Qualiphy status to N/A
+        // This ensures users can access telehealth after payment
+        const qualiphy_exam_status = 'N/A';
+        
+        // Update both payment status and Qualiphy status together
+        await supabaseAdmin
+          .from('user_appointments')
+          .update({
+            payment_status: paymentStatus,
+            qualiphy_exam_status: qualiphy_exam_status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', appointment.id);
+          
+        console.log(`✅ Updated payment status for appointment ${appointment.id} to ${paymentStatus} and set qualiphy_exam_status to ${qualiphy_exam_status} via payment intent`);
+        
+        // Update Sanity if we have a Sanity ID
+        if (appointment.sanity_id) {
+          try {
+            await sanityClient
+              .patch(appointment.sanity_id)
+              .set({
+                paymentStatus: paymentStatus,
+                qualiphyExamStatus: qualiphy_exam_status
+              })
+              .commit();
+              
+            console.log(`✅ Updated Sanity payment status for appointment ${appointment.sanity_id}`);
+          } catch (error) {
+            console.error(`Error updating Sanity payment status: ${error}`);
+          }
+        }
+        
+        // Add verification step
+        const { data: verifyData, error: verifyError } = await supabaseAdmin
+          .from('user_appointments')
+          .select('payment_status, qualiphy_exam_status')
+          .eq('id', appointment.id)
+          .single();
+          
+        if (!verifyError && verifyData) {
+          console.log(`Verification after update: payment_status=${verifyData.payment_status}, qualiphy_exam_status=${verifyData.qualiphy_exam_status}`);
+        }
+        
       } else if (paymentIntent.status === 'requires_payment_method' && appointment.payment_status !== 'pending') {
         paymentStatus = 'pending';
         statusChanged = true;
         stripeStatus = 'requires_payment_method';
-      }
-      
-      // Update payment status in Supabase if changed
-      if (statusChanged) {
+        
+        // Update payment status in Supabase
         await supabaseAdmin
           .from('user_appointments')
           .update({
@@ -219,9 +305,61 @@ async function syncAppointmentStatus(appointment: AppointmentData) {
     }
   }
   
-  // 2. Sync Qualiphy status if we have a patient exam ID
+  // Special case: If payment is paid but qualiphy_exam_status is not N/A, fix it
+  if (appointment.payment_status === 'paid' && 
+      (!appointment.qualiphy_exam_status || appointment.qualiphy_exam_status !== 'N/A')) {
+    
+    console.log(`⚠️ Found paid appointment ${appointment.id} without N/A status. Current status: ${appointment.qualiphy_exam_status}`);
+    
+    try {
+      // Update the Qualiphy exam status in Supabase
+      await supabaseAdmin
+        .from('user_appointments')
+        .update({
+          qualiphy_exam_status: 'N/A',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', appointment.id);
+        
+      qualiphyStatus = 'N/A';
+      statusChanged = true;
+      
+      console.log(`🔧 Fixed Qualiphy status for appointment ${appointment.id} to N/A`);
+      
+      // Update Sanity if we have a Sanity ID
+      if (appointment.sanity_id) {
+        try {
+          await sanityClient
+            .patch(appointment.sanity_id)
+            .set({
+              qualiphyExamStatus: 'N/A'
+            })
+            .commit();
+            
+          console.log(`✅ Fixed Sanity Qualiphy status for appointment ${appointment.sanity_id}`);
+        } catch (error) {
+          console.error(`Error updating Sanity Qualiphy status: ${error}`);
+        }
+      }
+      
+      // Verify the update
+      const { data: verifyData, error: verifyError } = await supabaseAdmin
+        .from('user_appointments')
+        .select('qualiphy_exam_status')
+        .eq('id', appointment.id)
+        .single();
+        
+      if (!verifyError && verifyData) {
+        console.log(`Verification after fixing Qualiphy status: qualiphy_exam_status=${verifyData.qualiphy_exam_status}`);
+      }
+    } catch (error) {
+      console.error(`Error fixing Qualiphy status for appointment ${appointment.id}:`, error);
+    }
+  }
+  
+  // 2. Sync Qualiphy status if we have a patient exam ID (but NOT if we already fixed it above)
   let qualiphyStatusChanged = false;
-  if (appointment.qualiphy_patient_exam_id) {
+  if (appointment.qualiphy_patient_exam_id && !statusChanged) {
     try {
       // In a real implementation, you would call the Qualiphy API to check exam status
       // For demo purposes, we'll check if the status needs updating from null to a default value
@@ -270,7 +408,7 @@ async function syncAppointmentStatus(appointment: AppointmentData) {
       message: "Appointment status updated successfully",
       changes: {
         stripe: statusChanged ? stripeStatus : null,
-        qualiphy: qualiphyStatusChanged ? qualiphyStatus : null
+        qualiphy: qualiphyStatusChanged ? qualiphyStatus : (statusChanged ? 'N/A' : null)
       }
     };
   } else {

@@ -7,6 +7,7 @@ import {
   AppointmentPurchaseParams, 
   AppointmentPurchaseResult 
 } from '@/types/appointment';
+import { validateSubscriptionId } from '@/utils/subscriptionUtils';
 
 export function useAppointmentPurchase() {
   const [isLoading, setIsLoading] = useState(false);
@@ -42,60 +43,24 @@ export function useAppointmentPurchase() {
       if (options.useSubscription) {
         // If a specific subscription ID was provided
         if (options.subscriptionId) {
-          // Check if it's a Sanity ID (non-UUID format)
-          if (!options.subscriptionId.includes('-')) {
-            // Try to find the corresponding subscription in our loaded subscriptions
-            const matchingSubscription = subscriptions.find(sub => 
-              sub.sanity_id === options.subscriptionId
-            );
-            
-            if (matchingSubscription) {
-              // Use the Supabase UUID instead of Sanity ID
-              params.subscriptionId = matchingSubscription.id;
-            } else {
-              console.warn(`Couldn't find subscription with Sanity ID: ${options.subscriptionId}`);
-              // Find the first active subscription instead of continuing without a subscription ID
-              const activeSubscription = findActiveSubscription();
-              if (activeSubscription) {
-                params.subscriptionId = activeSubscription.id;
-              } else {
-                const errorMessage = "Required subscription not found. Please refresh the page and try again.";
-                setError(errorMessage);
-                setIsLoading(false);
-                return { success: false, error: errorMessage };
-              }
-            }
+          params.subscriptionId = options.subscriptionId;
+        } else if (hasActiveSubscription) {
+          // Find the first active subscription
+          const activeSubscriptionId = validateSubscriptionId(undefined, subscriptions);
+          if (activeSubscriptionId) {
+            params.subscriptionId = activeSubscriptionId;
           } else {
-            // It's already a UUID format, use as is
-            params.subscriptionId = options.subscriptionId;
+            const errorMessage = "Required subscription not found. Please refresh the page and try again.";
+            setError(errorMessage);
+            setIsLoading(false);
+            return { success: false, error: errorMessage };
           }
         } else {
-          // No specific subscription ID provided, find the first active one
-          const activeSubscription = findActiveSubscription();
-          
-          if (activeSubscription) {
-            params.subscriptionId = activeSubscription.id;
-          } else if (hasActiveSubscription) {
-            // This case handles when subscriptions data isn't fully loaded yet but we know user has one
-            const errorMessage = "Your subscription details couldn't be loaded. Please try again.";
-            setError(errorMessage);
-            setIsLoading(false);
-            return { success: false, error: errorMessage };
-          } else {
-            const errorMessage = "Active subscription required but not found.";
-            setError(errorMessage);
-            setIsLoading(false);
-            return { success: false, error: errorMessage };
-          }
+          const errorMessage = "Active subscription required but not found.";
+          setError(errorMessage);
+          setIsLoading(false);
+          return { success: false, error: errorMessage };
         }
-      }
-      
-      // Helper function to find an active subscription
-      function findActiveSubscription() {
-        return subscriptions.find(sub => 
-          sub.is_active === true && 
-          (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'cancelling')
-        );
       }
       
       // Make API request to create appointment purchase

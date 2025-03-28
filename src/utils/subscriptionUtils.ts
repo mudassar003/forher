@@ -1,5 +1,4 @@
 // src/utils/subscriptionUtils.ts
-
 import { Subscription } from '@/store/subscriptionStore';
 
 /**

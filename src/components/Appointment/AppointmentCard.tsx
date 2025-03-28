@@ -1,76 +1,162 @@
 // src/components/Appointment/AppointmentCard.tsx
 "use client";
 
-import Link from 'next/link';
-// Update this import in src/components/Appointment/AppointmentCard.tsx
-import { AppointmentStatusBadges } from '@/app/account/appointments/components/AppointmentStatusBadges';
-import { Appointment } from '@/store/subscriptionStore';
-import { formatDate } from '@/utils/dateUtils';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { urlFor } from '@/sanity/lib/image';
+import { useAppointmentPurchase } from '@/hooks/useAppointmentPurchase';
+import { useAuthStore } from '@/store/authStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { SanityImageSource } from '@sanity/image-url/lib/types/types';
 
 interface AppointmentCardProps {
-  appointment: Appointment;
-  onViewDetails: (appointment: Appointment) => void;
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  duration?: number;
+  imageSrc?: SanityImageSource;
+  qualiphyExamId?: number;
+  requiresSubscription: boolean;
+  hasActiveSubscription: boolean;
 }
 
-export const AppointmentCard = ({ appointment, onViewDetails }: AppointmentCardProps) => {
-  // Check if user can access the telehealth portal based on payment status only
-  const canAccessTelehealth = appointment.payment_status === 'paid';
-  
-  // Format the creation date
-  const formattedDate = formatDate(appointment.created_at, 'medium');
-  
+const AppointmentCard = ({
+  id,
+  title,
+  description,
+  price,
+  duration = 30,
+  imageSrc,
+  qualiphyExamId,
+  requiresSubscription,
+  hasActiveSubscription
+}: AppointmentCardProps) => {
+  const [isBooking, setIsBooking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  const { purchaseAppointment, isLoading } = useAppointmentPurchase();
+
+  // Handle booking logic
+  const handleBookNow = async () => {
+    // If not authenticated, redirect to login
+    if (!isAuthenticated) {
+      const returnUrl = encodeURIComponent(window.location.pathname);
+      router.push(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+
+    // If appointment requires subscription but user doesn't have one
+    if (requiresSubscription && !hasActiveSubscription) {
+      setError("This appointment requires an active subscription.");
+      return;
+    }
+
+    setIsBooking(true);
+    setError(null);
+
+    try {
+      // Use the appointment purchase hook
+      const result = await purchaseAppointment(id, {
+        useSubscription: requiresSubscription
+      });
+
+      if (result.success && result.url) {
+        // Redirect to Stripe checkout
+        window.location.href = result.url;
+      } else {
+        setError(result.error || "Failed to book appointment.");
+      }
+    } catch (err) {
+      console.error('Error booking appointment:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
-      <div className="p-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-          <h3 className="font-medium text-gray-800 text-lg mb-2 sm:mb-0">
-            {appointment.treatment_name}
-          </h3>
-          
-          <div className="text-sm text-gray-500">
-            Booked on: {formattedDate}
-          </div>
-        </div>
-        
-        {/* Appointment Status Badges */}
-        <div className="mb-4">
-          <AppointmentStatusBadges
-            qualiphyStatus={appointment.qualiphyExamStatus}
-            paymentStatus={appointment.payment_status}
-            appointmentStatus={appointment.status}
-            requiresSubscription={appointment.requires_subscription}
+    <div className="h-full flex flex-col bg-white border rounded-lg shadow-sm overflow-hidden">
+      {/* Header with image if available */}
+      {imageSrc && (
+        <div className="relative h-40 w-full overflow-hidden">
+          <Image
+            src={urlFor(imageSrc).width(600).url()}
+            alt={title}
+            fill
+            className="object-cover"
           />
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 mt-3">
-          <button 
-            onClick={() => onViewDetails(appointment)}
-            className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50"
+      )}
+      
+      {/* Content */}
+      <div className="p-6 flex flex-col flex-grow">
+        {/* Title and Price */}
+        <div className="mb-4">
+          <div className="flex justify-between items-start">
+            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+            <span className="text-xl font-bold text-gray-900">${price}</span>
+          </div>
+          {duration && (
+            <p className="mt-1 text-sm text-gray-500">
+              Estimated duration: {duration} minutes
+            </p>
+          )}
+        </div>
+        
+        {/* Description */}
+        {description && (
+          <p className="text-gray-600 mb-4 flex-grow">{description}</p>
+        )}
+        
+        {/* Subscription requirement badge */}
+        {requiresSubscription && (
+          <div className="mt-1 mb-4">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              hasActiveSubscription ? 'bg-green-100 text-green-800' : 'bg-indigo-100 text-indigo-800'
+            }`}>
+              {hasActiveSubscription ? 'Subscription Access' : 'Subscription Required'}
+            </span>
+            
+            {!hasActiveSubscription && (
+              <p className="mt-2 text-xs text-gray-500">
+                This appointment requires an active subscription. 
+                <a href="/subscriptions" className="ml-1 text-indigo-600 hover:text-indigo-800">
+                  View subscription options
+                </a>
+              </p>
+            )}
+          </div>
+        )}
+        
+        {/* Error message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+            {error}
+          </div>
+        )}
+        
+        {/* Book button */}
+        <div className="mt-auto">
+          <button
+            onClick={handleBookNow}
+            disabled={isBooking || isLoading || (requiresSubscription && !hasActiveSubscription)}
+            className={`w-full px-4 py-2 rounded-md text-white font-medium ${
+              isBooking || isLoading || (requiresSubscription && !hasActiveSubscription)
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-pink-600 hover:bg-pink-700'
+            } transition-colors focus:outline-none`}
           >
-            View Details
+            {isBooking || isLoading ? 'Processing...' : 'Book Now'}
           </button>
           
-          {/* Telehealth Access - always show it but conditionally style it */}
-          <Link 
-            href="/appointment"
-            className={`px-3 py-1 text-sm rounded inline-flex items-center ${
-              canAccessTelehealth 
-                ? "border border-pink-500 text-pink-500 hover:bg-pink-50" 
-                : "border border-gray-300 text-gray-400 cursor-not-allowed"
-            }`}
-            title={!canAccessTelehealth ? "Payment or consultation status doesn't allow access yet" : ""}
-            onClick={(e) => {
-              if (!canAccessTelehealth) {
-                e.preventDefault();
-              }
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Access Telehealth
-          </Link>
+          {!isAuthenticated && (
+            <p className="mt-2 text-sm text-gray-500 text-center">
+              Please log in to book an appointment
+            </p>
+          )}
         </div>
       </div>
     </div>

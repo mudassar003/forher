@@ -34,6 +34,7 @@ interface UserSubscriptionState {
   error: string | null;
   cancellingId: string | null;
   syncingSubscriptions: boolean;
+  lastFetchedUserId: string | null; // Track the last fetched user ID
   
   // Actions
   fetchUserSubscriptions: (userId: string) => Promise<void>;
@@ -54,9 +55,15 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
   error: null,
   cancellingId: null,
   syncingSubscriptions: false,
+  lastFetchedUserId: null, // Initialize with null
   
   fetchUserSubscriptions: async (userId: string) => {
-    set({ loading: true, error: null });
+    // Skip if we're already loading or if the userId is the same as last fetched
+    if (get().loading || userId === get().lastFetchedUserId) {
+      return;
+    }
+    
+    set({ loading: true, error: null, lastFetchedUserId: userId });
     
     try {
       // Fetch from Supabase
@@ -88,50 +95,38 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         sanity_id: sub.sanity_id
       }));
       
-      // Log subscription data for debugging
-      console.log("Fetched subscriptions:", subscriptionsData);
-      
       // Check for active subscriptions using the helper function
       const hasActive = subscriptionsData.some(isSubscriptionActive);
       
-      console.log("Has active subscription:", hasActive);
-      
-      // Check if any subscription has a pending status but should be active
-      const hasPendingSubscriptions = subscriptionsData.some(sub => 
-        sub.status.toLowerCase() === 'pending'
-      );
-      
-      // Check for any inconsistencies between status and is_active
-      const hasInconsistentSubscriptions = subscriptionsData.some(sub => 
-        (sub.status.toLowerCase() === 'active' && !sub.is_active) ||
-        (sub.status.toLowerCase() !== 'active' && sub.is_active)
-      );
-      
-      // Check if any subscription has stripe_subscription_id but still shows pending status
-      const hasUnprocessedSubscriptions = subscriptionsData.some(sub => 
-        sub.status.toLowerCase() === 'pending' && !!sub.stripe_subscription_id
-      );
+      // Check for any issues that might need syncing
+      const needsSync = subscriptionsData.some(sub => {
+        const isPending = sub.status.toLowerCase() === 'pending';
+        const hasStripeId = !!sub.stripe_subscription_id;
+        const isInconsistent = (sub.status.toLowerCase() === 'active' && !sub.is_active) || 
+                              (sub.status.toLowerCase() !== 'active' && sub.is_active);
+        
+        return (isPending && hasStripeId) || isInconsistent;
+      });
       
       set({ 
         subscriptions: subscriptionsData,
-        hasActiveSubscription: hasActive
+        hasActiveSubscription: hasActive,
+        loading: false
       });
       
-      // Auto-sync if we detect issues, but don't wait for it to complete
-      if (hasUnprocessedSubscriptions || hasInconsistentSubscriptions || hasPendingSubscriptions) {
-        console.log("Found subscription inconsistencies or pending subscriptions, automatically syncing status");
-        // This will trigger in the background, we don't await it
-        get().syncSubscriptionStatuses(userId);
+      // Auto-sync if we detect issues, but don't wait for it to complete and don't trigger re-renders
+      if (needsSync && !get().syncingSubscriptions) {
+        // This runs in the background
+        get().syncSubscriptionStatuses(userId).catch(console.error);
       }
       
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
       set({ 
         error: error instanceof Error ? error.message : 'Unknown error fetching subscriptions',
-        subscriptions: []
+        subscriptions: [],
+        loading: false
       });
-    } finally {
-      set({ loading: false });
     }
   },
   
@@ -184,6 +179,11 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
   },
   
   syncSubscriptionStatuses: async (userId: string) => {
+    // Prevent multiple sync operations
+    if (get().syncingSubscriptions) {
+      return false;
+    }
+    
     try {
       set({ syncingSubscriptions: true, error: null });
       
@@ -196,24 +196,33 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         body: JSON.stringify({ userId }),
       });
       
-      let result;
+      if (!response.ok) {
+        let errorMessage = `Server returned ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If we can't parse the response, just use the status code message
+        }
+        throw new Error(`Failed to sync subscription statuses: ${errorMessage}`);
+      }
       
+      // Parse response if available
+      let result;
       try {
         result = await response.json();
       } catch (parseError) {
         console.error("Error parsing subscription sync response:", parseError);
-        throw new Error('Failed to parse server response');
       }
       
-      if (!response.ok) {
-        console.error("Subscription sync error details:", result);
-        throw new Error(result?.error || `Server returned ${response.status}: Failed to sync subscription statuses`);
+      // Refresh subscriptions after sync - with force refresh since we're setting a different userId
+      // to bypass the lastFetchedUserId check
+      const currentUserId = get().lastFetchedUserId;
+      set({ lastFetchedUserId: null }); // Reset to force a refresh
+      
+      if (currentUserId) {
+        await get().fetchUserSubscriptions(currentUserId);
       }
-      
-      console.log("Subscription sync result:", result);
-      
-      // Refresh subscriptions after sync
-      await get().fetchUserSubscriptions(userId);
       
       set({ syncingSubscriptions: false });
       return true;

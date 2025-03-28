@@ -4,59 +4,48 @@
 import QualiphyWidget from '@/components/QualiphyWidget';
 import QualiphyWidgetAuthWrapper from '@/components/QualiphyWidgetAuthWrapper';
 import Link from 'next/link';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 
-// Create a client component that safely uses search params
-const AppointmentContent = () => {
+// Main content component
+const AppointmentContent: React.FC = () => {
   const router = useRouter();
   const { user } = useAuthStore();
   const { syncSubscriptionStatuses } = useSubscriptionStore();
-  
-  const [subscriptionSuccess, setSubscriptionSuccess] = useState<boolean>(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const hasProcessedParams = useRef<boolean>(false);
 
-  // Use useEffect to safely access window.location after mount
-  useEffect(() => {
-    // Get URL parameters safely after component mounts
-    const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('subscription_success') === 'true';
-    const session = urlParams.get('session_id');
-    
-    setSubscriptionSuccess(success);
-    setSessionId(session);
-  }, []);
-
-  // Effect to handle the subscription success redirect
+  // Handle URL parameters and subscription syncing only once after mount
   useEffect(() => {
     const handleSubscriptionRedirect = async () => {
+      if (!user?.id || hasProcessedParams.current) return;
+
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const success = urlParams.get('subscription_success') === 'true';
+      const sessionId = urlParams.get('session_id');
+      
       // If we have a successful subscription payment & user
-      if (subscriptionSuccess && sessionId && user?.id) {
+      if (success && sessionId) {
         // Trigger a sync with Stripe to ensure subscription is active
         try {
           await syncSubscriptionStatuses(user.id);
           
-          // Optional: remove the query parameters from the URL for cleaner UX
-          const params = new URLSearchParams(window.location.search);
-          params.delete('subscription_success');
-          params.delete('session_id');
-          const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
-          
-          // Use replace to avoid adding to browser history
-          router.replace(newUrl);
+          // Remove the query parameters from the URL for cleaner UX
+          // but only after successfully checking subscription status
+          router.replace(window.location.pathname);
         } catch (err) {
           console.error("Error syncing subscription status:", err);
-          // Continue anyway - the user can manually sync if needed
         }
       }
+      
+      // Mark that we've processed parameters to avoid duplicate processing
+      hasProcessedParams.current = true;
     };
     
-    if (user && subscriptionSuccess && sessionId) {
-      handleSubscriptionRedirect();
-    }
-  }, [subscriptionSuccess, sessionId, user, syncSubscriptionStatuses, router]);
+    handleSubscriptionRedirect();
+  }, [user, syncSubscriptionStatuses, router]);
 
   return (
     <div className="py-12">
@@ -215,7 +204,7 @@ const AppointmentContent = () => {
   );
 };
 
-// Main page component with Suspense boundary
+// Main page component with Suspense boundary and auth wrapper
 export default function AppointmentAccessPage() {
   return (
     <QualiphyWidgetAuthWrapper>

@@ -1,7 +1,7 @@
 // src/components/QualiphyWidgetAuthWrapper.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -22,13 +22,43 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     fetchUserSubscriptions
   } = useSubscriptionStore();
   
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [forceChecked, setForceChecked] = useState(false);
+  const [statusChecked, setStatusChecked] = useState<boolean>(false);
+  
+  // Function to check subscription status with Stripe
+  const checkSubscriptionStatus = useCallback(async () => {
+    if (!user?.id) return false;
+    
+    try {
+      setSuccessMessage("Verifying subscription status...");
+      
+      // First sync with Stripe to ensure subscription is up-to-date
+      await syncSubscriptionStatuses(user.id);
+      
+      // Then fetch latest subscription data
+      await fetchUserSubscriptions(user.id);
+      
+      setStatusChecked(true);
+      setSuccessMessage("Subscription status verified");
+      
+      // Auto-hide message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+      
+      return true;
+    } catch (err) {
+      console.error("Error checking subscription:", err);
+      return false;
+    }
+  }, [user, syncSubscriptionStatuses, fetchUserSubscriptions]);
 
+  // Effect to check access when component mounts
   useEffect(() => {
     const checkAccess = async () => {
+      // Wait for auth to complete
       if (authLoading) return;
 
       // If not authenticated, redirect to login
@@ -39,28 +69,12 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
         return;
       }
 
-      // If we haven't already performed a force check and we have a user
-      if (!forceChecked && user?.id) {
-        setForceChecked(true);
-        
-        try {
-          // Force fetch latest subscription data
-          await fetchUserSubscriptions(user.id);
-          
-          // If we still don't have active subscription, try syncing with Stripe
-          if (!hasActiveSubscription) {
-            setSuccessMessage("Checking subscription status...");
-            await syncSubscriptionStatuses(user.id);
-            
-            // Fetch again after sync
-            await fetchUserSubscriptions(user.id);
-          }
-        } catch (err) {
-          console.error("Error checking subscription:", err);
-          // Continue anyway
-        }
+      // If we have a user but haven't loaded subscriptions yet
+      if (user?.id && !statusChecked && !subscriptionLoading) {
+        await checkSubscriptionStatus();
       }
 
+      // Set loading to false after all checks
       setIsLoading(false);
     };
 
@@ -71,13 +85,30 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     isAuthenticated, 
     user,
     router,
-    hasActiveSubscription,
-    syncSubscriptionStatuses,
-    fetchUserSubscriptions,
-    forceChecked
+    statusChecked,
+    checkSubscriptionStatus
   ]);
 
-  if (isLoading) {
+  // Check URL for subscription success parameter
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    
+    // Get URL parameters safely after component mounts
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('subscription_success') === 'true';
+    const sessionId = urlParams.get('session_id');
+    
+    // If coming back from successful subscription payment
+    if (success && sessionId && !statusChecked) {
+      // Force check status with Stripe
+      checkSubscriptionStatus().then(() => {
+        // Remove query params for cleaner URL
+        router.replace(window.location.pathname);
+      });
+    }
+  }, [isAuthenticated, user, router, statusChecked, checkSubscriptionStatus]);
+
+  if (isLoading || authLoading || subscriptionLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
@@ -104,18 +135,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     );
   }
 
-  // Debug subscription status
-  console.log("Subscription status:", { 
-    hasActiveSubscription, 
-    subscriptions: subscriptions.map(s => ({ 
-      id: s.id, 
-      status: s.status, 
-      is_active: s.is_active 
-    }))
-  });
-
-  // Check if we actually have an active subscription manually
-  // This is a failsafe in case hasActiveSubscription isn't working correctly
+  // Check for active subscription manually as backup
   const manualActiveCheck = subscriptions.some(sub => 
     ['active', 'trialing', 'cancelling', 'past_due'].includes(sub.status.toLowerCase()) && 
     sub.is_active === true
@@ -138,18 +158,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
               View Subscriptions
             </Link>
             <button 
-              onClick={() => {
-                if (user?.id) {
-                  setSuccessMessage("Checking subscription status...");
-                  syncSubscriptionStatuses(user.id)
-                    .then(() => fetchUserSubscriptions(user.id))
-                    .then(() => setSuccessMessage("Subscription status updated"))
-                    .catch(() => setSuccessMessage("Failed to update subscription status"))
-                    .finally(() => {
-                      setTimeout(() => setSuccessMessage(null), 3000);
-                    });
-                }
-              }}
+              onClick={() => checkSubscriptionStatus()}
               className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
             >
               Refresh Subscription Status

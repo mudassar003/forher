@@ -7,9 +7,9 @@ import EmptyState from "./EmptyState";
 import LoadingState from "./LoadingState";
 import ErrorState from "./ErrorState";
 import StatusSyncButton from "./StatusSyncButton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export const SubscriptionsList = () => {
+export const SubscriptionsList: React.FC = () => {
   const { 
     subscriptions, 
     loading, 
@@ -26,6 +26,8 @@ export const SubscriptionsList = () => {
   const hasPendingSubscriptions = subscriptions.some(
     subscription => subscription.status.toLowerCase() === 'pending'
   );
+  
+  // This useEffect was removed to prevent infinite loops
   
   const handleCancelSubscription = async (subscriptionId: string) => {
     // Clear any existing messages

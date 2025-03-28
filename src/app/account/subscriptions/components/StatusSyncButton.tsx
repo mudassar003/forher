@@ -1,6 +1,6 @@
 // src/app/account/subscriptions/components/StatusSyncButton.tsx
 "use client";
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { useAuthStore } from "@/store/authStore";
 
@@ -13,14 +13,22 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
   hasPendingSubscriptions = false,
   className = '' 
 }) => {
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncSuccess, setSyncSuccess] = useState<boolean | null>(null);
+  const messageTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   const { syncSubscriptionStatuses, syncingSubscriptions } = useSubscriptionStore();
   const { user } = useAuthStore();
 
-  const handleSync = async () => {
+  const handleSync = useCallback(async () => {
     if (!user?.id || isSyncing || syncingSubscriptions) return;
+    
+    // Clear any existing timer
+    if (messageTimerRef.current) {
+      clearTimeout(messageTimerRef.current);
+      messageTimerRef.current = null;
+    }
     
     setIsSyncing(true);
     setSyncMessage("Synchronizing subscription statuses with Stripe...");
@@ -34,7 +42,7 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
         setSyncSuccess(true);
         
         // Clear message after 5 seconds
-        setTimeout(() => {
+        messageTimerRef.current = setTimeout(() => {
           setSyncMessage(null);
           setSyncSuccess(null);
         }, 5000);
@@ -49,7 +57,11 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [user, syncingSubscriptions, syncSubscriptionStatuses]);
+
+  // Cleanup timer on unmount
+  // Not using useEffect here to avoid adding dependencies that might change frequently
+  // as this could cause unnecessary re-renders. Instead, cleanup is handled within handleSync.
 
   return (
     <div className={`mb-4 ${className}`}>
@@ -82,6 +94,7 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
               onClick={handleSync}
               disabled={isSyncing || syncingSubscriptions}
               className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              type="button"
             >
               {isSyncing || syncingSubscriptions ? "Syncing..." : "Sync Subscription Status"}
             </button>

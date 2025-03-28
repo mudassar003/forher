@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Link from 'next/link';
@@ -13,7 +13,6 @@ interface QualiphyWidgetAuthWrapperProps {
 
 export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps> = ({ children }) => {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuthStore();
   const { 
     hasActiveSubscription,
@@ -27,10 +26,6 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [forceChecked, setForceChecked] = useState(false);
-
-  // Check for subscription success parameters
-  const subscriptionSuccess = searchParams.get('subscription_success') === 'true';
-  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -80,39 +75,6 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     syncSubscriptionStatuses,
     fetchUserSubscriptions,
     forceChecked
-  ]);
-
-  // If we have a successful subscription payment & userId
-  useEffect(() => {
-    if (subscriptionSuccess && sessionId && user?.id && !isLoading) {
-      setSuccessMessage("Your subscription has been processed. Preparing your telehealth access...");
-      
-      // Trigger a sync with Stripe to ensure subscription is active
-      syncSubscriptionStatuses(user.id)
-        .then(() => {
-          // Fetch subscriptions again after sync
-          return fetchUserSubscriptions(user.id);
-        })
-        .then(() => {
-          setSuccessMessage("Your subscription is active! You now have telehealth access.");
-          
-          // Clear the success message after 5 seconds
-          setTimeout(() => {
-            setSuccessMessage(null);
-          }, 5000);
-        })
-        .catch(err => {
-          console.error("Error syncing subscription status:", err);
-          // Continue anyway - the user can manually sync if needed
-        });
-    }
-  }, [
-    subscriptionSuccess,
-    sessionId,
-    user,
-    isLoading,
-    syncSubscriptionStatuses,
-    fetchUserSubscriptions
   ]);
 
   if (isLoading) {

@@ -1,14 +1,53 @@
 // src/app/(default)/appointment/page.tsx
+'use client';
+
 import QualiphyWidget from '@/components/QualiphyWidget';
 import QualiphyWidgetAuthWrapper from '@/components/QualiphyWidgetAuthWrapper';
 import Link from 'next/link';
-
-export const metadata = {
-  title: 'Telehealth Consultation',
-  description: 'Access your telehealth consultation with our healthcare providers',
-};
+import { useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 
 export default function AppointmentAccessPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuthStore();
+  const { syncSubscriptionStatuses } = useSubscriptionStore();
+  
+  // Check for subscription success parameters
+  const subscriptionSuccess = searchParams.get('subscription_success') === 'true';
+  const sessionId = searchParams.get('session_id');
+
+  // Effect to handle the subscription success redirect
+  useEffect(() => {
+    const handleSubscriptionRedirect = async () => {
+      // If we have a successful subscription payment & user
+      if (subscriptionSuccess && sessionId && user?.id) {
+        // Trigger a sync with Stripe to ensure subscription is active
+        try {
+          await syncSubscriptionStatuses(user.id);
+          
+          // Optional: remove the query parameters from the URL for cleaner UX
+          const params = new URLSearchParams(window.location.search);
+          params.delete('subscription_success');
+          params.delete('session_id');
+          const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+          
+          // Use replace to avoid adding to browser history
+          router.replace(newUrl);
+        } catch (err) {
+          console.error("Error syncing subscription status:", err);
+          // Continue anyway - the user can manually sync if needed
+        }
+      }
+    };
+    
+    if (user) {
+      handleSubscriptionRedirect();
+    }
+  }, [subscriptionSuccess, sessionId, user, syncSubscriptionStatuses, router]);
+
   return (
     <QualiphyWidgetAuthWrapper>
       <div className="py-12">

@@ -51,7 +51,7 @@ interface SupabaseUserSubscription {
   sanity_id: string;
   sanity_subscription_id: string;
   subscription_name: string;
-  plan_id: string; // This is the missing field
+  plan_id: string;
   plan_name: string;
   stripe_session_id: string;
   stripe_customer_id: string;
@@ -248,7 +248,8 @@ export async function POST(req: Request): Promise<NextResponse> {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/account/subscriptions?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      // Modified success_url to redirect to appointment page directly
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/appointment?subscription_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscriptions?canceled=true`,
       customer: stripeCustomerId,
       metadata: {

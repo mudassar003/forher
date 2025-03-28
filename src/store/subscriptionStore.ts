@@ -43,6 +43,12 @@ interface UserSubscriptionState {
   syncSubscriptionStatuses: (userId: string) => Promise<boolean>;
 }
 
+// Helper function to check if a subscription is active
+const isSubscriptionActive = (subscription: Subscription): boolean => {
+  const activeStatuses = ['active', 'trialing', 'past_due', 'cancelling'];
+  return activeStatuses.includes(subscription.status.toLowerCase()) && subscription.is_active === true;
+};
+
 export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => ({
   subscriptions: [],
   hasActiveSubscription: false,
@@ -73,7 +79,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         user_id: sub.user_id,
         plan_name: sub.plan_name || sub.subscription_name || 'Subscription',
         status: sub.status || 'Unknown',
-        is_active: sub.is_active || false,
+        is_active: sub.is_active === true, // Ensure boolean type
         billing_amount: sub.billing_amount || 0,
         billing_period: sub.billing_period || 'monthly',
         next_billing_date: sub.next_billing_date || sub.end_date || new Date().toISOString(),
@@ -85,6 +91,14 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         stripe_subscription_id: sub.stripe_subscription_id,
         sanity_id: sub.sanity_id
       }));
+      
+      // Log subscription data for debugging
+      console.log("Fetched subscriptions:", subscriptionsData);
+      
+      // Check for active subscriptions using the helper function
+      const hasActive = subscriptionsData.some(isSubscriptionActive);
+      
+      console.log("Has active subscription:", hasActive);
       
       // Check if any subscription has a pending status but should be active
       const hasPendingSubscriptions = subscriptionsData.some(sub => 
@@ -104,16 +118,10 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       
       set({ 
         subscriptions: subscriptionsData,
-        hasActiveSubscription: subscriptionsData.some(sub => 
-          (sub.status.toLowerCase() === 'active' || 
-           sub.status.toLowerCase() === 'trialing' || 
-           sub.status.toLowerCase() === 'past_due' || 
-           sub.status.toLowerCase() === 'cancelling') && 
-          sub.is_active === true
-        )
+        hasActiveSubscription: hasActive
       });
       
-      // Auto-sync if we detect issues
+      // Auto-sync if we detect issues, but don't wait for it to complete
       if (hasUnprocessedSubscriptions || hasInconsistentSubscriptions || hasPendingSubscriptions) {
         console.log("Found subscription inconsistencies or pending subscriptions, automatically syncing status");
         // This will trigger in the background, we don't await it
@@ -160,8 +168,11 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         return sub;
       });
       
+      const hasActive = updatedSubscriptions.some(isSubscriptionActive);
+      
       set({ 
         subscriptions: updatedSubscriptions,
+        hasActiveSubscription: hasActive,
         cancellingId: null
       });
       

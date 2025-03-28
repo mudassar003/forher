@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Link from 'next/link';
@@ -13,17 +13,28 @@ interface QualiphyWidgetAuthWrapperProps {
 
 export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps> = ({ children }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuthStore();
   const { 
     hasActiveSubscription,
-    loading: subscriptionLoading 
+    subscriptions,
+    loading: subscriptionLoading,
+    syncSubscriptionStatuses,
+    fetchUserSubscriptions
   } = useSubscriptionStore();
+  
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [forceChecked, setForceChecked] = useState(false);
+
+  // Check for subscription success parameters
+  const subscriptionSuccess = searchParams.get('subscription_success') === 'true';
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     const checkAccess = async () => {
-      if (authLoading || subscriptionLoading) return;
+      if (authLoading) return;
 
       // If not authenticated, redirect to login
       if (!isAuthenticated) {
@@ -31,6 +42,28 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
         const returnUrl = encodeURIComponent(window.location.pathname);
         router.push(`/login?returnUrl=${returnUrl}`);
         return;
+      }
+
+      // If we haven't already performed a force check and we have a user
+      if (!forceChecked && user?.id) {
+        setForceChecked(true);
+        
+        try {
+          // Force fetch latest subscription data
+          await fetchUserSubscriptions(user.id);
+          
+          // If we still don't have active subscription, try syncing with Stripe
+          if (!hasActiveSubscription) {
+            setSuccessMessage("Checking subscription status...");
+            await syncSubscriptionStatuses(user.id);
+            
+            // Fetch again after sync
+            await fetchUserSubscriptions(user.id);
+          }
+        } catch (err) {
+          console.error("Error checking subscription:", err);
+          // Continue anyway
+        }
       }
 
       setIsLoading(false);
@@ -41,7 +74,45 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     authLoading, 
     subscriptionLoading, 
     isAuthenticated, 
-    router
+    user,
+    router,
+    hasActiveSubscription,
+    syncSubscriptionStatuses,
+    fetchUserSubscriptions,
+    forceChecked
+  ]);
+
+  // If we have a successful subscription payment & userId
+  useEffect(() => {
+    if (subscriptionSuccess && sessionId && user?.id && !isLoading) {
+      setSuccessMessage("Your subscription has been processed. Preparing your telehealth access...");
+      
+      // Trigger a sync with Stripe to ensure subscription is active
+      syncSubscriptionStatuses(user.id)
+        .then(() => {
+          // Fetch subscriptions again after sync
+          return fetchUserSubscriptions(user.id);
+        })
+        .then(() => {
+          setSuccessMessage("Your subscription is active! You now have telehealth access.");
+          
+          // Clear the success message after 5 seconds
+          setTimeout(() => {
+            setSuccessMessage(null);
+          }, 5000);
+        })
+        .catch(err => {
+          console.error("Error syncing subscription status:", err);
+          // Continue anyway - the user can manually sync if needed
+        });
+    }
+  }, [
+    subscriptionSuccess,
+    sessionId,
+    user,
+    isLoading,
+    syncSubscriptionStatuses,
+    fetchUserSubscriptions
   ]);
 
   if (isLoading) {
@@ -71,8 +142,25 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     );
   }
 
-  // No valid subscription access
-  if (!hasActiveSubscription) {
+  // Debug subscription status
+  console.log("Subscription status:", { 
+    hasActiveSubscription, 
+    subscriptions: subscriptions.map(s => ({ 
+      id: s.id, 
+      status: s.status, 
+      is_active: s.is_active 
+    }))
+  });
+
+  // Check if we actually have an active subscription manually
+  // This is a failsafe in case hasActiveSubscription isn't working correctly
+  const manualActiveCheck = subscriptions.some(sub => 
+    ['active', 'trialing', 'cancelling', 'past_due'].includes(sub.status.toLowerCase()) && 
+    sub.is_active === true
+  );
+
+  // No valid subscription access (use manual check as backup)
+  if (!hasActiveSubscription && !manualActiveCheck) {
     return (
       <div className="flex flex-col items-center justify-center h-screen p-4 text-center">
         <div className="bg-yellow-50 p-6 rounded-lg max-w-md">
@@ -87,14 +175,49 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
             <Link href="/subscriptions" className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">
               View Subscriptions
             </Link>
+            <button 
+              onClick={() => {
+                if (user?.id) {
+                  setSuccessMessage("Checking subscription status...");
+                  syncSubscriptionStatuses(user.id)
+                    .then(() => fetchUserSubscriptions(user.id))
+                    .then(() => setSuccessMessage("Subscription status updated"))
+                    .catch(() => setSuccessMessage("Failed to update subscription status"))
+                    .finally(() => {
+                      setTimeout(() => setSuccessMessage(null), 3000);
+                    });
+                }
+              }}
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+            >
+              Refresh Subscription Status
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // If everything is good, render the children
-  return <>{children}</>;
+  // If everything is good, render the children with success message if present
+  return (
+    <>
+      {successMessage && (
+        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 shadow-sm">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700">{successMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {children}
+    </>
+  );
 }
 
 export default QualiphyWidgetAuthWrapper;

@@ -73,13 +73,6 @@ export const SubscriptionModal = ({
                 <li>Access to premium features</li>
                 <li>Priority telehealth appointments</li>
                 <li>Discounted consultation fees</li>
-                {subscription.appointmentsIncluded > 0 && (
-                  <li>
-                    <span className="font-medium">
-                      {subscription.appointmentsUsed} / {subscription.appointmentsIncluded}
-                    </span> appointments used
-                  </li>
-                )}
               </ul>
             </div>
             

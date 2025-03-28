@@ -1,9 +1,8 @@
 // src/components/QualiphyWidget.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
 
 interface QualiphyWidgetProps {
   className?: string;
@@ -13,16 +12,6 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
-  const { appointments, hasActiveSubscription } = useSubscriptionStore();
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-
-  // Get the active appointment that grants telehealth access
-  const activeAppointment = appointments.find(apt => 
-    apt.payment_status === 'paid' && 
-    apt.status !== 'completed' && 
-    apt.status !== 'cancelled' &&
-    (apt.qualiphyExamStatus === 'Pending' || apt.qualiphyExamStatus === 'Deferred')
-  );
 
   useEffect(() => {
     // Create a container for the widget if it doesn't exist
@@ -86,23 +75,8 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
         '[{"SUN":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"MON":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"TUE":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"WED":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"THU":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"FRI":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"SAT":{"FROM":"00:00","TO":"23:59","isDaySelected":true}}]'
       );
       
-      // If we have an active appointment with a specific Qualiphy exam ID, set it
-      if (activeAppointment?.qualiphyExamId) {
-        script.setAttribute('data-exam-id', activeAppointment.qualiphyExamId.toString());
-        setStatusMessage(`Consultation ready for ${activeAppointment.treatment_name}`);
-      }
-      
       document.body.appendChild(script);
       scriptRef.current = script;
-      
-      // Set up status change listener
-      const originalShowDisclosureModal = window.showDisclosureModal;
-      window.showDisclosureModal = function() {
-        setStatusMessage('Starting consultation...');
-        if (originalShowDisclosureModal) {
-          originalShowDisclosureModal();
-        }
-      };
     }
 
     // Load the CSS for Qualiphy
@@ -120,31 +94,16 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
         scriptRef.current = null;
       }
     };
-  }, [user, activeAppointment]);
-
-  // Check if a specific appointment is passed, or if subscription access is available
-  const accessSource = activeAppointment 
-    ? `appointment (${activeAppointment.treatment_name})` 
-    : hasActiveSubscription 
-      ? 'subscription'
-      : null;
+  }, [user]);
 
   return (
     <div className={`relative bg-white p-6 rounded-lg shadow-sm ${className}`}>
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Telehealth Consultation</h2>
       
-      {statusMessage && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700">
-          {statusMessage}
-        </div>
-      )}
-      
-      {accessSource && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
-          <p className="font-medium">Access granted via your {accessSource}</p>
-          <p className="text-sm mt-1">You can now start your telehealth consultation</p>
-        </div>
-      )}
+      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
+        <p className="font-medium">Access granted via your subscription</p>
+        <p className="text-sm mt-1">You can now start your telehealth consultation</p>
+      </div>
       
       <p className="text-gray-600 mb-6">
         Start your virtual consultation with a licensed healthcare provider. Click the button below to begin.

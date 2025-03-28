@@ -1,7 +1,6 @@
 // middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { appointmentAccessMiddleware } from './src/middleware/appointmentAccess';
 
 export async function middleware(request: NextRequest) {
   // Create a response that we'll use to pass along
@@ -16,13 +15,8 @@ export async function middleware(request: NextRequest) {
   // Get the pathname
   const path = request.nextUrl.pathname;
   
-  // Handle appointment access restrictions for the single appointment page
+  // Handle appointment access restrictions - only check for auth and subscription
   if (path.startsWith('/appointment')) {
-    return appointmentAccessMiddleware(request);
-  }
-  
-  // Handle appointments routes - require authentication
-  if (path.startsWith('/appointments')) {
     // Get the current session
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -31,9 +25,30 @@ export async function middleware(request: NextRequest) {
       const returnUrl = encodeURIComponent(path);
       return NextResponse.redirect(new URL(`/login?returnUrl=${returnUrl}`, request.url));
     }
+
+    // User is authenticated, now check if they have an active subscription
+    const userId = session.user.id;
+
+    // Check for active subscriptions
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('user_subscriptions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .eq('is_deleted', false) // Only consider non-deleted subscriptions
+      .or('status.eq.active,status.eq.trialing,status.eq.cancelling')
+      .limit(1);
+
+    if (subscriptionData && subscriptionData.length > 0) {
+      // User has an active subscription with appointment access, allow access
+      return NextResponse.next();
+    }
+
+    // No active subscription, redirect to subscription page
+    return NextResponse.redirect(new URL('/subscriptions?access=denied', request.url));
   }
   
-  // For auth protected routes that aren't appointment specific
+  // For auth protected routes
   if (path.startsWith('/account')) {
     // Get the current session
     const { data: { session } } = await supabase.auth.getSession();
@@ -52,7 +67,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/account/:path*',
-    '/appointment/:path*',
-    '/appointments/:path*'
+    '/appointment/:path*'
   ],
 };

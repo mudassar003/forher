@@ -5,12 +5,15 @@ import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
 
 const Dashboard = () => {
   const { user } = useAuthStore();
+  const { hasActiveSubscription, fetchUserSubscriptions } = useSubscriptionStore();
   const [orderCount, setOrderCount] = useState(0);
   const [customerName, setCustomerName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [activeSubscriptions, setActiveSubscriptions] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -37,6 +40,22 @@ const Dashboard = () => {
             setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
           }
         }
+
+        // Fetch subscriptions
+        await fetchUserSubscriptions(user.id);
+        
+        // Get subscription count - fixed to use { count: 'exact' } parameter
+        const { data: subscriptionsData, error: subscriptionsError, count: subsCount } = await supabase
+          .from("user_subscriptions")
+          .select("id", { count: 'exact' })
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .eq("is_deleted", false)
+          .or('status.eq.active,status.eq.trialing,status.eq.cancelling');
+
+        if (!subscriptionsError) {
+          setActiveSubscriptions(subsCount || 0);
+        }
       } catch (error) {
         console.error("Error in user data fetch:", error);
         // Set fallback name
@@ -47,13 +66,14 @@ const Dashboard = () => {
     };
 
     fetchUserData();
-  }, [user]);
+  }, [user, fetchUserSubscriptions]);
 
-  // Placeholder stats for dashboard, but with dynamic order count
+  // Stats for dashboard
   const stats = [
     { label: "Orders", value: loading ? "..." : orderCount.toString(), icon: "📦" },
-    { label: "Appointments", value: "2", icon: "📅" },
-    { label: "Active Subscriptions", value: "1", icon: "🔄" },
+    { label: "Active Subscriptions", value: loading ? "..." : activeSubscriptions.toString(), icon: "🔄" },
+    { label: "Telehealth Access", value: hasActiveSubscription ? "Active" : "Inactive", icon: "🩺", 
+      color: hasActiveSubscription ? "bg-green-50 border-green-100" : "bg-gray-50 border-gray-200" }
   ];
 
   return (
@@ -66,7 +86,7 @@ const Dashboard = () => {
         {/* Quick stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {stats.map((stat, index) => (
-            <div key={index} className="bg-pink-50 p-5 rounded-lg border border-pink-100 flex items-center">
+            <div key={index} className={`${stat.color || "bg-pink-50 border-pink-100"} p-5 rounded-lg border flex items-center`}>
               <div className="text-3xl mr-4">{stat.icon}</div>
               <div>
                 <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
@@ -106,16 +126,16 @@ const Dashboard = () => {
             </div>
           </Link>
           
-          <Link href="/account/appointments">
+          <Link href="/appointment">
             <div className="bg-white p-5 rounded-lg border border-gray-200 hover:border-pink-300 hover:shadow-md transition-all group">
               <h3 className="font-medium text-gray-800 group-hover:text-pink-500 transition-colors flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                Your Appointments
+                Telehealth Portal
               </h3>
               <p className="text-sm text-gray-600 mt-2">
-                Schedule and manage your upcoming appointments
+                Access your telehealth consultations
               </p>
             </div>
           </Link>
@@ -129,7 +149,7 @@ const Dashboard = () => {
                 Subscriptions
               </h3>
               <p className="text-sm text-gray-600 mt-2">
-                Manage your recurring product deliveries
+                Manage your subscriptions and telehealth access
               </p>
             </div>
           </Link>
@@ -165,7 +185,70 @@ const Dashboard = () => {
         </div>
       </div>
       
-      {/* Recent activity section can be uncommented and integrated with real data if needed */}
+      {/* Telehealth Access Section */}
+      {hasActiveSubscription && (
+        <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Telehealth Access
+          </h2>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-100 mb-4">
+            <div className="flex items-start">
+              <div className="text-green-500 mt-1 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-green-700">Your subscription includes telehealth access</p>
+                <p className="mt-1 text-sm text-green-600">
+                  You can access the telehealth portal anytime during your subscription period.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Link href="/appointment" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Go to Telehealth Portal
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {!hasActiveSubscription && (
+        <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Telehealth Access
+          </h2>
+          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 mb-4">
+            <div className="flex items-start">
+              <div className="text-yellow-500 mt-1 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-yellow-700">Subscription required for telehealth access</p>
+                <p className="mt-1 text-sm text-yellow-600">
+                  You need an active subscription to access the telehealth portal.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Link href="/subscriptions" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              View Subscription Plans
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

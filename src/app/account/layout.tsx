@@ -10,12 +10,11 @@ import GlobalFooter from "@/components/GlobalFooter";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
-// Define navigation items
+// Define navigation items - removed Appointments
 const navItems = [
   { name: "Dashboard", path: "/account" },
   { name: "Profile", path: "/account/profile" },
   { name: "Orders", path: "/account/orders" },
-  { name: "Appointments", path: "/account/appointments" },
   { name: "Subscriptions", path: "/account/subscriptions" },
   { name: "Settings", path: "/account/settings" },
 ];
@@ -121,6 +120,18 @@ const AccountNavigation = () => {
             {item.name}
           </Link>
         ))}
+        
+        {/* Add telehealth link to navigation */}
+        <Link
+          href="/appointment"
+          className={`block px-4 py-3 rounded-lg transition-colors ${
+            pathname === "/appointment"
+              ? "bg-pink-100 text-pink-700 font-medium"
+              : "text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Telehealth
+        </Link>
       </nav>
       <div className="mt-6">
         <Link

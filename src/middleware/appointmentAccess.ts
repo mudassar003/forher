@@ -20,7 +20,8 @@ export async function appointmentAccessMiddleware(request: NextRequest) {
   // User is authenticated, now check if they have appointment access
   const userId = session.user.id;
 
-  // Check for active appointments with paid status
+  // Check for active appointments with paid status and N/A exam status
+  // ONLY N/A status is valid for appointment access
   const { data: appointmentData, error: appointmentError } = await supabase
     .from('user_appointments')
     .select('id')
@@ -28,11 +29,11 @@ export async function appointmentAccessMiddleware(request: NextRequest) {
     .eq('is_deleted', false) // Only consider non-deleted appointments
     .eq('payment_status', 'paid') // Must be paid
     .or('status.eq.scheduled,status.eq.confirmed,status.eq.pending')
-    .or('qualiphy_exam_status.eq.Pending,qualiphy_exam_status.eq.Deferred')
+    .eq('qualiphy_exam_status', 'N/A') // ONLY N/A status allows access
     .limit(1);
 
   if (appointmentData && appointmentData.length > 0) {
-    // User has an active appointment, allow access
+    // User has a valid appointment, allow access
     return NextResponse.next();
   }
 

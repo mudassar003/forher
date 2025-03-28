@@ -210,7 +210,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       const hasActiveAppointment = appointmentsData.some(apt => 
         apt.status !== 'completed' && 
         apt.status !== 'cancelled' &&
-        apt.payment_status === 'paid'
+        apt.payment_status === 'paid' &&
+        apt.qualiphyExamStatus === 'N/A' // ONLY N/A status is valid for appointment access
       );
       
       // Check if we have any appointments that need syncing (pending payment or missing status)
@@ -293,7 +294,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       const hasActiveAppointment = appointmentsData.some(apt => 
         apt.status !== 'completed' && 
         apt.status !== 'cancelled' &&
-        apt.payment_status === 'paid'
+        apt.payment_status === 'paid' &&
+        apt.qualiphyExamStatus === 'N/A' // ONLY N/A status is valid for appointment access
       );
       
       set({ 
@@ -508,7 +510,22 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
           }));
           
           // Update appointments in the store
-          set({ appointments: appointmentsData });
+          set({ 
+            appointments: appointmentsData,
+            // Update hasActiveAppointment based on refreshed data
+            hasActiveAppointment: appointmentsData.some(apt => 
+              apt.status !== 'completed' && 
+              apt.status !== 'cancelled' &&
+              apt.payment_status === 'paid' &&
+              apt.qualiphyExamStatus === 'N/A' // ONLY N/A status is valid for appointment access
+            )
+          });
+          
+          // Update canAccessAppointmentPage flag
+          const { hasActiveSubscription, hasActiveAppointment } = get();
+          set({
+            canAccessAppointmentPage: hasActiveSubscription || hasActiveAppointment
+          });
         }
       }
       

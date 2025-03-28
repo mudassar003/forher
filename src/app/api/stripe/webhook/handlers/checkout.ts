@@ -288,7 +288,8 @@ async function handleAppointmentPurchase(
       await updateSanityAppointment(sanityAppointmentId, {
         status: 'scheduled',
         scheduledDate: scheduledDate.toISOString(),
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        qualiphyExamStatus: 'N/A' // Set initial Qualiphy status to N/A
       });
       
       // Update Supabase user appointment
@@ -298,6 +299,7 @@ async function handleAppointmentPurchase(
         stripe_customer_id: customerId || null,
         payment_status: 'paid', // Set payment to paid
         payment_method: 'stripe',
+        qualiphy_exam_status: 'N/A', // Set initial Qualiphy status to N/A
         stripe_payment_intent_id: session.payment_intent as string,
         updated_at: new Date().toISOString()
       }, 'stripe_session_id');
@@ -311,16 +313,8 @@ async function handleAppointmentPurchase(
       if (qualiphyExamId && parseInt(qualiphyExamId) > 0) {
         console.log(`Will handle Qualiphy exam ID: ${qualiphyExamId} when user accesses widget`);
         
-        // Update Qualiphy status to pending
-        await updateSupabaseAppointment(appointmentData.id, {
-          qualiphy_exam_status: 'Pending',
-          updated_at: new Date().toISOString()
-        });
-        
-        // Update Sanity Qualiphy status
-        await updateSanityAppointment(sanityAppointmentId, {
-          qualiphyExamStatus: 'Pending'
-        });
+        // We've already set qualiphy_exam_status to N/A above, no need to update again
+        console.log(`✅ Set initial Qualiphy status to N/A for appointment ${appointmentData.id}`);
       }
     } else {
       throw new Error(`No sanity ID found for appointment with session ID: ${session.id}`);

@@ -12,8 +12,11 @@ interface AppointmentCardProps {
 }
 
 export const AppointmentCard = ({ appointment, onViewDetails }: AppointmentCardProps) => {
-  // Check if user can access the telehealth portal based on payment status only
-  const canAccessTelehealth = appointment.payment_status === 'paid';
+  // Check if user can access the telehealth portal based on payment status and exam status
+  // Only N/A status is valid for access
+  const canAccessTelehealth = 
+    appointment.payment_status === 'paid' && 
+    appointment.qualiphyExamStatus === 'N/A';
   
   // Format the creation date
   const formattedDate = formatDate(appointment.created_at, 'medium');
@@ -58,7 +61,7 @@ export const AppointmentCard = ({ appointment, onViewDetails }: AppointmentCardP
                 ? "border border-pink-500 text-pink-500 hover:bg-pink-50" 
                 : "border border-gray-300 text-gray-400 cursor-not-allowed"
             }`}
-            title={!canAccessTelehealth ? "Payment or consultation status doesn't allow access yet" : ""}
+            title={!canAccessTelehealth ? "Access is only available with N/A consultation status" : ""}
             onClick={(e) => {
               if (!canAccessTelehealth) {
                 e.preventDefault();

@@ -12,8 +12,11 @@ interface AppointmentDetailsModalProps {
 }
 
 export const AppointmentDetailsModal = ({ appointment, onClose }: AppointmentDetailsModalProps) => {
-  // Check if user can access the telehealth portal based on payment status only
-  const canAccessTelehealth = appointment.payment_status === 'paid';
+  // Check if user can access the telehealth portal based on payment status and exam status
+  // Only N/A status is valid for access
+  const canAccessTelehealth = 
+    appointment.payment_status === 'paid' && 
+    appointment.qualiphyExamStatus === 'N/A';
   
   // Format the creation date
   const formattedDate = formatDate(appointment.created_at, 'long');
@@ -23,7 +26,7 @@ export const AppointmentDetailsModal = ({ appointment, onClose }: AppointmentDet
 
   // Create a description of the current consultation status based on Qualiphy status
   const getConsultationStateMessage = (): { title: string; description: string } => {
-    if (!appointment.qualiphyExamStatus || appointment.payment_status !== 'paid') {
+    if (appointment.payment_status !== 'paid') {
       return { 
         title: 'Payment Required', 
         description: 'Complete payment to access your consultation.'
@@ -39,17 +42,17 @@ export const AppointmentDetailsModal = ({ appointment, onClose }: AppointmentDet
       case 'Deferred':
         return { 
           title: 'Consultation Under Review', 
-          description: 'Your consultation is currently under review by our medical team.' 
+          description: 'Your consultation is currently under review by our medical team. Telehealth access is no longer available.' 
         };
       case 'Pending':
         return { 
-          title: 'Ready for Consultation', 
-          description: 'Your consultation is ready. Click "Access Telehealth" to begin.' 
+          title: 'Processing Consultation', 
+          description: 'Your consultation is being processed. Telehealth access is no longer available.' 
         };
       case 'N/A':
         return { 
-          title: 'Consultation Not Available', 
-          description: 'This appointment is not eligible for telehealth consultation.' 
+          title: 'Ready for Consultation', 
+          description: 'Your appointment is ready. You can access the telehealth portal to begin your consultation.' 
         };
       default:
         return { 

@@ -31,8 +31,8 @@ export const AppointmentStatusBadges = ({
       description: 'Awaiting Consultation' 
     },
     'N/A': { 
-      color: 'bg-gray-100 text-gray-800 border border-gray-200', 
-      description: 'No Consultation' 
+      color: 'bg-blue-100 text-blue-800 border border-blue-200', 
+      description: 'Ready to Begin Consultation' 
     }
   };
 

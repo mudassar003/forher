@@ -17,7 +17,6 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
   const { 
     appointments, 
     hasActiveSubscription, 
-    hasActiveAppointment,
     refreshUserAppointments,
     loading: subscriptionLoading 
   } = useSubscriptionStore();
@@ -62,25 +61,21 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
 
   // Function to check if user has valid appointment access
   const hasValidAppointmentAccess = () => {
-    if (!hasActiveAppointment && !hasActiveSubscription) {
-      return false;
+    if (!hasActiveSubscription) {
+      // Check for a specific valid appointment - only N/A status is valid for access
+      return appointments.some(apt => 
+        // Must be paid
+        apt.payment_status === 'paid' && 
+        // Not completed or cancelled
+        apt.status !== 'completed' && 
+        apt.status !== 'cancelled' &&
+        // ONLY N/A status is valid for access
+        apt.qualiphyExamStatus === 'N/A'
+      );
     }
-
+    
     // If they have subscription access, that's enough
-    if (hasActiveSubscription) {
-      return true;
-    }
-
-    // Check for a specific valid appointment
-    return appointments.some(apt => 
-      // Must be paid and in the right status
-      apt.payment_status === 'paid' && 
-      // Must be in a status that allows access (not completed or cancelled)
-      apt.status !== 'completed' && 
-      apt.status !== 'cancelled' &&
-      // Qualiphy status must be Pending or Deferred (not Approved or N/A)
-      (apt.qualiphyExamStatus === 'Pending' || apt.qualiphyExamStatus === 'Deferred')
-    );
+    return true;
   };
 
   if (isLoading) {
@@ -123,7 +118,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
             You need an active appointment or subscription to access telehealth consultations.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3">
-            <Link href="/appointments" className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600">
+            <Link href="/book-appointments" className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600">
               Book Appointment
             </Link>
             <Link href="/subscriptions" className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">

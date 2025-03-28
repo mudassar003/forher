@@ -71,7 +71,6 @@ export interface DbAppointment {
   requires_subscription?: boolean;
 }
 
-// Add these interfaces to the file to be imported elsewheres
 export interface AppointmentPurchaseOptions {
   useSubscription?: boolean;
   subscriptionId?: string;

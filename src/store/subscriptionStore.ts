@@ -15,8 +15,6 @@ export interface Subscription {
   start_date: string;
   totalUsers?: number;
   products?: SubscriptionProduct[];
-  appointmentsIncluded: number;
-  appointmentsUsed: number;
   stripe_subscription_id?: string;
   sanity_id?: string;
   is_active: boolean;
@@ -86,8 +84,6 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         start_date: sub.start_date || new Date().toISOString(),
         totalUsers: 0, // Optional metadata
         products: [], // Could be populated from another query if needed
-        appointmentsIncluded: sub.appointments_included || 0,
-        appointmentsUsed: sub.appointments_used || 0,
         stripe_subscription_id: sub.stripe_subscription_id,
         sanity_id: sub.sanity_id
       }));

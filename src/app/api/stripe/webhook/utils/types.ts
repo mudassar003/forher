@@ -10,7 +10,6 @@ export interface SubscriptionUpdateData {
   next_billing_date?: string;
   stripe_subscription_id?: string;
   start_date?: string;
-  appointments_used?: number;
 }
 
 export interface SanitySubscriptionUpdateData {
@@ -18,8 +17,7 @@ export interface SanitySubscriptionUpdateData {
   isActive: boolean;
   endDate?: string;
   nextBillingDate?: string;
-  appointmentsUsed?: number;
-  stripeSubscriptionId?: string; // Added this field to match what's used in checkout.ts
+  stripeSubscriptionId?: string;
 }
 
 export interface OrderUpdateData {
@@ -41,22 +39,6 @@ export interface SanityOrderUpdateData {
   stripeCustomerId?: string;
 }
 
-export interface AppointmentUpdateData {
-  status: string;
-  scheduled_date?: string;
-  completed_date?: string;
-  stripe_customer_id?: string | null;
-  notes?: string;
-  updated_at?: string;
-}
-
-export interface SanityAppointmentUpdateData {
-  status: string;
-  scheduledDate?: string;
-  completedDate?: string;
-  notes?: string;
-}
-
 // Event handler return type
 export interface WebhookResponse {
   success: boolean;
@@ -69,11 +51,6 @@ export interface CheckoutSessionMetadata {
   userId?: string;
   userEmail?: string;
   subscriptionId?: string;
-  appointmentId?: string;
-  appointmentType?: string;
-  fromSubscription?: string;
-  userSubscriptionId?: string;
-  qualiphyExamId?: string;
   orderId?: string;
   sanityId?: string;
 }

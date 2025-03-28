@@ -218,6 +218,6 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
       {children}
     </>
   );
-}
+};
 
 export default QualiphyWidgetAuthWrapper;

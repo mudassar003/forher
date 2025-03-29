@@ -1,13 +1,19 @@
-//src/components/HomeHeader.tsx
+// src/components/HomeHeader.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { FiShoppingCart, FiMenu, FiX, FiUser } from "react-icons/fi";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase"; // Import Supabase client
 import { useCartStore } from "@/store/cartStore"; // Import Zustand cart store
+import { User } from "@supabase/supabase-js";
 
-const componentColorMap: { [key: string]: string } = {
+// Define component color map with proper typings
+interface ComponentColorMap {
+  [key: string]: string;
+}
+
+const componentColorMap: ComponentColorMap = {
   HairRegrowCard: "#729693",
   FaqAccordion: "#ffffff",
   HomeHero: "#f0f0f0",
@@ -15,29 +21,65 @@ const componentColorMap: { [key: string]: string } = {
   RotatingSection: "#464E3D",
 };
 
-const HomeHeader = () => {
-  const [headerBg, setHeaderBg] = useState("#ffffff");
-  const [user, setUser] = useState<any>(null); // Store logged-in user
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+// Component that safely uses routing hooks inside Suspense
+const HeaderContent: React.FC = () => {
+  const [headerBg, setHeaderBg] = useState<string>("#ffffff");
+  const [user, setUser] = useState<User | null>(null); // Properly typed user state
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
+  
+  // For safety, we'll get the current path from the window object
+  // This avoids using usePathname which requires suspense boundaries
+  const [currentPath, setCurrentPath] = useState<string>("/");
 
   // Get cart data from Zustand
   const cart = useCartStore((state) => state.cart);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0); // Calculate total quantity
 
+  // Update the current path whenever necessary
+  useEffect(() => {
+    // Update on mount
+    setCurrentPath(window.location.pathname);
+    
+    // Listen for navigation events
+    const handleRouteChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    
+    // This could be enhanced with routing events if needed
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, []);
+  
+  // Create the return URL for login/signup
+  const getReturnUrl = (): string => {
+    // Don't set return URL for auth-related pages
+    if (currentPath && 
+        (currentPath.startsWith('/login') || 
+         currentPath.startsWith('/signup') || 
+         currentPath.startsWith('/forgot-password') || 
+         currentPath.startsWith('/reset-password'))) {
+      return '/dashboard';
+    }
+    return currentPath || '/dashboard';
+  };
+
+  // Generate the login URL with return parameter
+  const loginUrl = `/login?returnUrl=${encodeURIComponent(getReturnUrl())}`;
+  const signupUrl = `/signup?returnUrl=${encodeURIComponent(getReturnUrl())}`;
+
   // Toggle mobile menu
-  const toggleMenu = () => {
+  const toggleMenu = (): void => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   // Handle scroll events
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+    const handleScroll = (): void => {
+      setIsScrolled(window.scrollY > 10);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -45,12 +87,13 @@ const HomeHeader = () => {
   }, []);
 
   useEffect(() => {
-    const handleIntersection = (entries: IntersectionObserverEntry[]) => {
+    const handleIntersection = (entries: IntersectionObserverEntry[]): void => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const componentName = entry.target.getAttribute("data-component");
-          const sectionColor = componentColorMap[componentName || ""];
-          if (sectionColor) setHeaderBg(sectionColor);
+          if (componentName && componentColorMap[componentName]) {
+            setHeaderBg(componentColorMap[componentName]);
+          }
         }
       });
     };
@@ -69,9 +112,9 @@ const HomeHeader = () => {
 
   // Check auth state on mount
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUser = async (): Promise<void> => {
       const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
+      if (data?.user && !error) {
         setUser(data.user);
       }
     };
@@ -80,11 +123,7 @@ const HomeHeader = () => {
 
     // Listen for auth state changes (login/logout)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
+      setUser(session?.user || null);
     });
 
     return () => {
@@ -94,7 +133,7 @@ const HomeHeader = () => {
 
   // Close menu if screen size changes to desktop
   useEffect(() => {
-    const handleResize = () => {
+    const handleResize = (): void => {
       if (window.innerWidth >= 768 && isMenuOpen) {
         setIsMenuOpen(false);
       }
@@ -137,7 +176,7 @@ const HomeHeader = () => {
 
           {/* Logo */}
           <Link href="/" className="text-3xl md:text-4xl font-semibold text-black">
-            Lily's
+            Lily&apos;s
           </Link>
 
           {/* Desktop Navigation */}
@@ -145,21 +184,6 @@ const HomeHeader = () => {
             <Link href="/" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Home
             </Link>
-            {/* <Link href="/c/wm" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Weight Loss
-            </Link>
-            <Link href="/c/hl" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Hair Care
-            </Link>
-            <Link href="/c/mh" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Anxiety Relief
-            </Link>
-            <Link href="/c/aa" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Skin Care
-            </Link>
-            <Link href="/c/b" className="text-base lg:text-sm font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Cycle Management
-            </Link> */}
             <Link href="/products" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
               Products
             </Link>
@@ -176,8 +200,8 @@ const HomeHeader = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Desktop Login/Account Button */}
-            <Link href={user ? "/account" : "/login"} className="hidden md:flex">
+            {/* Desktop Login/Account Button - Updated with dynamic return URL */}
+            <Link href={user ? "/account" : loginUrl} className="hidden md:flex">
               <button className="flex items-center bg-white text-black border border-gray-200 px-5 py-2 rounded-full shadow-sm hover:shadow-md transition">
                 <FiUser className="mr-2" />
                 <span>{user ? "Account" : "Login"}</span>
@@ -208,7 +232,7 @@ const HomeHeader = () => {
           {/* Menu Header with Close Button */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <Link href="/" className="text-2xl font-semibold text-black">
-              Lily's
+              Lily&apos;s
             </Link>
             <button 
               className="text-black focus:outline-none" 
@@ -274,10 +298,10 @@ const HomeHeader = () => {
             </nav>
           </div>
           
-          {/* User Account Button at Bottom */}
+          {/* User Account Button at Bottom - Updated with dynamic return URL */}
           <div className="p-4 border-t border-gray-200">
             <Link 
-              href={user ? "/account" : "/login"} 
+              href={user ? "/account" : loginUrl} 
               className="block"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -286,6 +310,17 @@ const HomeHeader = () => {
                 <span>{user ? "My Account" : "Login / Sign Up"}</span>
               </button>
             </Link>
+            
+            {/* Add sign up link if not logged in */}
+            {!user && (
+              <Link 
+                href={signupUrl}
+                className="mt-3 block text-center text-sm text-gray-600 hover:text-[#fc4e87]"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                New to Lily&apos;s? Create an account
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -298,6 +333,30 @@ const HomeHeader = () => {
         />
       )}
     </header>
+  );
+};
+
+// Fallback component for Suspense
+const HeaderFallback: React.FC = () => {
+  return (
+    <header className="sticky top-0 z-50 bg-white shadow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between py-4">
+          <div className="w-8 h-8"></div>
+          <div className="text-3xl font-semibold">Lily&apos;s</div>
+          <div className="w-8 h-8"></div>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+// Main component with Suspense boundary
+const HomeHeader: React.FC = () => {
+  return (
+    <Suspense fallback={<HeaderFallback />}>
+      <HeaderContent />
+    </Suspense>
   );
 };
 

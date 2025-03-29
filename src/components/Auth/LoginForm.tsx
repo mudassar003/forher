@@ -13,8 +13,6 @@ interface LoginFormProps {
   returnUrl?: string;
 }
 
-//test
-
 const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
   const {
     email,
@@ -31,51 +29,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
   } = useAuthFormStore();
 
   const router = useRouter();
-  const [isThrottled, setIsThrottled] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  // Check for throttling on component mount - FIXED VERSION
+  // Cleanup function to reset the form on unmount
   useEffect(() => {
-    // Only check throttling if we have a valid email
-    if (email && email.trim()) {
-      const attemptKey = `login_attempts_${email.toLowerCase()}`;
-      const attemptData = sessionStorage.getItem(attemptKey);
-      
-      if (attemptData) {
-        try {
-          const attempts = JSON.parse(attemptData);
-          const thirtyMinutes = 30 * 60 * 1000;
-          
-          if (attempts.count >= 5 && (Date.now() - attempts.timestamp) < thirtyMinutes) {
-            setIsThrottled(true);
-            
-            // Calculate time remaining and set error message
-            const timeLeft = Math.ceil((thirtyMinutes - (Date.now() - attempts.timestamp)) / 60000);
-            setError(`Too many login attempts. Please try again in ${timeLeft} minutes.`);
-          } else {
-            // Make sure to reset throttling state if not throttled
-            setIsThrottled(false);
-          }
-        } catch (err) {
-          // Handle potential JSON parse errors
-          console.error("Error parsing login attempts data:", err);
-          sessionStorage.removeItem(attemptKey); // Remove invalid data
-          setIsThrottled(false);
-        }
-      } else {
-        // Explicitly reset throttling if no attempt data found
-        setIsThrottled(false);
-      }
-    } else {
-      // No email provided yet, so no throttling
-      setIsThrottled(false);
-    }
-    
-    // Cleanup function to reset the form on unmount
     return () => {
       resetForm();
     };
-  }, [email, resetForm, setError]);
+  }, [resetForm]);
 
   const validateInputs = (): boolean => {
     if (!email.trim()) {
@@ -103,10 +64,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
     setError(null);
     setSuccessMessage(null);
     
-    // Check if user is throttled
-    if (isThrottled) {
-      return;
-    }
+    // Throttling check removed
     
     // Validate inputs
     if (!validateInputs()) {
@@ -199,7 +157,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
             placeholder="Email"
             className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
             required
-            disabled={loading || isThrottled}
+            disabled={loading}
             autoComplete="email"
           />
         </div>
@@ -217,7 +175,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
               placeholder="Password"
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none pr-10"
               required
-              disabled={loading || isThrottled}
+              disabled={loading}
               autoComplete="current-password"
             />
             <button 
@@ -251,7 +209,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
 
         <button
           type="submit"
-          disabled={loading || isThrottled}
+          disabled={loading}
           className="w-full bg-black text-white p-3 rounded-md font-semibold hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Logging in..." : "Log in"}
@@ -266,7 +224,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
 
       <button
         onClick={handleGoogleLogin}
-        disabled={loading || isThrottled}
+        disabled={loading}
         className="w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded-md font-semibold hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
         type="button"
       >

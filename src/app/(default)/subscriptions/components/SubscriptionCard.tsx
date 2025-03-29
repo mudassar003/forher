@@ -151,10 +151,8 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             className={`w-full py-3 rounded-lg text-white font-medium ${
               isProcessing || isLoading
                 ? 'bg-gray-300 cursor-not-allowed'
-                : isAuthenticated 
-                  ? 'bg-indigo-600 hover:bg-indigo-700'
-                  : 'bg-blue-500 hover:bg-blue-600'
-            } transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 shadow-sm`}
+                : 'bg-black hover:bg-gray-800'
+            } transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-opacity-50 shadow-sm`}
           >
             {isProcessing || isLoading 
               ? 'Processing...' 

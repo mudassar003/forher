@@ -1,15 +1,16 @@
-//src/app/(login)/reset-password/page.tsx
+// src/app/(login)/reset-password/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { updatePassword } from "@/lib/auth";
 import Link from "next/link";
 
-const ResetPasswordPage = () => {
+// Component that safely uses useSearchParams inside Suspense
+const ResetPasswordForm = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  
+  // We'll get the token from URL in useEffect instead of useSearchParams
+  const [token, setToken] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [message, setMessage] = useState<string>("");
@@ -20,25 +21,30 @@ const ResetPasswordPage = () => {
   
   // Get token from URL and validate it
   useEffect(() => {
-    const token = searchParams?.get('token');
-    
-    if (!token) {
-      setTokenValid(false);
-      setError("Invalid or missing reset token. Please request a new password reset link.");
-      return;
+    // Safe way to access URL parameters without useSearchParams
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenParam = urlParams.get('token');
+      
+      setToken(tokenParam);
+      
+      if (!tokenParam) {
+        setTokenValid(false);
+        setError("Invalid or missing reset token. Please request a new password reset link.");
+        return;
+      }
+      
+      // Here you would typically verify the token with your backend
+      // For this example, we're just checking if it exists
+      setTokenValid(true);
     }
-    
-    // Here you would typically verify the token with your backend
-    // For this example, we're just checking if it exists
-    // In a real implementation, you would validate against Supabase
-    setTokenValid(true);
     
     // Clear any messages when component unmounts
     return () => {
       setMessage("");
       setError("");
     };
-  }, [searchParams]);
+  }, []);
 
   const validatePassword = (password: string): boolean => {
     if (!password) {
@@ -270,6 +276,28 @@ const ResetPasswordPage = () => {
         </Link>
       </p>
     </div>
+  );
+};
+
+// Loading fallback to display while the form component is loading
+const LoadingFallback = () => (
+  <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
+    <div className="animate-pulse">
+      <div className="h-7 bg-gray-200 rounded w-3/4 mx-auto mb-6"></div>
+      <div className="h-24 bg-gray-200 rounded mb-4"></div>
+      <div className="h-12 bg-gray-200 rounded mb-4"></div>
+      <div className="h-12 bg-gray-200 rounded mb-4"></div>
+      <div className="h-12 bg-gray-200 rounded"></div>
+    </div>
+  </div>
+);
+
+// Main component
+const ResetPasswordPage = () => {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 };
 

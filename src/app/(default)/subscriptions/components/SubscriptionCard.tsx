@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
 import { SubscriptionFeature } from '@/types/subscription-page';
@@ -31,6 +32,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const { isAuthenticated } = useAuthStore();
   const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
+  const router = useRouter();
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -56,9 +58,16 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     }
   };
 
-  // Handle the subscription purchase
+  // Handle the subscription purchase or redirect to login
   const handleSubscribe = async (): Promise<void> => {
     if (isProcessing || isLoading) return;
+    
+    // If not authenticated, redirect to login with return URL
+    if (!isAuthenticated) {
+      const returnUrl = encodeURIComponent('/subscriptions');
+      router.push(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
     
     setIsProcessing(true);
     
@@ -138,21 +147,21 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         <div className="mt-auto pt-4 border-t border-gray-100">
           <button
             onClick={handleSubscribe}
-            disabled={isProcessing || isLoading || !isAuthenticated}
+            disabled={isProcessing || isLoading}
             className={`w-full py-3 rounded-lg text-white font-medium ${
-              isProcessing || isLoading || !isAuthenticated
+              isProcessing || isLoading
                 ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700'
+                : isAuthenticated 
+                  ? 'bg-indigo-600 hover:bg-indigo-700'
+                  : 'bg-blue-500 hover:bg-blue-600'
             } transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 shadow-sm`}
           >
-            {isProcessing || isLoading ? 'Processing...' : 'Subscribe Now'}
+            {isProcessing || isLoading 
+              ? 'Processing...' 
+              : isAuthenticated 
+                ? 'Subscribe Now'
+                : 'Sign In to Subscribe'}
           </button>
-          
-          {!isAuthenticated && (
-            <p className="mt-2 text-xs text-gray-500 text-center">
-              Please log in to subscribe
-            </p>
-          )}
           
           {error && (
             <p className="mt-2 text-xs text-red-600 text-center">

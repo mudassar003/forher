@@ -2,9 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import SubscriptionCard from './SubscriptionCard';
-import { useAuthStore } from '@/store/authStore';
 import { SubscriptionsData, Subscription, SubscriptionCategory } from '@/types/subscription-page';
 
 interface SubscriptionGridProps extends SubscriptionsData {}
@@ -17,7 +15,6 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
   allSubscriptions,
   error
 }) => {
-  const { isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(false);
 
   // FALLBACK: If no categories were found, just show all subscriptions
@@ -40,32 +37,6 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
             />
           ))}
         </div>
-        
-        {!isAuthenticated && (
-          <div className="mt-12 p-4 bg-indigo-50 rounded-lg max-w-2xl mx-auto">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-3 flex-1">
-                <h3 className="text-sm font-medium text-indigo-800">Sign in to subscribe</h3>
-                <div className="mt-2 text-sm text-indigo-700">
-                  <p>You need to be signed in to purchase a subscription plan. Please sign in or create an account.</p>
-                </div>
-                <div className="mt-4">
-                  <Link 
-                    href="/login?returnUrl=/subscriptions" 
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Sign In
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -198,32 +169,6 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 categories={subscription.categories}
               />
             ))}
-          </div>
-        </div>
-      )}
-      
-      {!isAuthenticated && (
-        <div className="mt-12 p-4 bg-indigo-50 rounded-lg max-w-2xl mx-auto">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <svg className="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-3 flex-1">
-              <h3 className="text-sm font-medium text-indigo-800">Sign in to subscribe</h3>
-              <div className="mt-2 text-sm text-indigo-700">
-                <p>You need to be signed in to purchase a subscription plan. Please sign in or create an account.</p>
-              </div>
-              <div className="mt-4">
-                <Link 
-                  href="/login?returnUrl=/subscriptions" 
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Sign In
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
       )}

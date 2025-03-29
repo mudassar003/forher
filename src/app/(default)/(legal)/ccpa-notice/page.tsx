@@ -10,7 +10,7 @@ export default function CCPANotice() {
       
       <div className="prose max-w-none text-gray-700">
         <p className="text-lg">
-          Last Updated: March 18, 2025
+          Last Updated: March 19, 2025
         </p>
         
         <p className="italic text-gray-600 mt-4 mb-8">

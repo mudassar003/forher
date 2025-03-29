@@ -8,6 +8,25 @@ import { supabase } from "@/lib/supabase"; // Import Supabase client
 import { useCartStore } from "@/store/cartStore"; // Import Zustand cart store
 import { User } from "@supabase/supabase-js";
 
+// Define route URLs with proper typing for internal navigation
+interface RouteUrls {
+  about: string;
+  contact: string;
+  [key: string]: string;
+}
+
+// Project route URLs - using internal routes for dynamic navigation
+const routeUrls: RouteUrls = {
+  about: '/about',
+  contact: '/contact'
+};
+
+// Define menu item interface for type safety
+interface MenuItem {
+  href: string;
+  label: string;
+}
+
 // Define component color map with proper typings
 interface ComponentColorMap {
   [key: string]: string;
@@ -35,6 +54,15 @@ const HeaderContent: React.FC = () => {
   // Get cart data from Zustand
   const cart = useCartStore((state) => state.cart);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0); // Calculate total quantity
+
+  // Define menu items for consistency between desktop and mobile
+  const menuItems: MenuItem[] = [
+    { href: "/", label: "Home" },
+    { href: "/products", label: "Products" },
+    { href: routeUrls.about, label: "About Us" },
+    { href: routeUrls.contact, label: "Contact Us" },
+    { href: "/studio", label: "Studio" }
+  ];
 
   // Update the current path whenever necessary
   useEffect(() => {
@@ -181,21 +209,15 @@ const HeaderContent: React.FC = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-6 lg:space-x-8">
-            <Link href="/" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Home
-            </Link>
-            <Link href="/products" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Products
-            </Link>
-            <Link href="/c/b" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              About Us
-            </Link>
-            <Link href="/c/b" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Contact Us
-            </Link>
-            <Link href="/studio" className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all">
-              Studio
-            </Link>
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all"
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           {/* Right Side Actions */}
@@ -243,58 +265,19 @@ const HeaderContent: React.FC = () => {
             </button>
           </div>
           
-          {/* Navigation Links */}
+          {/* Navigation Links - Now using the same items as desktop */}
           <div className="flex-grow overflow-y-auto px-4 py-2">
             <nav className="flex flex-col space-y-4">
-              <Link 
-                href="/" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link 
-                href="/c/wm" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Weight Loss
-              </Link>
-              <Link 
-                href="/c/hl" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Hair Care
-              </Link>
-              <Link 
-                href="/c/mh" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Anxiety Relief
-              </Link>
-              <Link 
-                href="/c/b" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Cycle Management
-              </Link>
-              <Link 
-                href="/products" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Products
-              </Link>
-              <Link 
-                href="/studio" 
-                className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Studio
-              </Link>
+              {menuItems.map((item) => (
+                <Link 
+                  key={item.href}
+                  href={item.href} 
+                  className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
           

@@ -1,3 +1,4 @@
+// src/sanity/schemaTypes/subscriptionType.ts
 import {CreditCardIcon} from '@sanity/icons'
 import {defineField, defineType} from 'sanity'
 
@@ -27,6 +28,17 @@ export const subscriptionType = defineType({
       name: 'description',
       title: 'Description',
       type: 'text',
+    }),
+    defineField({
+      name: 'categories',
+      title: 'Categories',
+      type: 'array',
+      of: [
+        {
+          type: 'reference',
+          to: [{type: 'subscriptionCategory'}],
+        },
+      ],
     }),
     defineField({
       name: 'features',
@@ -99,6 +111,13 @@ export const subscriptionType = defineType({
       initialValue: 0,
     }),
     defineField({
+      name: 'isFeatured',
+      title: 'Featured Subscription',
+      type: 'boolean',
+      description: 'Whether to show this subscription in the featured section',
+      initialValue: false,
+    }),
+    defineField({
       name: 'isActive',
       title: 'Active',
       type: 'boolean',
@@ -129,10 +148,11 @@ export const subscriptionType = defineType({
       media: 'image',
       price: 'price',
       isDeleted: 'isDeleted',
+      isFeatured: 'isFeatured',
     },
-    prepare({title, subtitle, media, price, isDeleted}) {
+    prepare({title, subtitle, media, price, isDeleted, isFeatured}) {
       return {
-        title: isDeleted ? `${title} (Deleted)` : title,
+        title: `${isDeleted ? `${title} (Deleted)` : title}${isFeatured ? ' ⭐' : ''}`,
         subtitle: `$${price} / ${subtitle}`,
         media,
       }

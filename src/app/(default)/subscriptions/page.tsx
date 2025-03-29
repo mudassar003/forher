@@ -1,12 +1,112 @@
-// src/app/subscriptions/page.tsx
-import SubscriptionGrid from '@/components/Subscription/SubscriptionGrid';
+// src/app/(default)/subscriptions/page.tsx
+import { groq } from 'next-sanity';
+import { client } from '@/sanity/lib/client';
+import { Metadata } from 'next';
+import SubscriptionGrid from './components/SubscriptionGrid';
+import { SubscriptionsData, Subscription, SubscriptionCategory } from '@/types/subscription-page';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Subscription Plans',
   description: 'Choose a subscription plan that best fits your needs',
 };
 
-export default function SubscriptionsPage() {
+// A more robust function to fetch subscriptions and organize by category
+async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
+  try {
+    // First fetch all subscriptions
+    const subscriptions: Subscription[] = await client.fetch(
+      groq`*[_type == "subscription" && isActive == true] {
+        _id,
+        title,
+        slug,
+        description,
+        price,
+        billingPeriod,
+        features,
+        image,
+        appointmentAccess,
+        appointmentDiscountPercentage,
+        isActive,
+        isFeatured,
+        "categories": categories[]->{ _id, title, slug, description, displayOrder }
+      }`
+    );
+    
+    // Fetch all categories to ensure we display them in correct order
+    const categories: SubscriptionCategory[] = await client.fetch(
+      groq`*[_type == "subscriptionCategory"] | order(displayOrder asc) {
+        _id,
+        title,
+        slug,
+        description,
+        displayOrder
+      }`
+    );
+    
+    // Extract all featured subscriptions
+    const featuredSubscriptions = subscriptions.filter(
+      subscription => subscription.isFeatured
+    );
+    
+    // Group subscriptions by category
+    const subscriptionsByCategory: Record<string, Subscription[]> = {};
+    categories.forEach(category => {
+      subscriptionsByCategory[category._id] = [];
+    });
+    
+    // Add subscriptions to their respective categories
+    subscriptions.forEach(subscription => {
+      if (subscription.categories && subscription.categories.length > 0) {
+        subscription.categories.forEach(category => {
+          if (category && subscriptionsByCategory[category._id]) {
+            subscriptionsByCategory[category._id].push(subscription);
+          }
+        });
+      }
+    });
+    
+    // Handle uncategorized subscriptions
+    const uncategorizedSubscriptions = subscriptions.filter(subscription => 
+      !subscription.categories || subscription.categories.length === 0
+    );
+    
+    return {
+      categories,
+      subscriptionsByCategory,
+      uncategorizedSubscriptions,
+      featuredSubscriptions,
+      allSubscriptions: subscriptions,
+    };
+  } catch (error: unknown) {
+    console.error("Error fetching subscription data:", error);
+    // Return empty data rather than failing completely
+    return {
+      categories: [],
+      subscriptionsByCategory: {},
+      uncategorizedSubscriptions: [],
+      featuredSubscriptions: [],
+      allSubscriptions: [], 
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+export default async function SubscriptionsPage() {
+  const { 
+    categories, 
+    subscriptionsByCategory, 
+    uncategorizedSubscriptions,
+    featuredSubscriptions,
+    allSubscriptions,
+    error
+  } = await getCategoriesWithSubscriptions();
+
+  // Debug information that will appear in the server logs
+  console.log("Debug: Categories found:", categories.length);
+  console.log("Debug: Featured subscriptions:", featuredSubscriptions.length);
+  console.log("Debug: Total subscriptions:", allSubscriptions.length);
+  if (error) console.error("Error in data fetching:", error);
+
   return (
     <div className="py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,82 +119,14 @@ export default function SubscriptionsPage() {
           </p>
         </div>
         
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden mb-12">
-          <div className="px-6 py-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Why Subscribe?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-pink-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.5H22" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 16.5H8" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 16.5H14.5" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-base font-medium text-gray-800 mb-1">Save 15%</h3>
-                  <p className="text-sm text-gray-600">Subscribers save 15% on all treatments and products</p>
-                </div>
-              </div>
-              
-              <div className="flex">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-pink-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-base font-medium text-gray-800 mb-1">Priority Appointments</h3>
-                  <p className="text-sm text-gray-600">Get priority scheduling for telehealth consultations</p>
-                </div>
-              </div>
-              
-              <div className="flex">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-pink-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-base font-medium text-gray-800 mb-1">Personalized Care</h3>
-                  <p className="text-sm text-gray-600">Receive customized wellness plans and recommendations</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <SubscriptionGrid />
-        
-        <div className="bg-indigo-50 rounded-lg p-6 mt-12">
-          <h2 className="text-xl font-bold text-indigo-900 mb-4">Frequently Asked Questions</h2>
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-base font-medium text-indigo-800">How do subscriptions work?</h3>
-              <p className="mt-2 text-sm text-indigo-700">
-                Our subscriptions are charged on a recurring basis according to the plan you choose. You can cancel at any time through your account dashboard.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-base font-medium text-indigo-800">Can I change my subscription plan?</h3>
-              <p className="mt-2 text-sm text-indigo-700">
-                Yes, you can upgrade or downgrade your subscription at any time. Changes will be applied at the start of the next billing cycle.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-base font-medium text-indigo-800">What happens to my appointment access if I cancel?</h3>
-              <p className="mt-2 text-sm text-indigo-700">
-                You'll maintain access to the telehealth platform until the end of your current billing period. After that, you'll need to purchase individual appointments.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-base font-medium text-indigo-800">Are there any refunds if I cancel early?</h3>
-              <p className="mt-2 text-sm text-indigo-700">
-                We do not provide prorated refunds for cancellations mid-cycle. Your subscription will remain active until the end of the current billing period.
-              </p>
-            </div>
-          </div>
-        </div>
+        <SubscriptionGrid 
+          categories={categories}
+          subscriptionsByCategory={subscriptionsByCategory}
+          uncategorizedSubscriptions={uncategorizedSubscriptions}
+          featuredSubscriptions={featuredSubscriptions}
+          allSubscriptions={allSubscriptions}
+          error={error}
+        />
       </div>
     </div>
   );

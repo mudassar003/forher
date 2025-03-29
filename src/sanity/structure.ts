@@ -1,3 +1,4 @@
+// src/sanity/structure.ts
 import type {StructureResolver} from 'sanity/structure'
 
 // https://www.sanity.io/docs/structure-builder-cheat-sheet
@@ -41,6 +42,7 @@ export const structure: StructureResolver = (S) =>
             .title('Subscriptions')
             .items([
               S.documentTypeListItem('subscription').title('Subscription Plans'),
+              S.documentTypeListItem('subscriptionCategory').title('Subscription Categories'),
               S.documentTypeListItem('userSubscription').title('User Subscriptions'),
             ])
         ),
@@ -59,6 +61,10 @@ export const structure: StructureResolver = (S) =>
       // Other content types
       S.divider(),
       ...S.documentTypeListItems().filter(
-        (item) => item.getId() && !['post', 'category', 'author', 'product', 'productCategory', 'order', 'subscription', 'appointment', 'userSubscription', 'userAppointment'].includes(item.getId()!),
+        (item) => item.getId() && ![
+          'post', 'category', 'author', 'product', 'productCategory', 
+          'order', 'subscription', 'subscriptionCategory', 'appointment', 
+          'userSubscription', 'userAppointment'
+        ].includes(item.getId()!),
       ),
     ])

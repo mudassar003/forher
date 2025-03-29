@@ -32,23 +32,41 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
   const [isThrottled, setIsThrottled] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  // Check for throttling on component mount
+  // Check for throttling on component mount - FIXED VERSION
   useEffect(() => {
-    // Check if the user is throttled based on previous login attempts
-    const attemptKey = `login_attempts_${email.toLowerCase()}`;
-    const attemptData = sessionStorage.getItem(attemptKey);
-    
-    if (attemptData) {
-      const attempts = JSON.parse(attemptData);
-      const thirtyMinutes = 30 * 60 * 1000;
+    // Only check throttling if we have a valid email
+    if (email && email.trim()) {
+      const attemptKey = `login_attempts_${email.toLowerCase()}`;
+      const attemptData = sessionStorage.getItem(attemptKey);
       
-      if (attempts.count >= 5 && (Date.now() - attempts.timestamp) < thirtyMinutes) {
-        setIsThrottled(true);
-        
-        // Calculate time remaining and set error message
-        const timeLeft = Math.ceil((thirtyMinutes - (Date.now() - attempts.timestamp)) / 60000);
-        setError(`Too many login attempts. Please try again in ${timeLeft} minutes.`);
+      if (attemptData) {
+        try {
+          const attempts = JSON.parse(attemptData);
+          const thirtyMinutes = 30 * 60 * 1000;
+          
+          if (attempts.count >= 5 && (Date.now() - attempts.timestamp) < thirtyMinutes) {
+            setIsThrottled(true);
+            
+            // Calculate time remaining and set error message
+            const timeLeft = Math.ceil((thirtyMinutes - (Date.now() - attempts.timestamp)) / 60000);
+            setError(`Too many login attempts. Please try again in ${timeLeft} minutes.`);
+          } else {
+            // Make sure to reset throttling state if not throttled
+            setIsThrottled(false);
+          }
+        } catch (err) {
+          // Handle potential JSON parse errors
+          console.error("Error parsing login attempts data:", err);
+          sessionStorage.removeItem(attemptKey); // Remove invalid data
+          setIsThrottled(false);
+        }
+      } else {
+        // Explicitly reset throttling if no attempt data found
+        setIsThrottled(false);
       }
+    } else {
+      // No email provided yet, so no throttling
+      setIsThrottled(false);
     }
     
     // Cleanup function to reset the form on unmount

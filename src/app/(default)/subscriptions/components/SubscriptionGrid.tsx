@@ -36,7 +36,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
               price={subscription.price}
               billingPeriod={subscription.billingPeriod}
               features={subscription.features || []}
-              image={subscription.image}
+              categories={subscription.categories}
             />
           ))}
         </div>
@@ -133,7 +133,6 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 price={subscription.price}
                 billingPeriod={subscription.billingPeriod}
                 features={subscription.features || []}
-                image={subscription.image}
                 categories={subscription.categories}
               />
             ))}
@@ -171,7 +170,6 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                   price={subscription.price}
                   billingPeriod={subscription.billingPeriod}
                   features={subscription.features || []}
-                  image={subscription.image}
                   categories={subscription.categories}
                 />
               ))}
@@ -197,7 +195,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 price={subscription.price}
                 billingPeriod={subscription.billingPeriod}
                 features={subscription.features || []}
-                image={subscription.image}
+                categories={subscription.categories}
               />
             ))}
           </div>

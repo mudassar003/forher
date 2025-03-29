@@ -93,20 +93,6 @@ export const userSubscriptionType = defineType({
       type: 'number',
     }),
     defineField({
-      name: 'hasAppointmentAccess',
-      title: 'Has Appointment Access',
-      type: 'boolean',
-      description: 'Whether this subscription grants access to book appointments',
-      initialValue: true,
-    }),
-    defineField({
-      name: 'appointmentDiscountPercentage',
-      title: 'Appointment Discount Percentage',
-      type: 'number',
-      description: 'Percentage discount on appointments for this user',
-      initialValue: 0,
-    }),
-    defineField({
       name: 'isDeleted',
       title: 'Deleted',
       type: 'boolean',

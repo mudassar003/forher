@@ -96,21 +96,6 @@ export const subscriptionType = defineType({
       description: 'The ID of the corresponding product in Stripe',
     }),
     defineField({
-      name: 'appointmentAccess',
-      title: 'Appointment Access',
-      type: 'boolean',
-      description: 'Whether this subscription grants access to book appointments',
-      initialValue: true,
-    }),
-    defineField({
-      name: 'appointmentDiscountPercentage',
-      title: 'Appointment Discount Percentage',
-      type: 'number',
-      description: 'Percentage discount on appointments for subscribers (0-100)',
-      validation: (Rule) => Rule.min(0).max(100),
-      initialValue: 0,
-    }),
-    defineField({
       name: 'isFeatured',
       title: 'Featured Subscription',
       type: 'boolean',

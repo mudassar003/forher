@@ -115,8 +115,8 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
   }
 
   return (
-    <div className="space-y-12">
-      {/* Featured Subscriptions Section */}
+    <div>
+      {/* Featured Subscriptions Section - Always at the top */}
       {featuredSubscriptions.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6 pb-2 border-b border-gray-200">

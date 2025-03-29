@@ -1,5 +1,5 @@
 // src/types/subscription-page.ts
-import { SanityImageSource } from "@sanity/image-url/lib/types/types";
+import { SanityImageSource } from '@sanity/image-url/lib/types/types';
 
 export interface SubscriptionFeature {
   featureText: string;
@@ -12,7 +12,7 @@ export interface SubscriptionCategory {
     current: string;
   };
   description?: string;
-  displayOrder: number;
+  displayOrder?: number;
 }
 
 export interface Subscription {
@@ -23,14 +23,14 @@ export interface Subscription {
   };
   description?: string;
   price: number;
-  billingPeriod: 'monthly' | 'quarterly' | 'annually';
-  features: SubscriptionFeature[];
+  billingPeriod: string;
+  features?: SubscriptionFeature[];
   image?: SanityImageSource;
-  appointmentAccess: boolean;
-  appointmentDiscountPercentage: number;
-  isActive: boolean;
   isFeatured: boolean;
+  isActive: boolean;
   categories?: SubscriptionCategory[];
+  stripePriceId?: string;
+  stripeProductId?: string;
 }
 
 export interface SubscriptionsData {

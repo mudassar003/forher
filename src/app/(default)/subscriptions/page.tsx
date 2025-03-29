@@ -15,7 +15,7 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
   try {
     // First fetch all subscriptions
     const subscriptions: Subscription[] = await client.fetch(
-      groq`*[_type == "subscription" && isActive == true] {
+      groq`*[_type == "subscription" && isActive == true && isDeleted != true] {
         _id,
         title,
         slug,
@@ -24,8 +24,6 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
         billingPeriod,
         features,
         image,
-        appointmentAccess,
-        appointmentDiscountPercentage,
         isActive,
         isFeatured,
         "categories": categories[]->{ _id, title, slug, description, displayOrder }
@@ -100,12 +98,6 @@ export default async function SubscriptionsPage() {
     allSubscriptions,
     error
   } = await getCategoriesWithSubscriptions();
-
-  // Debug information that will appear in the server logs
-  console.log("Debug: Categories found:", categories.length);
-  console.log("Debug: Featured subscriptions:", featuredSubscriptions.length);
-  console.log("Debug: Total subscriptions:", allSubscriptions.length);
-  if (error) console.error("Error in data fetching:", error);
 
   return (
     <div className="py-12">

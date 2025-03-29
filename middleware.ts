@@ -53,7 +53,7 @@ export async function middleware(request: NextRequest) {
   // For protection against brute force login attempts - implement rate limiting
   // This is a simple version - real implementation should use Redis or similar
   if (path === '/login' && request.method === 'POST') {
-    const ip = request.headers.get('x-forwarded-for') || request.ip || '127.0.0.1';
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const rateLimitKey = `ratelimit_login_${ip}`;
     
     // This is just pseudocode, real implementation would store in Redis

@@ -19,6 +19,7 @@
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.48.1",
     "countries-list": "^3.1.1",
+    "deepl-node": "^1.17.3",
     "dotenv": "^16.4.7",
     "framer-motion": "^12.4.2",
     "lucide-react": "^0.475.0",

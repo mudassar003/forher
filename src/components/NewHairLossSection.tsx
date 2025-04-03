@@ -62,7 +62,7 @@ export default function NewHairLossSection(): React.ReactElement {
         "Results visible within 3-6 months",
         "Safe for long-term use"
       ],
-      results: "76% of users see improved hair growth",
+      results: "50% of users see improved hair growth",
       /* No pricing information */
       timeline: 6
     },

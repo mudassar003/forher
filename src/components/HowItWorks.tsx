@@ -35,15 +35,15 @@ export default function HowItWorks() {
     },
     {
       id: 2,
-      title: "Physician Review",
-      description: "A licensed healthcare provider reviews your information and creates your personalized plan.",
+      title: "Good Faith Exam",
+      description: "A licensed healthcare provider performs a quick 5-10 minute telehealth exam",
       icon: "/images/doctor-icon.svg",
       color: "#d81159"
     },
     {
       id: 3,
       title: "Discreet Delivery",
-      description: "Receive your treatment in unmarked packaging, delivered right to your door.",
+      description: "24/7 online consultations, offering personalized treatment.",
       icon: "/images/delivery-icon.svg",
       color: "#8f2d56"
     },

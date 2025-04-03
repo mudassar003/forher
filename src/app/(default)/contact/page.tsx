@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: 'Contact Us | Lily&apos;s',
+  title: 'Contact Us | Lily\'s',
   description: 'Get in touch with our team for inquiries, support, or to schedule an appointment.',
 };
 
@@ -117,7 +117,7 @@ export default function ContactPage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-medium text-gray-900">Email</h3>
-                    <p className="mt-1 text-gray-600">contact@Lily&apos;s.com</p>
+                    <p className="mt-1 text-gray-600">cole@lilyswomenshealth.com</p>
                     <p className="mt-1 text-sm text-gray-500">We usually respond within 24 hours</p>
                   </div>
                 </div>
@@ -130,8 +130,8 @@ export default function ContactPage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-medium text-gray-900">Phone</h3>
-                    <p className="mt-1 text-gray-600">+1 (555) 123-4567</p>
-                    <p className="mt-1 text-sm text-gray-500">Mon-Fri from 9am to 5pm EST</p>
+                    <p className="mt-1 text-gray-600">682-386-7827</p>
+                    <p className="mt-1 text-sm text-gray-500">Available during business hours</p>
                   </div>
                 </div>
 
@@ -143,9 +143,8 @@ export default function ContactPage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-medium text-gray-900">Hours</h3>
-                    <p className="mt-1 text-gray-600">Monday-Friday: 9am - 5pm</p>
-                    <p className="mt-0.5 text-gray-600">Saturday: 10am - 2pm</p>
-                    <p className="mt-0.5 text-gray-600">Sunday: Closed</p>
+                    <p className="mt-1 text-gray-600">Every day: 8AM - 9PM CST</p>
+                    <p className="mt-0.5 text-gray-600">7 days a week, 365 days a year</p>
                   </div>
                 </div>
               </div>
@@ -178,7 +177,7 @@ export default function ContactPage() {
                 How quickly can I get an appointment?
               </h3>
               <p className="text-gray-600">
-                Most patients can get a telehealth appointment within 24-48 hours, depending on provider availability.
+                During 8AM-9PM CST an appointment can be made <strong>instantly</strong>, 7 days a week, 365 days a year.
               </p>
             </div>
             
@@ -187,7 +186,7 @@ export default function ContactPage() {
                 How do telehealth appointments work?
               </h3>
               <p className="text-gray-600">
-                Our telehealth appointments are conducted through a secure video platform. You'll receive a link prior to your appointment time.
+                A customer creates an appointment for a Good Faith Exam. Good Faith Exams are simple and can take only 10 minutes. A licensed provider will review medical history, assess current goals and symptoms, take some health screening questions, and make a medical judgment for the patient. That's it!
               </p>
             </div>
             
@@ -196,7 +195,7 @@ export default function ContactPage() {
                 What insurance do you accept?
               </h3>
               <p className="text-gray-600">
-                We offer both insurance-based and self-pay options. Please contact us for specific insurance information.
+                We do not take insurance, we are a cash only business.
               </p>
             </div>
             
@@ -205,7 +204,7 @@ export default function ContactPage() {
                 How can I refill my prescription?
               </h3>
               <p className="text-gray-600">
-                Existing patients can request prescription refills through our patient portal or by contacting our office.
+                Refills come on a monthly basis. In order to have your next month's order shipped, a check-in telehealth consultation is required. Once check-in is done, the next month's prescription will be sent.
               </p>
             </div>
           </div>

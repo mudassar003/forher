@@ -84,7 +84,16 @@ export default function AboutPage() {
                 Our Mission
               </h2>
               <p className="mt-4 text-lg text-gray-500">
-                At Lily&apos;s, we specialize in <strong>online consultations that bring expert healthcare directly to you—no waiting rooms, no hassle</strong>. Our telehealth platform allows individuals across the nation to <strong>access safe, effective treatments</strong> for <strong>weight loss, hair care, sexual wellness, and birth control</strong> from the comfort of their own home.
+                At Lily's, we're on a mission to make medically guided weight loss simple, supportive, and accessible for every woman.
+              </p>
+              <p className="mt-4 text-lg text-gray-500">
+                We understand that lasting change starts with trusted support, which is why we've built an easy-to-use platform that connects women with licensed doctors through secure telehealth consultations. While Lily's doesn't provide medical care directly, we work hand-in-hand with <strong>Qualiphy</strong>, a reputable telehealth provider, to ensure you receive expert care tailored to your goals.
+              </p>
+              <p className="mt-4 text-lg text-gray-500">
+                Our focus is on <strong>clinically backed weight loss solutions</strong>, including prescriptions like GLP-1 medications (such as semaglutide or tirzepatide), all prescribed by licensed professionals when appropriate. Through our website, you can explore your options, complete an intake, and get connected to the care you need—all from the comfort of home.
+              </p>
+              <p className="mt-4 text-lg text-gray-500">
+                We're here to guide you every step of the way, from discovery to results. At Lily's, you're not just starting a program—you're beginning a journey with the right support behind you.
               </p>
               <div className="mt-6">
                 <Link href="/subscriptions" className="inline-flex px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-black shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-opacity-50">

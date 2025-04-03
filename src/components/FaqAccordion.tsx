@@ -3,44 +3,39 @@
 import { useState, useRef, useEffect } from "react";
 import { FiPlus, FiMinus } from "react-icons/fi";
 
+// Updated FAQ data with new content
 const faqData = [
   {
     question: "What is Lily's?",
-    answer: `Lily's is a 100% online platform with over 1 million subscribers that connects patients to licensed 
-    healthcare professionals in all 50 states. We offer support for weight loss, hair regrowth, mental health, 
-    and skincare.
-
-    Through our simple online process you can connect with licensed medical providers who can 
-    recommend customized treatment plans including prescription treatments, if appropriate, shipped 
-    right to your door.`,
+    answer: "Lily's is an online platform that connects women with licensed healthcare providers through secure, convenient telehealth. We make it easy to access trusted medical care from home—starting with a simple intake through our website.",
   },
   {
     question: "How does Lily's work?",
-    answer: `Lily's works by connecting you to healthcare professionals through an easy online process. 
-    You fill out a health questionnaire, and a licensed provider will review it to recommend personalized 
-    treatments. If prescribed, your treatment is delivered directly to your door.`,
+    answer: "It's simple, a patient fills out a quick medical questionnaire on our website, chooses a product, starts a consultation, and finally receives the prescribed products right to their door.",
   },
   {
     question: "Who are the providers at Lily's?",
-    answer: `Lily's partners with licensed healthcare professionals who specialize in weight loss, hair regrowth, 
-    mental health, and skincare. These providers are fully licensed and experienced in delivering online 
-    healthcare services.`,
+    answer: "At Lily's we connect our customers to licensed professionals. Qualiphy is our Telehealth company, who supplies supplements and products through their pharmacy Strive Pharmacy.",
   },
 ];
 
-const FaqAccordion = () => {
+interface FaqAccordionProps {
+  // Props interface for future extensibility
+}
+
+const FaqAccordion: React.FC<FaqAccordionProps> = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const accordionRefs = useRef<Array<HTMLDivElement | null>>([]);
   
   // Handle keyboard navigation
-  const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
+  const handleKeyDown = (event: React.KeyboardEvent, index: number): void => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       toggleAccordion(index);
     }
   };
 
-  const toggleAccordion = (index: number) => {
+  const toggleAccordion = (index: number): void => {
     setOpenIndex((prevIndex) => (prevIndex === index ? null : index));
   };
 
@@ -59,7 +54,6 @@ const FaqAccordion = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
       <h2 className="text-2xl md:text-3xl font-medium mb-8 text-center">Frequently Asked Questions</h2>
       
       <div className="space-y-4">
@@ -72,7 +66,7 @@ const FaqAccordion = () => {
             <h3>
               <button
                 id={`faq-button-${index}`}
-                {...{"aria-expanded": openIndex === index ? "true" : "false"}}
+                aria-expanded={openIndex === index}
                 aria-controls={`faq-panel-${index}`}
                 className="w-full flex justify-between items-center px-6 py-5 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-400"
                 onClick={() => toggleAccordion(index)}
@@ -116,7 +110,6 @@ const FaqAccordion = () => {
           </div>
         ))}
       </div>
-    </div>
     </div>
   );
 };

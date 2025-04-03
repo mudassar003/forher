@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Learn about Lily\'s, our mission, and how we provide expert healthcare through online consultations.',
 };
 
-// Define proper interfaces for our component props
+// Define proper interfaces for our component propss
 interface FeatureCardProps {
   title: string;
   description: string;

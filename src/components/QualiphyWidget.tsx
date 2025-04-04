@@ -36,7 +36,7 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
       loadButton.setAttribute('onmouseover', "this.style.backgroundColor='#8058fa'; this.style.color='white'");
       loadButton.setAttribute('onmouseout', "this.style.backgroundColor='#CFC9FF'; this.style.color='#0A005B'");
       loadButton.setAttribute('onclick', 'showDisclosureModal()');
-      loadButton.innerText = 'Start Consultation';
+      loadButton.innerText = 'Exam Invite';
       widgetContainer.appendChild(loadButton);
 
       const notAvailable = document.createElement('p');
@@ -72,19 +72,11 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
       );
       script.setAttribute('data-timezone', '-5');
       script.setAttribute('data-examhours', 
-        '[{"SUN":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"MON":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"TUE":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"WED":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"THU":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"FRI":{"FROM":"00:00","TO":"23:59","isDaySelected":true}},{"SAT":{"FROM":"00:00","TO":"23:59","isDaySelected":true}}]'
+        '[{"SUN":{"FROM":"08:00","TO":"21:00","isDaySelected":true}},{"MON":{"FROM":"08:00","TO":"21:00","isDaySelected":true}},{"TUE":{"FROM":"08:00","TO":"21:00","isDaySelected":true}},{"WED":{"FROM":"08:00","TO":"21:00","isDaySelected":true}},{"THU":{"FROM":"08:00","TO":"21:00","isDaySelected":true}},{"FRI":{"FROM":"08:00","TO":"21:00","isDaySelected":true}},{"SAT":{"FROM":"08:00","TO":"21:00","isDaySelected":true}}]'
       );
       
       document.body.appendChild(script);
       scriptRef.current = script;
-    }
-
-    // Load the CSS for Qualiphy
-    if (!document.querySelector('link[href*="qualiphy-web-d918b"]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://firebasestorage.googleapis.com/v0/b/qualiphy-web-d918b.appspot.com/o/style-v4.css?alt=media&token=34735782-16e8-4a2f-9eaa-426d65af48b2';
-      document.head.appendChild(link);
     }
 
     // Cleanup function to remove the scripts when component unmounts

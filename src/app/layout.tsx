@@ -38,17 +38,6 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
-
-        {/* Qualiphy Scripts - Load them at the end of body */}
-        <Script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" strategy="afterInteractive" />
-        <Script
-          id="qualiphy-script"
-          src="https://www.app.qualiphy.me/scripts/quidget_disclosure.js"
-          data-formsrc="https://www.app.qualiphy.me/qualiphy-widget?clinic=Lily's&clinicId=2936&first_name=&last_name=&email=&phone_number=&gender=&exams=selectable&tele_state_required=true&token=03c1104d9f29a55f0355920b6dee309f3c46222f"
-          data-timezone="-5"
-          data-examhours="[{&quot;SUN&quot;:{&quot;FROM&quot;:&quot;00:00&quot;,&quot;TO&quot;:&quot;23:59&quot;,&quot;isDaySelected&quot;:true}},{&quot;MON&quot;:{&quot;FROM&quot;:&quot;00:00&quot;,&quot;TO&quot;:&quot;23:59&quot;,&quot;isDaySelected&quot;:true}},{&quot;TUE&quot;:{&quot;FROM&quot;:&quot;00:00&quot;,&quot;TO&quot;:&quot;23:59&quot;,&quot;isDaySelected&quot;:true}},{&quot;WED&quot;:{&quot;FROM&quot;:&quot;00:00&quot;,&quot;TO&quot;:&quot;23:59&quot;,&quot;isDaySelected&quot;:true}},{&quot;THU&quot;:{&quot;FROM&quot;:&quot;00:00&quot;,&quot;TO&quot;:&quot;23:59&quot;,&quot;isDaySelected&quot;:true}},{&quot;FRI&quot;:{&quot;FROM&quot;:&quot;00:00&quot;,&quot;TO&quot;:&quot;23:59&quot;,&quot;isDaySelected&quot;:true}},{&quot;SAT&quot;:{&quot;FROM&quot;:&quot;00:00&quot;,&quot;TO&quot;:&quot;23:59&quot;,&quot;isDaySelected&quot;:true}}]"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );

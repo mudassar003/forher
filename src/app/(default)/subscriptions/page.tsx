@@ -100,25 +100,36 @@ export default async function SubscriptionsPage() {
   } = await getCategoriesWithSubscriptions();
 
   return (
-    <div className="py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-4">
-            Subscription Plans
-          </h1>
-          <p className="max-w-2xl mx-auto text-xl text-gray-500">
-            Choose a subscription plan that best fits your needs and enjoy exclusive benefits
-          </p>
+    <div>
+      {/* Header section with brand styling */}
+      <div style={{ background: "#F7F7F7" }}>
+        <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 
+              className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
+              style={{ color: "#e63946" }} // Brand red color
+            >
+              Subscription Plans
+            </h1>
+            <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-700">
+              Choose a subscription plan that best fits your needs and enjoy exclusive benefits
+            </p>
+          </div>
         </div>
-        
-        <SubscriptionGrid 
-          categories={categories}
-          subscriptionsByCategory={subscriptionsByCategory}
-          uncategorizedSubscriptions={uncategorizedSubscriptions}
-          featuredSubscriptions={featuredSubscriptions}
-          allSubscriptions={allSubscriptions}
-          error={error}
-        />
+      </div>
+
+      {/* Main content with white background */}
+      <div className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SubscriptionGrid 
+            categories={categories}
+            subscriptionsByCategory={subscriptionsByCategory}
+            uncategorizedSubscriptions={uncategorizedSubscriptions}
+            featuredSubscriptions={featuredSubscriptions}
+            allSubscriptions={allSubscriptions}
+            error={error}
+          />
+        </div>
       </div>
     </div>
   );

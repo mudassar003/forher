@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Learn about Lily\'s, our mission, and how we provide expert healthcare through online consultations.',
 };
 
-// Define proper interfaces for our component propss
+// Define proper interfaces for our component props
 interface FeatureCardProps {
   title: string;
   description: string;
@@ -60,15 +60,19 @@ export default function AboutPage() {
 
   return (
     <main className="bg-white">
-      {/* Hero Section */}
-      <div className="relative bg-gray-50">
+      {/* Hero Section - Updated with brand red heading and light gray background */}
+      <div className="relative" style={{ 
+        background: "#F7F7F7"
+      }}>
         <div className="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-              <span className="block">About</span>
-              <span className="block text-pink-600">Lily&apos;s</span>
+            <h1 
+              className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl"
+              style={{ color: "#e63946" }} // Brand red color from RotatingHeadline
+            >
+              About Lily&apos;s
             </h1>
-            <p className="mt-6 max-w-lg mx-auto text-xl text-gray-500 sm:max-w-3xl">
+            <p className="mt-6 max-w-lg mx-auto text-xl text-gray-700 sm:max-w-3xl">
               Healthcare designed for women, delivered to your door.
             </p>
           </div>

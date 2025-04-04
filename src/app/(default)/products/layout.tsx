@@ -20,7 +20,7 @@ export default function ProductLayout({
         You could add category navigation or breadcrumbs here that
         would be consistent across all product pages
       */}
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-white">
         {children}
       </main>
     </>

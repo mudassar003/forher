@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
+import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 // Define types for Sanity content
 interface SanitySubscription {
@@ -87,17 +89,44 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
+    // Get authenticated user from cookies
+    const cookieStore = cookies();
+    const authClient = createRouteHandlerClient({ cookies: () => cookieStore });
+    
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+    
+    // Parse request data
     const data: SubscriptionRequest = await req.json();
     
     // Validate required fields
-    if (!data.subscriptionId || !data.userId || !data.userEmail) {
+    if (!data.subscriptionId) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: "Missing subscription ID" },
         { status: 400 }
       );
     }
     
-    console.log(`Creating subscription for user ${data.userId} with plan ${data.subscriptionId}`);
+    // Security check: Ensure user can only create subscriptions for themselves
+    // Override any user ID provided in the request with the authenticated user's ID
+    const userId = user.id;
+    const userEmail = user.email || data.userEmail;
+    
+    if (!userEmail) {
+      return NextResponse.json(
+        { success: false, error: "User email is required" },
+        { status: 400 }
+      );
+    }
+    
+    console.log(`Creating subscription for user ${userId} with plan ${data.subscriptionId}`);
     
     // 1. Fetch subscription details from Sanity
     const subscription = await sanityClient.fetch<SanitySubscription>(
@@ -206,18 +235,18 @@ export async function POST(req: Request): Promise<NextResponse> {
     const { data: customerData, error: customerError } = await supabase
       .from('stripe_customers')
       .select('stripe_customer_id, user_id, email')
-      .eq('user_id', data.userId)
+      .eq('user_id', userId)
       .single<StripeCustomer>();
       
     let stripeCustomerId: string;
     
     if (customerError || !customerData) {
-      console.log(`Creating new customer for user ${data.userId}`);
+      console.log(`Creating new customer for user ${userId}`);
       // Create a Stripe customer
       const customer = await stripe.customers.create({
-        email: data.userEmail,
+        email: userEmail,
         metadata: {
-          userId: data.userId
+          userId: userId
         }
       });
       
@@ -227,9 +256,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       await supabase
         .from('stripe_customers')
         .insert({
-          user_id: data.userId,
+          user_id: userId,
           stripe_customer_id: customer.id,
-          email: data.userEmail
+          email: userEmail
         });
         
       console.log(`Created Stripe customer: ${customer.id}`);
@@ -253,12 +282,12 @@ export async function POST(req: Request): Promise<NextResponse> {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscriptions?canceled=true`,
       customer: stripeCustomerId,
       metadata: {
-        userId: data.userId,
-        userEmail: data.userEmail,
+        userId: userId,
+        userEmail: userEmail,
         subscriptionId: subscription._id,
         subscriptionType: "subscription" // To differentiate from one-time appointments
       },
-      client_reference_id: data.userId,
+      client_reference_id: userId,
     };
     
     // 4. Create a checkout session for the subscription
@@ -270,8 +299,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     const startDate = new Date().toISOString();
     const userSubscription: UserSubscription = {
       _type: 'userSubscription',
-      userId: data.userId,
-      userEmail: data.userEmail,
+      userId: userId,
+      userEmail: userEmail,
       subscription: {
         _type: 'reference',
         _ref: subscription._id
@@ -293,8 +322,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     
     // 6. Create pending subscription in Supabase
     const supabaseSubscription: SupabaseUserSubscription = {
-      user_id: data.userId,
-      user_email: data.userEmail,
+      user_id: userId,
+      user_email: userEmail,
       sanity_id: sanityResponse._id,
       sanity_subscription_id: subscription._id,
       subscription_name: subscription.title,

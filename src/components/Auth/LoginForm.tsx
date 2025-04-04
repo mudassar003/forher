@@ -64,8 +64,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
     setError(null);
     setSuccessMessage(null);
     
-    // Throttling check removed
-    
     // Validate inputs
     if (!validateInputs()) {
       return;
@@ -79,11 +77,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       if (authError) {
         setError(authError);
         return;
-      }
-
-      // Store auth token if available
-      if (session?.access_token) {
-        localStorage.setItem('user-auth-token', session.access_token);
       }
       
       // Reset form after successful login

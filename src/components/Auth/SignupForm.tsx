@@ -113,11 +113,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
         setError(authError);
         return;
       }
-
-      // Store auth token if available
-      if (session?.access_token) {
-        localStorage.setItem('user-auth-token', session.access_token || 'token-placeholder');
-      }
       
       /* 
       // Uncomment for email verification flow

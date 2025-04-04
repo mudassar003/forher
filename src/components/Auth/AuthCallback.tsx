@@ -16,9 +16,6 @@ const AuthCallback = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // Store the access token in localStorage
-          localStorage.setItem('user-auth-token', session.access_token);
-          
           // Get the stored returnUrl or use default
           const returnUrl = sessionStorage.getItem('loginReturnUrl') || "/dashboard";
           sessionStorage.removeItem('loginReturnUrl'); // Clean up

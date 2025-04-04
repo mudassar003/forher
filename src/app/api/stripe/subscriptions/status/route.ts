@@ -33,6 +33,20 @@ interface SubscriptionData {
 
 export async function POST(req: Request) {
   try {
+    // Get authenticated user from cookies
+    const cookieStore = cookies();
+    const authClient = createRouteHandlerClient({ cookies: () => cookieStore });
+    
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+    
     // Parse request body
     const data: SyncRequest = await req.json();
     
@@ -44,17 +58,20 @@ export async function POST(req: Request) {
       );
     }
     
-    // Get auth client with user's cookie context
-    // No longer needed since we're removing authentication checks
-    // const cookieStore = cookies();
-    // const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-
-    // We're bypassing the authentication check here
-    // Skip authentication verification and proceed with the sync
+    // Security check: Ensure user can only access their own data
+    // or admin users (you would need to implement admin check)
+    if (data.userId !== user.id) {
+      // If you have admin roles, you could check here
+      // For example: if (!isAdminUser(user.id)) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Cannot access other users' subscription data" },
+        { status: 403 }
+      );
+    }
 
     console.log(`Processing subscription sync for user ${data.userId}`);
     
-    // Use admin client for all subsequent operations
+    // Use admin client for subsequent operations to have full access
     // Fetch the user's subscriptions
     let query = supabaseAdmin
       .from('user_subscriptions')

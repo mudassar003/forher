@@ -161,9 +161,8 @@ export const signOut = async (): Promise<AuthResponse> => {
       console.error("Sign-Out Error:", error.message);
       return { data: null, error: "Failed to sign out" };
     }
-
-    // Clear any auth-related data from localStorage
-    localStorage.removeItem('user-auth-token');
+    
+    // Clear any auth-related data from sessionStorage
     sessionStorage.removeItem('loginReturnUrl');
     
     return { data: null, error: null };

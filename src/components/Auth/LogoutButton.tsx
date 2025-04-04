@@ -3,7 +3,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { FiLogOut } from "react-icons/fi";
 
@@ -19,8 +18,7 @@ const LogoutButton = () => {
       // Clear auth data from state/store
       await signOutUser();
       
-      // Clear any relevant local storage items
-      localStorage.removeItem('user-auth-token');
+      // Clear any relevant session storage items
       sessionStorage.removeItem('loginReturnUrl');
       
       // Redirect to homepage

@@ -1,4 +1,4 @@
-//src/app/cart/page.tsx
+//src/app/(default)/cart/page.tsx
 "use client";
 
 import { useCartStore } from "@/store/cartStore";
@@ -6,10 +6,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+// Define interfaces for better type safety
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+}
+
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCartStore();
-  const [couponCode, setCouponCode] = useState("");
-  const [specialInstructions, setSpecialInstructions] = useState("");
+  const [couponCode, setCouponCode] = useState<string>("");
+  const [specialInstructions, setSpecialInstructions] = useState<string>("");
 
   // Calculate subtotal with fallback for undefined prices
   const subtotal = cart.reduce((acc, item) => {

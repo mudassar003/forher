@@ -45,13 +45,13 @@ export default function ContactPage() {
 
   return (
     <div className="bg-white">
-      {/* Hero Section with brand color and styling */}
+      {/* Hero Section with standardized styling */}
       <div style={{ background: "#F7F7F7" }}>
         <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 
-              className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl"
-              style={{ color: "#e63946" }} // Brand red color
+              className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
+              style={{ color: "#e63946" }}
             >
               Get in Touch
             </h1>

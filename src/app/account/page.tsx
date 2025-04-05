@@ -2,102 +2,48 @@
 "use client";
 
 import { useAuthStore } from "@/store/authStore";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
+import Link from "next/link";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const { user } = useAuthStore();
-  const { hasActiveSubscription, fetchUserSubscriptions, isFetched } = useSubscriptionStore();
-  const [orderCount, setOrderCount] = useState(0);
-  const [customerName, setCustomerName] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [activeSubscriptions, setActiveSubscriptions] = useState(0);
+  const { hasActiveSubscription, fetchUserSubscriptions } = useSubscriptionStore();
 
+  // Fetch subscription data when component mounts
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        if (!user) return;
-        
-        // Fetch order count
-        const { data: ordersData, error: ordersError, count } = await supabase
-          .from("orders")
-          .select("id, customer_name", { count: 'exact' })
-          .eq("email", user.email)
-          .order("created_at", { ascending: false });
-
-        if (ordersError) {
-          console.error("Error fetching orders:", ordersError);
-        } else {
-          setOrderCount(count || ordersData.length || 0);
-          
-          // Get customer name from the most recent order
-          if (ordersData && ordersData.length > 0 && ordersData[0].customer_name) {
-            setCustomerName(ordersData[0].customer_name);
-          } else {
-            // Fallback to user metadata or email
-            setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
-          }
-        }
-
-        // Fetch user subscriptions if not already fetched
-        if (!isFetched && user.id) {
-          await fetchUserSubscriptions(user.id);
-        }
-        
-        // Get subscription count using proper parameters
-        const { data: subscriptionsData, error: subscriptionsError, count: subsCount } = await supabase
-          .from("user_subscriptions")
-          .select("id", { count: 'exact' })
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .eq("is_deleted", false)
-          .or('status.eq.active,status.eq.trialing,status.eq.cancelling');
-
-        if (!subscriptionsError) {
-          setActiveSubscriptions(subsCount || 0);
-        }
-      } catch (error) {
-        console.error("Error in user data fetch:", error);
-        // Set fallback name
-        setCustomerName(user?.user_metadata?.name || user?.email?.split('@')[0] || 'User');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchUserData();
+    // Fetch subscriptions if user has ID
+    if (user?.id) {
+      fetchUserSubscriptions(user.id);
     }
-  }, [user, fetchUserSubscriptions, isFetched]);
+  }, [user, fetchUserSubscriptions]);
 
-  // Stats for dashboard
-  const stats = [
-    { label: "Orders", value: loading ? "..." : orderCount.toString(), icon: "📦" },
-    { label: "Active Subscriptions", value: loading ? "..." : activeSubscriptions.toString(), icon: "🔄" },
-    { label: "Telehealth Access", value: hasActiveSubscription ? "Active" : "Inactive", icon: "🩺", 
-      color: hasActiveSubscription ? "bg-green-50 border-green-100" : "bg-gray-50 border-gray-200" }
-  ];
+  // Get display name from user data
+  const displayName = 
+    user?.user_metadata?.full_name || 
+    user?.user_metadata?.name || 
+    (user?.email ? user.email.split('@')[0] : 'User');
 
   return (
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-          Welcome back, {loading ? "..." : customerName}!
+          Welcome back, {displayName}!
         </h2>
         
-        {/* Quick stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className={`${stat.color || "bg-pink-50 border-pink-100"} p-5 rounded-lg border flex items-center`}>
-              <div className="text-3xl mr-4">{stat.icon}</div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-                <p className="text-sm text-gray-600">{stat.label}</p>
-              </div>
-            </div>
-          ))}
+        {/* Telehealth Access Status */}
+        <div className={`${hasActiveSubscription ? "bg-green-50 border-green-100" : "bg-yellow-50 border-yellow-100"} p-5 rounded-lg border flex items-start mb-8`}>
+          <div className="text-3xl mr-4">🩺</div>
+          <div>
+            <p className="text-lg font-bold text-gray-800">
+              Telehealth Access: {hasActiveSubscription ? "Active" : "Inactive"}
+            </p>
+            <p className="text-sm text-gray-600">
+              {hasActiveSubscription 
+                ? "You have access to telehealth services with your current subscription." 
+                : "You need an active subscription to access telehealth services."}
+            </p>
+          </div>
         </div>
 
         {/* Quick links */}
@@ -190,7 +136,7 @@ const Dashboard = () => {
       </div>
       
       {/* Telehealth Access Section */}
-      {hasActiveSubscription && (
+      {hasActiveSubscription ? (
         <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">
             Telehealth Access
@@ -220,9 +166,7 @@ const Dashboard = () => {
             </Link>
           </div>
         </div>
-      )}
-
-      {!hasActiveSubscription && (
+      ) : (
         <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">
             Telehealth Access

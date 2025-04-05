@@ -48,20 +48,6 @@ const Dashboard = () => {
 
         {/* Quick links */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/account/profile">
-            <div className="bg-white p-5 rounded-lg border border-gray-200 hover:border-pink-300 hover:shadow-md transition-all group">
-              <h3 className="font-medium text-gray-800 group-hover:text-pink-500 transition-colors flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
-                Your Profile
-              </h3>
-              <p className="text-sm text-gray-600 mt-2">
-                Manage your personal information and preferences
-              </p>
-            </div>
-          </Link>
-          
           <Link href="/account/orders">
             <div className="bg-white p-5 rounded-lg border border-gray-200 hover:border-pink-300 hover:shadow-md transition-all group">
               <h3 className="font-medium text-gray-800 group-hover:text-pink-500 transition-colors flex items-center">

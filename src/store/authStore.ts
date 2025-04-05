@@ -1,11 +1,12 @@
+// src/store/authStore.ts
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js"; // ✅ Import Supabase User type
+import { User } from "@supabase/supabase-js";
 
 interface AuthState {
-  user: User | null; // ✅ Ensure user is typed correctly
+  user: User | null;
   loading: boolean;
-  isAuthenticated: boolean; // Add authentication status flag for easier checks
+  isAuthenticated: boolean;
   setUser: (user: User | null) => void;
   checkSession: () => Promise<void>;
   signOutUser: () => Promise<void>;
@@ -14,28 +15,51 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
-  isAuthenticated: false, // Initialize as not authenticated
+  isAuthenticated: false,
 
   setUser: (user) => set({ 
     user,
-    isAuthenticated: !!user // Set authentication status based on user presence
+    isAuthenticated: !!user,
+    loading: false
   }),
 
   checkSession: async () => {
     set({ loading: true });
-    const { data } = await supabase.auth.getSession();
-    set({ 
-      user: data?.session?.user ?? null, 
-      isAuthenticated: !!data?.session?.user, // Set authentication status
-      loading: false 
-    });
+    try {
+      // Uses the createClientComponentClient to get the session which utilizes cookies
+      const { data } = await supabase.auth.getSession();
+      
+      set({ 
+        user: data?.session?.user ?? null, 
+        isAuthenticated: !!data?.session?.user,
+        loading: false 
+      });
+    } catch (error) {
+      console.error("Error checking session:", error);
+      set({
+        user: null,
+        isAuthenticated: false,
+        loading: false
+      });
+    }
   },
 
   signOutUser: async () => {
-    await supabase.auth.signOut();
-    set({ 
-      user: null,
-      isAuthenticated: false // Update authentication status on logout
-    });
+    try {
+      // Sign out will clear the cookie-based session
+      await supabase.auth.signOut();
+      set({ 
+        user: null,
+        isAuthenticated: false,
+        loading: false
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      // Still reset the state even if there's an error
+      set({ 
+        user: null,
+        isAuthenticated: false 
+      });
+    }
   },
 }));

@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { v4 as uuidv4 } from 'uuid'; // Import UUID generator
 
 // Define types for Sanity content
 interface SanitySubscription {
@@ -48,6 +49,7 @@ interface StripeCustomer {
 }
 
 interface SupabaseUserSubscription {
+  id: string; // Add this field to ensure we have an ID
   user_id: string;
   user_email: string;
   sanity_id: string;
@@ -322,6 +324,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     
     // 6. Create pending subscription in Supabase
     const supabaseSubscription: SupabaseUserSubscription = {
+      id: uuidv4(), // Generate a UUID for the ID field
       user_id: userId,
       user_email: userEmail,
       sanity_id: sanityResponse._id,
@@ -345,7 +348,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       .insert(supabaseSubscription);
       
     if (insertError) {
-      console.error("Supabase order creation error:", insertError);
+      console.error("Supabase insertion error:", insertError);
       throw new Error(`Failed to create Supabase record: ${insertError.message}`);
     }
     

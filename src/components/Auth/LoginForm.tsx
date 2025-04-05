@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
+import { useAuthStore } from "@/store/authStore"; // Add this import
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,8 +29,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
     resetForm,
   } = useAuthFormStore();
 
+  // Add auth store to update auth state after login
+  const { setUser, checkSession, isAuthenticated } = useAuthStore();
+
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
+      router.push(storedReturnUrl);
+    }
+  }, [isAuthenticated, returnUrl, router]);
 
   // Cleanup function to reset the form on unmount
   useEffect(() => {
@@ -76,7 +88,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       
       if (authError) {
         setError(authError);
+        setLoading(false);
         return;
+      }
+      
+      // Set success message
+      setSuccessMessage("Login successful! Redirecting...");
+      
+      // Update the auth state
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        // If no session returned, explicitly check the session
+        await checkSession();
       }
       
       // Reset form after successful login
@@ -86,12 +110,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
       sessionStorage.removeItem('loginReturnUrl'); // Clean up
       
-      // Redirect to the return URL
-      router.push(storedReturnUrl);
+      // Redirect to the return URL after a short delay to show success message
+      setTimeout(() => {
+        router.push(storedReturnUrl);
+      }, 1000);
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
       console.error("Login error:", err);
-    } finally {
       setLoading(false);
     }
   };
@@ -108,13 +133,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       
       if (authError) {
         setError(authError);
+        setLoading(false);
       }
       // For OAuth, the redirect will happen automatically after auth completion
       // The returnUrl is already saved in sessionStorage
     } catch (err) {
       setError("An unexpected error occurred with Google login. Please try again.");
       console.error("Google login error:", err);
-    } finally {
       setLoading(false);
     }
   };

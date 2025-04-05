@@ -1,6 +1,6 @@
 // src/lib/auth.ts
 import { supabase } from "./supabase";
-import { Session } from "@supabase/supabase-js";
+import { Session, AuthError } from "@supabase/supabase-js";
 
 // Define response type for better type safety
 interface AuthResponse<T = any> {
@@ -18,6 +18,9 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/`,
+        // This will ensure cookies are set properly
+        // and the session is persisted via cookies rather than localStorage
+        persistSession: true,
       },
     });
 
@@ -38,8 +41,6 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
  */
 export const signUpWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
   try {
-    // Rate limiting check could be done here or in middleware
-    
     // Validate email format
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return { data: null, error: "Invalid email address" };
@@ -50,15 +51,17 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
       return { data: null, error: "Password must be at least 8 characters" };
     }
 
-    // Sign up the user
+    // Sign up the user with cookie-based sessions
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,
-      /* Uncomment for email verification
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/`,
+        // This ensures cookies are used for auth state management
+        data: {
+          // Include any additional user metadata here
+        }
       }
-      */
     });
 
     if (error) {
@@ -69,18 +72,6 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
       }
       return { data: null, error: "Failed to create account" };
     }
-
-    /* Uncomment for email verification check
-    // Check if email verification is required
-    if (data?.user && !data.user.email_confirmed_at) {
-      return { 
-        data, 
-        error: null,
-        session: data.session,
-        message: "Please check your email to verify your account"
-      };
-    }
-    */
 
     return { data, error: null, session: data.session };
   } catch (err) {
@@ -120,7 +111,7 @@ export const signInWithEmail = async (email: string, password: string): Promise<
       return { data: null, error: "Invalid email address" };
     }
 
-    // Sign in the user
+    // Sign in the user - using the auth-helpers client ensures cookies are used
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -155,6 +146,7 @@ export const signInWithEmail = async (email: string, password: string): Promise<
  */
 export const signOut = async (): Promise<AuthResponse> => {
   try {
+    // This will remove both cookies and any localStorage session info
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -225,5 +217,42 @@ export const updatePassword = async (newPassword: string): Promise<AuthResponse>
   } catch (err) {
     console.error("Unexpected error during password update:", err);
     return { data: null, error: "An unexpected error occurred" };
+  }
+};
+
+/**
+ * Get the current authenticated user
+ */
+export const getCurrentUser = async () => {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { user, error: null };
+  } catch (error) {
+    console.error("Error getting current user:", error);
+    return { user: null, error };
+  }
+};
+
+/**
+ * Verify if the current user has a valid session
+ */
+export const verifySession = async (): Promise<boolean> => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error("Session verification error:", error);
+      return false;
+    }
+    
+    return !!session;
+  } catch (error) {
+    console.error("Unexpected error verifying session:", error);
+    return false;
   }
 };

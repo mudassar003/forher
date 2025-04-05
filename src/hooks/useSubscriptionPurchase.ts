@@ -1,6 +1,7 @@
 // src/hooks/useSubscriptionPurchase.ts
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { verifySession } from '@/lib/auth';
 
 interface SubscriptionPurchaseResult {
   success: boolean;
@@ -12,12 +13,15 @@ interface SubscriptionPurchaseResult {
 export function useSubscriptionPurchase() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   // Function to purchase a subscription plan
   const purchaseSubscription = async (subscriptionId: string): Promise<SubscriptionPurchaseResult> => {
+    // First, verify that the session is valid (cookie check)
+    const hasValidSession = await verifySession();
+    
     // Check if user is authenticated
-    if (!user) {
+    if (!isAuthenticated || !hasValidSession || !user) {
       const errorMessage = "You must be logged in to purchase a subscription";
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -38,6 +42,8 @@ export function useSubscriptionPurchase() {
           userId: user.id,
           userEmail: user.email
         }),
+        // Include credentials to ensure cookies are sent with the request
+        credentials: 'include'
       });
       
       const result = await response.json();

@@ -4,8 +4,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { FiShoppingCart, FiMenu, FiX, FiUser } from "react-icons/fi";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase"; // Import Supabase client
-import { useCartStore } from "@/store/cartStore"; // Import Zustand cart store
+import { useAuthStore } from "@/store/authStore"; // Import auth store
+import { useCartStore } from "@/store/cartStore";
 import { User } from "@supabase/supabase-js";
 
 // Define route URLs with proper typing for internal navigation
@@ -43,13 +43,15 @@ const componentColorMap: ComponentColorMap = {
 // Component that safely uses routing hooks inside Suspense
 const HeaderContent: React.FC = () => {
   const [headerBg, setHeaderBg] = useState<string>("#ffffff");
-  const [user, setUser] = useState<User | null>(null); // Properly typed user state
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   
   // For safety, we'll get the current path from the window object
   // This avoids using usePathname which requires suspense boundaries
   const [currentPath, setCurrentPath] = useState<string>("/");
+
+  // Get user from auth store
+  const { user, isAuthenticated } = useAuthStore();
 
   // Get cart data from Zustand
   const cart = useCartStore((state) => state.cart);
@@ -138,27 +140,6 @@ const HeaderContent: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Check auth state on mount
-  useEffect(() => {
-    const fetchUser = async (): Promise<void> => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user && !error) {
-        setUser(data.user);
-      }
-    };
-
-    fetchUser();
-
-    // Listen for auth state changes (login/logout)
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
   // Close menu if screen size changes to desktop
   useEffect(() => {
     const handleResize = (): void => {
@@ -222,11 +203,11 @@ const HeaderContent: React.FC = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Desktop Login/Account Button - Updated with dynamic return URL */}
-            <Link href={user ? "/account" : loginUrl} className="hidden md:flex">
+            {/* Desktop Login/Account Button - Using auth store to determine state */}
+            <Link href={isAuthenticated ? "/account" : loginUrl} className="hidden md:flex">
               <button className="flex items-center bg-white text-black border border-gray-200 px-5 py-2 rounded-full shadow-sm hover:shadow-md transition">
                 <FiUser className="mr-2" />
-                <span>{user ? "Account" : "Login"}</span>
+                <span>{isAuthenticated ? "Account" : "Login"}</span>
               </button>
             </Link>
 
@@ -281,21 +262,21 @@ const HeaderContent: React.FC = () => {
             </nav>
           </div>
           
-          {/* User Account Button at Bottom - Updated with dynamic return URL */}
+          {/* User Account Button at Bottom - Using auth store to determine state */}
           <div className="p-4 border-t border-gray-200">
             <Link 
-              href={user ? "/account" : loginUrl} 
+              href={isAuthenticated ? "/account" : loginUrl} 
               className="block"
               onClick={() => setIsMenuOpen(false)}
             >
               <button className="w-full flex items-center justify-center bg-black text-white px-5 py-3 rounded-full shadow-sm hover:bg-gray-800 transition">
                 <FiUser className="mr-2" />
-                <span>{user ? "My Account" : "Login / Sign Up"}</span>
+                <span>{isAuthenticated ? "My Account" : "Login / Sign Up"}</span>
               </button>
             </Link>
             
             {/* Add sign up link if not logged in */}
-            {!user && (
+            {!isAuthenticated && (
               <Link 
                 href={signupUrl}
                 className="mt-3 block text-center text-sm text-gray-600 hover:text-[#fc4e87]"

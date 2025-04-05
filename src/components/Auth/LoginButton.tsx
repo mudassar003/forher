@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
 
 interface LoginButtonProps {
   className?: string;
@@ -12,7 +13,7 @@ interface LoginButtonProps {
 
 /**
  * A reusable login button component that preserves the current route
- * This component works without requiring usePathname by using window.location
+ * and integrates with the authentication store
  */
 const LoginButton = ({ 
   className = "bg-black text-white px-4 py-2 rounded-md",
@@ -20,6 +21,8 @@ const LoginButton = ({
   returnUrl // Optional override
 }: LoginButtonProps) => {
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  
   // Set initial returnUrl to undefined to prevent hydration errors
   const [currentPath, setCurrentPath] = useState<string | undefined>(undefined);
   
@@ -28,7 +31,16 @@ const LoginButton = ({
     setCurrentPath(window.location.pathname + window.location.search);
   }, []);
   
+  // If already authenticated, we could redirect directly to the account page
+  // or disable the button, but here we'll leave it to honor the component usage
+  
   const handleLoginRedirect = () => {
+    // If already authenticated, go to account page
+    if (isAuthenticated) {
+      router.push('/account');
+      return;
+    }
+    
     // Use the provided returnUrl, or the dynamically determined currentPath, or fall back to "/"
     const pathToReturn = returnUrl || currentPath || "/";
     const encodedReturnUrl = encodeURIComponent(pathToReturn);
@@ -42,7 +54,7 @@ const LoginButton = ({
       onClick={handleLoginRedirect}
       className={className}
     >
-      {buttonText}
+      {isAuthenticated ? "Account" : buttonText}
     </button>
   );
 };

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useStripeStore } from '@/store/stripeStore';
 import { useCartStore } from '@/store/cartStore';
+import { verifySession } from '@/lib/auth';
 
 interface CheckoutData {
   email: string;
@@ -33,6 +34,14 @@ export function useStripeCheckout() {
   // Function to initiate Stripe checkout
   const initiateCheckout = async (checkoutData: CheckoutData) => {
     try {
+      // Verify authentication session validity
+      const hasValidSession = await verifySession();
+      if (!hasValidSession) {
+        // Handle unauthenticated users silently - for guest checkout
+        // Or throw error if auth is required:
+        // throw new Error("Authentication is required for checkout");
+      }
+      
       startCheckout();
       
       // Ensure payment method is set to 'card' for Stripe
@@ -55,6 +64,8 @@ export function useStripeCheckout() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(stripeCheckoutData),
+        // Include credentials to ensure cookies are sent with the request
+        credentials: 'include'
       });
       
       const result = await response.json();

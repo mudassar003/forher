@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
+import { useAuthStore } from "@/store/authStore"; // Add this import
 import { signUpWithEmail, signInWithGoogle } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -30,15 +31,25 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
     resetForm,
   } = useAuthFormStore();
 
+  // Add auth store to update auth state after signup
+  const { setUser, checkSession, isAuthenticated } = useAuthStore();
+
   const router = useRouter();
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isHoneypotFilled, setIsHoneypotFilled] = useState<boolean>(false);
 
-  // Add a honeypot field to catch bots
+  // Redirect if already authenticated
   useEffect(() => {
-    // Reset form on component unmount
+    if (isAuthenticated) {
+      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
+      router.push(storedReturnUrl);
+    }
+  }, [isAuthenticated, returnUrl, router]);
+
+  // Reset form on component unmount
+  useEffect(() => {
     return () => {
       resetForm();
     };
@@ -111,6 +122,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       
       if (authError) {
         setError(authError);
+        setLoading(false);
         return;
       }
       
@@ -119,10 +131,19 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       if (data && !data.session) {
         // Email verification is required
         setSuccessMessage("Please check your email to verify your account before logging in");
+        setLoading(false);
         // Don't redirect yet, show success message
         return;
       }
       */
+      
+      // Update the auth state
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        // If no session returned, explicitly check the session
+        await checkSession();
+      }
       
       resetForm();
       
@@ -140,7 +161,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
       console.error("Signup error:", err);
-    } finally {
       setLoading(false);
     }
   };
@@ -157,12 +177,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       
       if (authError) {
         setError(authError);
+        setLoading(false);
       }
       // For OAuth, the redirect happens automatically
+      // The auth state will be updated by the AuthProvider
     } catch (err) {
       setError("An unexpected error occurred with Google login. Please try again.");
       console.error("Google signup error:", err);
-    } finally {
       setLoading(false);
     }
   };

@@ -37,15 +37,19 @@ const AccountHeader = () => {
 
   useEffect(() => {
     const fetchCustomerName = async (authUser: User) => {
-      // Type-safe email check based on Supabase types
+      // Ensure email exists and is a non-empty string
       const userEmail = authUser.email;
+      if (!userEmail) {
+        handleFallbackName(authUser);
+        return;
+      }
 
       try {
         // Fetch from orders with a type-safe email check
         const { data, error } = await supabase
           .from("orders")
           .select("customer_name")
-          .eq("email", userEmail)
+          .eq("email", userEmail) // Guaranteed to be a non-null string here
           .order("created_at", { ascending: false })
           .limit(1)
           .single();
@@ -74,7 +78,9 @@ const AccountHeader = () => {
         // Check if user_metadata.name exists and is a string
         (authUser.user_metadata?.name && typeof authUser.user_metadata.name === 'string') 
           ? authUser.user_metadata.name 
-          : authUser.email.split('@')[0] // Safe split since email is guaranteed to be a string
+          : (authUser.email && typeof authUser.email === 'string')
+            ? authUser.email.split('@')[0] 
+            : null
       );
     };
 

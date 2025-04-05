@@ -15,13 +15,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClientComponentClient<Database>({
   supabaseUrl,
   supabaseKey: supabaseAnonKey,
-  options: {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  }
 });
 
 // Regular Supabase client for non-auth operations or when specific configuration is needed

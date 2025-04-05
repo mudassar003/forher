@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
-import { Database } from "@/types/supabase";
 
 // Define the types for order and order item structures
 interface OrderItem {
@@ -61,33 +60,32 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { user } = useAuthStore();
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        // Early return if no user or no email available
-        if (!user?.email) {
+        // We need the user's email for the query
+        // Skip fetching if not available
+        if (!user || !user.email) {
+          setOrders([]);
           setLoading(false);
-          setError("User email is not available");
           return;
         }
 
-        // Define a type-safe email value
-        const userEmail: string = user.email;
+        // Since we've confirmed email exists here, TypeScript should be happy
+        const email = user.email;
 
         // Fetch orders from Supabase
         const { data: ordersData, error: ordersError } = await supabase
           .from("orders")
           .select("id, customer_name, email, address, total, status, created_at")
-          .eq("email", userEmail) // Now we're passing a confirmed string
+          .eq("email", email) // Using the guaranteed non-null email
           .order("created_at", { ascending: false });
 
         if (ordersError) {
           console.error("Error fetching orders:", ordersError);
-          setError("Failed to fetch orders. Please try again later.");
           setLoading(false);
           return;
         }
@@ -112,17 +110,12 @@ export default function OrdersPage() {
         setOrders(ordersWithItems);
       } catch (error) {
         console.error("Error in orders fetch:", error);
-        setError("An unexpected error occurred. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
-      fetchOrders();
-    } else {
-      setLoading(false);
-    }
+    fetchOrders();
   }, [user]);
 
   const viewOrderDetails = (order: Order) => {
@@ -139,23 +132,6 @@ export default function OrdersPage() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        </div>
       </div>
     );
   }

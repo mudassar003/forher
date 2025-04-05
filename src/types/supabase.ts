@@ -12,79 +12,79 @@ export interface Database {
     Tables: {
       orders: {
         Row: {
-          id: string
-          created_at: string
-          email: string
-          customer_name: string
-          address: string
-          apartment: string | null
-          city: string
-          country: string
-          postal_code: string | null
-          phone: string
-          payment_method: string
-          shipping_method: string
-          status: string
-          subtotal: number
-          shipping_cost: number
-          total: number
-          sanity_id: string | null
-          stripe_session_id: string | null
-          stripe_payment_intent_id: string | null
-          payment_status: string
-          stripe_customer_id: string | null
-          is_deleted: boolean | null
-          display_order_id: string | null
+          id: string // uuid, NOT NULL
+          email: string // text, NOT NULL
+          customer_name: string | null // text
+          address: string | null // text
+          apartment: string | null // text
+          city: string | null // text
+          country: string | null // text
+          postal_code: string | null // text
+          phone: string | null // text
+          payment_method: string | null // text
+          shipping_method: string | null // text
+          status: string | null // text
+          subtotal: number | null // numeric
+          shipping_cost: number | null // numeric
+          total: number | null // numeric
+          sanity_id: string | null // text
+          stripe_session_id: string | null // text
+          stripe_payment_intent_id: string | null // text
+          payment_status: string | null // text
+          stripe_customer_id: string | null // text
+          is_deleted: boolean | null // boolean
+          display_order_id: string | null // text
+          created_at: string | null // timestamp with time zone
         }
         Insert: {
-          id?: string
-          created_at?: string
-          email: string
-          customer_name: string
-          address: string
-          apartment?: string | null
-          city: string
-          country: string
-          postal_code?: string | null
-          phone: string
-          payment_method: string
-          shipping_method: string
-          status: string
-          subtotal: number
-          shipping_cost: number
-          total: number
-          sanity_id?: string | null
-          stripe_session_id?: string | null
-          stripe_payment_intent_id?: string | null
-          payment_status: string
-          stripe_customer_id?: string | null
-          is_deleted?: boolean | null
-          display_order_id?: string | null
+          id?: string // uuid
+          email: string // text, NOT NULL
+          customer_name?: string | null // text
+          address?: string | null // text
+          apartment?: string | null // text
+          city?: string | null // text
+          country?: string | null // text
+          postal_code?: string | null // text
+          phone?: string | null // text
+          payment_method?: string | null // text
+          shipping_method?: string | null // text
+          status?: string | null // text
+          subtotal?: number | null // numeric
+          shipping_cost?: number | null // numeric
+          total?: number | null // numeric
+          sanity_id?: string | null // text
+          stripe_session_id?: string | null // text
+          stripe_payment_intent_id?: string | null // text
+          payment_status?: string | null // text
+          stripe_customer_id?: string | null // text
+          is_deleted?: boolean | null // boolean
+          display_order_id?: string | null // text
+          created_at?: string | null // timestamp with time zone
         }
         Update: {
-          id?: string
-          created_at?: string
-          email?: string
-          customer_name?: string
-          address?: string
-          apartment?: string | null
-          city?: string
-          country?: string
-          postal_code?: string | null
-          phone?: string
-          payment_method?: string
-          shipping_method?: string
-          status?: string
-          subtotal?: number
-          shipping_cost?: number
-          total?: number
-          sanity_id?: string | null
-          stripe_session_id?: string | null
-          stripe_payment_intent_id?: string | null
-          payment_status?: string
-          stripe_customer_id?: string | null
-          is_deleted?: boolean | null
-          display_order_id?: string | null
+          id?: string // uuid
+          email?: string // text
+          customer_name?: string | null // text
+          address?: string | null // text
+          apartment?: string | null // text
+          city?: string | null // text
+          country?: string | null // text
+          postal_code?: string | null // text
+          phone?: string | null // text
+          payment_method?: string | null // text
+          shipping_method?: string | null // text
+          status?: string | null // text
+          subtotal?: number | null // numeric
+          shipping_cost?: number | null // numeric
+          total?: number | null // numeric
+          sanity_id?: string | null // text
+          stripe_session_id?: string | null // text
+          stripe_payment_intent_id?: string | null // text
+          payment_status?: string | null // text
+          stripe_customer_id?: string | null // text
+          is_deleted?: boolean | null // boolean
+          display_order_id?: string | null // text
+          created_at?: string | null // timestamp with time zone
         }
       }
       order_items: {

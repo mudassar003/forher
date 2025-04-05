@@ -10,6 +10,7 @@ interface QualiphyWidgetProps {
 
 const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
   const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const momentScriptRef = useRef<HTMLScriptElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
 
@@ -20,6 +21,7 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
       widgetContainer.id = 'main-qualiphy-widget';
       containerRef.current?.appendChild(widgetContainer);
 
+      // Create the load button
       const loadButton = document.createElement('div');
       loadButton.id = 'loadFormButton';
       loadButton.style.width = '150px';
@@ -39,6 +41,7 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
       loadButton.innerText = 'Exam Invite';
       widgetContainer.appendChild(loadButton);
 
+      // Create the not available message
       const notAvailable = document.createElement('p');
       notAvailable.id = 'not-available';
       notAvailable.style.display = 'none';
@@ -46,13 +49,17 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
       widgetContainer.appendChild(notAvailable);
     }
 
-    // Load the Qualiphy script if it doesn't exist
-    if (!document.getElementById('qualiphy-script')) {
+    // Load the required scripts if they don't exist
+    if (!document.getElementById('moment-script')) {
       // Add moment.js dependency
       const momentScript = document.createElement('script');
+      momentScript.id = 'moment-script';
       momentScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js';
       document.body.appendChild(momentScript);
+      momentScriptRef.current = momentScript;
+    }
 
+    if (!document.getElementById('qualiphy-script')) {
       // Add the Qualiphy script
       const script = document.createElement('script');
       script.id = 'qualiphy-script';
@@ -81,9 +88,14 @@ const QualiphyWidget: React.FC<QualiphyWidgetProps> = ({ className = '' }) => {
 
     // Cleanup function to remove the scripts when component unmounts
     return () => {
-      if (scriptRef.current) {
-        document.body.removeChild(scriptRef.current);
+      if (scriptRef.current && scriptRef.current.parentNode) {
+        scriptRef.current.parentNode.removeChild(scriptRef.current);
         scriptRef.current = null;
+      }
+      
+      if (momentScriptRef.current && momentScriptRef.current.parentNode) {
+        momentScriptRef.current.parentNode.removeChild(momentScriptRef.current);
+        momentScriptRef.current = null;
       }
     };
   }, [user]);

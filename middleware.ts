@@ -21,6 +21,12 @@ const AUTH_ROUTES = [
   '/reset-password'
 ];
 
+// Routes that should bypass regular auth checks (like Stripe return URLs)
+const BYPASS_ROUTES = [
+  '/appointment?subscription_success=true',
+  '/checkout/order-confirmation'
+];
+
 // Helper to check if a path matches any of the patterns
 const matchesPatterns = (path: string, patterns: string[]): boolean => {
   return patterns.some(pattern => {
@@ -29,8 +35,23 @@ const matchesPatterns = (path: string, patterns: string[]): boolean => {
       const base = pattern.slice(0, -1);
       return path.startsWith(base);
     }
+    
+    // For patterns with query parameters
+    if (pattern.includes('?')) {
+      const [patternPath, patternQuery] = pattern.split('?');
+      if (path.startsWith(patternPath) && path.includes(patternQuery)) {
+        return true;
+      }
+    }
+    
     return path === pattern;
   });
+};
+
+// Check if the current URL should bypass auth checks
+const shouldBypassAuth = (url: URL): boolean => {
+  const fullPath = url.pathname + url.search;
+  return matchesPatterns(fullPath, BYPASS_ROUTES);
 };
 
 export async function middleware(req: NextRequest) {
@@ -47,8 +68,14 @@ export async function middleware(req: NextRequest) {
   // Create a Supabase client for auth with cookie support
   const supabase = createMiddlewareClient({ req, res });
 
-  // Get the pathname
+  // Get the pathname and full URL
   const path = req.nextUrl.pathname;
+  const url = req.nextUrl;
+  
+  // Check if this is a special URL that should bypass auth (like Stripe return URLs)
+  if (shouldBypassAuth(url)) {
+    return res;
+  }
   
   // For protection against brute force login attempts - implement rate limiting
   // This is a simple version - real implementation should use Redis or similar

@@ -20,7 +20,6 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
         redirectTo: `${window.location.origin}/`,
         // This will ensure cookies are set properly
         // and the session is persisted via cookies rather than localStorage
-        
       },
     });
 
@@ -240,19 +239,55 @@ export const getCurrentUser = async () => {
 
 /**
  * Verify if the current user has a valid session
+ * @returns Promise<boolean> - true if the user has a valid session, false otherwise
  */
 export const verifySession = async (): Promise<boolean> => {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    // Try to get the user from the auth state
+    const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error) {
       console.error("Session verification error:", error);
       return false;
     }
     
-    return !!session;
+    // If we have a user, then the session is valid
+    return !!user;
   } catch (error) {
     console.error("Unexpected error verifying session:", error);
     return false;
   }
+};
+
+/**
+ * Refresh the current session if needed
+ * @returns Promise<boolean> - true if the session was refreshed successfully, false otherwise
+ */
+export const refreshSession = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    
+    if (error) {
+      console.error("Session refresh error:", error);
+      return false;
+    }
+    
+    return !!data.session;
+  } catch (error) {
+    console.error("Unexpected error refreshing session:", error);
+    return false;
+  }
+};
+
+/**
+ * Set up listener for auth state changes
+ * @param callback Function to call when auth state changes
+ * @returns Unsubscribe function
+ */
+export const onAuthStateChange = (callback: (event: string, session: Session | null) => void) => {
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    callback(event, session);
+  });
+  
+  return data.subscription.unsubscribe;
 };

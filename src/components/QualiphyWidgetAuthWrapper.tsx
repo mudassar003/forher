@@ -33,12 +33,13 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     
     try {
       setSuccessMessage("Verifying subscription status...");
+      console.log("Checking subscription status for user:", user.id);
       
       // First sync with Stripe to ensure subscription is up-to-date
       await syncSubscriptionStatuses(user.id);
       
       // Then fetch latest subscription data
-      await fetchUserSubscriptions(user.id);
+      await fetchUserSubscriptions(user.id, true);
       
       setStatusChecked(true);
       setSuccessMessage("Subscription status verified");
@@ -58,20 +59,25 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
   // Effect to check access when component mounts
   useEffect(() => {
     const checkAccess = async () => {
+      console.log("Checking access, auth state:", { isAuthenticated, authLoading });
+      console.log("Subscription state:", { hasActiveSubscription, subscriptionLoading });
+      
       // Wait for auth to complete
       if (authLoading) return;
 
       // If not authenticated, redirect to login
       if (!isAuthenticated) {
         // Store the current path for redirection after login
-        const returnUrl = encodeURIComponent(window.location.pathname);
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
         router.push(`/login?returnUrl=${returnUrl}`);
         return;
       }
 
       // If we have a user but haven't loaded subscriptions yet
       if (user?.id && !statusChecked && !subscriptionLoading) {
-        await checkSubscriptionStatus();
+        // Always refresh subscription data when this component mounts
+        await fetchUserSubscriptions(user.id, true);
+        setStatusChecked(true);
       }
 
       // Set loading to false after all checks
@@ -86,7 +92,8 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     user,
     router,
     statusChecked,
-    checkSubscriptionStatus
+    fetchUserSubscriptions,
+    hasActiveSubscription
   ]);
 
   // Check URL for subscription success parameter
@@ -140,6 +147,12 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     ['active', 'trialing', 'cancelling', 'past_due'].includes(sub.status.toLowerCase()) && 
     sub.is_active === true
   );
+
+  console.log("Subscription check:", { 
+    hasActiveSubscription, 
+    manualActiveCheck, 
+    subscriptionsCount: subscriptions.length 
+  });
 
   // No valid subscription access (use manual check as backup)
   if (!hasActiveSubscription && !manualActiveCheck) {

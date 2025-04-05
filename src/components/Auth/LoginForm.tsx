@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
-import { useAuthStore } from "@/store/authStore"; // Add this import
+import { useAuthStore } from "@/store/authStore"; 
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
@@ -29,19 +29,31 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
     resetForm,
   } = useAuthFormStore();
 
-  // Add auth store to update auth state after login
-  const { setUser, checkSession, isAuthenticated } = useAuthStore();
-
+  const { user, setUser, checkSession, isAuthenticated } = useAuthStore();
+  const searchParams = useSearchParams();
+  
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  
+  // Parse return URL from query parameters
+  const parsedReturnUrl = searchParams ? searchParams.get('returnUrl') : null;
+  const effectiveReturnUrl = parsedReturnUrl || returnUrl;
+
+  // Store return URL in sessionStorage
+  useEffect(() => {
+    if (effectiveReturnUrl) {
+      sessionStorage.setItem('loginReturnUrl', effectiveReturnUrl);
+    }
+  }, [effectiveReturnUrl]);
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
+      // Check if we have a stored returnUrl
+      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || effectiveReturnUrl;
       router.push(storedReturnUrl);
     }
-  }, [isAuthenticated, returnUrl, router]);
+  }, [isAuthenticated, effectiveReturnUrl, router]);
 
   // Cleanup function to reset the form on unmount
   useEffect(() => {
@@ -49,6 +61,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       resetForm();
     };
   }, [resetForm]);
+
+  // Check for pending subscription
+  useEffect(() => {
+    const pendingSubscriptionId = sessionStorage.getItem('pendingSubscriptionId');
+    if (isAuthenticated && pendingSubscriptionId) {
+      // Clear the pending subscription ID
+      sessionStorage.removeItem('pendingSubscriptionId');
+      
+      // Redirect to subscriptions page
+      router.push('/subscriptions');
+    }
+  }, [isAuthenticated, router]);
 
   const validateInputs = (): boolean => {
     if (!email.trim()) {
@@ -107,12 +131,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       resetForm();
       
       // Get the stored returnUrl (may have changed if user did OAuth)
-      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
-      sessionStorage.removeItem('loginReturnUrl'); // Clean up
+      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || effectiveReturnUrl;
       
       // Redirect to the return URL after a short delay to show success message
       setTimeout(() => {
-        router.push(storedReturnUrl);
+        // Check if there's a pending subscription ID
+        const pendingSubscriptionId = sessionStorage.getItem('pendingSubscriptionId');
+        
+        if (pendingSubscriptionId) {
+          // If there is, redirect to subscriptions page
+          router.push('/subscriptions');
+        } else {
+          // Otherwise, redirect to the return URL
+          router.push(storedReturnUrl);
+        }
       }, 1000);
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -129,6 +161,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
     setLoading(true);
     
     try {
+      // Make sure the current return URL is saved before OAuth redirects
+      const currentReturnUrl = sessionStorage.getItem('loginReturnUrl') || effectiveReturnUrl;
+      sessionStorage.setItem('loginReturnUrl', currentReturnUrl);
+      
       const { error: authError } = await signInWithGoogle();
       
       if (authError) {
@@ -218,7 +254,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
 
         <div className="text-right">
           <Link 
-            href={`/forgot-password${returnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 
+            href={`/forgot-password${effectiveReturnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 
             className="text-sm text-purple-600 hover:underline"
           >
             Forgot your password?
@@ -262,7 +298,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       <p className="text-center text-sm mt-6 text-gray-500">
         First time here?{" "}
         <Link 
-          href={`/signup${returnUrl !== '/account' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 
+          href={`/signup${effectiveReturnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 
           className="text-blue-600 hover:underline"
         >
           Create an account

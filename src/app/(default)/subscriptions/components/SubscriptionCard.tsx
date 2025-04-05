@@ -1,7 +1,7 @@
 // src/app/(default)/subscriptions/components/SubscriptionCard.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
@@ -30,9 +30,16 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   categories
 }) => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const { isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, checkSession } = useAuthStore();
   const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
   const router = useRouter();
+  
+  // Check auth state when component mounts
+  useEffect(() => {
+    if (!isAuthenticated) {
+      checkSession();
+    }
+  }, [isAuthenticated, checkSession]);
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -62,8 +69,14 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const handleSubscribe = async (): Promise<void> => {
     if (isProcessing || isLoading) return;
     
+    // Store current path in sessionStorage
+    const currentPath = window.location.pathname;
+    sessionStorage.setItem('subscriptionReturnPath', currentPath);
+    
     // If not authenticated, redirect to login with return URL
     if (!isAuthenticated) {
+      // Save intended subscription ID to purchase after login
+      sessionStorage.setItem('pendingSubscriptionId', id);
       const returnUrl = encodeURIComponent('/subscriptions');
       router.push(`/login?returnUrl=${returnUrl}`);
       return;
@@ -72,6 +85,9 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     setIsProcessing(true);
     
     try {
+      // Store appointment page as the return URL after successful purchase
+      sessionStorage.setItem('loginReturnUrl', '/appointment');
+      
       const result = await purchaseSubscription(id);
       
       if (result.success && result.url) {

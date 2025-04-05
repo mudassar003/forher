@@ -1,7 +1,7 @@
 // src/hooks/useSubscriptionPurchase.ts
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { verifySession } from '@/lib/auth';
+import { verifySession, refreshSession } from '@/lib/auth';
 
 interface SubscriptionPurchaseResult {
   success: boolean;
@@ -13,12 +13,24 @@ interface SubscriptionPurchaseResult {
 export function useSubscriptionPurchase() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, checkSession } = useAuthStore();
 
   // Function to purchase a subscription plan
-  const purchaseSubscription = async (subscriptionId: string): Promise<SubscriptionPurchaseResult> => {
+  const purchaseSubscription = useCallback(async (subscriptionId: string): Promise<SubscriptionPurchaseResult> => {
     // First, verify that the session is valid (cookie check)
-    const hasValidSession = await verifySession();
+    let hasValidSession = await verifySession();
+    
+    // If session is invalid but we think we're authenticated, try to refresh
+    if (!hasValidSession && isAuthenticated) {
+      // Try to refresh the session
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        hasValidSession = true;
+      } else {
+        // If refresh failed, update our auth state
+        await checkSession();
+      }
+    }
     
     // Check if user is authenticated
     if (!isAuthenticated || !hasValidSession || !user) {
@@ -31,6 +43,9 @@ export function useSubscriptionPurchase() {
     setError(null);
     
     try {
+      // Store return URL in sessionStorage to help with redirecting after auth
+      sessionStorage.setItem('loginReturnUrl', '/appointment');
+      
       // Make API request to create subscription purchase
       const response = await fetch('/api/stripe/subscriptions', {
         method: 'POST',
@@ -65,7 +80,7 @@ export function useSubscriptionPurchase() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, isAuthenticated, checkSession]);
   
   return {
     isLoading,

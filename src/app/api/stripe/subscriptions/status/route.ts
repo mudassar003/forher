@@ -3,14 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 import Stripe from "stripe";
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { getAuthenticatedUser } from '@/utils/apiAuth';
 
 // Types
 interface SubscriptionSyncRequest {
   userId: string;
   subscriptionId?: string;
+  forceRefresh?: boolean;
 }
 
 interface SubscriptionData {
@@ -50,6 +49,7 @@ export async function POST(req: NextRequest) {
     const user = await getAuthenticatedUser();
     
     if (!user) {
+      console.log("Authentication required");
       return NextResponse.json(
         { success: false, error: "Authentication required" },
         { status: 401 }
@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
     
     // Validate user ID is provided
     if (!data.userId) {
+      console.log("User ID is required");
       return NextResponse.json(
         { success: false, error: "User ID is required" },
         { status: 400 }
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
     
     // Security check: Ensure user can only access their own data
     if (data.userId !== user.id) {
+      console.log("Unauthorized access attempt: " + data.userId + " vs " + user.id);
       return NextResponse.json(
         { success: false, error: "Unauthorized: Cannot access other users' subscription data" },
         { status: 403 }
@@ -92,6 +94,7 @@ export async function POST(req: NextRequest) {
     const { data: subscriptions, error: fetchError } = await query;
     
     if (fetchError) {
+      console.log("Failed to fetch subscriptions:", fetchError.message);
       return NextResponse.json(
         { success: false, error: `Failed to fetch subscriptions: ${fetchError.message}` },
         { status: 500 }
@@ -99,10 +102,13 @@ export async function POST(req: NextRequest) {
     }
     
     if (!subscriptions || subscriptions.length === 0) {
+      console.log("No subscriptions found");
       return NextResponse.json(
-        { success: true, message: "No subscriptions found to sync" }
+        { success: true, message: "No subscriptions found to sync", subscriptions: [] }
       );
     }
+    
+    console.log(`Found ${subscriptions.length} subscriptions to sync`);
     
     // Process each subscription
     const results: SyncResult[] = await Promise.all(subscriptions.map(async (subscription) => {
@@ -118,10 +124,18 @@ export async function POST(req: NextRequest) {
       }
     }));
     
-    // Return results
+    // Get updated subscriptions after sync
+    const { data: updatedSubscriptions } = await supabaseAdmin
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', data.userId)
+      .order('created_at', { ascending: false });
+    
+    // Return results with updated subscriptions
     return NextResponse.json({
       success: true,
-      results
+      results,
+      subscriptions: updatedSubscriptions || []
     });
     
   } catch (error) {

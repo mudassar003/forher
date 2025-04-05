@@ -2,20 +2,17 @@
 "use client";
 
 import Link from "next/link";
+import LegalPageLayout from "@/components/legal/LegalPageLayout"; // Add this import
 
 export default function CookiePolicy() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Cookie Policy</h1>
-      
-      <div className="prose max-w-none text-gray-700">
-        <p className="text-lg">
-          Last Updated: March 17, 2025
-        </p>
-        
+   <LegalPageLayout 
+      title="Cookie Policy" 
+      lastUpdated="March 17, 2025"
+    >
         <h2 className="text-xl font-semibold mt-8 mb-4">1. Introduction</h2>
         <p>
-          This Cookie Policy explains how Direct2Her ("we," "our," or "us") uses cookies and similar technologies to recognize you when you visit our website or use our mobile application (collectively, "Services"). It explains what these technologies are and why we use them, as well as your rights to control our use of them.
+          This Cookie Policy explains how Lily&apos;s ("we," "our," or "us") uses cookies and similar technologies to recognize you when you visit our website or use our mobile application (collectively, "Services"). It explains what these technologies are and why we use them, as well as your rights to control our use of them.
         </p>
         <p>
           Please read this Cookie Policy carefully. By continuing to browse or use our Services, you agree to our use of cookies and similar technologies as described in this Cookie Policy.
@@ -26,7 +23,7 @@ export default function CookiePolicy() {
           Cookies are small data files that are placed on your computer or mobile device when you visit a website. Cookies are widely used by website owners to make their websites work, or to work more efficiently, as well as to provide reporting information.
         </p>
         <p>
-          Cookies set by the website owner (in this case, Direct2Her) are called "first-party cookies." Cookies set by parties other than the website owner are called "third-party cookies." Third-party cookies enable third-party features or functionality to be provided on or through the website (e.g., advertising, interactive content, and analytics). The parties that set these third-party cookies can recognize your computer both when it visits the website in question and also when it visits certain other websites.
+          Cookies set by the website owner (in this case, Lily&apos;s) are called "first-party cookies." Cookies set by parties other than the website owner are called "third-party cookies." Third-party cookies enable third-party features or functionality to be provided on or through the website (e.g., advertising, interactive content, and analytics). The parties that set these third-party cookies can recognize your computer both when it visits the website in question and also when it visits certain other websites.
         </p>
         
         <h2 className="text-xl font-semibold mt-8 mb-4">3. Why Do We Use Cookies?</h2>
@@ -129,14 +126,14 @@ export default function CookiePolicy() {
             <tbody className="bg-white">
               <tr>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">_d2h_session</td>
-                <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">direct2her.com</td>
+                <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Lily&apos;s.com</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Maintains user sessions and authentication</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Session</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Essential</td>
               </tr>
               <tr>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">_d2h_auth</td>
-                <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">direct2her.com</td>
+                <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Lily&apos;s.com</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Authentication token</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">30 days</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Essential</td>
@@ -164,7 +161,7 @@ export default function CookiePolicy() {
               </tr>
               <tr>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">_d2h_survey</td>
-                <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">direct2her.com</td>
+                <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Lily&apos;s.com</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Remembers survey progress and responses</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">7 days</td>
                 <td className="px-4 py-2 border border-gray-200 text-sm text-gray-700">Functional</td>
@@ -181,38 +178,6 @@ export default function CookiePolicy() {
           The date at the top of this Cookie Policy indicates when it was last updated.
         </p>
         
-        <h2 className="text-xl font-semibold mt-8 mb-4">8. Contact Us</h2>
-        <p>
-          If you have any questions or concerns about our use of cookies or this Cookie Policy, please contact us at:
-        </p>
-        <p>
-          Direct2Her<br />
-          Email: privacy@direct2her.com<br />
-          Phone: (555) 123-4567<br />
-          Address: 123 Healthcare Ave, Suite 100, San Francisco, CA 94107
-        </p>
-        
-        <div className="mt-12 pt-6 border-t border-gray-200">
-          <h3 className="text-lg font-medium mb-4">Related Policies</h3>
-          <ul className="space-y-2">
-            <li>
-              <Link href="/privacy-policy" className="text-blue-600 hover:underline">
-                Privacy Policy
-              </Link>
-            </li>
-            <li>
-              <Link href="/terms-of-service" className="text-blue-600 hover:underline">
-                Terms of Service
-              </Link>
-            </li>
-            <li>
-              <Link href="/ccpa-notice" className="text-blue-600 hover:underline">
-                CCPA Notice
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+      </LegalPageLayout>
   );
 }

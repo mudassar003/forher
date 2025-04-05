@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lily&apos;s",
+  title: "<div>Lily&apos;s</div>",
   description: "Start your journey with personalized care",
 };
 

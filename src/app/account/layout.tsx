@@ -6,15 +6,13 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-import { Database } from "@/types/supabase";
 import GlobalFooter from "@/components/GlobalFooter";
-import { User } from "@supabase/supabase-js";
 
 // Define navigation items interface
 interface NavItem {
   name: string;
   path: string;
+  icon?: ReactNode; // Optional icon property for future enhancement
 }
 
 // Define navigation items
@@ -24,75 +22,16 @@ const navItems: NavItem[] = [
   { name: "Orders", path: "/account/orders" },
   { name: "Subscriptions", path: "/account/subscriptions" },
   { name: "Settings", path: "/account/settings" },
+  { name: "Telehealth", path: "/appointment" },
 ];
 
-// Type for Order from Supabase
-type OrderRow = Database['public']['Tables']['orders']['Row'];
-
 // AccountHeader component for all account pages
-const AccountHeader = () => {
+const AccountHeader: React.FC = () => {
   const { user, setUser } = useAuthStore();
   const router = useRouter();
-  const [customerName, setCustomerName] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCustomerName = async (authUser: User) => {
-      // Ensure email exists and is a non-empty string
-      const userEmail = authUser.email;
-      if (!userEmail) {
-        handleFallbackName(authUser);
-        return;
-      }
-
-      try {
-        // Fetch from orders with explicit type handling
-        const { data, error } = await supabase
-          .from("orders")
-          .select("customer_name")
-          // Use optional chaining to satisfy type checking
-          .eq(
-            "email", 
-            userEmail as Database['public']['Tables']['orders']['Row']['email']
-          )
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single<OrderRow>();
-
-        if (error) {
-          console.error("Error fetching orders:", error);
-          handleFallbackName(authUser);
-          return;
-        }
-
-        // Safely access customer_name 
-        if (data?.customer_name) {
-          setCustomerName(data.customer_name);
-        } else {
-          handleFallbackName(authUser);
-        }
-      } catch (error) {
-        console.error("Unexpected error fetching customer name:", error);
-        handleFallbackName(authUser);
-      }
-    };
-
-    const handleFallbackName = (authUser: User) => {
-      // Fallback to user metadata or parsed email
-      setCustomerName(
-        // Check if user_metadata.name exists and is a string
-        (authUser.user_metadata?.name && typeof authUser.user_metadata.name === 'string') 
-          ? authUser.user_metadata.name 
-          : (authUser.email && typeof authUser.email === 'string')
-            ? authUser.email.split('@')[0] 
-            : null
-      );
-    };
-
-    // Only fetch customer name if user exists
-    if (user) {
-      fetchCustomerName(user);
-    }
-  }, [user]);
+  
+  // Get display name directly from user data
+  const displayName = getUserDisplayName(user);
 
   const handleLogout = async () => {
     await signOut();
@@ -106,9 +45,9 @@ const AccountHeader = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold">My Account</h1>
-            {customerName && (
+            {displayName && (
               <span className="text-sm bg-pink-100 text-pink-600 px-3 py-1 rounded-full">
-                {customerName}
+                {displayName}
               </span>
             )}
           </div>
@@ -139,7 +78,7 @@ const AccountHeader = () => {
 };
 
 // Sidebar navigation
-const AccountNavigation = () => {
+const AccountNavigation: React.FC = () => {
   const pathname = usePathname();
 
   return (
@@ -158,18 +97,6 @@ const AccountNavigation = () => {
             {item.name}
           </Link>
         ))}
-        
-        {/* Add telehealth link to navigation */}
-        <Link
-          href="/appointment"
-          className={`block px-4 py-3 rounded-lg transition-colors ${
-            pathname === "/appointment"
-              ? "bg-pink-100 text-pink-700 font-medium"
-              : "text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          Telehealth
-        </Link>
       </nav>
       <div className="mt-6">
         <Link
@@ -183,20 +110,51 @@ const AccountNavigation = () => {
   );
 };
 
-// This layout will wrap all pages within the account section
+/**
+ * Helper function to get user display name from various sources
+ * @param user User object from auth store
+ * @returns Display name string or null if none available
+ */
+function getUserDisplayName(user: any): string | null {
+  if (!user) return null;
+  
+  // Try to get name from user metadata
+  if (user.user_metadata?.full_name) return user.user_metadata.full_name;
+  if (user.user_metadata?.name) return user.user_metadata.name;
+  
+  // If no name in metadata, use email (split at @ to get username part)
+  if (user.email && typeof user.email === 'string') {
+    return user.email.split('@')[0];
+  }
+  
+  return null;
+}
+
+// This layout wraps all pages within the account section
 export default function AccountLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    // Redirect to login if user is not authenticated and loading is complete
     if (!loading && !user) {
-      router.push("/login"); // Redirect to login if not authenticated
+      // Capture the current URL to redirect back after login
+      const currentPath = window.location.pathname;
+      router.push(`/login?returnUrl=${encodeURIComponent(currentPath)}`);
     }
   }, [user, loading, router]);
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  // Show loading indicator while auth state is being determined
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+      </div>
+    );
+  }
 
-  if (!user) return null; // Don't render anything while redirecting
+  // Don't render anything while redirecting to login
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">

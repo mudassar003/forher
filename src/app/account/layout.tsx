@@ -49,13 +49,14 @@ const AccountHeader = () => {
         const { data, error } = await supabase
           .from("orders")
           .select("customer_name")
-          .eq("email", userEmail) // Guaranteed to be a non-null string here
+          // Use type assertion to handle email column
+          .eq("email", userEmail as string) 
           .order("created_at", { ascending: false })
           .limit(1)
           .single();
 
         if (error) {
-          console.error("Error fetching customer name:", error);
+          console.error("Error fetching orders:", error);
           handleFallbackName(authUser);
           return;
         }

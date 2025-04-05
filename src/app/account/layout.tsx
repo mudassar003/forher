@@ -10,7 +10,7 @@ import GlobalFooter from "@/components/GlobalFooter";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
-// Define navigation items - removed Appointments
+// Define navigation items
 const navItems = [
   { name: "Dashboard", path: "/account" },
   { name: "Profile", path: "/account/profile" },
@@ -31,11 +31,23 @@ const AccountHeader = () => {
       if (!user) return;
 
       try {
-        // Attempt to fetch customer name from orders
+        // Ensure user.email is used safely
+        const userEmail = user.email;
+        if (!userEmail) {
+          // Fallback to user metadata or email from parsed email
+          setCustomerName(
+            user.user_metadata?.name || 
+            userEmail?.split('@')[0] || 
+            null
+          );
+          return;
+        }
+
+        // Fetch from orders with a type-safe email check
         const { data, error } = await supabase
           .from("orders")
           .select("customer_name")
-          .eq("email", user.email)
+          .eq("email", userEmail)
           .order("created_at", { ascending: false })
           .limit(1)
           .single();
@@ -44,12 +56,20 @@ const AccountHeader = () => {
           setCustomerName(data.customer_name);
         } else {
           // Fallback to user metadata or email
-          setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || null);
+          setCustomerName(
+            user.user_metadata?.name || 
+            userEmail.split('@')[0] || 
+            null
+          );
         }
       } catch (error) {
         console.error("Error fetching customer name:", error);
         // Fallback to user metadata or email
-        setCustomerName(user.user_metadata?.name || user.email?.split('@')[0] || null);
+        setCustomerName(
+          user.user_metadata?.name || 
+          user.email?.split('@')[0] || 
+          null
+        );
       }
     };
 

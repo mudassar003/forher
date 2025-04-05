@@ -192,11 +192,8 @@ export const SubscriptionsList: React.FC = () => {
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h2 className="text-lg font-semibold text-gray-800">Your Subscriptions</h2>
-          <Link href="/subscriptions" className="px-4 py-2 bg-pink-500 text-white text-sm rounded-md hover:bg-pink-600 transition-colors">
-            Browse Plans
-          </Link>
         </div>
 
         <div className="p-6">

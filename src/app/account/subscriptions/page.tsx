@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { useAuthStore } from "@/store/authStore";
 import SubscriptionsList from "./components/SubscriptionsList";
-import BenefitsSection from "./components/BenefitsSection";
 
 export default function SubscriptionsPage() {
   const { fetchUserSubscriptions, isFetched } = useSubscriptionStore();
@@ -18,9 +17,8 @@ export default function SubscriptionsPage() {
   }, [user, fetchUserSubscriptions, isFetched]);
 
   return (
-    <div className="space-y-6">
+    <div>
       <SubscriptionsList />
-      <BenefitsSection />
     </div>
   );
 }

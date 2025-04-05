@@ -30,6 +30,7 @@ interface SyncResult {
   previousStatus?: string;
   newStatus?: string;
   stripeStatus?: string;
+  status?: string;
 }
 
 // Initialize Stripe client
@@ -168,7 +169,7 @@ async function syncSubscriptionStatus(subscription: SubscriptionData): Promise<S
           id: subscription.id,
           success: false,
           message: "No subscription found in Stripe for this session",
-          stripeStatus: session.status
+          stripeStatus: session.status || undefined
         };
       }
     } catch (error) {
@@ -312,10 +313,14 @@ async function syncSubscriptionStatus(subscription: SubscriptionData): Promise<S
 /**
  * Map Stripe subscription status to our internal status
  */
-function mapStripeStatus(stripeStatus: Stripe.Subscription.Status): {
+function mapStripeStatus(stripeStatus: Stripe.Subscription.Status | null | undefined): {
   status: string;
   isActive: boolean;
 } {
+  if (!stripeStatus) {
+    return { status: 'unknown', isActive: false };
+  }
+  
   switch (stripeStatus) {
     case 'active':
       return { status: 'active', isActive: true };

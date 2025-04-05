@@ -2,7 +2,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 
 // Define the types for order and order item structures
@@ -61,27 +60,17 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const { user } = useAuthStore();
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        // We need the user's email for the query
-        // Skip fetching if not available
-        if (!user || !user.email) {
-          setOrders([]);
-          setLoading(false);
-          return;
-        }
-
-        // Since we've confirmed email exists here, TypeScript should be happy
-        const email = user.email;
+        const user = (await supabase.auth.getUser()).data.user;
 
         // Fetch orders from Supabase
         const { data: ordersData, error: ordersError } = await supabase
           .from("orders")
           .select("id, customer_name, email, address, total, status, created_at")
-          .eq("email", email) // Using the guaranteed non-null email
+          .eq("email", user?.email)
           .order("created_at", { ascending: false });
 
         if (ordersError) {
@@ -92,7 +81,7 @@ export default function OrdersPage() {
 
         // Now fetch order items based on order_id
         const ordersWithItems = await Promise.all(
-          (ordersData || []).map(async (order: any) => {
+          ordersData.map(async (order: any) => {
             const { data: orderItems, error: itemsError } = await supabase
               .from("order_items")
               .select("id, product_id, name, quantity, price, image")
@@ -103,7 +92,7 @@ export default function OrdersPage() {
               return { ...order, items: [] };
             }
 
-            return { ...order, items: orderItems || [] };
+            return { ...order, items: orderItems };
           })
         );
 
@@ -116,7 +105,7 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [user]);
+  }, []);
 
   const viewOrderDetails = (order: Order) => {
     setSelectedOrder(order);

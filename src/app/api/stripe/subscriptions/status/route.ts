@@ -30,6 +30,8 @@ interface SyncResult {
   previousStatus?: string;
   newStatus?: string;
   stripeStatus?: string | null;
+  status?: string;         
+  partialSuccess?: boolean;
 }
 
 // Initialize Stripe client

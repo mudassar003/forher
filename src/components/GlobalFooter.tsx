@@ -12,7 +12,7 @@ const GlobalFooter = () => {
           {/* Brand Column */}
           <div className="col-span-1">
             <div className="text-3xl font-semibold mb-4">
-              <span className="text-black">Lily's</span>
+              <span className="text-black">Lily&apos;s</span>
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Empowering you to look and feel your best every day.
@@ -116,7 +116,7 @@ const GlobalFooter = () => {
       <div className="border-t border-gray-300 pt-6 pb-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} hers. All rights reserved.
+            © {new Date().getFullYear()} Lily&apos;s. All rights reserved.
           </p>
         </div>
       </div>

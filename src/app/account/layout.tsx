@@ -18,7 +18,6 @@ interface NavItem {
 // Define navigation items
 const navItems: NavItem[] = [
   { name: "Dashboard", path: "/account" },
-  { name: "Profile", path: "/account/profile" },
   { name: "Orders", path: "/account/orders" },
   { name: "Subscriptions", path: "/account/subscriptions" },
   { name: "Settings", path: "/account/settings" },
@@ -44,7 +43,6 @@ const AccountHeader: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold">My Account</h1>
             {displayName && (
               <span className="text-sm bg-pink-100 text-pink-600 px-3 py-1 rounded-full">
                 {displayName}
@@ -74,6 +72,27 @@ const AccountHeader: React.FC = () => {
         </div>
       </div>
     </header>
+  );
+};
+
+// Account hero section that matches About Us page styling
+const AccountHero: React.FC = () => {
+  return (
+    <div style={{ background: "#F7F7F7" }}>
+      <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h1 
+            className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
+            style={{ color: "#e63946" }}
+          >
+            Account
+          </h1>
+          <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-700">
+            Manage your orders, subscriptions, and telehealth access
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -159,6 +178,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <AccountHeader />
+      <AccountHero />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}

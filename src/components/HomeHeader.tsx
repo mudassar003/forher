@@ -17,6 +17,8 @@ interface RouteUrls {
 
 // Project route URLs - using internal routes for dynamic navigation
 const routeUrls: RouteUrls = {
+  home: '/',
+  subscriptions: '/subscriptions',
   about: '/about',
   contact: '/contact'
 };
@@ -59,11 +61,10 @@ const HeaderContent: React.FC = () => {
 
   // Define menu items for consistency between desktop and mobile
   const menuItems: MenuItem[] = [
-    { href: "/", label: "Home" },
-    { href: "/products", label: "Products" },
+    { href: routeUrls.home, label: "Home" },
+    { href: routeUrls.subscriptions, label: "Subscriptions" },
     { href: routeUrls.about, label: "About Us" },
-    { href: routeUrls.contact, label: "Contact Us" },
-    { href: "/studio", label: "Studio" }
+    { href: routeUrls.contact, label: "Contact Us" }
   ];
 
   // Update the current path whenever necessary

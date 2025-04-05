@@ -9,7 +9,7 @@ import { useSubscriptionStore } from "@/store/subscriptionStore";
 
 const Dashboard = () => {
   const { user } = useAuthStore();
-  const { hasActiveSubscription, fetchUserSubscriptions } = useSubscriptionStore();
+  const { hasActiveSubscription, fetchUserSubscriptions, isFetched } = useSubscriptionStore();
   const [orderCount, setOrderCount] = useState(0);
   const [customerName, setCustomerName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,10 +41,12 @@ const Dashboard = () => {
           }
         }
 
-        // Fetch subscriptions
-        await fetchUserSubscriptions(user.id);
+        // Fetch user subscriptions if not already fetched
+        if (!isFetched && user.id) {
+          await fetchUserSubscriptions(user.id);
+        }
         
-        // Get subscription count - fixed to use { count: 'exact' } parameter
+        // Get subscription count using proper parameters
         const { data: subscriptionsData, error: subscriptionsError, count: subsCount } = await supabase
           .from("user_subscriptions")
           .select("id", { count: 'exact' })
@@ -65,8 +67,10 @@ const Dashboard = () => {
       }
     };
 
-    fetchUserData();
-  }, [user, fetchUserSubscriptions]);
+    if (user) {
+      fetchUserData();
+    }
+  }, [user, fetchUserSubscriptions, isFetched]);
 
   // Stats for dashboard
   const stats = [

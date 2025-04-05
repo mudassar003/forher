@@ -1,25 +1,16 @@
 // src/app/api/stripe/subscriptions/status/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 import Stripe from "stripe";
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { getAuthenticatedUser } from '@/utils/apiAuth';
 
-// Initialize Stripe client
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: undefined, // Use latest API version
-});
-
-// Initialize Supabase admin client for server operations
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-interface SyncRequest {
+// Types
+interface SubscriptionSyncRequest {
   userId: string;
   subscriptionId?: string;
-  sessionId?: string;
 }
 
 interface SubscriptionData {
@@ -31,16 +22,32 @@ interface SubscriptionData {
   is_active: boolean;
 }
 
-export async function POST(req: Request) {
+interface SyncResult {
+  id: string;
+  success: boolean;
+  message?: string;
+  error?: string;
+  previousStatus?: string;
+  newStatus?: string;
+  stripeStatus?: string;
+}
+
+// Initialize Stripe client
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: undefined, // Use latest API version
+});
+
+// Initialize Supabase admin client for server operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+export async function POST(req: NextRequest) {
   try {
     // Get authenticated user from cookies
-    const cookieStore = cookies();
-    const authClient = createRouteHandlerClient({ cookies: () => cookieStore });
+    const user = await getAuthenticatedUser();
     
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
-    
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
         { status: 401 }
@@ -48,7 +55,7 @@ export async function POST(req: Request) {
     }
     
     // Parse request body
-    const data: SyncRequest = await req.json();
+    const data: SubscriptionSyncRequest = await req.json();
     
     // Validate user ID is provided
     if (!data.userId) {
@@ -59,10 +66,7 @@ export async function POST(req: Request) {
     }
     
     // Security check: Ensure user can only access their own data
-    // or admin users (you would need to implement admin check)
     if (data.userId !== user.id) {
-      // If you have admin roles, you could check here
-      // For example: if (!isAdminUser(user.id)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Cannot access other users' subscription data" },
         { status: 403 }
@@ -78,13 +82,9 @@ export async function POST(req: Request) {
       .select('id, stripe_subscription_id, stripe_session_id, status, is_active, sanity_id')
       .eq('user_id', data.userId);
     
-    // Add filters if provided
+    // Add filter if specific subscription ID provided
     if (data.subscriptionId) {
       query = query.eq('id', data.subscriptionId);
-    }
-    
-    if (data.sessionId) {
-      query = query.eq('stripe_session_id', data.sessionId);
     }
     
     const { data: subscriptions, error: fetchError } = await query;
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
     }
     
     // Process each subscription
-    const results = await Promise.all(subscriptions.map(async (subscription) => {
+    const results: SyncResult[] = await Promise.all(subscriptions.map(async (subscription) => {
       try {
         return await syncSubscriptionStatus(subscription);
       } catch (error) {
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
 /**
  * Sync a single subscription's status with Stripe
  */
-async function syncSubscriptionStatus(subscription: SubscriptionData) {
+async function syncSubscriptionStatus(subscription: SubscriptionData): Promise<SyncResult> {
   // If we don't have a Stripe subscription ID, check if we have a session ID
   if (!subscription.stripe_subscription_id && subscription.stripe_session_id) {
     try {
@@ -168,7 +168,7 @@ async function syncSubscriptionStatus(subscription: SubscriptionData) {
           id: subscription.id,
           success: false,
           message: "No subscription found in Stripe for this session",
-          stripeSessionStatus: session.status
+          stripeStatus: session.status
         };
       }
     } catch (error) {

@@ -13,7 +13,6 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
   hasPendingSubscriptions = false,
   className = '' 
 }) => {
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncSuccess, setSyncSuccess] = useState<boolean | null>(null);
   const messageTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -22,7 +21,7 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
   const { user } = useAuthStore();
 
   const handleSync = useCallback(async () => {
-    if (!user?.id || isSyncing || syncingSubscriptions) return;
+    if (!user?.id || syncingSubscriptions) return;
     
     // Clear any existing timer
     if (messageTimerRef.current) {
@@ -30,7 +29,6 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
       messageTimerRef.current = null;
     }
     
-    setIsSyncing(true);
     setSyncMessage("Synchronizing subscription statuses with Stripe...");
     setSyncSuccess(null);
     
@@ -54,14 +52,20 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
       console.error("Error syncing:", error);
       setSyncMessage("An error occurred during synchronization.");
       setSyncSuccess(false);
-    } finally {
-      setIsSyncing(false);
     }
   }, [user, syncingSubscriptions, syncSubscriptionStatuses]);
 
   // Cleanup timer on unmount
-  // Not using useEffect here to avoid adding dependencies that might change frequently
-  // as this could cause unnecessary re-renders. Instead, cleanup is handled within handleSync.
+  const cleanupOnUnmount = useCallback(() => {
+    if (messageTimerRef.current) {
+      clearTimeout(messageTimerRef.current);
+    }
+  }, []);
+  
+  // Use this in a useEffect if needed
+  // useEffect(() => {
+  //   return cleanupOnUnmount;
+  // }, [cleanupOnUnmount]);
 
   return (
     <div className={`mb-4 ${className}`}>
@@ -92,11 +96,11 @@ export const StatusSyncButton: React.FC<StatusSyncButtonProps> = ({
             </p>
             <button
               onClick={handleSync}
-              disabled={isSyncing || syncingSubscriptions}
+              disabled={syncingSubscriptions}
               className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               type="button"
             >
-              {isSyncing || syncingSubscriptions ? "Syncing..." : "Sync Subscription Status"}
+              {syncingSubscriptions ? "Syncing..." : "Sync Subscription Status"}
             </button>
           </div>
         </div>

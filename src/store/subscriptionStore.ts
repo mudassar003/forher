@@ -34,10 +34,10 @@ interface UserSubscriptionState {
   error: string | null;
   cancellingId: string | null;
   syncingSubscriptions: boolean;
-  lastFetchedUserId: string | null; // Track the last fetched user ID
+  isFetched: boolean; // Track if we've fetched at least once
   
   // Actions
-  fetchUserSubscriptions: (userId: string) => Promise<void>;
+  fetchUserSubscriptions: (userId: string, forceRefresh?: boolean) => Promise<void>;
   cancelUserSubscription: (subscriptionId: string) => Promise<boolean>;
   syncSubscriptionStatuses: (userId: string) => Promise<boolean>;
 }
@@ -55,15 +55,20 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
   error: null,
   cancellingId: null,
   syncingSubscriptions: false,
-  lastFetchedUserId: null, // Initialize with null
+  isFetched: false,
   
-  fetchUserSubscriptions: async (userId: string) => {
-    // Skip if we're already loading or if the userId is the same as last fetched
-    if (get().loading || userId === get().lastFetchedUserId) {
+  fetchUserSubscriptions: async (userId: string, forceRefresh: boolean = false) => {
+    // Skip if we're already loading 
+    if (get().loading) {
       return;
     }
     
-    set({ loading: true, error: null, lastFetchedUserId: userId });
+    // Skip if we've already fetched and not forcing refresh
+    if (get().isFetched && !forceRefresh) {
+      return;
+    }
+    
+    set({ loading: true, error: null });
     
     try {
       // Fetch from Supabase
@@ -71,7 +76,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', userId)
-        .eq('is_deleted', false) // Only fetch non-deleted subscriptions
+         // Only fetch non-deleted subscriptions
         .order('created_at', { ascending: false }); // Get most recent first
       
       if (supabaseError) {
@@ -111,7 +116,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       set({ 
         subscriptions: subscriptionsData,
         hasActiveSubscription: hasActive,
-        loading: false
+        loading: false,
+        isFetched: true
       });
       
       // Auto-sync if we detect issues, but don't wait for it to complete and don't trigger re-renders
@@ -124,8 +130,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
       console.error('Error fetching subscriptions:', error);
       set({ 
         error: error instanceof Error ? error.message : 'Unknown error fetching subscriptions',
-        subscriptions: [],
-        loading: false
+        loading: false,
+        isFetched: true
       });
     }
   },
@@ -215,14 +221,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>((set, get) => 
         console.error("Error parsing subscription sync response:", parseError);
       }
       
-      // Refresh subscriptions after sync - with force refresh since we're setting a different userId
-      // to bypass the lastFetchedUserId check
-      const currentUserId = get().lastFetchedUserId;
-      set({ lastFetchedUserId: null }); // Reset to force a refresh
-      
-      if (currentUserId) {
-        await get().fetchUserSubscriptions(currentUserId);
-      }
+      // Refresh subscriptions after sync - with force refresh
+      await get().fetchUserSubscriptions(userId, true);
       
       set({ syncingSubscriptions: false });
       return true;

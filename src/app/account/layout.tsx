@@ -45,15 +45,18 @@ const AccountHeader = () => {
       }
 
       try {
-        // Fetch from orders with a type-safe email check
+        // Fetch from orders with explicit type handling
         const { data, error } = await supabase
           .from("orders")
           .select("customer_name")
-          // Use type assertion to handle email column
-          .eq("email", userEmail as string) 
+          // Use optional chaining to satisfy type checking
+          .eq(
+            "email", 
+            userEmail as Database['public']['Tables']['orders']['Row']['email']
+          )
           .order("created_at", { ascending: false })
           .limit(1)
-          .single();
+          .single<OrderRow>();
 
         if (error) {
           console.error("Error fetching orders:", error);
@@ -61,9 +64,9 @@ const AccountHeader = () => {
           return;
         }
 
-        const orderData = data as OrderRow | null;
-        if (orderData?.customer_name) {
-          setCustomerName(orderData.customer_name);
+        // Safely access customer_name 
+        if (data?.customer_name) {
+          setCustomerName(data.customer_name);
         } else {
           handleFallbackName(authUser);
         }

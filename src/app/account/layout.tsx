@@ -1,17 +1,24 @@
 //src/app/account/layout.tsx
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { useEffect } from "react";
-import GlobalFooter from "@/components/GlobalFooter";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { Database } from "@/types/supabase";
+import GlobalFooter from "@/components/GlobalFooter";
+import { User } from "@supabase/supabase-js";
+
+// Define navigation items interface
+interface NavItem {
+  name: string;
+  path: string;
+}
 
 // Define navigation items
-const navItems = [
+const navItems: NavItem[] = [
   { name: "Dashboard", path: "/account" },
   { name: "Profile", path: "/account/profile" },
   { name: "Orders", path: "/account/orders" },
@@ -19,30 +26,21 @@ const navItems = [
   { name: "Settings", path: "/account/settings" },
 ];
 
+// Type for Order from Supabase
+type OrderRow = Database['public']['Tables']['orders']['Row'];
+
 // AccountHeader component for all account pages
 const AccountHeader = () => {
   const { user, setUser } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
   const [customerName, setCustomerName] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCustomerName = async () => {
-      if (!user) return;
+    const fetchCustomerName = async (authUser: User) => {
+      // Type-safe email check based on Supabase types
+      const userEmail = authUser.email;
 
       try {
-        // Ensure user.email is used safely
-        const userEmail = user.email;
-        if (!userEmail) {
-          // Fallback to user metadata or email from parsed email
-          setCustomerName(
-            user.user_metadata?.name || 
-            userEmail?.split('@')[0] || 
-            null
-          );
-          return;
-        }
-
         // Fetch from orders with a type-safe email check
         const { data, error } = await supabase
           .from("orders")
@@ -52,28 +50,38 @@ const AccountHeader = () => {
           .limit(1)
           .single();
 
-        if (data && data.customer_name) {
-          setCustomerName(data.customer_name);
+        if (error) {
+          console.error("Error fetching customer name:", error);
+          handleFallbackName(authUser);
+          return;
+        }
+
+        const orderData = data as OrderRow | null;
+        if (orderData?.customer_name) {
+          setCustomerName(orderData.customer_name);
         } else {
-          // Fallback to user metadata or email
-          setCustomerName(
-            user.user_metadata?.name || 
-            userEmail.split('@')[0] || 
-            null
-          );
+          handleFallbackName(authUser);
         }
       } catch (error) {
-        console.error("Error fetching customer name:", error);
-        // Fallback to user metadata or email
-        setCustomerName(
-          user.user_metadata?.name || 
-          user.email?.split('@')[0] || 
-          null
-        );
+        console.error("Unexpected error fetching customer name:", error);
+        handleFallbackName(authUser);
       }
     };
 
-    fetchCustomerName();
+    const handleFallbackName = (authUser: User) => {
+      // Fallback to user metadata or parsed email
+      setCustomerName(
+        // Check if user_metadata.name exists and is a string
+        (authUser.user_metadata?.name && typeof authUser.user_metadata.name === 'string') 
+          ? authUser.user_metadata.name 
+          : authUser.email.split('@')[0] // Safe split since email is guaranteed to be a string
+      );
+    };
+
+    // Only fetch customer name if user exists
+    if (user) {
+      fetchCustomerName(user);
+    }
   }, [user]);
 
   const handleLogout = async () => {

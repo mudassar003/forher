@@ -20,7 +20,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
         redirectTo: `${window.location.origin}/`,
         // This will ensure cookies are set properly
         // and the session is persisted via cookies rather than localStorage
-        persistSession: true,
+        
       },
     });
 

@@ -1,99 +1,128 @@
 // src/store/authFormStore.ts
-import { create } from "zustand";
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
-// Define stricter types for form state
+// Define types
+export interface PasswordStrength {
+  score: number;
+  feedback: string;
+  isValid: boolean;
+}
+
 interface AuthFormState {
   email: string;
   password: string;
+  passwordStrength: PasswordStrength;
   loading: boolean;
   error: string | null;
   successMessage: string | null;
-  passwordStrength: {
-    isValid: boolean;
-    score: number; // 0-4, higher is stronger
-    feedback: string | null;
-  };
+  
+  // Actions/setters
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setSuccessMessage: (message: string | null) => void;
-  validatePassword: (password: string) => void;
+  validatePassword: (password: string) => boolean;
   resetForm: () => void;
 }
 
-// Password validation function
-const validatePasswordStrength = (password: string): { isValid: boolean; score: number; feedback: string | null } => {
-  // Default values
-  let isValid = false;
-  let score = 0;
-  let feedback = null;
-
-  // If password is empty, return defaults
-  if (!password) {
-    return { isValid, score, feedback: "Password is required" };
-  }
-
-  // Check length
-  if (password.length < 8) {
-    return { isValid, score, feedback: "Password must be at least 8 characters" };
-  }
-
-  // Basic scoring system
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-
-  // Determine validity and feedback based on score
-  if (score >= 3) {
-    isValid = true;
-    feedback = score === 5 ? "Strong password" : "Good password";
-  } else {
-    feedback = "Password is too weak. Include uppercase letters, numbers, and special characters.";
-  }
-
-  return { isValid, score, feedback };
+// Default password strength state
+const defaultPasswordStrength: PasswordStrength = {
+  score: 0,
+  feedback: '',
+  isValid: false
 };
 
-export const useAuthFormStore = create<AuthFormState>((set) => ({
-  email: "",
-  password: "",
-  loading: false,
-  error: null,
-  successMessage: null,
-  passwordStrength: {
-    isValid: false,
+export const useAuthFormStore = create<AuthFormState>()(
+  devtools(
+    (set, get) => ({
+      // State
+      email: '',
+      password: '',
+      passwordStrength: defaultPasswordStrength,
+      loading: false,
+      error: null,
+      successMessage: null,
+      
+      // Actions
+      setEmail: (email: string) => set({ email }),
+      
+      setPassword: (password: string) => {
+        // Evaluate password strength
+        const strength = evaluatePasswordStrength(password);
+        set({ password, passwordStrength: strength });
+      },
+      
+      setLoading: (loading: boolean) => set({ loading }),
+      
+      setError: (error: string | null) => set({ error }),
+      
+      setSuccessMessage: (message: string | null) => set({ successMessage: message }),
+      
+      validatePassword: (password: string) => {
+        const strength = evaluatePasswordStrength(password);
+        set({ passwordStrength: strength });
+        return strength.isValid;
+      },
+      
+      resetForm: () => set({
+        email: '',
+        password: '',
+        passwordStrength: defaultPasswordStrength,
+        loading: false,
+        error: null,
+        successMessage: null
+      })
+    }),
+    { name: "auth-form-store" }
+  )
+);
+
+// Helper function to evaluate password strength
+function evaluatePasswordStrength(password: string): PasswordStrength {
+  // Default weak password
+  const result: PasswordStrength = {
     score: 0,
-    feedback: null
-  },
-  setEmail: (email) => set({ email }),
-  setPassword: (password) => {
-    const strength = validatePasswordStrength(password);
-    set({ 
-      password,
-      passwordStrength: strength
-    });
-  },
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
-  setSuccessMessage: (message) => set({ successMessage: message }),
-  validatePassword: (password) => {
-    const strength = validatePasswordStrength(password);
-    set({ passwordStrength: strength });
-    return strength.isValid;
-  },
-  resetForm: () => set({ 
-    email: "", 
-    password: "", 
-    loading: false, 
-    error: null,
-    successMessage: null,
-    passwordStrength: {
-      isValid: false,
-      score: 0,
-      feedback: null
-    }
-  }),
-}));
+    feedback: 'Password is too weak',
+    isValid: false
+  };
+  
+  if (!password) {
+    return result;
+  }
+  
+  // Basic criteria checks
+  const hasMinLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  // Calculate score (0-4)
+  let score = 0;
+  if (hasMinLength) score++;
+  if (hasUpperCase) score++;
+  if (hasLowerCase && hasNumbers) score++;
+  if (hasSpecialChar) score++;
+  
+  // Determine feedback based on missing criteria
+  let feedback = '';
+  let isValid = false;
+  
+  if (score >= 3) {
+    isValid = true;
+    feedback = score === 4 ? 'Strong password' : 'Good password';
+  } else {
+    const missing = [];
+    if (!hasMinLength) missing.push('at least 8 characters');
+    if (!hasUpperCase) missing.push('uppercase letters');
+    if (!hasLowerCase) missing.push('lowercase letters');
+    if (!hasNumbers) missing.push('numbers');
+    if (!hasSpecialChar) missing.push('special characters');
+    
+    feedback = `Password should include ${missing.join(', ')}`;
+  }
+  
+  return { score, feedback, isValid };
+}

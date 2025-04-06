@@ -65,9 +65,11 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
 
     if (error) {
       console.error("Sign-Up Error:", error.message);
-      // Use generic error messages to avoid leaking information
+      // Provide specific error messages to help users
       if (error.message.includes("email")) {
         return { data: null, error: "Email address is invalid or already in use" };
+      } else if (error.message.includes("password")) {
+        return { data: null, error: error.message };
       }
       return { data: null, error: "Failed to create account" };
     }
@@ -209,6 +211,9 @@ export const updatePassword = async (newPassword: string): Promise<AuthResponse>
 
     if (error) {
       console.error("Update Password Error:", error.message);
+      if (error.message.includes("validating")) {
+        return { data: null, error: "Your reset link may have expired. Please request a new one." };
+      }
       return { data: null, error: "Failed to update password" };
     }
 

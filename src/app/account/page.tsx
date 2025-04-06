@@ -9,7 +9,7 @@ import Link from 'next/link';
 export default function AccountPage() {
   const { user, isAuthenticated } = useAuthStore();
   const { subscriptions, hasActiveSubscription, loading, fetchUserSubscriptions } = useSubscriptionStore();
-  const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
 
   // Load subscriptions when component mounts
   useEffect(() => {
@@ -156,12 +156,12 @@ export default function AccountPage() {
                         {new Date(subscription.next_billing_date).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button 
+                        <Link
+                          href="/account/subscriptions"
                           className="text-indigo-600 hover:text-indigo-900"
-                          onClick={() => console.log("Manage subscription", subscription.id)}
                         >
                           Manage
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   ))}
@@ -175,7 +175,7 @@ export default function AccountPage() {
                 href="/subscriptions"
                 className="mt-4 inline-block bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-2 rounded-md hover:opacity-90 transition-all"
               >
-                Browse Subscription Plans
+                View Subscription Plans
               </Link>
             </div>
           )}
@@ -194,12 +194,12 @@ export default function AccountPage() {
               </Link>
             </div>
             <div>
-              <button
+              <Link 
+                href="/forgot-password"
                 className="text-indigo-600 hover:text-indigo-900"
-                onClick={() => console.log("Change password")}
               >
                 Change Password
-              </button>
+              </Link>
             </div>
             <div>
               <button

@@ -2,15 +2,29 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { updatePassword } from "@/lib/auth";
 import Link from "next/link";
 
-// Component that safely uses useSearchParams inside Suspense
-const ResetPasswordForm = () => {
+interface ResetPasswordFormProps {
+  token?: string | null;
+}
+
+// Component that safely uses token from URL
+const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token: tokenProp }) => {
+  // Use token from props or parse from URL for direct access
+  const searchParams = useSearchParams();
+  const [token, setToken] = useState<string | null>(tokenProp || null);
+  
+  // Get token from URL if not provided in props
+  useEffect(() => {
+    if (!token && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenParam = urlParams.get('token') || searchParams?.get('token') || null;
+      setToken(tokenParam);
+    }
+  }, [token, searchParams]);
   const router = useRouter();
-  // We'll get the token from URL in useEffect instead of useSearchParams
-  const [token, setToken] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [message, setMessage] = useState<string>("");
@@ -19,24 +33,13 @@ const ResetPasswordForm = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
   
-  // Get token from URL and validate it
+  // Check token validity
   useEffect(() => {
-    // Safe way to access URL parameters without useSearchParams
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tokenParam = urlParams.get('token');
-      
-      setToken(tokenParam);
-      
-      if (!tokenParam) {
-        setTokenValid(false);
-        setError("Invalid or missing reset token. Please request a new password reset link.");
-        return;
-      }
-      
-      // Here you would typically verify the token with your backend
-      // For this example, we're just checking if it exists
+    if (token) {
       setTokenValid(true);
+    } else {
+      setTokenValid(false);
+      setError("Invalid or missing reset token. Please request a new password reset link.");
     }
     
     // Clear any messages when component unmounts
@@ -44,7 +47,7 @@ const ResetPasswordForm = () => {
       setMessage("");
       setError("");
     };
-  }, []);
+  }, [token]);
 
   const validatePassword = (password: string): boolean => {
     if (!password) {
@@ -164,6 +167,7 @@ const ResetPasswordForm = () => {
     );
   };
 
+  // Complete the ResetPasswordForm component
   // If token is invalid, show error message with link to request new password reset
   if (tokenValid === false) {
     return (
@@ -294,9 +298,12 @@ const LoadingFallback = () => (
 
 // Main component
 const ResetPasswordPage = () => {
+  const searchParams = useSearchParams();
+  const token = searchParams?.get('token');
+
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <ResetPasswordForm />
+      <ResetPasswordForm token={token} />
     </Suspense>
   );
 };

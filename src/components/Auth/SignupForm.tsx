@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
-import { useAuthStore } from "@/store/authStore"; // Add this import
+import { useAuthStore } from "@/store/authStore"; 
 import { signUpWithEmail, signInWithGoogle } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,7 +36,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
 
   const router = useRouter();
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isHoneypotFilled, setIsHoneypotFilled] = useState<boolean>(false);
 
@@ -94,12 +93,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       return false;
     }
     
-    // Check terms acceptance
-    if (!termsAccepted) {
-      setError("You must accept the Terms & Privacy Policy");
-      return false;
-    }
-    
     return true;
   };
 
@@ -121,7 +114,14 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       const { error: authError, session } = await signUpWithEmail(email, password);
       
       if (authError) {
-        setError(authError);
+        // Show specific error message based on the error
+        if (authError.includes("already") || authError.includes("email")) {
+          setError("This email address is already in use. Please login instead.");
+        } else if (authError.includes("Password")) {
+          setError(authError);
+        } else {
+          setError(authError);
+        }
         setLoading(false);
         return;
       }
@@ -156,7 +156,16 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       
       // Redirect after a short delay to show the success message
       setTimeout(() => {
-        router.push(storedReturnUrl);
+        // Check if there's a pending subscription ID
+        const pendingSubscriptionId = sessionStorage.getItem('pendingSubscriptionId');
+        
+        if (pendingSubscriptionId) {
+          // If there is, redirect to subscriptions page
+          router.push('/subscriptions');
+        } else {
+          // Otherwise, redirect to the return URL
+          router.push(storedReturnUrl);
+        }
       }, 1500);
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -322,27 +331,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
             tabIndex={-1}
             autoComplete="off"
           />
-        </div>
-
-        <div className="flex items-start">
-          <input
-            type="checkbox"
-            id="terms"
-            checked={termsAccepted}
-            onChange={() => setTermsAccepted(!termsAccepted)}
-            className="mt-1 mr-2"
-            disabled={loading}
-          />
-          <label htmlFor="terms" className="text-sm text-gray-600">
-            By creating an account, I agree to the{" "}
-            <Link href="/terms" className="text-blue-600 hover:underline">
-              Terms & Conditions
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="text-blue-600 hover:underline">
-              Privacy Policy
-            </Link>.
-          </label>
         </div>
 
         <button

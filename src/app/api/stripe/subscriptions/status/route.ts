@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 import Stripe from "stripe";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { getAuthenticatedUser } from '@/utils/apiAuth';
 
 // Types
@@ -129,6 +131,7 @@ export async function POST(req: NextRequest) {
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', data.userId)
+      .eq('is_deleted', false)
       .order('created_at', { ascending: false });
     
     // Return results with updated subscriptions

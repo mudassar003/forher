@@ -105,7 +105,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
         set({ loading: true, error: null });
         
         try {
-          // Fetch from Supabase - removed is_deleted filter
+          // Fetch from Supabase
           const { data: supabaseData, error: supabaseError } = await supabase
             .from('user_subscriptions')
             .select('*')

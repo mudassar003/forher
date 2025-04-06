@@ -1,6 +1,18 @@
 // src/store/authFormStore.ts
 import { create } from "zustand";
-import { zxcvbn, ZXCVBNScore, ZXCVBNResult } from "@zxcvbn-ts/core";
+
+// Define our own types for zxcvbn since the library types are causing issues
+type ZXCVBNScore = 0 | 1 | 2 | 3 | 4;
+
+interface ZXCVBNFeedback {
+  warning: string;
+  suggestions: string[];
+}
+
+interface ZXCVBNResult {
+  score: ZXCVBNScore;
+  feedback: ZXCVBNFeedback;
+}
 
 interface PasswordStrength {
   score: ZXCVBNScore;
@@ -30,6 +42,53 @@ interface AuthFormState {
   validatePassword: (password: string) => PasswordStrength;
   resetForm: () => void;
 }
+
+// Simple password strength check without external library
+const checkPasswordStrength = (password: string): ZXCVBNResult => {
+  // Define criteria
+  const hasLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  // Calculate score based on criteria
+  let score: ZXCVBNScore = 0;
+  
+  if (hasLength) score++;
+  if (hasUpperCase) score++;
+  if (hasLowerCase) score++;
+  if (hasNumbers) score++;
+  if (hasSpecialChar) score++;
+  
+  // Cap score at 4
+  score = Math.min(score, 4) as ZXCVBNScore;
+  
+  // Generate feedback
+  let warning = "";
+  const suggestions: string[] = [];
+  
+  if (!hasLength) {
+    warning = "Password is too short";
+    suggestions.push("Use at least 8 characters");
+  } else if (!hasUpperCase) {
+    suggestions.push("Add uppercase letters");
+  } else if (!hasLowerCase) {
+    suggestions.push("Add lowercase letters");
+  } else if (!hasNumbers) {
+    suggestions.push("Add numbers");
+  } else if (!hasSpecialChar) {
+    suggestions.push("Add special characters");
+  }
+  
+  return {
+    score,
+    feedback: {
+      warning,
+      suggestions
+    }
+  };
+};
 
 export const useAuthFormStore = create<AuthFormState>((set, get) => ({
   // Initial state
@@ -77,9 +136,9 @@ export const useAuthFormStore = create<AuthFormState>((set, get) => ({
       };
     }
     
-    // Use zxcvbn for more comprehensive strength checking
+    // Use our custom password strength checker
     try {
-      const result: ZXCVBNResult = zxcvbn(password);
+      const result = checkPasswordStrength(password);
       
       // Determine feedback based on score
       let feedback = "";
@@ -111,7 +170,7 @@ export const useAuthFormStore = create<AuthFormState>((set, get) => ({
           isValid = false;
       }
       
-      // If there's specific feedback from zxcvbn, use that
+      // If there's specific feedback from result, use that
       if (result.feedback.warning) {
         feedback = result.feedback.warning;
         if (result.feedback.suggestions.length > 0) {
@@ -125,9 +184,9 @@ export const useAuthFormStore = create<AuthFormState>((set, get) => ({
         isValid
       };
     } catch (error) {
-      // Fallback to simpler checks if zxcvbn fails
-      console.error("Error using zxcvbn:", error);
+      console.error("Error checking password strength:", error);
       
+      // Fallback to simpler checks
       const hasUpperCase = /[A-Z]/.test(password);
       const hasLowerCase = /[a-z]/.test(password);
       const hasNumbers = /[0-9]/.test(password);

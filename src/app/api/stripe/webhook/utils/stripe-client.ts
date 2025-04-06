@@ -7,6 +7,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 // Using undefined for apiVersion will automatically use the latest API version
+// New default API version: 2025-02-24.acacia (because stripe has provided this new api version)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: undefined, // Use the latest API version automatically
 });

@@ -4,9 +4,10 @@ import { Stripe } from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 
+// New default API version: 2025-02-24.acacia (because stripe has provided this new api version)
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia', // Use the required API version
+  apiVersion: undefined, // Use the required API version
 });
 
 // Initialize Supabase client

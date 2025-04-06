@@ -1,128 +1,160 @@
 // src/store/authFormStore.ts
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { create } from "zustand";
+import { zxcvbn, ZXCVBNScore, ZXCVBNResult } from "@zxcvbn-ts/core";
 
-// Define types
-export interface PasswordStrength {
-  score: number;
+interface PasswordStrength {
+  score: ZXCVBNScore;
   feedback: string;
   isValid: boolean;
 }
 
 interface AuthFormState {
+  // Form fields
   email: string;
   password: string;
-  passwordStrength: PasswordStrength;
+  
+  // UI state
   loading: boolean;
   error: string | null;
   successMessage: string | null;
   
-  // Actions/setters
+  // Password strength
+  passwordStrength: PasswordStrength;
+  
+  // Actions
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setSuccessMessage: (message: string | null) => void;
-  validatePassword: (password: string) => boolean;
+  validatePassword: (password: string) => PasswordStrength;
   resetForm: () => void;
 }
 
-// Default password strength state
-const defaultPasswordStrength: PasswordStrength = {
-  score: 0,
-  feedback: '',
-  isValid: false
-};
-
-export const useAuthFormStore = create<AuthFormState>()(
-  devtools(
-    (set, get) => ({
-      // State
-      email: '',
-      password: '',
-      passwordStrength: defaultPasswordStrength,
-      loading: false,
-      error: null,
-      successMessage: null,
-      
-      // Actions
-      setEmail: (email: string) => set({ email }),
-      
-      setPassword: (password: string) => {
-        // Evaluate password strength
-        const strength = evaluatePasswordStrength(password);
-        set({ password, passwordStrength: strength });
-      },
-      
-      setLoading: (loading: boolean) => set({ loading }),
-      
-      setError: (error: string | null) => set({ error }),
-      
-      setSuccessMessage: (message: string | null) => set({ successMessage: message }),
-      
-      validatePassword: (password: string) => {
-        const strength = evaluatePasswordStrength(password);
-        set({ passwordStrength: strength });
-        return strength.isValid;
-      },
-      
-      resetForm: () => set({
-        email: '',
-        password: '',
-        passwordStrength: defaultPasswordStrength,
-        loading: false,
-        error: null,
-        successMessage: null
-      })
-    }),
-    { name: "auth-form-store" }
-  )
-);
-
-// Helper function to evaluate password strength
-function evaluatePasswordStrength(password: string): PasswordStrength {
-  // Default weak password
-  const result: PasswordStrength = {
+export const useAuthFormStore = create<AuthFormState>((set, get) => ({
+  // Initial state
+  email: "",
+  password: "",
+  loading: false,
+  error: null,
+  successMessage: null,
+  passwordStrength: {
     score: 0,
-    feedback: 'Password is too weak',
+    feedback: "",
     isValid: false
-  };
+  },
   
-  if (!password) {
-    return result;
-  }
+  // Actions
+  setEmail: (email: string) => set({ email }),
   
-  // Basic criteria checks
-  const hasMinLength = password.length >= 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /[0-9]/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  setPassword: (password: string) => {
+    // Calculate password strength when password changes
+    const passwordStrength = get().validatePassword(password);
+    set({ password, passwordStrength });
+  },
   
-  // Calculate score (0-4)
-  let score = 0;
-  if (hasMinLength) score++;
-  if (hasUpperCase) score++;
-  if (hasLowerCase && hasNumbers) score++;
-  if (hasSpecialChar) score++;
+  setLoading: (loading: boolean) => set({ loading }),
   
-  // Determine feedback based on missing criteria
-  let feedback = '';
-  let isValid = false;
+  setError: (error: string | null) => set({ error }),
   
-  if (score >= 3) {
-    isValid = true;
-    feedback = score === 4 ? 'Strong password' : 'Good password';
-  } else {
-    const missing = [];
-    if (!hasMinLength) missing.push('at least 8 characters');
-    if (!hasUpperCase) missing.push('uppercase letters');
-    if (!hasLowerCase) missing.push('lowercase letters');
-    if (!hasNumbers) missing.push('numbers');
-    if (!hasSpecialChar) missing.push('special characters');
+  setSuccessMessage: (successMessage: string | null) => set({ successMessage }),
+  
+  validatePassword: (password: string): PasswordStrength => {
+    if (!password) {
+      return {
+        score: 0,
+        feedback: "Password is required",
+        isValid: false
+      };
+    }
     
-    feedback = `Password should include ${missing.join(', ')}`;
-  }
+    // Basic length check
+    if (password.length < 8) {
+      return {
+        score: 1,
+        feedback: "Password must be at least 8 characters long",
+        isValid: false
+      };
+    }
+    
+    // Use zxcvbn for more comprehensive strength checking
+    try {
+      const result: ZXCVBNResult = zxcvbn(password);
+      
+      // Determine feedback based on score
+      let feedback = "";
+      let isValid = false;
+      
+      switch(result.score) {
+        case 0:
+          feedback = "Very weak password. Try adding more characters and symbols.";
+          isValid = false;
+          break;
+        case 1: 
+          feedback = "Weak password. Try adding numbers and special characters.";
+          isValid = false;
+          break;
+        case 2:
+          feedback = "Fair password, but could be stronger.";
+          isValid = false;
+          break;
+        case 3:
+          feedback = "Good password!";
+          isValid = true;
+          break;
+        case 4:
+          feedback = "Strong password!";
+          isValid = true;
+          break;
+        default:
+          feedback = "Password strength unknown.";
+          isValid = false;
+      }
+      
+      // If there's specific feedback from zxcvbn, use that
+      if (result.feedback.warning) {
+        feedback = result.feedback.warning;
+        if (result.feedback.suggestions.length > 0) {
+          feedback += ` ${result.feedback.suggestions.join(' ')}`;
+        }
+      }
+      
+      return {
+        score: result.score,
+        feedback,
+        isValid
+      };
+    } catch (error) {
+      // Fallback to simpler checks if zxcvbn fails
+      console.error("Error using zxcvbn:", error);
+      
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumbers = /[0-9]/.test(password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      
+      const isStrong = hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
+      
+      return {
+        score: isStrong ? 3 : 2,
+        feedback: isStrong 
+          ? "Good password!" 
+          : "Add uppercase letters, numbers, and special characters.",
+        isValid: isStrong
+      };
+    }
+  },
   
-  return { score, feedback, isValid };
-}
+  resetForm: () => set({
+    email: "",
+    password: "",
+    loading: false,
+    error: null,
+    successMessage: null,
+    passwordStrength: {
+      score: 0,
+      feedback: "",
+      isValid: false
+    }
+  })
+}));

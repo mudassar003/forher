@@ -1,20 +1,24 @@
 //src/components/Auth/AuthProvider.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { supabase } from "@/lib/supabase";
 import { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
-const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { user, checkSession, setUser, isAuthenticated } = useAuthStore();
   const { fetchUserSubscriptions, resetSubscriptionStore } = useSubscriptionStore();
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   // Initialize auth state on mount
   useEffect(() => {
-    const initAuth = async () => {
+    const initAuth = async (): Promise<void> => {
       // First check if we have a user in the store already (from sessionStorage)
       if (!isAuthenticated) {
         // If not, check with Supabase directly
@@ -23,7 +27,10 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsInitialized(true);
     };
     
-    initAuth();
+    initAuth().catch(error => {
+      console.error("Error initializing auth:", error);
+      setIsInitialized(true); // Still mark as initialized even if there's an error
+    });
   }, [checkSession, isAuthenticated]);
 
   // Fetch subscriptions whenever user changes

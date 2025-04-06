@@ -15,7 +15,7 @@ interface LoginButtonProps {
  * A reusable login button component that preserves the current route
  * and integrates with the authentication store
  */
-const LoginButton = ({ 
+const LoginButton: React.FC<LoginButtonProps> = ({ 
   className = "bg-black text-white px-4 py-2 rounded-md",
   buttonText = "Log in", 
   returnUrl // Optional override
@@ -34,7 +34,7 @@ const LoginButton = ({
   // If already authenticated, we could redirect directly to the account page
   // or disable the button, but here we'll leave it to honor the component usage
   
-  const handleLoginRedirect = () => {
+  const handleLoginRedirect = (): void => {
     // If already authenticated, go to account page
     if (isAuthenticated) {
       router.push('/account');

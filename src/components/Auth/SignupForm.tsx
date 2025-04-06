@@ -8,7 +8,6 @@ import { signUpWithEmail, signInWithGoogle } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
-import { FaApple } from "react-icons/fa";
 
 interface SignupFormProps {
   returnUrl?: string;
@@ -36,6 +35,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
 
   const router = useRouter();
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isHoneypotFilled, setIsHoneypotFilled] = useState<boolean>(false);
 
@@ -53,6 +53,18 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       resetForm();
     };
   }, [resetForm]);
+
+  // Check for pending subscription
+  useEffect(() => {
+    const pendingSubscriptionId = sessionStorage.getItem('pendingSubscriptionId');
+    if (isAuthenticated && pendingSubscriptionId) {
+      // Clear the pending subscription ID
+      sessionStorage.removeItem('pendingSubscriptionId');
+      
+      // Redirect to subscriptions page
+      router.push('/subscriptions');
+    }
+  }, [isAuthenticated, router]);
 
   const validateInputs = (): boolean => {
     // Clear any previous errors
@@ -93,6 +105,12 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       return false;
     }
     
+    // Check terms acceptance
+    if (!termsAccepted) {
+      setError("You must accept the Terms & Privacy Policy");
+      return false;
+    }
+    
     return true;
   };
 
@@ -114,14 +132,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       const { error: authError, session } = await signUpWithEmail(email, password);
       
       if (authError) {
-        // Show specific error message based on the error
-        if (authError.includes("already") || authError.includes("email")) {
-          setError("This email address is already in use. Please login instead.");
-        } else if (authError.includes("Password")) {
-          setError(authError);
-        } else {
-          setError(authError);
-        }
+        setError(authError);
         setLoading(false);
         return;
       }
@@ -156,16 +167,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       
       // Redirect after a short delay to show the success message
       setTimeout(() => {
-        // Check if there's a pending subscription ID
-        const pendingSubscriptionId = sessionStorage.getItem('pendingSubscriptionId');
-        
-        if (pendingSubscriptionId) {
-          // If there is, redirect to subscriptions page
-          router.push('/subscriptions');
-        } else {
-          // Otherwise, redirect to the return URL
-          router.push(storedReturnUrl);
-        }
+        router.push(storedReturnUrl);
       }, 1500);
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -182,14 +184,17 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
     setLoading(true);
     
     try {
-      const { error: authError } = await signInWithGoogle();
+      // Store current return URL
+      const storedReturnUrl = sessionStorage.getItem('loginReturnUrl') || returnUrl;
+      
+      // Pass the returnUrl to the Google OAuth function
+      const { error: authError } = await signInWithGoogle(storedReturnUrl);
       
       if (authError) {
         setError(authError);
         setLoading(false);
       }
       // For OAuth, the redirect happens automatically
-      // The auth state will be updated by the AuthProvider
     } catch (err) {
       setError("An unexpected error occurred with Google login. Please try again.");
       console.error("Google signup error:", err);
@@ -333,6 +338,27 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
           />
         </div>
 
+        <div className="flex items-start">
+          <input
+            type="checkbox"
+            id="terms"
+            checked={termsAccepted}
+            onChange={() => setTermsAccepted(!termsAccepted)}
+            className="mt-1 mr-2"
+            disabled={loading}
+          />
+          <label htmlFor="terms" className="text-sm text-gray-600">
+            By creating an account, I agree to the{" "}
+            <Link href="/terms" className="text-blue-600 hover:underline">
+              Terms & Conditions
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-blue-600 hover:underline">
+              Privacy Policy
+            </Link>.
+          </label>
+        </div>
+
         <button
           type="submit"
           disabled={loading}
@@ -356,15 +382,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       >
         <FcGoogle className="text-xl" />
         {loading ? "Signing up..." : "Continue with Google"}
-      </button>
-
-      <button
-        disabled={true} // Disabled until implemented
-        className="w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded-md font-semibold hover:bg-gray-100 transition mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
-        type="button"
-      >
-        <FaApple className="text-xl" />
-        Continue with Apple
       </button>
 
       <p className="text-center text-sm mt-6 text-gray-500">

@@ -1,4 +1,4 @@
-// src/components/Auth/LoginForm.tsx
+//src/components/Auth/LoginForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +8,6 @@ import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
-import { FaApple } from "react-icons/fa";
 
 interface LoginFormProps {
   returnUrl?: string;
@@ -165,7 +164,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       const currentReturnUrl = sessionStorage.getItem('loginReturnUrl') || effectiveReturnUrl;
       sessionStorage.setItem('loginReturnUrl', currentReturnUrl);
       
-      const { error: authError } = await signInWithGoogle();
+      // Pass the returnUrl to the Google OAuth function
+      const { error: authError } = await signInWithGoogle(currentReturnUrl);
       
       if (authError) {
         setError(authError);
@@ -284,15 +284,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       >
         <FcGoogle className="text-xl" />
         {loading ? "Signing in..." : "Continue with Google"}
-      </button>
-
-      <button
-        disabled={true} // Disabled until implemented
-        className="w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded-md font-semibold hover:bg-gray-100 transition mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
-        type="button"
-      >
-        <FaApple className="text-xl" />
-        Continue with Apple
       </button>
 
       <p className="text-center text-sm mt-6 text-gray-500">

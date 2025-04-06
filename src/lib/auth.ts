@@ -1,9 +1,9 @@
 // src/lib/auth.ts
 import { supabase } from "./supabase";
-import { Session, AuthError } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 
 // Define response type for better type safety
-interface AuthResponse<T = any> {
+export interface AuthResponse<T = unknown> {
   data: T | null;
   error: string | null;
   session?: Session | null;
@@ -11,15 +11,24 @@ interface AuthResponse<T = any> {
 
 /**
  * Sign in with Google OAuth
+ * @param returnUrl Optional return URL after successful authentication
  */
-export const signInWithGoogle = async (): Promise<AuthResponse> => {
+export const signInWithGoogle = async (returnUrl?: string): Promise<AuthResponse> => {
   try {
+    // Default redirect to homepage if no returnUrl provided
+    const redirectPath = returnUrl ? returnUrl : '/';
+    const redirectTo = `${window.location.origin}${redirectPath}`;
+    
+    // Store returnUrl in sessionStorage for access after OAuth completes
+    if (returnUrl) {
+      sessionStorage.setItem('loginReturnUrl', returnUrl);
+    }
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo,
         // This will ensure cookies are set properly
-        // and the session is persisted via cookies rather than localStorage
       },
     });
 
@@ -37,6 +46,8 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
 
 /**
  * Sign up with Email & Password
+ * @param email User's email address
+ * @param password User's password
  */
 export const signUpWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
   try {
@@ -65,11 +76,9 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
 
     if (error) {
       console.error("Sign-Up Error:", error.message);
-      // Provide specific error messages to help users
+      // Use generic error messages to avoid leaking information
       if (error.message.includes("email")) {
         return { data: null, error: "Email address is invalid or already in use" };
-      } else if (error.message.includes("password")) {
-        return { data: null, error: error.message };
       }
       return { data: null, error: "Failed to create account" };
     }
@@ -83,6 +92,8 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
 
 /**
  * Sign in with Email & Password
+ * @param email User's email address
+ * @param password User's password
  */
 export const signInWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
   try {
@@ -167,6 +178,7 @@ export const signOut = async (): Promise<AuthResponse> => {
 
 /**
  * Send password reset email
+ * @param email User's email address
  */
 export const sendPasswordResetEmail = async (email: string): Promise<AuthResponse> => {
   try {
@@ -199,6 +211,7 @@ export const sendPasswordResetEmail = async (email: string): Promise<AuthRespons
 
 /**
  * Update password after reset
+ * @param newPassword New password to set
  */
 export const updatePassword = async (newPassword: string): Promise<AuthResponse> => {
   try {
@@ -211,9 +224,6 @@ export const updatePassword = async (newPassword: string): Promise<AuthResponse>
 
     if (error) {
       console.error("Update Password Error:", error.message);
-      if (error.message.includes("validating")) {
-        return { data: null, error: "Your reset link may have expired. Please request a new one." };
-      }
       return { data: null, error: "Failed to update password" };
     }
 
@@ -226,8 +236,9 @@ export const updatePassword = async (newPassword: string): Promise<AuthResponse>
 
 /**
  * Get the current authenticated user
+ * @returns Object containing the user or error
  */
-export const getCurrentUser = async () => {
+export const getCurrentUser = async (): Promise<{ user: User | null; error: Error | null }> => {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
     
@@ -238,7 +249,7 @@ export const getCurrentUser = async () => {
     return { user, error: null };
   } catch (error) {
     console.error("Error getting current user:", error);
-    return { user: null, error };
+    return { user: null, error: error as Error };
   }
 };
 
@@ -289,7 +300,7 @@ export const refreshSession = async (): Promise<boolean> => {
  * @param callback Function to call when auth state changes
  * @returns Unsubscribe function
  */
-export const onAuthStateChange = (callback: (event: string, session: Session | null) => void) => {
+export const onAuthStateChange = (callback: (event: string, session: Session | null) => void): (() => void) => {
   const { data } = supabase.auth.onAuthStateChange((event, session) => {
     callback(event, session);
   });

@@ -13,6 +13,14 @@ const PROTECTED_ROUTES = [
   '/appointment'
 ];
 
+// Define admin routes
+const ADMIN_ROUTES = [
+  '/admin',
+  '/admin/subscriptions',
+  '/admin/users',
+  '/admin/dashboard'
+];
+
 // Define auth-related routes
 const AUTH_ROUTES = [
   '/login',
@@ -98,25 +106,29 @@ export async function middleware(req: NextRequest) {
   // Get the current session from cookies
   const { data: { session } } = await supabase.auth.getSession();
   
-  // For auth protected routes
-  if (matchesPatterns(path, PROTECTED_ROUTES)) {    
-    // If no session, redirect to login
+  // For admin protected routes
+  if (matchesPatterns(path, ADMIN_ROUTES)) {
+    // First ensure user is authenticated
     if (!session) {
       const returnUrl = encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
       return NextResponse.redirect(new URL(`/login?returnUrl=${returnUrl}`, req.url));
     }
     
-    // Optional: Check for specific roles for specific routes
-    if (path.startsWith('/admin')) {
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
-        
-      if (!userRole || userRole.role !== 'admin') {
-        return NextResponse.redirect(new URL('/unauthorized', req.url));
-      }
+    // Check if user email is in the admin list
+    const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map(email => email.trim());
+    
+    if (!session.user.email || !ADMIN_EMAILS.includes(session.user.email)) {
+      // Redirect non-admin users to unauthorized page
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+  }
+  
+  // For regular auth protected routes
+  else if (matchesPatterns(path, PROTECTED_ROUTES)) {    
+    // If no session, redirect to login
+    if (!session) {
+      const returnUrl = encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
+      return NextResponse.redirect(new URL(`/login?returnUrl=${returnUrl}`, req.url));
     }
   }
   
@@ -168,6 +180,9 @@ export const config = {
     '/checkout/:path*',
     '/appointment/:path*',
     
+    // Admin routes
+    '/admin/:path*',
+    
     // Auth routes
     '/login',
     '/signup',
@@ -178,7 +193,5 @@ export const config = {
     '/api/user-subscriptions/:path*',
     '/api/orders/:path*',
     '/api/stripe/subscriptions/:path*',
-    
-    // Add more routes as needed
   ],
 };

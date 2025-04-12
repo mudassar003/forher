@@ -18,10 +18,10 @@ interface NavItem {
 // Define navigation items
 const navItems: NavItem[] = [
   { name: "Dashboard", path: "/account" },
-  { name: "Orders", path: "/account/orders" },
+  // { name: "Orders", path: "/account/orders" },
   { name: "Subscriptions", path: "/account/subscriptions" },
   { name: "Settings", path: "/account/settings" },
-  { name: "Telehealth", path: "/appointment" },
+  // { name: "Telehealth", path: "/appointment" },
 ];
 
 // AccountHeader component for all account pages

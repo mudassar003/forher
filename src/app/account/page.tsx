@@ -59,50 +59,10 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Quick Actions Grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Appointments */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Telehealth Consultations</h2>
-            <p className="text-gray-600 mb-4">
-              {hasActiveSubscription
-                ? "You have access to telehealth consultations with your subscription."
-                : "Subscribe to gain access to telehealth consultations."}
-            </p>
-            {hasActiveSubscription ? (
-              <Link
-                href="/appointment"
-                className="inline-block bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-2 rounded-md hover:opacity-90 transition-all"
-              >
-                Schedule Consultation
-              </Link>
-            ) : (
-              <Link
-                href="/subscriptions"
-                className="inline-block bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-2 rounded-md hover:opacity-90 transition-all"
-              >
-                View Subscription Plans
-              </Link>
-            )}
-          </div>
-
-          {/* Profile */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
-            <p className="text-gray-600 mb-4">
-              Update your personal information and preferences.
-            </p>
-            <Link
-              href="/account/profile"
-              className="inline-block bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-all"
-            >
-              Edit Profile
-            </Link>
-          </div>
-        </div>
+        {/* Quick Actions Grid - Removed the two tabs */}
 
         {/* Subscriptions Table */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">My Subscriptions</h2>
           
           {subscriptions.length > 0 ? (
@@ -179,37 +139,6 @@ export default function AccountPage() {
               </Link>
             </div>
           )}
-        </div>
-
-        {/* Account Actions */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Account Actions</h2>
-          <div className="space-y-3">
-            <div>
-              <Link
-                href="/account/orders"
-                className="text-indigo-600 hover:text-indigo-900"
-              >
-                View Order History
-              </Link>
-            </div>
-            <div>
-              <Link 
-                href="/forgot-password"
-                className="text-indigo-600 hover:text-indigo-900"
-              >
-                Change Password
-              </Link>
-            </div>
-            <div>
-              <button
-                className="text-red-600 hover:text-red-900"
-                onClick={() => console.log("Delete account")}
-              >
-                Delete Account
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

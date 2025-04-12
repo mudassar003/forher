@@ -10,7 +10,7 @@ export const hairLossQuestions: Question[] = [
     description: "Please select your current age range.",
     type: QuestionType.SingleSelect,
     options: [
-      { id: "under-18", label: "Under 18" },
+      // { id: "under-18", label: "Under 18" },
       { id: "18-24", label: "18-24" },
       { id: "25-34", label: "25-34" },
       { id: "35-44", label: "35-44" },

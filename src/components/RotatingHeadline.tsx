@@ -12,6 +12,7 @@ interface Category {
   id: CategoryId;
   text: string;
   assessmentUrl: string;
+  hidden?: boolean;
 }
 
 interface CategoryContent {
@@ -39,8 +40,8 @@ interface GradientTextStyle {
 const categories: Category[] = [
   { id: "weight-loss", text: "Weight Loss", assessmentUrl: "/c/wm" },
   { id: "hair-care", text: "Hair Care", assessmentUrl: "/c/hl" },
-  { id: "anxiety", text: "Anxiety Relief", assessmentUrl: "/c/mh" },
-  { id: "skin", text: "Skin Care", assessmentUrl: "/c/aa" },
+  { id: "anxiety", text: "Anxiety Relief", assessmentUrl: "/c/mh", hidden: true },
+  { id: "skin", text: "Skin Care", assessmentUrl: "/c/aa", hidden: true },
   { id: "cycle", text: "Cycle Management", assessmentUrl: "/c/b" },
 ];
 
@@ -202,7 +203,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              {categories.map((category, index) => (
+              {categories.filter(category => !category.hidden).map((category, index) => (
                 <motion.button
                   key={category.id}
                   className="w-full sm:w-auto px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-full text-white font-medium text-base sm:text-lg md:text-xl transition-all hover:shadow-lg flex items-center justify-center sm:justify-start"

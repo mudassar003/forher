@@ -132,7 +132,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
   };
 
   return (
-    <section className="flex flex-col items-center justify-center min-h-[70vh] px-4 sm:px-6 md:px-12 lg:px-24 py-8 sm:py-12 relative overflow-hidden">
+    <section className="flex flex-col items-center justify-center min-h-[70vh] px-4 sm:px-6 md:px-12 lg:px-24 py-8 sm:py-12 relative overflow-hidden bg-white">
       {/* Inject the keyframes animation */}
       <style>{animationKeyframes}</style>
       
@@ -323,7 +323,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
         )}
       </div>
       
-      {/* Wave transition at the bottom of the section */}
+      {/* Wave transition at the bottom of the section - DARK MODE REFERENCE REMOVED */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-1">
         <svg 
           className="relative block w-full h-16 sm:h-24" 
@@ -332,7 +332,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
         >
           <path 
             d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C15,10.18,36.88,20.62,58.94,31.06,108.88,52.93,163.34,71.36,216,87.57,281.12,107.36,345.66,119.57,411,119.22Z" 
-            className="fill-white dark:fill-gray-900"
+            className="fill-white"
             style={{
               filter: "drop-shadow(0px -2px 3px rgba(230, 57, 70, 0.1))"
             }}

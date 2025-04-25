@@ -22,7 +22,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) =
       {icon}
     </div>
     <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-    <p className="mt-2 text-base text-gray-500">{description}</p>
+    <p className="mt-2 text-base text-black">{description}</p>
   </div>
 );
 
@@ -85,17 +85,23 @@ export default function AboutPage() {
               <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
                 Our Mission
               </h2>
-              <p className="mt-4 text-lg text-gray-500">
+              <p className="mt-4 text-lg text-black">
                 At Lily's, we're on a mission to make medically guided weight loss simple, supportive, and accessible for every woman.
               </p>
-              <p className="mt-4 text-lg text-gray-500">
+              <p className="mt-4 text-lg text-black">
                 We understand that lasting change starts with trusted support, which is why we've built an easy-to-use platform that connects women with licensed doctors through secure telehealth consultations. While Lily's doesn't provide medical care directly, we work hand-in-hand with <strong>Qualiphy</strong>, a reputable telehealth provider, to ensure you receive expert care tailored to your goals.
               </p>
-              <p className="mt-4 text-lg text-gray-500">
+              <p className="mt-4 text-lg text-black">
                 Our focus is on <strong>clinically backed weight loss solutions</strong>, including prescriptions like GLP-1 medications (such as semaglutide or tirzepatide), all prescribed by licensed professionals when appropriate. Through our website, you can explore your options, complete an intake, and get connected to the care you need—all from the comfort of home.
               </p>
-              <p className="mt-4 text-lg text-gray-500">
+              <p className="mt-4 text-lg text-black">
                 We're here to guide you every step of the way, from discovery to results. At Lily's, you're not just starting a program—you're beginning a journey with the right support behind you.
+              </p>
+              <p className="mt-4 text-lg text-black">
+                Qualiphy Email: contact@qualiphy.me
+              </p>
+              <p className="mt-4 text-lg text-black">
+              Qualiphy Phone: +1 (424) 257-3977
               </p>
               <div className="mt-6">
                 <Link href="/subscriptions" className="inline-flex px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-black shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-opacity-50">
@@ -124,7 +130,7 @@ export default function AboutPage() {
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Why Choose Us?
             </h2>
-            <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+            <p className="mt-4 max-w-2xl text-xl text-black lg:mx-auto">
               We believe in accessible, personalized healthcare for all women.
             </p>
           </div>

@@ -101,17 +101,20 @@ export default async function SubscriptionsPage() {
 
   return (
     <div>
-      {/* Header section with brand styling */}
-      <div style={{ background: "#F7F7F7" }}>
-        <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 sm:px-6 lg:px-8">
+      {/* Enhanced header section with brand styling */}
+      <div className="relative bg-gradient-to-r from-[#e63946] to-[#ff4d6d] py-16 sm:py-24">
+        <div className="absolute inset-0 opacity-20">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="w-full h-full">
+            <path fill="#ffffff" fillOpacity="1" d="M0,192L48,176C96,160,192,128,288,138.7C384,149,480,203,576,208C672,213,768,171,864,149.3C960,128,1056,128,1152,144C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+          </svg>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <h1 
-              className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
-              style={{ color: "#e63946" }} // Brand red color
-            >
+            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
               Subscription Plans
             </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-700">
+            <p className="mt-6 max-w-2xl mx-auto text-xl text-pink-100">
               Choose a subscription plan that best fits your needs and enjoy exclusive benefits
             </p>
           </div>

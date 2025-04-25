@@ -101,29 +101,45 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     }
   };
 
+  // Check if the subscription is featured based on categories or title
+  const isFeatured = categories?.some(cat => cat.title.toLowerCase().includes('featured')) || title.toLowerCase().includes('featured');
+
   return (
-    <div className="flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm h-full hover:shadow-md transition-shadow">
-      {/* Simple elegant header */}
-      <div className="px-6 pt-6 pb-2">
-        <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
-      </div>
-      
-      {/* Content */}
-      <div className="px-6 pb-6 flex flex-col flex-grow">
-        {/* Price with prominent display */}
-        <div className="mt-2 mb-6">
+    <div className={`flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 h-full transform hover:-translate-y-1 ${
+      isFeatured ? 'border-2 border-[#e63946] relative' : 'border border-gray-100'
+    }`}>
+      {/* Header with gradient background for featured plans, subtle for regular */}
+      <div className={`px-6 py-6 ${
+        isFeatured 
+          ? 'bg-gradient-to-r from-[#e63946] to-[#ff4d6d] text-white' 
+          : 'bg-white border-b border-gray-100'
+      }`}>
+        <h3 className={`text-xl font-bold ${isFeatured ? 'text-white' : 'text-gray-900'}`}>
+          {title}
+        </h3>
+        
+        {/* Price display */}
+        <div className="mt-4">
           <div className="flex items-baseline">
-            <span className="text-4xl font-bold text-gray-900">{formatCurrency(price)}</span>
-            <span className="ml-2 text-gray-600">{getBillingPeriodDisplay()}</span>
+            <span className={`text-4xl font-extrabold ${isFeatured ? 'text-white' : 'text-gray-900'}`}>
+              {formatCurrency(price)}
+            </span>
+            <span className={`ml-2 ${isFeatured ? 'text-pink-100' : 'text-gray-500'}`}>
+              {getBillingPeriodDisplay()}
+            </span>
           </div>
           
-          {/* Categories as subtle tags */}
+          {/* Categories as tags */}
           {categories && categories.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1 mt-3">
               {categories.map(category => (
                 <span 
                   key={category._id}
-                  className="text-xs text-gray-500"
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    isFeatured 
+                      ? 'bg-pink-700 text-pink-100' 
+                      : 'bg-pink-50 text-pink-700'
+                  }`}
                 >
                   {category.title}
                 </span>
@@ -131,44 +147,51 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             </div>
           )}
         </div>
+      </div>
+      
+      {/* Content */}
+      <div className="px-6 py-6 bg-white flex-grow flex flex-col">
+        {/* Description */}
+        {description && (
+          <div className="mb-6">
+            <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
+          </div>
+        )}
         
-        {/* Description with clean styling */}
-        <div className="mb-6">
-          {description ? (
-            <p className="text-gray-600 text-sm">{description}</p>
-          ) : null}
-        </div>
-        
-        {/* Features list with modern checkmarks */}
+        {/* Features list with pink checkmarks */}
         <div className="mb-6 flex-grow">
           {features.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {features.filter(feature => feature && feature.featureText).map((feature, index) => (
-                <li key={index} className="flex items-center">
-                  <svg
-                    className="h-4 w-4 text-indigo-500 flex-shrink-0 mr-2"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-sm text-gray-600">{feature.featureText}</span>
+                <li key={index} className="flex items-start">
+                  <div className="mt-1 mr-3 flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-pink-100">
+                    <svg
+                      className="h-3 w-3 text-[#e63946]"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-700">{feature.featureText}</span>
                 </li>
               ))}
             </ul>
           ) : null}
         </div>
         
-        {/* Clean, minimal button design */}
+        {/* Call to action button */}
         <div className="mt-auto pt-4 border-t border-gray-100">
           <button
             onClick={handleSubscribe}
             disabled={isProcessing || isLoading}
-            className={`w-full py-3 rounded-lg text-white font-medium ${
+            className={`w-full py-3 px-4 rounded-lg text-white font-medium transition-all duration-300 ${
               isProcessing || isLoading
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-black hover:bg-gray-800'
-            } transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-opacity-50 shadow-sm`}
+                ? 'bg-gray-400 cursor-not-allowed'
+                : isFeatured
+                  ? 'bg-gradient-to-r from-[#e63946] to-[#ff4d6d] hover:from-[#d52d3a] hover:to-[#e63956] shadow-md hover:shadow-lg'
+                  : 'bg-[#e63946] hover:bg-[#d52d3a]'
+            } focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50`}
           >
             {isProcessing || isLoading 
               ? 'Processing...' 

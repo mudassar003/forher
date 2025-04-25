@@ -55,7 +55,7 @@ const HeaderContent: React.FC = () => {
   // Get user from auth store
   const { user, isAuthenticated } = useAuthStore();
 
-  // Get cart data from Zustand
+  // Get cart data from Zustand - keep this for later use
   const cart = useCartStore((state) => state.cart);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0); // Calculate total quantity
 
@@ -185,8 +185,8 @@ const HeaderContent: React.FC = () => {
           </button>
 
           {/* Logo */}
-          <Link href="/" className="text-3xl md:text-4xl font-semibold text-black">
-            Lily&apos;s
+          <Link href="/" className="flex items-center">
+            <img src="/Logo.png" alt="Lily's Logo" className="h-10 md:h-12" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -212,7 +212,9 @@ const HeaderContent: React.FC = () => {
               </button>
             </Link>
 
-            {/* Shopping Cart Icon with Dynamic Count */}
+            {/* Shopping Cart Icon - TEMPORARILY HIDDEN */}
+            {/* Cart code kept for future re-implementation */}
+            {/* 
             <Link href="/cart" className="relative">
               <FiShoppingCart className="text-2xl text-black cursor-pointer" />
               {totalItems > 0 && (
@@ -221,6 +223,7 @@ const HeaderContent: React.FC = () => {
                 </span>
               )}
             </Link>
+            */}
           </div>
         </div>
       </div>
@@ -235,8 +238,8 @@ const HeaderContent: React.FC = () => {
         <div className="flex flex-col h-full">
           {/* Menu Header with Close Button */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <Link href="/" className="text-2xl font-semibold text-black">
-              Lily&apos;s
+            <Link href="/" className="flex items-center">
+              <img src="/Logo.png" alt="Lily's Logo" className="h-8" />
             </Link>
             <button 
               className="text-black focus:outline-none" 
@@ -308,7 +311,9 @@ const HeaderFallback: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between py-4">
           <div className="w-8 h-8"></div>
-          <div className="text-3xl font-semibold">Lily&apos;s</div>
+          <div className="flex items-center">
+            <img src="/Logo.png" alt="Lily's Logo" className="h-8" />
+          </div>
           <div className="w-8 h-8"></div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 "use client";
 
 import { FiFacebook, FiInstagram, FiTwitter, FiLinkedin } from "react-icons/fi";
+import Link from "next/link";
 
 const GlobalFooter = () => {
   return (
@@ -11,8 +12,10 @@ const GlobalFooter = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-8">
           {/* Brand Column */}
           <div className="col-span-1">
-            <div className="text-3xl font-semibold mb-4">
-              <span className="text-black">Lily&apos;s</span>
+            <div className="mb-4">
+              <Link href="/" className="flex items-center">
+                <img src="/Logo.png" alt="Lily's Logo" className="h-10" />
+              </Link>
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Empowering you to look and feel your best every day.

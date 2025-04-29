@@ -100,9 +100,19 @@ export default async function SubscriptionsPage() {
   } = await getCategoriesWithSubscriptions();
 
   return (
-    <div>
+    <div className="relative overflow-hidden">
+      {/* Decorative Bubbles - Top Section */}
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-[#ffe6f0] opacity-20 blur-3xl"></div>
+      <div className="absolute top-40 right-0 w-96 h-96 rounded-full bg-[#f9dde5] opacity-30 blur-3xl"></div>
+      <div className="absolute -top-10 right-1/4 w-40 h-40 rounded-full bg-[#ffb3c1] opacity-10 blur-2xl"></div>
+      
       {/* Enhanced header section with brand styling */}
-      <div className="relative bg-gradient-to-r from-[#e63946] to-[#ff4d6d] py-16 sm:py-24">
+      <div className="relative bg-gradient-to-r from-[#e63946] to-[#ff4d6d] py-16 sm:py-24 overflow-hidden">
+        {/* Decorative elements for the header */}
+        <div className="absolute top-1/2 left-1/4 w-32 h-32 rounded-full bg-white opacity-10 blur-xl"></div>
+        <div className="absolute bottom-0 right-1/3 w-40 h-40 rounded-full bg-white opacity-5 blur-xl"></div>
+        
+        {/* Wave pattern background */}
         <div className="absolute inset-0 opacity-20">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="w-full h-full">
             <path fill="#ffffff" fillOpacity="1" d="M0,192L48,176C96,160,192,128,288,138.7C384,149,480,203,576,208C672,213,768,171,864,149.3C960,128,1056,128,1152,144C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
@@ -122,8 +132,12 @@ export default async function SubscriptionsPage() {
       </div>
 
       {/* Main content with white background */}
-      <div className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative py-12 bg-white">
+        {/* Middle section bubbles */}
+        <div className="absolute top-1/2 left-0 w-72 h-72 rounded-full bg-[#f0f7ff] opacity-30 blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-0 w-80 h-80 rounded-full bg-[#ffeef2] opacity-40 blur-3xl"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <SubscriptionGrid 
             categories={categories}
             subscriptionsByCategory={subscriptionsByCategory}
@@ -134,6 +148,10 @@ export default async function SubscriptionsPage() {
           />
         </div>
       </div>
+      
+      {/* Bottom bubbles */}
+      <div className="absolute bottom-10 left-1/3 w-60 h-60 rounded-full bg-[#ffe6f0] opacity-30 blur-3xl"></div>
+      <div className="absolute -bottom-20 right-1/4 w-48 h-48 rounded-full bg-[#f9dde5] opacity-20 blur-2xl"></div>
     </div>
   );
 }

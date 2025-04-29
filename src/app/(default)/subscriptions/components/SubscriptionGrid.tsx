@@ -17,6 +17,12 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
 
+  // Assign card type based on position in grid
+  const getCardType = (index: number) => {
+    const types = ['basic', 'premium', 'standard'] as const;
+    return types[index % 3];
+  };
+
   // FALLBACK: If no categories were found, just show all subscriptions
   if (categories.length === 0 && allSubscriptions.length > 0) {
     return (
@@ -32,7 +38,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
         </h2>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
-          {allSubscriptions.map((subscription) => (
+          {allSubscriptions.map((subscription, index) => (
             <SubscriptionCard 
               key={subscription._id}
               id={subscription._id}
@@ -42,6 +48,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
               billingPeriod={subscription.billingPeriod}
               features={subscription.features || []}
               categories={subscription.categories}
+              cardType={getCardType(index)}
             />
           ))}
         </div>
@@ -119,7 +126,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           </h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
-            {featuredSubscriptions.map((subscription) => (
+            {featuredSubscriptions.map((subscription, index) => (
               <SubscriptionCard 
                 key={subscription._id}
                 id={subscription._id}
@@ -129,6 +136,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 billingPeriod={subscription.billingPeriod}
                 features={subscription.features || []}
                 categories={subscription.categories}
+                cardType={getCardType(index)}
               />
             ))}
           </div>
@@ -136,7 +144,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
       )}
       
       {/* Display subscriptions by category */}
-      {categories.map((category, index) => {
+      {categories.map((category, categoryIndex) => {
         const categorySubscriptions = subscriptionsByCategory[category._id] || [];
         
         // Only render category section if it has subscriptions
@@ -145,7 +153,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
         return (
           <div key={category._id} className="mb-16 relative">
             {/* Alternating decorative bubbles for each category section */}
-            {index % 2 === 0 ? (
+            {categoryIndex % 2 === 0 ? (
               <>
                 <div className="absolute top-10 right-0 w-32 h-32 rounded-full bg-[#ffe6f0] opacity-20 blur-2xl"></div>
                 <div className="absolute bottom-0 left-10 w-40 h-40 rounded-full bg-[#f9dde5] opacity-10 blur-xl"></div>
@@ -171,7 +179,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
-              {categorySubscriptions.map((subscription) => (
+              {categorySubscriptions.map((subscription, index) => (
                 <SubscriptionCard 
                   key={subscription._id}
                   id={subscription._id}
@@ -181,6 +189,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                   billingPeriod={subscription.billingPeriod}
                   features={subscription.features || []}
                   categories={subscription.categories}
+                  cardType={getCardType(index)}
                 />
               ))}
             </div>
@@ -202,7 +211,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           </h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
-            {uncategorizedSubscriptions.map((subscription) => (
+            {uncategorizedSubscriptions.map((subscription, index) => (
               <SubscriptionCard 
                 key={subscription._id}
                 id={subscription._id}
@@ -212,6 +221,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 billingPeriod={subscription.billingPeriod}
                 features={subscription.features || []}
                 categories={subscription.categories}
+                cardType={getCardType(index)}
               />
             ))}
           </div>

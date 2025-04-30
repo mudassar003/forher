@@ -63,9 +63,9 @@ export async function getServerTranslations(
  * Get the current language from cookies for server components
  * @returns The current language code
  */
-export function getServerLanguage(): string {
+export async function getServerLanguage(): Promise<string> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();  // Await the cookies to resolve the Promise
     const langCookie = cookieStore.get('i18nextLng');
     
     // Return the language from cookie if available and supported
@@ -102,7 +102,7 @@ export async function createServerTranslator(
   language?: string, 
   namespace: string = 'common'
 ): Promise<ServerTranslator> {
-  const lang = language || getServerLanguage();
+  const lang = language || await getServerLanguage();  // Await the result of getServerLanguage
   const translations = await getServerTranslations(lang, namespace);
   
   /**

@@ -1,7 +1,9 @@
 // src/hooks/useTranslations.ts
-import { useTranslation, TFunction } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { TFunction } from 'i18next';  // Updated import
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ReactNode } from 'react';
+
 
 // Define types for interpolation options
 interface InterpolationOptions {

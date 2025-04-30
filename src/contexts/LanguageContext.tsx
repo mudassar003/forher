@@ -26,8 +26,8 @@ interface LanguageProviderProps {
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { i18n } = useTranslation();
-  const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'en');
-  const [isRtl, setIsRtl] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState<string>(i18n.language || 'en');
+  const [isRtl, setIsRtl] = useState<boolean>(false);
 
   useEffect(() => {
     // Update the current language when i18n language changes
@@ -37,13 +37,14 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     setIsRtl(['ar', 'he', 'fa', 'ur'].includes(i18n.language));
   }, [i18n.language]);
 
-  const changeLanguage = (lang: string) => {
+  const changeLanguage = (lang: string): void => {
     i18n.changeLanguage(lang);
     // Save the language preference to localStorage
     try {
       localStorage.setItem('i18nextLng', lang);
-    } catch (e) {
-      console.error('Could not save language preference:', e);
+    } catch (error) {
+      console.error('Could not save language preference:', 
+        error instanceof Error ? error.message : 'Unknown error');
     }
   };
 

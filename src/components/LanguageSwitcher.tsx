@@ -22,7 +22,7 @@ const LanguageSwitcher: React.FC = () => {
   
   const currentLang = languages.find(lang => lang.code === currentLanguage) || languages[0];
   
-  const handleChangeLanguage = (code: string) => {
+  const handleChangeLanguage = (code: string): void => {
     changeLanguage(code);
     setIsOpen(false);
   };

@@ -4,7 +4,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { FiShoppingCart, FiMenu, FiX, FiUser } from "react-icons/fi";
 import Link from "next/link";
-import { useAuthStore } from "@/store/authStore"; // Import auth store
+import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { User } from "@supabase/supabase-js";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -76,7 +76,7 @@ const HeaderContent: React.FC = () => {
     setCurrentPath(window.location.pathname);
     
     // Listen for navigation events
-    const handleRouteChange = () => {
+    const handleRouteChange = (): void => {
       setCurrentPath(window.location.pathname);
     };
     

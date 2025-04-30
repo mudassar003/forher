@@ -3,11 +3,16 @@ import fs from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
 
+// Define specific types for translations
+type TranslationValue = string | number | boolean | null | Record<string, unknown>;
+
+type TranslationsObject = {
+  [key: string]: TranslationValue | TranslationsObject;
+};
+
 type TranslationsCache = {
   [lang: string]: {
-    [namespace: string]: {
-      [key: string]: any
-    }
+    [namespace: string]: TranslationsObject;
   }
 };
 
@@ -20,7 +25,10 @@ const translationsCache: TranslationsCache = {};
  * @param namespace Namespace for translations (default: 'common')
  * @returns Translation object or empty object if not found
  */
-export async function getServerTranslations(language: string = 'en', namespace: string = 'common') {
+export async function getServerTranslations(
+  language: string = 'en', 
+  namespace: string = 'common'
+): Promise<TranslationsObject> {
   try {
     // Check if we have the translations in cache
     if (translationsCache[language]?.[namespace]) {
@@ -30,7 +38,7 @@ export async function getServerTranslations(language: string = 'en', namespace: 
     // Read translations from the file
     const filePath = path.join(process.cwd(), 'public', 'locales', language, `${namespace}.json`);
     const fileContent = await fs.promises.readFile(filePath, 'utf8');
-    const translations = JSON.parse(fileContent);
+    const translations = JSON.parse(fileContent) as TranslationsObject;
 
     // Cache the translations
     if (!translationsCache[language]) {
@@ -73,13 +81,27 @@ export function getServerLanguage(): string {
   }
 }
 
+// Define the shape of replacement parameters
+interface TranslationParams {
+  [key: string]: string | number | boolean | Date | null | undefined;
+}
+
+// Interface for the translator object
+interface ServerTranslator {
+  t: (key: string, params?: TranslationParams) => string;
+  language: string;
+}
+
 /**
  * Create a translation function for server components
  * @param language Language code
  * @param namespace Translation namespace
  * @returns A translation function (t)
  */
-export async function createServerTranslator(language?: string, namespace: string = 'common') {
+export async function createServerTranslator(
+  language?: string, 
+  namespace: string = 'common'
+): Promise<ServerTranslator> {
   const lang = language || getServerLanguage();
   const translations = await getServerTranslations(lang, namespace);
   
@@ -89,15 +111,15 @@ export async function createServerTranslator(language?: string, namespace: strin
    * @param params Replacement parameters
    * @returns Translated string
    */
-  const t = (key: string, params?: Record<string, any>): string => {
+  const t = (key: string, params?: TranslationParams): string => {
     // Split the key by dots to support nested objects
     const keys = key.split('.');
-    let value = translations;
+    let value: unknown = translations;
     
     // Traverse the object using the key parts
     for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = value[k];
+      if (value && typeof value === 'object' && k in (value as object)) {
+        value = (value as Record<string, unknown>)[k];
       } else {
         // Key not found
         return key;
@@ -111,7 +133,7 @@ export async function createServerTranslator(language?: string, namespace: strin
     
     // Handle parameter replacement
     if (params) {
-      return value.replace(/{{(\w+)}}/g, (_, paramKey) => {
+      return value.replace(/{{(\w+)}}/g, (_: string, paramKey: string) => {
         return params[paramKey] !== undefined ? String(params[paramKey]) : `{{${paramKey}}}`;
       });
     }

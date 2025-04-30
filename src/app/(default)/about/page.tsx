@@ -122,6 +122,9 @@ export default function AboutPage() {
               <p className="mt-4 text-lg text-black">
               Qualiphy Phone: +1 (424) 257-3977
               </p>
+                <p className="mt-4 text-lg text-black">
+              Qualiphy Address: 13 N San Vicente Blvd, Beverly Hills, CA 90211
+              </p>
               <div className="mt-6">
                 <Link href="/subscriptions" className="inline-flex px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-black shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-opacity-50">
                   Book a Consultation

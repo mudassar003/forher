@@ -1,0 +1,42 @@
+{
+  "header": {
+    "home": "Inicio",
+    "subscriptions": "Suscripciones",
+    "aboutUs": "Sobre Nosotros",
+    "contactUs": "Contáctenos",
+    "account": "Cuenta",
+    "login": "Iniciar Sesión",
+    "loginSignUp": "Iniciar Sesión / Registrarse",
+    "myAccount": "Mi Cuenta",
+    "newToLilys": "¿Nuevo en Lily's? Crea una cuenta"
+  },
+  "footer": {
+    "allRightsReserved": "Todos los derechos reservados",
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "submit": "Enviar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "languageSelect": "Seleccionar Idioma"
+  },
+  "auth": {
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidó su Contraseña?",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar Sesión",
+    "createAccount": "Crear Cuenta",
+    "resetPassword": "Restablecer Contraseña",
+    "alreadyHaveAccount": "¿Ya tiene una cuenta?",
+    "dontHaveAccount": "¿No tiene una cuenta?"
+  }
+}

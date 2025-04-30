@@ -1,0 +1,42 @@
+{
+  "header": {
+    "home": "Home",
+    "subscriptions": "Subscriptions",
+    "aboutUs": "About Us",
+    "contactUs": "Contact Us",
+    "account": "Account",
+    "login": "Login",
+    "loginSignUp": "Login / Sign Up",
+    "myAccount": "My Account",
+    "newToLilys": "New to Lily's? Create an account"
+  },
+  "footer": {
+    "allRightsReserved": "All rights reserved",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "save": "Save",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "languageSelect": "Select Language"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "createAccount": "Create Account",
+    "resetPassword": "Reset Password",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  }
+}

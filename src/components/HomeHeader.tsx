@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/authStore"; // Import auth store
 import { useCartStore } from "@/store/cartStore";
 import { User } from "@supabase/supabase-js";
+import LanguageSwitcher from "./LanguageSwitcher";
+import useTranslations from "@/hooks/useTranslations";
 
 // Define route URLs with proper typing for internal navigation
 interface RouteUrls {
@@ -26,7 +28,7 @@ const routeUrls: RouteUrls = {
 // Define menu item interface for type safety
 interface MenuItem {
   href: string;
-  label: string;
+  labelKey: string;
 }
 
 // Define component color map with proper typings
@@ -44,6 +46,7 @@ const componentColorMap: ComponentColorMap = {
 
 // Component that safely uses routing hooks inside Suspense
 const HeaderContent: React.FC = () => {
+  const { t, isRtl } = useTranslations();
   const [headerBg, setHeaderBg] = useState<string>("#ffffff");
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
@@ -61,10 +64,10 @@ const HeaderContent: React.FC = () => {
 
   // Define menu items for consistency between desktop and mobile
   const menuItems: MenuItem[] = [
-    { href: routeUrls.home, label: "Home" },
-    { href: routeUrls.subscriptions, label: "Subscriptions" },
-    { href: routeUrls.about, label: "About Us" },
-    { href: routeUrls.contact, label: "Contact Us" }
+    { href: routeUrls.home, labelKey: "header.home" },
+    { href: routeUrls.subscriptions, labelKey: "header.subscriptions" },
+    { href: routeUrls.about, labelKey: "header.aboutUs" },
+    { href: routeUrls.contact, labelKey: "header.contactUs" }
   ];
 
   // Update the current path whenever necessary
@@ -197,23 +200,25 @@ const HeaderContent: React.FC = () => {
                 href={item.href}
                 className="text-base lg:text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 px-2 py-1 rounded-md transition-all"
               >
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             ))}
           </nav>
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+            
             {/* Desktop Login/Account Button - Using auth store to determine state */}
             <Link href={isAuthenticated ? "/account" : loginUrl} className="hidden md:flex">
               <button className="flex items-center bg-white text-black border border-gray-200 px-5 py-2 rounded-full shadow-sm hover:shadow-md transition">
                 <FiUser className="mr-2" />
-                <span>{isAuthenticated ? "Account" : "Login"}</span>
+                <span>{isAuthenticated ? t('header.account') : t('header.login')}</span>
               </button>
             </Link>
 
             {/* Shopping Cart Icon - TEMPORARILY HIDDEN */}
-            {/* Cart code kept for future re-implementation */}
             {/* 
             <Link href="/cart" className="relative">
               <FiShoppingCart className="text-2xl text-black cursor-pointer" />
@@ -250,6 +255,11 @@ const HeaderContent: React.FC = () => {
             </button>
           </div>
           
+          {/* Language Switcher in Mobile Menu */}
+          <div className="px-4 py-2 border-b border-gray-100">
+            <LanguageSwitcher />
+          </div>
+          
           {/* Navigation Links - Now using the same items as desktop */}
           <div className="flex-grow overflow-y-auto px-4 py-2">
             <nav className="flex flex-col space-y-4">
@@ -260,7 +270,7 @@ const HeaderContent: React.FC = () => {
                   className="text-lg font-normal text-gray-800 hover:text-[#fc4e87] hover:shadow-sm hover:shadow-pink-100/30 py-3 px-4 rounded-md border-b border-gray-100 transition-all"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -275,7 +285,7 @@ const HeaderContent: React.FC = () => {
             >
               <button className="w-full flex items-center justify-center bg-black text-white px-5 py-3 rounded-full shadow-sm hover:bg-gray-800 transition">
                 <FiUser className="mr-2" />
-                <span>{isAuthenticated ? "My Account" : "Login / Sign Up"}</span>
+                <span>{isAuthenticated ? t('header.myAccount') : t('header.loginSignUp')}</span>
               </button>
             </Link>
             
@@ -286,7 +296,7 @@ const HeaderContent: React.FC = () => {
                 className="mt-3 block text-center text-sm text-gray-600 hover:text-[#fc4e87]"
                 onClick={() => setIsMenuOpen(false)}
               >
-                New to Lily&apos;s? Create an account
+                {t('header.newToLilys')}
               </Link>
             )}
           </div>

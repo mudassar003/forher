@@ -2,6 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
+// Define supported languages
+const supportedLanguages = ['en', 'es'];
+const defaultLanguage = 'en';
+
 // Define protected routes
 const PROTECTED_ROUTES = [
   '/account',
@@ -62,9 +66,31 @@ const shouldBypassAuth = (url: URL): boolean => {
   return matchesPatterns(fullPath, BYPASS_ROUTES);
 };
 
+// Get the preferred language from request
+const getPreferredLanguage = (request: NextRequest): string => {
+  // Check for language in the cookie
+  const langCookie = request.cookies.get('i18nextLng')?.value;
+  if (langCookie && supportedLanguages.includes(langCookie)) {
+    return langCookie;
+  }
+  
+  // Check for language in the Accept-Language header
+  const acceptLanguage = request.headers.get('Accept-Language') || '';
+  const headerLangs = acceptLanguage.split(',').map(lang => lang.split(';')[0].trim().substring(0, 2));
+  
+  for (const lang of headerLangs) {
+    if (supportedLanguages.includes(lang)) {
+      return lang;
+    }
+  }
+  
+  // Default to English
+  return defaultLanguage;
+};
+
 export async function middleware(req: NextRequest) {
   // Create a response that we'll modify and return
-  const res = NextResponse.next();
+  let res = NextResponse.next();
   
   // Add security headers to all responses
   res.headers.set('X-Content-Type-Options', 'nosniff');
@@ -79,6 +105,17 @@ export async function middleware(req: NextRequest) {
   // Get the pathname and full URL
   const path = req.nextUrl.pathname;
   const url = req.nextUrl;
+  
+  // Handle language detection and setting
+  // We're not redirecting to language-specific URLs to keep the implementation simple
+  // Instead, we're just setting the preferred language in a cookie
+  // This approach avoids issues with URL-based language switching
+  const preferredLanguage = getPreferredLanguage(req);
+  res.cookies.set('i18nextLng', preferredLanguage, { 
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+    sameSite: 'lax'
+  });
   
   // Check if this is a special URL that should bypass auth (like Stripe return URLs)
   if (shouldBypassAuth(url)) {
@@ -193,5 +230,8 @@ export const config = {
     '/api/user-subscriptions/:path*',
     '/api/orders/:path*',
     '/api/stripe/subscriptions/:path*',
+    
+    // All routes (for language handling)
+    '/(.*)',
   ],
 };

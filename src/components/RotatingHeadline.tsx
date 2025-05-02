@@ -1,8 +1,10 @@
+//src/components/RotatingHeadline.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import React from "react";
+import useTranslations from "@/hooks/useTranslations";
 
 // Define strict TypeScript types
 type CategoryId = "weight-loss" | "hair-care" | "anxiety" | "skin" | "cycle";
@@ -13,12 +15,6 @@ interface Category {
   text: string;
   assessmentUrl: string;
   hidden?: boolean;
-}
-
-interface CategoryContent {
-  heading: string;
-  subheading: string;
-  ctaText: string;
 }
 
 interface AnimatedWord {
@@ -36,55 +32,27 @@ interface GradientTextStyle {
   animation?: string;
 }
 
-// Categories with consistent naming and assessment URLs
-const categories: Category[] = [
-  { id: "weight-loss", text: "Weight Loss", assessmentUrl: "/c/wm" },
-  { id: "hair-care", text: "Hair Care", assessmentUrl: "/c/hl" },
-  { id: "anxiety", text: "Anxiety Relief", assessmentUrl: "/c/mh", hidden: true },
-  { id: "skin", text: "Skin Care", assessmentUrl: "/c/aa", hidden: true },
-  { id: "cycle", text: "Cycle Management", assessmentUrl: "/c/b" },
-];
-
-// Content for each category that appears after selection
-const categoryContent: Record<CategoryId, CategoryContent> = {
-  "weight-loss": {
-    heading: "Personalized weight management",
-    subheading: "Custom plans tailored to your body",
-    ctaText: "Start your plan",
-  },
-  "hair-care": {
-    heading: "Solutions for thicker, healthier hair",
-    subheading: "Targeted treatments for your hair type",
-    ctaText: "Hair assessment",
-  },
-  "anxiety": {
-    heading: "Find your calm with custom support",
-    subheading: "Evidence-based anxiety relief",
-    ctaText: "Discover options",
-  },
-  "skin": {
-    heading: "Reveal your natural glow",
-    subheading: "Skincare routines for your unique needs",
-    ctaText: "Skin analysis",
-  },
-  "cycle": {
-    heading: "Balanced hormones, better life",
-    subheading: "Track, understand, and optimize your cycle",
-    ctaText: "Start tracking",
-  },
-};
-
 export default function PersonalizedHeroSection(): React.ReactElement {
+  const { t, isRtl } = useTranslations();
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [stage, setStage] = useState<Stage>("initial"); // initial, selected
   const [wordIndex, setWordIndex] = useState<number>(0);
   
+  // Categories with consistent naming and assessment URLs
+  const categories: Category[] = [
+    { id: "weight-loss", text: t('rotatingHeadline.categories.weight-loss.text'), assessmentUrl: "/c/wm" },
+    { id: "hair-care", text: t('rotatingHeadline.categories.hair-care.text'), assessmentUrl: "/c/hl" },
+    { id: "anxiety", text: t('rotatingHeadline.categories.anxiety.text'), assessmentUrl: "/c/mh", hidden: true },
+    { id: "skin", text: t('rotatingHeadline.categories.skin.text'), assessmentUrl: "/c/aa", hidden: true },
+    { id: "cycle", text: t('rotatingHeadline.categories.cycle.text'), assessmentUrl: "/c/b" },
+  ];
+  
   const animatedWords: AnimatedWord[] = [
-    { text: "healthier", color: "#e63946" }, // Brand red
-    { text: "happier", color: "#d81159" },  // Dark pink
-    { text: "stronger", color: "#8f2d56" }, // Deep raspberry
-    { text: "better", color: "#c1121f" },   // Cherry red
-    { text: "transformed", color: "#ff4d6d" } // Coral pink
+    { text: t('rotatingHeadline.animatedWords.healthier'), color: "#e63946" }, // Brand red
+    { text: t('rotatingHeadline.animatedWords.happier'), color: "#d81159" },  // Dark pink
+    { text: t('rotatingHeadline.animatedWords.stronger'), color: "#8f2d56" }, // Deep raspberry
+    { text: t('rotatingHeadline.animatedWords.better'), color: "#c1121f" },   // Cherry red
+    { text: t('rotatingHeadline.animatedWords.transformed'), color: "#ff4d6d" } // Coral pink
   ];
   
   useEffect(() => {
@@ -157,7 +125,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               transition={{ duration: 0.5 }}
               aria-live="polite"
             >
-              No More Waiting.
+              {t('rotatingHeadline.noMoreWaiting')}
             </motion.h1>
             
             {/* Animated subheading - Improved responsiveness */}
@@ -177,11 +145,11 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   transition={{ duration: 0.5, ease: "easeInOut" }}
                   style={{ color: animatedWords[wordIndex].color }}
                 >
-                  <span className="text-gray-500">Be</span> <span 
-                    className=""
-                  >
+                  <span className="text-gray-500">{t('rotatingHeadline.be')}</span>{' '}
+                  <span className="">
                     {animatedWords[wordIndex].text}
-                  </span> <span className="text-gray-500">Today</span>
+                  </span>{' '}
+                  <span className="text-gray-500">{t('rotatingHeadline.today')}</span>
                 </motion.span>
               </AnimatePresence>
             </motion.div>
@@ -193,7 +161,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Start your journey with personalized care
+              {t('rotatingHeadline.startJourney')}
             </motion.p>
 
             {/* Category selection pills */}
@@ -253,7 +221,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   className="text-gray-500 hover:text-gray-700 transition-colors"
                   aria-label="Return to all categories"
                 >
-                  ← All categories
+                  ← {t('rotatingHeadline.allCategories')}
                 </button>
                 <span className="text-gray-400" aria-hidden="true">|</span>
                 <span 
@@ -276,7 +244,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                {categoryContent[selectedCategory].heading}
+                {t(`rotatingHeadline.categories.${selectedCategory}.heading`)}
               </motion.h1>
               
               {/* Dynamic subheading */}
@@ -286,7 +254,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                {categoryContent[selectedCategory].subheading}
+                {t(`rotatingHeadline.categories.${selectedCategory}.subheading`)}
               </motion.p>
               
               {/* Call to action */}
@@ -307,7 +275,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Make an Appointment
+                  {t('rotatingHeadline.makeAppointment')}
                 </motion.button>
                 <motion.button 
                   className="px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-base sm:text-lg transition-all hover:shadow-lg"
@@ -315,7 +283,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Take Assessment Survey
+                  {t('rotatingHeadline.takeAssessment')}
                 </motion.button>
               </motion.div>
             </motion.div>
@@ -323,7 +291,7 @@ export default function PersonalizedHeroSection(): React.ReactElement {
         )}
       </div>
       
-      {/* Wave transition at the bottom of the section - DARK MODE REFERENCE REMOVED */}
+      {/* Wave transition at the bottom of the section */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-1">
         <svg 
           className="relative block w-full h-16 sm:h-24" 

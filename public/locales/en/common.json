@@ -38,5 +38,53 @@
     "resetPassword": "Reset Password",
     "alreadyHaveAccount": "Already have an account?",
     "dontHaveAccount": "Don't have an account?"
+  },
+  "rotatingHeadline": {
+    "noMoreWaiting": "No More Waiting.",
+    "be": "Be",
+    "today": "Today",
+    "startJourney": "Start your journey with personalized care",
+    "animatedWords": {
+      "healthier": "healthier",
+      "happier": "happier",
+      "stronger": "stronger",
+      "better": "better",
+      "transformed": "transformed"
+    },
+    "categories": {
+      "weight-loss": {
+        "text": "Weight Loss",
+        "heading": "Personalized weight management",
+        "subheading": "Custom plans tailored to your body",
+        "ctaText": "Start your plan"
+      },
+      "hair-care": {
+        "text": "Hair Care",
+        "heading": "Solutions for thicker, healthier hair",
+        "subheading": "Targeted treatments for your hair type",
+        "ctaText": "Hair assessment"
+      },
+      "anxiety": {
+        "text": "Anxiety Relief",
+        "heading": "Find your calm with custom support",
+        "subheading": "Evidence-based anxiety relief",
+        "ctaText": "Discover options"
+      },
+      "skin": {
+        "text": "Skin Care",
+        "heading": "Reveal your natural glow",
+        "subheading": "Skincare routines for your unique needs",
+        "ctaText": "Skin analysis"
+      },
+      "cycle": {
+        "text": "Cycle Management",
+        "heading": "Balanced hormones, better life",
+        "subheading": "Track, understand, and optimize your cycle",
+        "ctaText": "Start tracking"
+      }
+    },
+    "allCategories": "All categories",
+    "makeAppointment": "Make an Appointment",
+    "takeAssessment": "Take Assessment Survey"
   }
 }

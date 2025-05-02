@@ -38,5 +38,53 @@
     "resetPassword": "Restablecer Contraseña",
     "alreadyHaveAccount": "¿Ya tiene una cuenta?",
     "dontHaveAccount": "¿No tiene una cuenta?"
+  },
+  "rotatingHeadline": {
+    "noMoreWaiting": "No Más Esperas.",
+    "be": "Sé",
+    "today": "Hoy",
+    "startJourney": "Comienza tu viaje con atención personalizada",
+    "animatedWords": {
+      "healthier": "más saludable",
+      "happier": "más feliz",
+      "stronger": "más fuerte",
+      "better": "mejor",
+      "transformed": "transformado"
+    },
+    "categories": {
+      "weight-loss": {
+        "text": "Pérdida de Peso",
+        "heading": "Control de peso personalizado",
+        "subheading": "Planes personalizados adaptados a tu cuerpo",
+        "ctaText": "Comienza tu plan"
+      },
+      "hair-care": {
+        "text": "Cuidado del Cabello",
+        "heading": "Soluciones para un cabello más grueso y saludable",
+        "subheading": "Tratamientos específicos para tu tipo de cabello",
+        "ctaText": "Evaluación capilar"
+      },
+      "anxiety": {
+        "text": "Alivio de Ansiedad",
+        "heading": "Encuentra tu calma con apoyo personalizado",
+        "subheading": "Alivio de ansiedad basado en evidencia",
+        "ctaText": "Descubre opciones"
+      },
+      "skin": {
+        "text": "Cuidado de la Piel",
+        "heading": "Revela tu brillo natural",
+        "subheading": "Rutinas de cuidado para tus necesidades únicas",
+        "ctaText": "Análisis de piel"
+      },
+      "cycle": {
+        "text": "Gestión del Ciclo",
+        "heading": "Hormonas equilibradas, mejor vida",
+        "subheading": "Rastrea, entiende y optimiza tu ciclo",
+        "ctaText": "Comienza a rastrear"
+      }
+    },
+    "allCategories": "Todas las categorías",
+    "makeAppointment": "Programar una Cita",
+    "takeAssessment": "Realizar Evaluación"
   }
 }

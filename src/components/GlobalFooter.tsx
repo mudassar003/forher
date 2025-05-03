@@ -1,12 +1,21 @@
-//scr/comp/GlobalFooter.tsx
+//src/components/GlobalFooter.tsx
 "use client";
 
 import { FiFacebook, FiInstagram, FiTwitter, FiLinkedin } from "react-icons/fi";
 import Link from "next/link";
+import { useTranslations } from "@/hooks/useTranslations";
 
-const GlobalFooter = () => {
+// Define interface for component props (following TypeScript strict typing)
+interface GlobalFooterProps {
+  className?: string;
+}
+
+const GlobalFooter: React.FC<GlobalFooterProps> = ({ className = "" }) => {
+  const { t } = useTranslations();
+  const currentYear = new Date().getFullYear();
+  
   return (
-    <footer className="bg-gray-100 text-gray-800 py-8">
+    <footer className={`bg-gray-100 text-gray-800 py-8 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-8">
@@ -33,6 +42,25 @@ const GlobalFooter = () => {
               </a>
               <a href="#" aria-label="LinkedIn" className="hover:text-black transition-colors duration-200">
                 <FiLinkedin className="text-xl" />
+              </a>
+            </div>
+            
+            {/* LegitScript Certification */}
+            <div className="mt-6">
+              <a 
+                href="https://www.legitscript.com/websites/?checker_keywords=lilyswomenshealth.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                title="Verify LegitScript Approval for www.lilyswomenshealth.com"
+                className="inline-block"
+              >
+                <img 
+                  src="https://static.legitscript.com/seals/44171411.png" 
+                  alt="LegitScript Approved" 
+                  width="73" 
+                  height="79"
+                  className="max-w-full h-auto"
+                />
               </a>
             </div>
           </div>
@@ -119,8 +147,10 @@ const GlobalFooter = () => {
       <div className="border-t border-gray-300 pt-6 pb-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} Lily&apos;s. All rights reserved.
+            © {currentYear} Lily&apos;s. All rights reserved.
           </p>
+          
+          {/* Additional Certifications could go here */}
         </div>
       </div>
     </footer>

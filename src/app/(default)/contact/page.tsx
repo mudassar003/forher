@@ -1,6 +1,7 @@
 // src/app/(default)/contact/page.tsx
 import { Metadata } from 'next';
 import Link from 'next/link';
+import PageHeader from '@/components/PageHeader';
 
 // Define metadata for SEO
 export const metadata: Metadata = {
@@ -45,22 +46,12 @@ export default function ContactPage() {
 
   return (
     <div className="bg-white">
-      {/* Hero Section with standardized styling */}
-      <div style={{ background: "#F7F7F7" }}>
-        <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 
-              className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
-              style={{ color: "#e63946" }}
-            >
-              Get in Touch
-            </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-700">
-              Have questions or need support? We're here to help.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Using our reusable PageHeader component */}
+      <PageHeader 
+        title="Get in Touch"
+        subtitle="Have questions or need support? 
+         We're here to help. Send us a message or give us a call."
+      />
 
       {/* Main content with white background */}
       <div className="py-12 bg-white">

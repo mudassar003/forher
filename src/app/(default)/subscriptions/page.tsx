@@ -4,6 +4,7 @@ import { client } from '@/sanity/lib/client';
 import { Metadata } from 'next';
 import SubscriptionGrid from './components/SubscriptionGrid';
 import { SubscriptionsData, Subscription, SubscriptionCategory } from '@/types/subscription-page';
+import PageHeader from '@/components/PageHeader';
 
 export const metadata: Metadata = {
   title: 'Subscription Plans',
@@ -106,30 +107,11 @@ export default async function SubscriptionsPage() {
       <div className="absolute top-40 right-0 w-96 h-96 rounded-full bg-[#f9dde5] opacity-30 blur-3xl"></div>
       <div className="absolute -top-10 right-1/4 w-40 h-40 rounded-full bg-[#ffb3c1] opacity-10 blur-2xl"></div>
       
-      {/* Enhanced header section with brand styling */}
-      <div className="relative bg-gradient-to-r from-[#e63946] to-[#ff4d6d] py-16 sm:py-24 overflow-hidden">
-        {/* Decorative elements for the header */}
-        <div className="absolute top-1/2 left-1/4 w-32 h-32 rounded-full bg-white opacity-10 blur-xl"></div>
-        <div className="absolute bottom-0 right-1/3 w-40 h-40 rounded-full bg-white opacity-5 blur-xl"></div>
-        
-        {/* Wave pattern background */}
-        <div className="absolute inset-0 opacity-20">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="w-full h-full">
-            <path fill="#ffffff" fillOpacity="1" d="M0,192L48,176C96,160,192,128,288,138.7C384,149,480,203,576,208C672,213,768,171,864,149.3C960,128,1056,128,1152,144C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-          </svg>
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
-              Subscription Plans
-            </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-pink-100">
-              Choose a subscription plan that best fits your needs and enjoy exclusive benefits
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Using our new reusable PageHeader component */}
+      <PageHeader 
+        title="Subscription Plans"
+        subtitle="Choose a subscription plan that best fits your needs and enjoy exclusive benefits"
+      />
 
       {/* Main content with white background */}
       <div className="relative py-12 bg-white">

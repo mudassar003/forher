@@ -1,4 +1,4 @@
-// src/types/subscription-page.ts
+//src/types/subscription-page.ts
 import { SanityImageSource } from '@sanity/image-url/lib/types/types';
 
 export interface SubscriptionFeature {
@@ -8,23 +8,28 @@ export interface SubscriptionFeature {
 export interface SubscriptionCategory {
   _id: string;
   title: string;
+  titleEs?: string;
   slug: {
     current: string;
   };
   description?: string;
+  descriptionEs?: string;
   displayOrder?: number;
 }
 
 export interface Subscription {
   _id: string;
   title: string;
+  titleEs?: string;
   slug: {
     current: string;
   };
   description?: string;
+  descriptionEs?: string;
   price: number;
   billingPeriod: string;
   features?: SubscriptionFeature[];
+  featuresEs?: SubscriptionFeature[];
   image?: SanityImageSource;
   isFeatured: boolean;
   isActive: boolean;

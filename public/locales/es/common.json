@@ -39,6 +39,26 @@
     "alreadyHaveAccount": "¿Ya tiene una cuenta?",
     "dontHaveAccount": "¿No tiene una cuenta?"
   },
+  "subscriptions": {
+    "title": "Planes de Suscripción",
+    "subtitle": "Elija un plan de suscripción que se adapte mejor a sus necesidades y disfrute de beneficios exclusivos",
+    "featuredPlans": "Planes Destacados",
+    "otherPlans": "Otros Planes",
+    "ourPlans": "Nuestros Planes de Suscripción",
+    "noPlans": "No hay planes de suscripción disponibles",
+    "checkBackLater": "Por favor, vuelva más tarde para ver nuevas opciones de suscripción",
+    "loadingPlans": "Cargando planes de suscripción...",
+    "somethingWrong": "Algo salió mal",
+    "tryAgain": "Intentar de nuevo",
+    "subscribeNow": "Suscribirse Ahora",
+    "processing": "Procesando...",
+    "signInToSubscribe": "Iniciar Sesión para Suscribirse",
+    "billingPeriods": {
+      "monthly": "/mes",
+      "quarterly": "/trimestre",
+      "annually": "/año"
+    }
+  },
   "rotatingHeadline": {
     "noMoreWaiting": "No Más Esperas.",
     "be": "Sé",

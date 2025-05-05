@@ -1,4 +1,5 @@
-// src/app/(default)/subscriptions/components/SubscriptionCard.tsx
+//src/app/%28default%29/subscriptions/components/SubscriptionCard.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,17 +7,22 @@ import { useRouter } from 'next/navigation';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
 import { SubscriptionFeature } from '@/types/subscription-page';
+import useTranslations from '@/hooks/useTranslations';
 
 interface SubscriptionCardProps {
   id: string;
   title: string;
+  titleEs?: string;
   description?: string;
+  descriptionEs?: string;
   price: number;
   billingPeriod: string;
   features: SubscriptionFeature[];
+  featuresEs?: SubscriptionFeature[];
   categories?: Array<{
     _id: string;
     title: string;
+    titleEs?: string;
   }>;
   cardType?: 'basic' | 'standard' | 'premium';
 }
@@ -24,10 +30,13 @@ interface SubscriptionCardProps {
 const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   id,
   title,
+  titleEs,
   description,
+  descriptionEs,
   price,
   billingPeriod,
   features = [],
+  featuresEs = [],
   categories,
   cardType = 'basic' // Default to basic styling
 }) => {
@@ -36,6 +45,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const { user, isAuthenticated, checkSession } = useAuthStore();
   const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
   const router = useRouter();
+  const { t, currentLanguage } = useTranslations();
   
   // Check auth state when component mounts
   useEffect(() => {
@@ -43,6 +53,28 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       checkSession();
     }
   }, [isAuthenticated, checkSession]);
+
+  // Get the content based on current language
+  const getLocalizedTitle = (): string => {
+    if (currentLanguage === 'es' && titleEs) {
+      return titleEs;
+    }
+    return title;
+  };
+  
+  const getLocalizedDescription = (): string | undefined => {
+    if (currentLanguage === 'es' && descriptionEs) {
+      return descriptionEs;
+    }
+    return description;
+  };
+  
+  const getLocalizedFeatures = (): SubscriptionFeature[] => {
+    if (currentLanguage === 'es' && featuresEs && featuresEs.length > 0) {
+      return featuresEs;
+    }
+    return features;
+  };
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -56,15 +88,28 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 
   // Determine proper billing period display
   const getBillingPeriodDisplay = (): string => {
-    switch (billingPeriod.toLowerCase()) {
-      case 'monthly':
-        return '/month';
-      case 'quarterly':
-        return '/quarter';
-      case 'annually':
-        return '/year';
-      default:
-        return `/${billingPeriod}`;
+    if (currentLanguage === 'es') {
+      switch (billingPeriod.toLowerCase()) {
+        case 'monthly':
+          return '/mes';
+        case 'quarterly':
+          return '/trimestre';
+        case 'annually':
+          return '/año';
+        default:
+          return `/${billingPeriod}`;
+      }
+    } else {
+      switch (billingPeriod.toLowerCase()) {
+        case 'monthly':
+          return '/month';
+        case 'quarterly':
+          return '/quarter';
+        case 'annually':
+          return '/year';
+        default:
+          return `/${billingPeriod}`;
+      }
     }
   };
 
@@ -104,6 +149,19 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     }
   };
 
+  // Get localized subscription button text
+  const getSubscribeButtonText = (): string => {
+    if (isProcessing || isLoading) {
+      return currentLanguage === 'es' ? 'Procesando...' : 'Processing...';
+    }
+    
+    if (isAuthenticated) {
+      return currentLanguage === 'es' ? 'Suscribirse Ahora' : 'Subscribe Now';
+    }
+    
+    return currentLanguage === 'es' ? 'Iniciar Sesión para Suscribirse' : 'Sign In to Subscribe';
+  };
+
   return (
     <div 
       className="plan-card"
@@ -111,12 +169,12 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={`plan-header ${cardType}-header`}>
-        <div className="plan-name">{title.toUpperCase()}</div>
-        <div className="plan-price">{formatCurrency(price)}</div>
+        <div className="plan-name">{getLocalizedTitle().toUpperCase()}</div>
+        <div className="plan-price">{formatCurrency(price)}<span className="plan-period">{getBillingPeriodDisplay()}</span></div>
       </div>
       
       <div className="plan-features">
-        {features.filter(feature => feature && feature.featureText).map((feature, index) => (
+        {getLocalizedFeatures().filter(feature => feature && feature.featureText).map((feature, index) => (
           <div key={index} className="feature-item">
             <div className={`feature-icon ${cardType}-icon`}>✓</div>
             <div className="feature-text">{feature.featureText}</div>
@@ -130,11 +188,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           disabled={isProcessing || isLoading}
           className={`subscribe-btn btn-${cardType} ${(isProcessing || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          {isProcessing || isLoading 
-            ? 'Processing...' 
-            : isAuthenticated 
-              ? 'Subscribe Now' 
-              : 'Sign In to Subscribe'}
+          {getSubscribeButtonText()}
         </button>
         
         {error && (
@@ -214,6 +268,11 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         .plan-price {
           font-size: 24px;
           font-weight: 500;
+        }
+        
+        .plan-period {
+          font-size: 16px;
+          opacity: 0.9;
         }
         
         .plan-features {

@@ -14,20 +14,31 @@ export const metadata: Metadata = {
 // A more robust function to fetch subscriptions and organize by category
 async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
   try {
-    // First fetch all subscriptions
+    // First fetch all subscriptions with translations
     const subscriptions: Subscription[] = await client.fetch(
       groq`*[_type == "subscription" && isActive == true && isDeleted != true] {
         _id,
         title,
+        titleEs,
         slug,
         description,
+        descriptionEs,
         price,
         billingPeriod,
         features,
+        featuresEs,
         image,
         isActive,
         isFeatured,
-        "categories": categories[]->{ _id, title, slug, description, displayOrder }
+        "categories": categories[]->{ 
+          _id, 
+          title, 
+          titleEs,
+          slug, 
+          description, 
+          descriptionEs,
+          displayOrder 
+        }
       }`
     );
     
@@ -36,8 +47,10 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
       groq`*[_type == "subscriptionCategory"] | order(displayOrder asc) {
         _id,
         title,
+        titleEs,
         slug,
         description,
+        descriptionEs,
         displayOrder
       }`
     );

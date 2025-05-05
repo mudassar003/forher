@@ -1,5 +1,5 @@
-// src/sanity/schemaTypes/subscriptionType.ts
-import {CreditCardIcon} from '@sanity/icons'
+//src/sanity/schemaTypes/subscriptionType.ts
+import { CreditCardIcon } from '@sanity/icons'
 import {defineField, defineType} from 'sanity'
 
 export const subscriptionType = defineType({
@@ -10,9 +10,15 @@ export const subscriptionType = defineType({
   fields: [
     defineField({
       name: 'title',
-      title: 'Title',
+      title: 'Title (English)',
       type: 'string',
       validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'titleEs',
+      title: 'Title (Spanish)',
+      type: 'string',
+      description: 'Spanish translation of the subscription title',
     }),
     defineField({
       name: 'slug',
@@ -26,8 +32,14 @@ export const subscriptionType = defineType({
     }),
     defineField({
       name: 'description',
-      title: 'Description',
+      title: 'Description (English)',
       type: 'text',
+    }),
+    defineField({
+      name: 'descriptionEs',
+      title: 'Description (Spanish)',
+      type: 'text',
+      description: 'Spanish translation of the description',
     }),
     defineField({
       name: 'categories',
@@ -42,7 +54,7 @@ export const subscriptionType = defineType({
     }),
     defineField({
       name: 'features',
-      title: 'Features',
+      title: 'Features (English)',
       type: 'array',
       of: [
         {
@@ -62,7 +74,31 @@ export const subscriptionType = defineType({
           }
         }
       ],
-      description: 'List of features included in this subscription',
+      description: 'List of features included in this subscription (English)',
+    }),
+    defineField({
+      name: 'featuresEs',
+      title: 'Features (Spanish)',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'feature',
+          fields: [
+            {
+              name: 'featureText',
+              title: 'Feature',
+              type: 'string'
+            }
+          ],
+          preview: {
+            select: {
+              title: 'featureText'
+            }
+          }
+        }
+      ],
+      description: 'List of features included in this subscription (Spanish)',
     }),
     defineField({
       name: 'price',

@@ -1,5 +1,5 @@
-// src/sanity/schemaTypes/subscriptionCategoryType.ts
-import {TagIcon} from '@sanity/icons'
+//src/sanity/schemaTypes/subscriptionCategoryType.ts
+import { TagIcon } from '@sanity/icons'
 import {defineField, defineType} from 'sanity'
 
 export const subscriptionCategoryType = defineType({
@@ -10,9 +10,15 @@ export const subscriptionCategoryType = defineType({
   fields: [
     defineField({
       name: 'title',
-      title: 'Title',
+      title: 'Title (English)',
       type: 'string',
       validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'titleEs',
+      title: 'Title (Spanish)',
+      type: 'string',
+      description: 'Spanish translation of the category title',
     }),
     defineField({
       name: 'slug',
@@ -26,8 +32,14 @@ export const subscriptionCategoryType = defineType({
     }),
     defineField({
       name: 'description',
-      title: 'Description',
+      title: 'Description (English)',
       type: 'text',
+    }),
+    defineField({
+      name: 'descriptionEs',
+      title: 'Description (Spanish)',
+      type: 'text',
+      description: 'Spanish translation of the description',
     }),
     defineField({
       name: 'displayOrder',

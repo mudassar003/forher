@@ -39,6 +39,26 @@
     "alreadyHaveAccount": "Already have an account?",
     "dontHaveAccount": "Don't have an account?"
   },
+  "subscriptions": {
+    "title": "Subscription Plans",
+    "subtitle": "Choose a subscription plan that best fits your needs and enjoy exclusive benefits",
+    "featuredPlans": "Featured Plans",
+    "otherPlans": "Other Plans",
+    "ourPlans": "Our Subscription Plans",
+    "noPlans": "No subscription plans available",
+    "checkBackLater": "Please check back later for new subscription options",
+    "loadingPlans": "Loading subscription plans...",
+    "somethingWrong": "Something went wrong",
+    "tryAgain": "Try Again",
+    "subscribeNow": "Subscribe Now",
+    "processing": "Processing...",
+    "signInToSubscribe": "Sign In to Subscribe",
+    "billingPeriods": {
+      "monthly": "/month",
+      "quarterly": "/quarter",
+      "annually": "/year"
+    }
+  },
   "rotatingHeadline": {
     "noMoreWaiting": "No More Waiting.",
     "be": "Be",

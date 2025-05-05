@@ -1,9 +1,11 @@
-// src/app/(default)/subscriptions/components/SubscriptionGrid.tsx
+
+//src/app/%28default%29/subscriptions/components/SubscriptionGrid.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import SubscriptionCard from './SubscriptionCard';
 import { SubscriptionsData, Subscription, SubscriptionCategory } from '@/types/subscription-page';
+import useTranslations from '@/hooks/useTranslations';
 
 interface SubscriptionGridProps extends SubscriptionsData {}
 
@@ -16,6 +18,23 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
   error
 }) => {
   const [loading, setLoading] = useState(false);
+  const { t, currentLanguage } = useTranslations();
+
+  // Get localized category title
+  const getLocalizedCategoryTitle = (category: SubscriptionCategory): string => {
+    if (currentLanguage === 'es' && category.titleEs) {
+      return category.titleEs;
+    }
+    return category.title;
+  };
+
+  // Get localized category description
+  const getLocalizedCategoryDescription = (category: SubscriptionCategory): string | undefined => {
+    if (currentLanguage === 'es' && category.descriptionEs) {
+      return category.descriptionEs;
+    }
+    return category.description;
+  };
 
   // Assign card type based on position in grid
   const getCardType = (index: number) => {
@@ -33,7 +52,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
         
         <h2 className="text-3xl font-bold mb-8 text-center relative z-10">
           <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
-            Our Subscription Plans
+            {currentLanguage === 'es' ? t('subscriptions.ourPlans') : t('subscriptions.ourPlans')}
           </span>
         </h2>
         
@@ -43,10 +62,13 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
               key={subscription._id}
               id={subscription._id}
               title={subscription.title}
+              titleEs={subscription.titleEs}
               description={subscription.description}
+              descriptionEs={subscription.descriptionEs}
               price={subscription.price}
               billingPeriod={subscription.billingPeriod}
               features={subscription.features || []}
+              featuresEs={subscription.featuresEs || []}
               categories={subscription.categories}
               cardType={getCardType(index)}
             />
@@ -64,7 +86,9 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
         
         <div className="text-center relative z-10">
           <div className="w-16 h-16 mx-auto mb-4 border-4 border-[#e63946] border-t-transparent rounded-full animate-spin"></div>
-          <h2 className="text-lg text-gray-600">Loading subscription plans...</h2>
+          <h2 className="text-lg text-gray-600">
+            {t('subscriptions.loadingPlans')}
+          </h2>
         </div>
       </div>
     );
@@ -79,13 +103,15 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           <svg className="w-12 h-12 text-[#e63946] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h2 className="text-lg font-medium text-red-800 mb-2">Something went wrong</h2>
+          <h2 className="text-lg font-medium text-red-800 mb-2">
+            {t('subscriptions.somethingWrong')}
+          </h2>
           <p className="text-red-600">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-[#e63946] text-white rounded-md hover:bg-[#d52d3a] transition-colors"
           >
-            Try Again
+            {t('subscriptions.tryAgain')}
           </button>
         </div>
       </div>
@@ -101,9 +127,11 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
-          <h2 className="text-xl font-medium text-gray-800 mb-4">No subscription plans available</h2>
+          <h2 className="text-xl font-medium text-gray-800 mb-4">
+            {t('subscriptions.noPlans')}
+          </h2>
           <p className="text-gray-600">
-            Please check back later for new subscription options.
+            {t('subscriptions.checkBackLater')}
           </p>
         </div>
       </div>
@@ -121,7 +149,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           
           <h2 className="text-3xl font-bold mb-8 text-center relative z-10">
             <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
-              Featured Plans
+              {t('subscriptions.featuredPlans')}
             </span>
           </h2>
           
@@ -131,10 +159,13 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 key={subscription._id}
                 id={subscription._id}
                 title={subscription.title}
+                titleEs={subscription.titleEs}
                 description={subscription.description}
+                descriptionEs={subscription.descriptionEs}
                 price={subscription.price}
                 billingPeriod={subscription.billingPeriod}
                 features={subscription.features || []}
+                featuresEs={subscription.featuresEs || []}
                 categories={subscription.categories}
                 cardType={getCardType(index)}
               />
@@ -168,12 +199,12 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
             <div className="mb-8 relative z-10">
               <h2 className="text-2xl font-bold text-center">
                 <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
-                  {category.title}
+                  {getLocalizedCategoryTitle(category)}
                 </span>
               </h2>
-              {category.description && (
+              {getLocalizedCategoryDescription(category) && (
                 <p className="mt-3 text-center text-gray-600 max-w-3xl mx-auto">
-                  {category.description}
+                  {getLocalizedCategoryDescription(category)}
                 </p>
               )}
             </div>
@@ -184,10 +215,13 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                   key={subscription._id}
                   id={subscription._id}
                   title={subscription.title}
+                  titleEs={subscription.titleEs}
                   description={subscription.description}
+                  descriptionEs={subscription.descriptionEs}
                   price={subscription.price}
                   billingPeriod={subscription.billingPeriod}
                   features={subscription.features || []}
+                  featuresEs={subscription.featuresEs || []}
                   categories={subscription.categories}
                   cardType={getCardType(index)}
                 />
@@ -206,7 +240,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           
           <h2 className="text-2xl font-bold mb-8 text-center relative z-10">
             <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
-              Other Plans
+              {t('subscriptions.otherPlans')}
             </span>
           </h2>
           
@@ -216,10 +250,13 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 key={subscription._id}
                 id={subscription._id}
                 title={subscription.title}
+                titleEs={subscription.titleEs}
                 description={subscription.description}
+                descriptionEs={subscription.descriptionEs}
                 price={subscription.price}
                 billingPeriod={subscription.billingPeriod}
                 features={subscription.features || []}
+                featuresEs={subscription.featuresEs || []}
                 categories={subscription.categories}
                 cardType={getCardType(index)}
               />

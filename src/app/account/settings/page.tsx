@@ -139,11 +139,11 @@ const AccountSettingsPage = () => {
   
   return (
     <div className="max-w-3xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
+      <h1 className="text-2xl font-bold mb-6 text-black">Account Settings</h1>
       
       {/* Profile Information Section */}
       <div className="bg-white shadow rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
+        <h2 className="text-xl font-semibold mb-4 text-black">Profile Information</h2>
         
         {message.text && (
           <div 
@@ -210,7 +210,7 @@ const AccountSettingsPage = () => {
       
       {/* Password Section */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+        <h2 className="text-xl font-semibold mb-4 text-black">Change Password</h2>
         
         {passwordMessage.text && (
           <div 

@@ -112,9 +112,8 @@ export default function HowItWorks() {
               <div className="w-20 h-20 mb-5 flex items-center justify-center bg-[#ffe6f0] rounded-full">
                 {step.id === 1 && (
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="m9 9 6 6" />
-                    <path d="m15 9-6 6" />
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 )}
                 {step.id === 2 && (
@@ -217,9 +216,8 @@ export default function HowItWorks() {
                   <div className="w-24 h-24 mb-5 flex items-center justify-center bg-[#ffe6f0] rounded-full">
                     {step.id === 1 && (
                       <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="18" height="18" x="3" y="3" rx="2" />
-                        <path d="m9 9 6 6" />
-                        <path d="m15 9-6 6" />
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     )}
                     {step.id === 2 && (
@@ -294,7 +292,7 @@ export default function HowItWorks() {
             Experience personalized healthcare designed for your unique needs with Lily's.
           </p>
           <motion.a
-            href="/booking"
+            href="/subscriptions"
             className="inline-block px-8 py-3 md:px-10 md:py-4 rounded-full font-bold text-white text-lg shadow-lg"
             style={{ 
               background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",

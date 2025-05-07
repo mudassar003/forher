@@ -1,4 +1,3 @@
-
 //src/app/%28default%29/subscriptions/components/SubscriptionGrid.tsx
 'use client';
 
@@ -50,7 +49,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
         <div className="absolute top-10 left-0 w-32 h-32 rounded-full bg-[#ffe6f0] opacity-30 blur-2xl"></div>
         <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-[#f9dde5] opacity-20 blur-2xl"></div>
         
-        <h2 className="text-3xl font-bold mb-8 text-center relative z-10">
+        <h2 className="text-3xl font-bold mb-8 text-center relative z-10 text-[#e63946]">
           <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
             {currentLanguage === 'es' ? t('subscriptions.ourPlans') : t('subscriptions.ourPlans')}
           </span>
@@ -147,7 +146,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           <div className="absolute -top-5 left-10 w-20 h-20 rounded-full bg-[#ffedf0] opacity-40 blur-xl"></div>
           <div className="absolute bottom-10 right-0 w-40 h-40 rounded-full bg-[#f0f7ff] opacity-30 blur-2xl"></div>
           
-          <h2 className="text-3xl font-bold mb-8 text-center relative z-10">
+          <h2 className="text-3xl font-bold mb-8 text-center relative z-10 text-[#e63946]">
             <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
               {t('subscriptions.featuredPlans')}
             </span>
@@ -197,7 +196,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
             )}
             
             <div className="mb-8 relative z-10">
-              <h2 className="text-2xl font-bold text-center">
+              <h2 className="text-2xl font-bold text-center text-[#e63946]">
                 <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
                   {getLocalizedCategoryTitle(category)}
                 </span>
@@ -238,7 +237,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           <div className="absolute top-0 right-1/3 w-32 h-32 rounded-full bg-[#ffedf0] opacity-30 blur-2xl"></div>
           <div className="absolute bottom-10 left-1/3 w-28 h-28 rounded-full bg-[#f0f7ff] opacity-20 blur-xl"></div>
           
-          <h2 className="text-2xl font-bold mb-8 text-center relative z-10">
+          <h2 className="text-2xl font-bold mb-8 text-center relative z-10 text-[#e63946]">
             <span className="inline-block relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#e63946]">
               {t('subscriptions.otherPlans')}
             </span>

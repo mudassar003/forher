@@ -99,7 +99,7 @@ export default function OrdersPage() {
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-semibold text-gray-800">Your Orders</h2>
+          <h2 className="text-lg font-semibold text-black">Your Orders</h2>
         </div>
 
         {orders.length === 0 ? (

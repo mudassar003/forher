@@ -64,7 +64,7 @@ export default function AboutPage() {
       {/* Using our reusable PageHeader component */}
       <PageHeader 
         title="About Lily's"
-        subtitle="Healthcare designed for women, delivered to your door."
+        subtitle="Empowering women with personalized healthcare solutions and expert medical guidance."
       />
       
       {/* Mission Section */}

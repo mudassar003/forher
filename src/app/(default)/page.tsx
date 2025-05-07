@@ -2,7 +2,7 @@
 import RotatingHeadline from "@/components/RotatingHeadline";
 import RotatingSection from "@/components/RotatingSection";
 import FaqAccordion from "@/components/FaqAccordion";
-import SubscribeSection from "@/components/SubscribeSection";
+// import SubscribeSection from "@/components/SubscribeSection";
 import HowItWorks from "@/components/HowItWorks";
 import NewHairLossSection from "@/components/NewHairLossSection";
 // import Packages from "@/components/Packages";
@@ -16,7 +16,7 @@ export default function HomePage() {
         <RotatingSection />
         <NewHairLossSection />
         <FaqAccordion />
-        <SubscribeSection />
+       
       </div>
     </main>
   );

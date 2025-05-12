@@ -106,5 +106,37 @@
     "allCategories": "All categories",
     "makeAppointment": "Make an Appointment",
     "takeAssessment": "Take Assessment Survey"
+  },
+  "howItWorks": {
+    "title": "How Lily's Works",
+    "subtitle": "Get personalized healthcare from the comfort of your home in just a few simple steps.",
+    "step": "Step",
+    "previous": "Previous",
+    "next": "Next",
+    "bookAppointment": "Book Appointment",
+    "ctaDescription": "Experience personalized healthcare designed for your unique needs with Lily's.",
+    "ariaLabels": {
+      "viewStep": "View step {{step}}",
+      "previousStep": "Go to previous step",
+      "nextStep": "Go to next step"
+    },
+    "steps": {
+      "assessment": {
+        "title": "Quick Online Assessment",
+        "description": "Complete a comprehensive health questionnaire in just 5 minutes."
+      },
+      "exam": {
+        "title": "Good Faith Exam",
+        "description": "A licensed healthcare provider performs a quick 5-10 minute telehealth exam."
+      },
+      "delivery": {
+        "title": "Discreet Delivery",
+        "description": "24/7 online consultations, offering personalized treatment."
+      },
+      "support": {
+        "title": "Ongoing Support",
+        "description": "Access to our medical team for questions, adjustments, and regular check-ins."
+      }
+    }
   }
 }

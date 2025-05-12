@@ -1,11 +1,14 @@
+//src/components/HowItWorks.tsx
 "use client";
 
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
+import useTranslations from "@/hooks/useTranslations";
 
 export default function HowItWorks() {
   const [activeStep, setActiveStep] = useState(1);
+  const { t } = useTranslations();
 
   // Animation variants for staggered animations
   const containerVariants = {
@@ -28,29 +31,29 @@ export default function HowItWorks() {
   const steps = [
     {
       id: 1,
-      title: "Quick Online Assessment",
-      description: "Complete a comprehensive health questionnaire in just 5 minutes.",
+      title: t('howItWorks.steps.assessment.title'),
+      description: t('howItWorks.steps.assessment.description'),
       icon: "/images/assessment-icon.svg",
       color: "#e63946"
     },
     {
       id: 2,
-      title: "Good Faith Exam",
-      description: "A licensed healthcare provider performs a quick 5-10 minute telehealth exam",
+      title: t('howItWorks.steps.exam.title'),
+      description: t('howItWorks.steps.exam.description'),
       icon: "/images/doctor-icon.svg",
       color: "#d81159"
     },
     {
       id: 3,
-      title: "Discreet Delivery",
-      description: "24/7 online consultations, offering personalized treatment.",
+      title: t('howItWorks.steps.delivery.title'),
+      description: t('howItWorks.steps.delivery.description'),
       icon: "/images/delivery-icon.svg",
       color: "#8f2d56"
     },
     {
       id: 4,
-      title: "Ongoing Support",
-      description: "Access to our medical team for questions, adjustments, and regular check-ins.",
+      title: t('howItWorks.steps.support.title'),
+      description: t('howItWorks.steps.support.description'),
       icon: "/images/support-icon.svg",
       color: "#ff4d6d"
     }
@@ -74,7 +77,7 @@ export default function HowItWorks() {
             transition={{ duration: 0.6 }}
             style={{ color: "#e63946" }}
           >
-            How Lily's Works
+            {t('howItWorks.title')}
           </motion.h2>
           <motion.p 
             className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto"
@@ -82,7 +85,7 @@ export default function HowItWorks() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Get personalized healthcare from the comfort of your home in just a few simple steps.
+            {t('howItWorks.subtitle')}
           </motion.p>
         </div>
         
@@ -167,9 +170,9 @@ export default function HowItWorks() {
                   backgroundColor: activeStep >= step.id ? step.color : '#e5e7eb'
                 }}
                 onClick={() => setActiveStep(step.id)}
-                aria-label={`View step ${step.id}`}
+                aria-label={t('howItWorks.ariaLabels.viewStep', { step: step.id })}
               >
-                <span className="sr-only">Step {step.id}</span>
+                <span className="sr-only">{t('howItWorks.step')} {step.id}</span>
               </button>
             ))}
           </div>
@@ -189,7 +192,7 @@ export default function HowItWorks() {
                 }}
                 onClick={() => setActiveStep(step.id)}
               >
-                Step {step.id}
+                {t('howItWorks.step')} {step.id}
               </button>
             ))}
           </div>
@@ -258,11 +261,12 @@ export default function HowItWorks() {
                 className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center ${
                   activeStep === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'
                 }`}
+                aria-label={t('howItWorks.ariaLabels.previousStep')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Previous
+                {t('howItWorks.previous')}
               </button>
               <button
                 onClick={() => setActiveStep(prev => Math.min(prev + 1, 4))}
@@ -270,8 +274,9 @@ export default function HowItWorks() {
                 className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center ${
                   activeStep === 4 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'
                 }`}
+                aria-label={t('howItWorks.ariaLabels.nextStep')}
               >
-                Next
+                {t('howItWorks.next')}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -289,10 +294,10 @@ export default function HowItWorks() {
           transition={{ duration: 0.6 }}
         >
           <p className="text-lg md:text-xl text-gray-700 mb-6 max-w-2xl mx-auto">
-            Experience personalized healthcare designed for your unique needs with Lily's.
+            {t('howItWorks.ctaDescription')}
           </p>
           <motion.a
-            href="/subscriptions"
+            href="/appointment"
             className="inline-block px-8 py-3 md:px-10 md:py-4 rounded-full font-bold text-white text-lg shadow-lg"
             style={{ 
               background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
@@ -305,7 +310,7 @@ export default function HowItWorks() {
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.3 }}
           >
-            Book Appointment
+            {t('howItWorks.bookAppointment')}
           </motion.a>
         </motion.div>
       </div>

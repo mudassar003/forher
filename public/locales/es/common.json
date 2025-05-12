@@ -106,5 +106,37 @@
     "allCategories": "Todas las categorías",
     "makeAppointment": "Programar una Cita",
     "takeAssessment": "Realizar Evaluación"
+  },
+  "howItWorks": {
+    "title": "Cómo Funciona Lily's",
+    "subtitle": "Obtenga atención médica personalizada desde la comodidad de su hogar en unos sencillos pasos.",
+    "step": "Paso",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "bookAppointment": "Programar una Cita",
+    "ctaDescription": "Experimente atención médica personalizada diseñada para sus necesidades únicas con Lily's.",
+    "ariaLabels": {
+      "viewStep": "Ver paso {{step}}",
+      "previousStep": "Ir al paso anterior",
+      "nextStep": "Ir al siguiente paso"
+    },
+    "steps": {
+      "assessment": {
+        "title": "Evaluación Rápida en Línea",
+        "description": "Complete un cuestionario de salud integral en solo 5 minutos."
+      },
+      "exam": {
+        "title": "Examen de Buena Fe",
+        "description": "Un proveedor de atención médica licenciado realiza un examen de telesalud rápido de 5-10 minutos."
+      },
+      "delivery": {
+        "title": "Entrega Discreta",
+        "description": "Consultas en línea 24/7, ofreciendo tratamiento personalizado."
+      },
+      "support": {
+        "title": "Soporte Continuo",
+        "description": "Acceso a nuestro equipo médico para preguntas, ajustes y revisiones regulares."
+      }
+    }
   }
 }

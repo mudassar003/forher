@@ -173,42 +173,6 @@ const RedesignedWeightLossSection = () => {
                   </div>
                 </motion.div>
               </div>
-              
-              {/* Mobile Action buttons in a card-like container */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="p-5 rounded-xl bg-white shadow-sm border border-gray-100"
-              >
-                <p className="text-center text-gray-700 font-medium mb-4">Ready to start your journey?</p>
-                <div className="space-y-3">
-                  <motion.a 
-                    href="/products"
-                    className="w-full px-6 py-3 rounded-lg font-medium text-white bg-gradient-to-r from-[#e63946] to-[#ff4d6d] shadow-sm flex items-center justify-center hover:shadow-md transition-all duration-300"
-                    whileHover={{ y: -2 }}
-                    whileTap={{ y: 0 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                    </svg>
-                    See Products
-                  </motion.a>
-                  <motion.a 
-                    href="/booking"
-                    className="w-full px-6 py-3 rounded-lg font-medium text-[#e63946] bg-white border border-[#e63946] shadow-sm flex items-center justify-center hover:bg-[#fff5f6] transition-all duration-300"
-                    whileHover={{ y: -2 }}
-                    whileTap={{ y: 0 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                    </svg>
-                    Book Appointment
-                  </motion.a>
-                </div>
-              </motion.div>
             </motion.div>
           </div>
         ) : (
@@ -297,39 +261,6 @@ const RedesignedWeightLossSection = () => {
                   </div>
                 </motion.div>
               </div>
-              
-              {/* Action buttons moved to left column for better integration */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="space-y-3 md:space-y-0 md:flex md:gap-4 mt-2"
-              >
-                <motion.a 
-                  href="/products"
-                  className="w-full md:w-auto px-6 py-3 rounded-lg font-medium text-white bg-gradient-to-r from-[#e63946] to-[#ff4d6d] shadow-sm flex items-center justify-center hover:shadow-md transition-all duration-300"
-                  whileHover={{ y: -2 }}
-                  whileTap={{ y: 0 }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                  </svg>
-                  See Products
-                </motion.a>
-                <motion.a 
-                  href="/booking"
-                  className="w-full md:w-auto px-6 py-3 rounded-lg font-medium text-[#e63946] bg-white border border-[#e63946] shadow-sm flex items-center justify-center hover:bg-[#fff5f6] transition-all duration-300"
-                  whileHover={{ y: -2 }}
-                  whileTap={{ y: 0 }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                  </svg>
-                  Book Appointment
-                </motion.a>
-              </motion.div>
             </motion.div>
             
             {/* Right column - Enhanced BMI calculator */}

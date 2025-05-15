@@ -285,34 +285,7 @@ export default function HowItWorks() {
           </motion.div>
         </div>
         
-        {/* Bottom CTA */}
-        <motion.div 
-          className="mt-12 md:mt-20 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <p className="text-lg md:text-xl text-gray-700 mb-6 max-w-2xl mx-auto">
-            {t('howItWorks.ctaDescription')}
-          </p>
-          <motion.a
-            href="/appointment"
-            className="inline-block px-8 py-3 md:px-10 md:py-4 rounded-full font-bold text-white text-lg shadow-lg"
-            style={{ 
-              background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
-              backgroundSize: "200% auto",
-            }}
-            whileHover={{ 
-              scale: 1.05,
-              backgroundPosition: "right center"
-            }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.3 }}
-          >
-            {t('howItWorks.bookAppointment')}
-          </motion.a>
-        </motion.div>
+
       </div>
     </section>
   );

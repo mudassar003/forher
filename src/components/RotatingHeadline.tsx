@@ -257,26 +257,13 @@ export default function PersonalizedHeroSection(): React.ReactElement {
                 {t(`rotatingHeadline.categories.${selectedCategory}.subheading`)}
               </motion.p>
               
-              {/* Call to action */}
+              {/* Call to action - only assessment button now */}
               <motion.div 
-                className="flex flex-col sm:flex-row gap-4 justify-center"
+                className="flex justify-center"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <motion.button 
-                  className="px-6 sm:px-8 py-3 sm:py-4 rounded-full text-white font-medium text-base sm:text-lg transition-all hover:shadow-lg"
-                  style={{ 
-                    background: "linear-gradient(90deg, #e63946 0%, #ff4d6d 50%, #ff758f 100%)",
-                    backgroundSize: "200% auto",
-                    animation: "gradient 3s linear infinite",
-                  }}
-                  onClick={() => window.location.href="/appointment"}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {t('rotatingHeadline.makeAppointment')}
-                </motion.button>
                 <motion.button 
                   className="px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-gray-700 border border-gray-200 font-medium text-base sm:text-lg transition-all hover:shadow-lg"
                   onClick={handleAssessment}

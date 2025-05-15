@@ -11,9 +11,25 @@ interface PortableTextProps {
 }
 
 // Define the list type
-interface ListGroup {
-  type: 'bullet' | 'number';
+interface BulletListGroup {
+  type: 'bullet';
   items: React.ReactElement[];
+}
+
+interface NumberListGroup {
+  type: 'number';
+  items: React.ReactElement[];
+}
+
+type ListGroup = BulletListGroup | NumberListGroup;
+
+// Type guard functions
+function isBulletList(list: ListGroup): list is BulletListGroup {
+  return list.type === 'bullet';
+}
+
+function isNumberList(list: ListGroup): list is NumberListGroup {
+  return list.type === 'number';
 }
 
 const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) => {
@@ -114,6 +130,15 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
     }
   };
 
+  // Create a function that renders a list element based on the list type
+  const renderList = (list: ListGroup, key: string): React.ReactElement => {
+    if (isBulletList(list)) {
+      return <ul key={key} className="mb-4">{list.items}</ul>;
+    } else {
+      return <ol key={key} className="mb-4">{list.items}</ol>;
+    }
+  };
+
   // Group consecutive list items
   const renderBlocks = () => {
     const result: React.ReactElement[] = [];
@@ -128,11 +153,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
           currentList = { type: listType, items: [] };
         } else if (currentList.type !== listType) {
           // If list type changes, end the current list and start a new one
-          const listElement = currentList.type === 'bullet' 
-            ? <ul key={`list-${index}`} className="mb-4">{currentList.items}</ul>
-            : <ol key={`list-${index}`} className="mb-4">{currentList.items}</ol>;
-          
-          result.push(listElement);
+          result.push(renderList(currentList, `list-${index}`));
           currentList = { type: listType, items: [] };
         }
         
@@ -144,11 +165,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
       } else {
         // If not a list item, end any current list
         if (currentList) {
-          const listElement = currentList.type === 'bullet' 
-            ? <ul key={`list-${index}`} className="mb-4">{currentList.items}</ul>
-            : <ol key={`list-${index}`} className="mb-4">{currentList.items}</ol>;
-          
-          result.push(listElement);
+          result.push(renderList(currentList, `list-${index}`));
           currentList = null;
         }
         
@@ -162,11 +179,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
     
     // Handle any remaining list
     if (currentList) {
-      const listElement = currentList.type === 'bullet' 
-        ? <ul key="list-end" className="mb-4">{currentList.items}</ul>
-        : <ol key="list-end" className="mb-4">{currentList.items}</ol>;
-      
-      result.push(listElement);
+      result.push(renderList(currentList, "list-end"));
     }
     
     return result;

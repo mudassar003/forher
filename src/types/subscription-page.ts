@@ -17,6 +17,26 @@ export interface SubscriptionCategory {
   displayOrder?: number;
 }
 
+// Type for the blocks in Portable Text
+export interface BlockContent {
+  _key: string;
+  _type: string;
+  style?: string;
+  markDefs?: Array<{
+    _key: string;
+    _type: string;
+    href?: string;
+  }>;
+  children?: Array<{
+    _key: string;
+    _type: string;
+    marks?: string[];
+    text?: string;
+  }>;
+  listItem?: string;
+  level?: number;
+}
+
 export interface Subscription {
   _id: string;
   title: string;
@@ -24,8 +44,8 @@ export interface Subscription {
   slug: {
     current: string;
   };
-  description?: string;
-  descriptionEs?: string;
+  description?: BlockContent[]; // Updated to BlockContent array
+  descriptionEs?: BlockContent[]; // Updated to BlockContent array
   price: number;
   billingPeriod: string;
   features?: SubscriptionFeature[];

@@ -153,88 +153,7 @@ export const weightLossQuestions: Question[] = [
     ]
   },
 
-  // Step 6: Activity Level & Metabolism
-  {
-    id: "activity-level",
-    question: "How active are you?",
-    description: "Select the option that best describes your typical activity level.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "sedentary", label: "Sedentary (Little or no exercise)" },
-      { id: "lightly-active", label: "Lightly active (1-2 workouts per week)" },
-      { id: "moderately-active", label: "Moderately active (3-4 workouts per week)" },
-      { id: "very-active", label: "Very active (5+ workouts per week)" }
-    ]
-  },
-  {
-    id: "metabolism",
-    question: "How would you describe your metabolism?",
-    description: "This helps us understand your body's natural tendencies.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "fast", label: "Fast" },
-      { id: "normal", label: "Normal" },
-      { id: "slow", label: "Slow" }
-    ]
-  },
-  {
-    id: "recent-weight-gain",
-    question: "Have you noticed significant weight gain recently?",
-    description: "This may help identify underlying causes.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-
-  // Step 7: Eating Habits & Cravings
-  {
-    id: "eating-habits",
-    question: "How would you describe your eating habits?",
-    description: "Select the option that best describes your typical eating pattern.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "portion-control", label: "I eat mostly healthy but struggle with portion control" },
-      { id: "sugar-carbs", label: "I often crave sugary or high-carb foods" },
-      { id: "emotional-eating", label: "I eat due to stress or emotions" },
-      { id: "specific-diet", label: "I follow a specific diet (e.g., keto, intermittent fasting)" }
-    ]
-  },
-  {
-    id: "cravings",
-    question: "Do you struggle with cravings?",
-    description: "Select the option that best describes your experience with food cravings.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "frequent-cravings", label: "Yes, frequently" },
-      { id: "some-control", label: "Yes, but I can control them" },
-      { id: "no-cravings", label: "No" }
-    ]
-  },
-  {
-    id: "eat-out",
-    question: "How often do you eat out?",
-    description: "This helps us understand your dietary patterns.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "rarely", label: "Rarely" },
-      { id: "occasionally", label: "Occasionally" },
-      { id: "frequently", label: "Frequently" }
-    ]
-  },
-  {
-    id: "alcohol",
-    question: "Do you drink alcohol?",
-    description: "Alcohol can impact weight loss and interact with certain medications.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-
-  // Step 8: Sleep & Stress
+  // Sleep & Stress section - keeping these as they weren't specified for removal
   {
     id: "sleep-hours",
     question: "How many hours of sleep do you get per night?",
@@ -255,40 +174,6 @@ export const weightLossQuestions: Question[] = [
       { id: "low", label: "Low" },
       { id: "moderate", label: "Moderate" },
       { id: "high", label: "High" }
-    ]
-  },
-
-  // Step 9: Medical Eligibility Confirmation
-  {
-    id: "doctor-consultation",
-    question: "Are you willing to consult a doctor before taking weight loss treatments?",
-    description: "Medical consultation is essential for safe and effective treatment.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-
-  // Step 10: Product Preference
-  {
-    id: "prescription-preference",
-    question: "Are you open to prescription-based treatments?",
-    description: "Prescription treatments may be more effective for some individuals.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No (Only OTC products recommended)" }
-    ]
-  },
-  {
-    id: "medication-type",
-    question: "Would you prefer injections or oral medications?",
-    description: "Different medication formats have varying benefits and convenience levels.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "injections", label: "I am comfortable with injections" },
-      { id: "oral", label: "I prefer oral medications" }
     ]
   }
 ];
@@ -396,11 +281,6 @@ export const checkEligibility = (responses: Record<string, any>): { eligible: bo
   // Step 4: Eating Disorder
   if (responses['eating-disorder'] === 'yes') {
     reason = "Note: Weight loss products are not recommended for individuals with a history of eating disorders. Please consult with your healthcare provider for healthy weight management approaches.";
-  }
-
-  // Step 9: Doctor Consultation
-  if (responses['doctor-consultation'] === 'no') {
-    reason = "Note: Medical consultation is required before starting weight loss treatments to ensure safety and effectiveness. Please reconsider consulting with a healthcare provider.";
   }
 
   // Always return eligible but with appropriate warning message

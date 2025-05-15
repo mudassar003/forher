@@ -1,6 +1,6 @@
 //src/sanity/schemaTypes/subscriptionType.ts
 import { CreditCardIcon } from '@sanity/icons'
-import {defineField, defineType} from 'sanity'
+import {defineField, defineType, defineArrayMember} from 'sanity'
 
 export const subscriptionType = defineType({
   name: 'subscription',
@@ -33,13 +33,86 @@ export const subscriptionType = defineType({
     defineField({
       name: 'description',
       title: 'Description (English)',
-      type: 'text',
+      type: 'array', // Changed from 'text' to array of blocks
+      of: [
+        defineArrayMember({
+          type: 'block',
+          styles: [
+            {title: 'Normal', value: 'normal'},
+            {title: 'H2', value: 'h2'},
+            {title: 'H3', value: 'h3'},
+            {title: 'H4', value: 'h4'},
+            {title: 'Quote', value: 'blockquote'},
+          ],
+          lists: [
+            {title: 'Bullet', value: 'bullet'},
+            {title: 'Numbered', value: 'number'}
+          ],
+          marks: {
+            decorators: [
+              {title: 'Strong', value: 'strong'},
+              {title: 'Emphasis', value: 'em'},
+            ],
+            annotations: [
+              {
+                title: 'URL',
+                name: 'link',
+                type: 'object',
+                fields: [
+                  {
+                    title: 'URL',
+                    name: 'href',
+                    type: 'url',
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      ],
+      description: 'Rich text description for this subscription plan (English)',
     }),
     defineField({
       name: 'descriptionEs',
       title: 'Description (Spanish)',
-      type: 'text',
-      description: 'Spanish translation of the description',
+      type: 'array', // Changed from 'text' to array of blocks
+      of: [
+        defineArrayMember({
+          type: 'block',
+          styles: [
+            {title: 'Normal', value: 'normal'},
+            {title: 'H2', value: 'h2'},
+            {title: 'H3', value: 'h3'},
+            {title: 'H4', value: 'h4'},
+            {title: 'Quote', value: 'blockquote'},
+          ],
+          lists: [
+            {title: 'Bullet', value: 'bullet'},
+            {title: 'Numbered', value: 'number'}
+          ],
+          marks: {
+            decorators: [
+              {title: 'Strong', value: 'strong'},
+              {title: 'Emphasis', value: 'em'},
+            ],
+            annotations: [
+              {
+                title: 'URL',
+                name: 'link',
+                type: 'object',
+                fields: [
+                  {
+                    title: 'URL',
+                    name: 'href',
+                    type: 'url',
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      ],
+      description: 'Rich text description for this subscription plan (Spanish)',
     }),
     defineField({
       name: 'categories',

@@ -100,50 +100,7 @@ export const hairLossQuestions: Question[] = [
     ]
   },
   
-  // Step 4: Lifestyle & Diet
-  {
-    id: "balanced-diet",
-    question: "Do you have a balanced diet with sufficient protein and vitamins?",
-    description: "A balanced diet is important for hair health.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-  {
-    id: "recent-changes",
-    question: "Have you experienced recent stress, illness, or hormonal changes?",
-    description: "E.g., post-pregnancy, menopause, major life events",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-  {
-    id: "heat-styling",
-    question: "How often do you use heat styling tools?",
-    description: "E.g., blow dryers, straighteners, curling irons",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "rarely", label: "Rarely" },
-      { id: "occasionally", label: "Occasionally" },
-      { id: "frequently", label: "Frequently" }
-    ]
-  },
-  {
-    id: "chemical-treatments",
-    question: "Do you regularly dye or chemically treat your hair?",
-    description: "Including color treatments, perms, relaxers, etc.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-  
-  // Step 5: Scalp Health & Hair Care
+  // Step 4: Scalp Health
   {
     id: "scalp-issues",
     question: "Do you experience dandruff, scalp irritation, or itchiness?",
@@ -154,29 +111,8 @@ export const hairLossQuestions: Question[] = [
       { id: "no", label: "No" }
     ]
   },
-  {
-    id: "wash-frequency",
-    question: "How often do you wash your hair?",
-    description: "Select your typical hair washing frequency.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "daily", label: "Daily" },
-      { id: "every-2-3-days", label: "Every 2-3 days" },
-      { id: "once-a-week", label: "Once a week" }
-    ]
-  },
-  {
-    id: "specialized-shampoo",
-    question: "Do you use sulfate-free or hair-growth supporting shampoos?",
-    description: "These types of shampoos can be gentler on the hair and scalp.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
   
-  // Step 6: Hair Loss Treatment Preferences
+  // Step 5: Treatment History
   {
     id: "previous-treatments",
     question: "Have you tried any hair loss treatments before?",
@@ -188,48 +124,6 @@ export const hairLossQuestions: Question[] = [
       { id: "supplements", label: "Hair Growth Supplements" },
       { id: "specialized-shampoos", label: "Specialized Shampoos" },
       { id: "none", label: "None of the above" }
-    ]
-  },
-  {
-    id: "topical-treatments",
-    question: "Are you open to topical hair regrowth treatments?",
-    description: "E.g., minoxidil, peptides, serums",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-  {
-    id: "oral-supplements",
-    question: "Are you interested in oral supplements for hair regrowth?",
-    description: "E.g., biotin, saw palmetto, iron, or collagen",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-  {
-    id: "long-term-commitment",
-    question: "Are you comfortable committing to long-term hair regrowth treatments?",
-    description: "3-6 months minimum is typically required to see results",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-  
-  // Step 7: Medical Eligibility Confirmation
-  {
-    id: "doctor-consultation",
-    question: "Are you willing to consult a doctor before starting any new hair loss treatment?",
-    description: "Medical guidance is important for safe and effective treatment.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
     ]
   }
 ];
@@ -292,14 +186,6 @@ export const checkEligibility = (responses: FormResponse): { eligible: boolean; 
     return {
       eligible: false,
       reason: "Your hair loss may be medication-induced. We recommend consulting your doctor before starting any hair loss treatment."
-    };
-  }
-
-  // Not willing to consult doctor
-  if (responses["doctor-consultation"] === "no") {
-    return {
-      eligible: false,
-      reason: "A medical consultation is required before starting our hair loss treatments to ensure they're safe and appropriate for you."
     };
   }
 

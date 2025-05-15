@@ -17,22 +17,28 @@ export interface SubscriptionCategory {
   displayOrder?: number;
 }
 
+// Type for span children in Portable Text
+export interface PortableTextSpan {
+  _key?: string;
+  _type: 'span';
+  marks?: string[];
+  text?: string;
+}
+
+// Type for mark definitions in Portable Text
+export interface PortableTextMarkDef {
+  _key: string;
+  _type: string;
+  href?: string;
+}
+
 // Type for the blocks in Portable Text
 export interface BlockContent {
   _key: string;
   _type: string;
   style?: string;
-  markDefs?: Array<{
-    _key: string;
-    _type: string;
-    href?: string;
-  }>;
-  children?: Array<{
-    _key: string;
-    _type: string;
-    marks?: string[];
-    text?: string;
-  }>;
+  markDefs?: PortableTextMarkDef[];
+  children?: PortableTextSpan[];
   listItem?: string;
   level?: number;
 }
@@ -44,8 +50,8 @@ export interface Subscription {
   slug: {
     current: string;
   };
-  description?: BlockContent[]; // Updated to BlockContent array
-  descriptionEs?: BlockContent[]; // Updated to BlockContent array
+  description?: BlockContent[]; // BlockContent array
+  descriptionEs?: BlockContent[]; // BlockContent array
   price: number;
   billingPeriod: string;
   features?: SubscriptionFeature[];

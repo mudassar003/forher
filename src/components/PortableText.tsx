@@ -27,23 +27,24 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
     // Get all child text nodes and marks
     const textContent = children
       .filter(child => child && typeof child === 'object')
-      .map((child) => {
+      .map((child, i) => {
         // Skip non-text nodes
         if (!child || child._type !== 'span' || !child.text) {
-          return '';
+          return null;
         }
 
         const { text, marks = [] } = child;
         
-        let formattedText = text;
+        // Start with plain text
+        let formattedText: React.ReactNode = text;
 
         // Apply marks (like strong, em)
         if (marks.includes('strong')) {
-          formattedText = <strong key={child._key}>{formattedText}</strong>;
+          formattedText = <strong key={`${child._key}-strong`}>{formattedText}</strong>;
         }
         
         if (marks.includes('em')) {
-          formattedText = <em key={child._key}>{formattedText}</em>;
+          formattedText = <em key={`${child._key}-em`}>{formattedText}</em>;
         }
 
         // Handle link annotations
@@ -57,7 +58,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
             formattedText = (
               <Link 
                 href={linkDef.href as string} 
-                key={child._key}
+                key={`${child._key}-link`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#e63946] underline hover:text-[#d52d3a]"
@@ -68,7 +69,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
           }
         }
 
-        return formattedText;
+        return <React.Fragment key={child._key || `span-${i}`}>{formattedText}</React.Fragment>;
       });
 
     // Handle different block styles

@@ -149,22 +149,31 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
         const listType = block.listItem as 'bullet' | 'number';
         
         // Start a new list or continue the current one
-        if (!currentList) {
-          currentList = { type: listType, items: [] };
+        if (currentList === null) {
+          // Initialize a new list
+          currentList = { 
+            type: listType, 
+            items: [] 
+          };
         } else if (currentList.type !== listType) {
           // If list type changes, end the current list and start a new one
           result.push(renderList(currentList, `list-${index}`));
-          currentList = { type: listType, items: [] };
+          currentList = { 
+            type: listType, 
+            items: [] 
+          };
         }
         
+        // At this point, currentList is guaranteed to be non-null
         // Add the item to the current list
         const renderedNode = renderNode(block, index);
         if (renderedNode) {
-          currentList.items.push(renderedNode);
+          // TypeScript: Use ! to assert that currentList is definitely not null
+          currentList!.items.push(renderedNode);
         }
       } else {
         // If not a list item, end any current list
-        if (currentList) {
+        if (currentList !== null) {
           result.push(renderList(currentList, `list-${index}`));
           currentList = null;
         }
@@ -178,7 +187,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
     });
     
     // Handle any remaining list
-    if (currentList) {
+    if (currentList !== null) {
       result.push(renderList(currentList, "list-end"));
     }
     

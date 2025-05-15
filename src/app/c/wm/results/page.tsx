@@ -1,205 +1,154 @@
 // src/app/c/wm/results/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { urlFor } from '@/sanity/lib/image';
-import { client } from '@/sanity/lib/client';
 import HomeHeader from "@/components/HomeHeader";
 import GlobalFooter from "@/components/GlobalFooter";
-import { calculateBMI } from "../lose-weight/data/questions";
+import { client } from '@/sanity/lib/client';
+import SubscriptionCard from "@/app/(default)/subscriptions/components/SubscriptionCard";
+import { Subscription, SubscriptionCategory } from "@/types/subscription-page";
 
-interface Product {
-  _id: string;
-  title: string;
-  slug: { current: string };
-  price: number;
-  description: string;
-  mainImage?: any;
-  productType?: string;
-  administrationType?: string;
-}
-
-interface Recommendation {
-  eligible: boolean;
-  recommendedProductId: string | null;
-  explanation: string;
-  product?: Product;
-}
+// Static product data
+const staticProduct = {
+  _id: "static-product-id",
+  title: "Compounded Semaglutide – Physician-Formulated Weight Loss Solution",
+  slug: { current: "compounded-semaglutide" },
+  price: 0,
+  description: "Semaglutide is a GLP-1 receptor agonist that helps regulate appetite and blood sugar levels.",
+  productType: "prescription",
+  administrationType: "injectable"
+};
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [categories, setCategories] = useState<SubscriptionCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [bmi, setBmi] = useState<number | null>(null);
-  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
 
+  // Fetch subscription data
   useEffect(() => {
-    // Check if we have a stored ineligibility reason
-    const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
-    if (storedIneligibilityReason) {
-      setIneligibilityReason(storedIneligibilityReason);
-    }
-    
-    // Check if we already have a recommendation in localStorage
-    const savedRecommendation = localStorage.getItem('weightLossRecommendation');
-    
-    const fetchData = async () => {
+    const fetchSubscriptions = async () => {
       try {
-        // Fetch all weight loss products regardless of recommendation
-        const products: Product[] = await client.fetch(`
-          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="weight-loss"]._id)] {
-            _id, title, slug, price, description, mainImage, productType, administrationType
+        setIsLoading(true);
+        
+        // Fetch subscriptions related to weight loss from Sanity CMS
+        const fetchedSubscriptions: Subscription[] = await client.fetch(`
+          *[_type == "subscription" && isActive == true && references(*[_type=="subscriptionCategory" && slug.current=="weight-management"]._id)] {
+            _id,
+            title,
+            titleEs,
+            slug,
+            description,
+            descriptionEs,
+            price,
+            billingPeriod,
+            features,
+            featuresEs,
+            isFeatured,
+            "categories": categories[]->{ 
+              _id, 
+              title, 
+              titleEs,
+              slug, 
+              description, 
+              descriptionEs,
+              displayOrder 
+            }
           }
         `);
         
-        setAllProducts(products || []);
-        
-        // If the user is ineligible, create a custom recommendation object
-        if (storedIneligibilityReason) {
-          const ineligibleRecommendation: Recommendation = {
-            eligible: false,
-            recommendedProductId: null,
-            explanation: storedIneligibilityReason
-          };
-          
-          setRecommendation(ineligibleRecommendation);
-          setIsLoading(false);
-          return;
-        }
-        
-        // If we have a saved recommendation, use it
-        if (savedRecommendation) {
-          setRecommendation(JSON.parse(savedRecommendation));
-          setIsLoading(false);
-          return;
-        }
-        
-        // Otherwise, get form responses and call the API
-        const storedResponses = sessionStorage.getItem("finalResponses");
-        
-        if (!storedResponses) {
-          router.push("/c/wm");
-          return;
-        }
-        
-        const responses = JSON.parse(storedResponses);
-        
-        // Calculate BMI if applicable
-        if (responses['current-weight'] && responses['height']) {
-          const calculatedBmi = calculateBMI(
-            responses['current-weight'] as string,
-            responses['height'] as string
-          );
-          setBmi(calculatedBmi);
-        }
-        
-        // Call the API to get recommendations
-        const response = await fetch('/api/recommendations', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ formResponses: responses }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to get recommendation');
-        }
-        
-        const data = await response.json();
-        
-        // Parse recommendation data
-        let parsedRecommendation: Recommendation;
-        
-        // Check if the response is a string (explanation) or an object
-        if (typeof data === 'string' || (data && !data.hasOwnProperty('eligible'))) {
-          // If it's just text, create a structured object
-          const explanation = typeof data === 'string' ? data : data.explanation || "Based on your responses, we cannot recommend our weight loss medications at this time.";
-          
-          parsedRecommendation = {
-            eligible: false,
-            recommendedProductId: null,
-            explanation: explanation
-          };
-        } else {
-          // Otherwise use the structured response
-          parsedRecommendation = data as Recommendation;
-          
-          // If the recommendation has a product ID but not the product data,
-          // find it in the products we fetched
-          if (parsedRecommendation.eligible && 
-              parsedRecommendation.recommendedProductId && 
-              !parsedRecommendation.product) {
-            const recommendedProduct = products.find((p: Product) => p._id === parsedRecommendation.recommendedProductId);
-            if (recommendedProduct) {
-              parsedRecommendation.product = recommendedProduct;
-            }
+        // Fetch subscription categories
+        const fetchedCategories: SubscriptionCategory[] = await client.fetch(`
+          *[_type == "subscriptionCategory" && slug.current == "weight-management"] | order(displayOrder asc) {
+            _id,
+            title,
+            titleEs,
+            slug,
+            description,
+            descriptionEs,
+            displayOrder
           }
-        }
+        `);
         
-        // Save the recommendation to localStorage for persistence
-        localStorage.setItem('weightLossRecommendation', JSON.stringify(parsedRecommendation));
-        
-        setRecommendation(parsedRecommendation);
+        setSubscriptions(fetchedSubscriptions || []);
+        setCategories(fetchedCategories || []);
       } catch (error) {
-        console.error("Error:", error);
-        setError("We couldn't generate your recommendation. Please try again later.");
+        console.error("Error fetching subscription data:", error);
+        // Fallback to static data if the fetch fails
+        setSubscriptions(getFallbackSubscriptions());
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchData();
-  }, [router]);
+    fetchSubscriptions();
+  }, []);
 
-  // Function to clear recommendation and start over
-  const startOver = () => {
-    localStorage.removeItem('weightLossRecommendation');
-    sessionStorage.removeItem('finalResponses');
-    sessionStorage.removeItem('weightLossResponses');
-    sessionStorage.removeItem('ineligibilityReason');
-    router.push("/c/wm");
+  // Fallback subscription data if fetch fails
+  const getFallbackSubscriptions = (): Subscription[] => {
+    return [
+      {
+        _id: "subscription-1",
+        title: "Weight Management Basic",
+        slug: { current: "weight-management-basic" },
+        price: 29.99,
+        billingPeriod: "monthly",
+        description: [],
+        features: [
+          { featureText: "Weekly check-ins" },
+          { featureText: "Basic nutritional guidance" },
+          { featureText: "Access to recipes" }
+        ],
+        isFeatured: false,
+        isActive: true
+      },
+      {
+        _id: "subscription-2",
+        title: "Weight Management Premium",
+        slug: { current: "weight-management-premium" },
+        price: 49.99,
+        billingPeriod: "monthly",
+        description: [],
+        features: [
+          { featureText: "Personalized meal planning" },
+          { featureText: "1-on-1 consultations" },
+          { featureText: "24/7 coach support" },
+          { featureText: "Prescription medication options" }
+        ],
+        isFeatured: true,
+        isActive: true
+      },
+      {
+        _id: "subscription-3",
+        title: "Weight Management Annual",
+        slug: { current: "weight-management-annual" },
+        price: 299.99,
+        billingPeriod: "annually",
+        description: [],
+        features: [
+          { featureText: "Everything in Premium" },
+          { featureText: "2 months free" },
+          { featureText: "Quarterly progress review" },
+          { featureText: "Custom exercise plan" }
+        ],
+        isFeatured: false,
+        isActive: true
+      }
+    ];
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <HomeHeader />
-        <div className="flex-grow flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
-          <p className="mt-6 text-xl">Analyzing your responses...</p>
-          <p className="mt-2 text-gray-500">We're preparing your personalized recommendation</p>
-        </div>
-        <GlobalFooter />
-      </div>
-    );
-  }
+  // Assign card type based on position
+  const getCardType = (index: number) => {
+    const types = ['basic', 'premium', 'standard'] as const;
+    return types[index % 3];
+  };
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <HomeHeader />
-        <div className="flex-grow flex flex-col items-center justify-center px-6">
-          <div className="w-full max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold text-[#fe92b5] mb-6">Oops! Something went wrong</h2>
-            <p className="text-xl mb-8">{error}</p>
-            <button 
-              onClick={() => router.push("/c/wm/submit")}
-              className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-gray-900"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-        <GlobalFooter />
-      </div>
-    );
-  }
+  // Function to start over
+  const startOver = () => {
+    router.push("/c/wm");
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -208,216 +157,112 @@ export default function ResultsPage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-4xl font-semibold text-[#fe92b5] text-center mb-10">Your Personalized Recommendation</h1>
         
-        {/* Display BMI information if available */}
-        {bmi !== null && (
-          <div className={`max-w-4xl mx-auto p-5 mb-10 rounded-lg ${
-            bmi < 18.5 ? 'bg-amber-100' : 
-            bmi < 25 ? 'bg-green-100' : 
-            bmi < 30 ? 'bg-yellow-100' : 
-            'bg-orange-100'
-          }`}>
-            <h3 className="text-xl font-semibold">Your BMI: {bmi.toFixed(1)}</h3>
-            <p className="mt-1">
-              Category: <strong>
-                {bmi < 18.5 ? 'Underweight' : 
-                 bmi < 25 ? 'Normal weight' : 
-                 bmi < 30 ? 'Overweight' : 
-                 'Obese'}
-              </strong>
-            </p>
-            <p className="mt-2 text-sm">
-              {bmi < 18.5 ? 
-                'A BMI below 18.5 is considered underweight. Weight loss products are not typically recommended.' : 
-               bmi < 25 ? 
-                'A BMI between 18.5 and 24.9 is considered normal weight. Consider lifestyle changes if you wish to maintain or optimize your weight.' : 
-               bmi < 30 ? 
-                'A BMI between 25 and 29.9 is considered overweight. Weight management products may be helpful in conjunction with lifestyle changes.' : 
-                'A BMI of 30 or higher is considered obese. Weight management products can be beneficial alongside lifestyle modifications.'}
-            </p>
-          </div>
-        )}
-        
-        {/* Recommendation Section */}
+        {/* Recommendation Section - STATIC */}
         <section className="mb-16">
-          {/* Eligible with Product Recommendation */}
-          {recommendation?.eligible && recommendation.product && (
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
-              <div className="bg-gradient-to-r from-[#fe92b5]/10 to-[#fe92b5]/5 p-6 flex items-center">
-                <div className="w-16 h-16 bg-[#fe92b5] rounded-full flex items-center justify-center mr-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-800">We found your perfect match!</h2>
-                  <p className="text-gray-600">Based on your assessment, we recommend:</p>
-                </div>
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+            <div className="bg-gradient-to-r from-[#fe92b5]/10 to-[#fe92b5]/5 p-6 flex items-center">
+              <div className="w-16 h-16 bg-[#fe92b5] rounded-full flex items-center justify-center mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              
-              <div className="p-6">
-                <div className="flex flex-col md:flex-row gap-8">
-                  {/* Product Image */}
-                  <div className="md:w-1/3">
-                    {recommendation.product.mainImage ? (
-                      <div className="relative h-64 w-full rounded-lg overflow-hidden">
-                        <Image 
-                          src={urlFor(recommendation.product.mainImage).url()} 
-                          alt={recommendation.product.title} 
-                          fill 
-                          style={{objectFit: 'cover'}} 
-                          className="transition-transform hover:scale-105"
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-64 w-full bg-gray-200 rounded-lg flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    
-                    {recommendation.product.productType && (
-                      <div className="mt-2 inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                        {recommendation.product.productType === 'OTC' ? 'Over-the-counter' : 'Prescription required'}
-                      </div>
-                    )}
-                    
-                    {recommendation.product.administrationType && (
-                      <div className="mt-2 ml-2 inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                        {recommendation.product.administrationType === 'oral' ? 'Oral medication' : 'Injectable'}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Product Details */}
-                  <div className="md:w-2/3">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{recommendation.product.title}</h3>
-                    <div className="flex items-center mb-4">
-                      <span className="text-xl font-bold text-black">${recommendation.product.price}</span>
-                      <span className="ml-2 px-2 py-1 bg-[#fe92b5] text-white text-xs rounded-full">Recommended</span>
-                    </div>
-                    <p className="text-gray-700 mb-6">{recommendation.product.description}</p>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                      <h4 className="font-semibold mb-2">Why This Is Right For You:</h4>
-                      <p>{recommendation.explanation}</p>
-                    </div>
-                    
-                    <Link href={`/products/${recommendation.product.slug?.current}`} className="block w-full">
-                      <button className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full w-full hover:bg-gray-900">
-                        Learn More About This Product
-                      </button>
-                    </Link>
-                  </div>
-                </div>
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-800">We found your perfect match!</h2>
+                <p className="text-gray-600">Based on your assessment, we recommend:</p>
               </div>
             </div>
-          )}
-          
-          {/* Not Eligible */}
-          {(!recommendation?.eligible || !recommendation?.product) && (
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
-              <div className="bg-gradient-to-r from-amber-100 to-amber-50 p-6 flex items-center">
-                <div className="w-16 h-16 bg-amber-400 rounded-full flex items-center justify-center mr-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-800">Medical Guidance Recommended</h2>
-                  <p className="text-gray-600">We care about your health and safety.</p>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                  <p className="text-lg leading-relaxed">{recommendation?.explanation || "Based on your responses, we recommend consulting with a healthcare provider before pursuing weight loss medication. Your health is our priority."}</p>
+            
+            <div className="p-6">
+              <div className="flex flex-col md:flex-row gap-8">
+                {/* Product Image */}
+                <div className="md:w-1/3">
+                  <div className="h-64 w-full bg-gray-200 rounded-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  
+                  <div className="mt-2 inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                    Prescription required
+                  </div>
+                  
+                  <div className="mt-2 ml-2 inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                    Injectable
+                  </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button 
-                    onClick={startOver}
-                    className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-gray-900 flex-1"
-                  >
-                    Retake Assessment
-                  </button>
-                  <Link 
-                    href="/consultation" 
-                    className="bg-[#fe92b5] text-white text-lg font-medium px-6 py-3 rounded-full text-center hover:bg-[#fe92b5]/90 flex-1"
-                  >
-                    Book a Consultation
+                {/* Product Details */}
+                <div className="md:w-2/3">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{staticProduct.title}</h3>
+                  <div className="flex items-center mb-4">
+                    <span className="text-xl font-bold text-black">${staticProduct.price}</span>
+                    <span className="ml-2 px-2 py-1 bg-[#fe92b5] text-white text-xs rounded-full">Recommended</span>
+                  </div>
+                  <p className="text-gray-700 mb-6">{staticProduct.description}</p>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                    <h4 className="font-semibold mb-2">Why This Is Right For You:</h4>
+                    <p>
+                      Thank you for sharing your responses with us. Based on your current 
+                      weight of 70 kg, height of 78 inches, and your diagnosis of Type 2 
+                      Diabetes, we believe that Compounded Semaglutide – Physician-
+                      Formulated Weight Loss Solution could be an excellent fit for you. 
+                      Semaglutide has been shown to be effective not only in facilitating 
+                      weight loss but also in improving glycemic control for individuals with 
+                      Type 2 Diabetes. By enhancing insulin sensitivity and regulating 
+                      appetite, it can help you achieve sustainable and healthy weight loss.
+                    </p>
+                  </div>
+                  
+                  <Link href={`/products/${staticProduct.slug.current}`} className="block w-full">
+                    <button className="bg-black text-white text-lg font-medium px-6 py-3 rounded-full w-full hover:bg-gray-900">
+                      Learn More About This Product
+                    </button>
                   </Link>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </section>
         
-        {/* Browse Other Products Section */}
-        <section>
-          <h2 className="text-3xl font-semibold text-gray-800 mb-6">Weight Loss Products</h2>
-          <p className="text-gray-600 max-w-3xl mb-8">Browse our selection of physician-formulated weight loss treatments designed to support your journey to better health.</p>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {allProducts.slice(0, 8).map((product: Product) => (
-              <Link 
-                href={`/products/${product.slug?.current}`} 
-                key={product._id} 
-                className="group"
-              >
-                <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1 h-full flex flex-col">
-                  {/* Product Image */}
-                  <div className="relative h-48 w-full bg-gray-100">
-                    {product.mainImage ? (
-                      <Image 
-                        src={urlFor(product.mainImage).url()} 
-                        alt={product.title} 
-                        fill 
-                        style={{objectFit: 'cover'}} 
-                        className="transition-transform group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    
-                    {recommendation?.product && recommendation.product._id === product._id && (
-                      <div className="absolute top-2 right-2 bg-[#fe92b5] text-white text-xs py-1 px-2 rounded-full">
-                        Recommended
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Product Details */}
-                  <div className="p-4 flex-grow flex flex-col">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{product.title}</h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-grow">{product.description}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-gray-900">${product.price}</span>
-                      <div className="flex flex-col items-end">
-                        {product.productType && (
-                          <span className="text-xs text-gray-500">{product.productType === 'OTC' ? 'Over-the-counter' : 'Prescription'}</span>
-                        )}
-                        {product.administrationType && (
-                          <span className="text-xs text-gray-500">{product.administrationType === 'oral' ? 'Oral' : 'Injectable'}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
+        {/* Subscription Packages Section */}
+        <section className="mb-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-[#e63946] mb-4">Enhance Your Results with a Subscription Plan</h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Our subscription plans provide ongoing support, monitoring, and exclusive benefits 
+              to help you maximize your weight loss journey and maintain results.
+            </p>
           </div>
-          
-          <div className="text-center mt-10">
-            <Link 
-              href="/products" 
-              className="inline-block bg-black text-white font-medium px-6 py-3 rounded-full hover:bg-gray-900"
-            >
-              View All Products
+
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="w-16 h-16 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {subscriptions.map((subscription, index) => (
+                <SubscriptionCard
+                  key={subscription._id}
+                  id={subscription._id}
+                  title={subscription.title}
+                  titleEs={subscription.titleEs}
+                  description={subscription.description}
+                  descriptionEs={subscription.descriptionEs}
+                  price={subscription.price}
+                  billingPeriod={subscription.billingPeriod}
+                  features={subscription.features || []}
+                  featuresEs={subscription.featuresEs || []}
+                  categories={subscription.categories}
+                  cardType={getCardType(index)}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-12">
+            <Link href="/subscriptions" className="inline-block bg-black text-white font-medium px-8 py-3 rounded-full hover:bg-gray-900">
+              View All Subscription Plans
             </Link>
           </div>
         </section>

@@ -15,7 +15,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
     return null;
   }
 
-  const renderNode = (block: BlockContent, index: number) => {
+  const renderNode = (block: BlockContent, index: number): React.ReactElement | null => {
     // Check for block type
     if (block._type !== 'block') {
       // Handle non-block types if needed
@@ -110,8 +110,8 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
 
   // Group consecutive list items
   const renderBlocks = () => {
-    const result: JSX.Element[] = [];
-    let currentList: { type: 'bullet' | 'number'; items: JSX.Element[] } | null = null;
+    const result: React.ReactElement[] = [];
+    let currentList: { type: 'bullet' | 'number'; items: React.ReactElement[] } | null = null;
     
     value.forEach((block, index) => {
       if (block._type === 'block' && block.listItem) {

@@ -10,6 +10,12 @@ interface PortableTextProps {
   className?: string;
 }
 
+// Define the list type
+interface ListGroup {
+  type: 'bullet' | 'number';
+  items: React.ReactElement[];
+}
+
 const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) => {
   if (!value || !Array.isArray(value) || value.length === 0) {
     return null;
@@ -111,7 +117,7 @@ const PortableText: React.FC<PortableTextProps> = ({ value, className = '' }) =>
   // Group consecutive list items
   const renderBlocks = () => {
     const result: React.ReactElement[] = [];
-    let currentList: { type: 'bullet' | 'number'; items: React.ReactElement[] } | null = null;
+    let currentList: ListGroup | null = null;
     
     value.forEach((block, index) => {
       if (block._type === 'block' && block.listItem) {

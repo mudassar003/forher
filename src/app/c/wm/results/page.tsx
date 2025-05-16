@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HomeHeader from "@/components/HomeHeader";
 import GlobalFooter from "@/components/GlobalFooter";
+import SubscriptionGrid from "@/app/(default)/subscriptions/components/SubscriptionGrid";
+import { groq } from 'next-sanity';
 import { client } from '@/sanity/lib/client';
-import SubscriptionCard from "@/app/(default)/subscriptions/components/SubscriptionCard";
-import { Subscription, SubscriptionCategory } from "@/types/subscription-page";
+import { SubscriptionsData, Subscription, SubscriptionCategory } from '@/types/subscription-page';
 
 // Static product data
 const staticProduct = {
@@ -21,129 +22,125 @@ const staticProduct = {
   administrationType: "injectable"
 };
 
+// A more robust function to fetch subscriptions and organize by category - copied from subscriptions page
+async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
+  try {
+    // First fetch all subscriptions with translations
+    const subscriptions: Subscription[] = await client.fetch(
+      groq`*[_type == "subscription" && isActive == true && isDeleted != true] {
+        _id,
+        title,
+        titleEs,
+        slug,
+        description,
+        descriptionEs,
+        price,
+        billingPeriod,
+        features,
+        featuresEs,
+        image,
+        isActive,
+        isFeatured,
+        "categories": categories[]->{ 
+          _id, 
+          title, 
+          titleEs,
+          slug, 
+          description, 
+          descriptionEs,
+          displayOrder 
+        }
+      }`
+    );
+    
+    // Fetch all categories to ensure we display them in correct order
+    const categories: SubscriptionCategory[] = await client.fetch(
+      groq`*[_type == "subscriptionCategory"] | order(displayOrder asc) {
+        _id,
+        title,
+        titleEs,
+        slug,
+        description,
+        descriptionEs,
+        displayOrder
+      }`
+    );
+    
+    // Extract all featured subscriptions
+    const featuredSubscriptions = subscriptions.filter(
+      subscription => subscription.isFeatured
+    );
+    
+    // Group subscriptions by category
+    const subscriptionsByCategory: Record<string, Subscription[]> = {};
+    categories.forEach(category => {
+      subscriptionsByCategory[category._id] = [];
+    });
+    
+    // Add subscriptions to their respective categories
+    subscriptions.forEach(subscription => {
+      if (subscription.categories && subscription.categories.length > 0) {
+        subscription.categories.forEach(category => {
+          if (category && subscriptionsByCategory[category._id]) {
+            subscriptionsByCategory[category._id].push(subscription);
+          }
+        });
+      }
+    });
+    
+    // Handle uncategorized subscriptions
+    const uncategorizedSubscriptions = subscriptions.filter(subscription => 
+      !subscription.categories || subscription.categories.length === 0
+    );
+    
+    return {
+      categories,
+      subscriptionsByCategory,
+      uncategorizedSubscriptions,
+      featuredSubscriptions,
+      allSubscriptions: subscriptions,
+    };
+  } catch (error: unknown) {
+    console.error("Error fetching subscription data:", error);
+    // Return empty data rather than failing completely
+    return {
+      categories: [],
+      subscriptionsByCategory: {},
+      uncategorizedSubscriptions: [],
+      featuredSubscriptions: [],
+      allSubscriptions: [], 
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
 export default function ResultsPage() {
   const router = useRouter();
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [categories, setCategories] = useState<SubscriptionCategory[]>([]);
+  const [subscriptionsData, setSubscriptionsData] = useState<SubscriptionsData>({
+    categories: [],
+    subscriptionsByCategory: {},
+    uncategorizedSubscriptions: [],
+    featuredSubscriptions: [],
+    allSubscriptions: []
+  });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch subscription data
+  // Fetch subscription data using the same function as the subscriptions page
   useEffect(() => {
-    const fetchSubscriptions = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        
-        // Fetch subscriptions related to weight loss from Sanity CMS
-        const fetchedSubscriptions: Subscription[] = await client.fetch(`
-          *[_type == "subscription" && isActive == true && references(*[_type=="subscriptionCategory" && slug.current=="weight-management"]._id)] {
-            _id,
-            title,
-            titleEs,
-            slug,
-            description,
-            descriptionEs,
-            price,
-            billingPeriod,
-            features,
-            featuresEs,
-            isFeatured,
-            "categories": categories[]->{ 
-              _id, 
-              title, 
-              titleEs,
-              slug, 
-              description, 
-              descriptionEs,
-              displayOrder 
-            }
-          }
-        `);
-        
-        // Fetch subscription categories
-        const fetchedCategories: SubscriptionCategory[] = await client.fetch(`
-          *[_type == "subscriptionCategory" && slug.current == "weight-management"] | order(displayOrder asc) {
-            _id,
-            title,
-            titleEs,
-            slug,
-            description,
-            descriptionEs,
-            displayOrder
-          }
-        `);
-        
-        setSubscriptions(fetchedSubscriptions || []);
-        setCategories(fetchedCategories || []);
+        const data = await getCategoriesWithSubscriptions();
+        setSubscriptionsData(data);
       } catch (error) {
-        console.error("Error fetching subscription data:", error);
-        // Fallback to static data if the fetch fails
-        setSubscriptions(getFallbackSubscriptions());
+        console.error("Error fetching subscriptions:", error);
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchSubscriptions();
+    fetchData();
   }, []);
-
-  // Fallback subscription data if fetch fails
-  const getFallbackSubscriptions = (): Subscription[] => {
-    return [
-      {
-        _id: "subscription-1",
-        title: "Weight Management Basic",
-        slug: { current: "weight-management-basic" },
-        price: 29.99,
-        billingPeriod: "monthly",
-        description: [],
-        features: [
-          { featureText: "Weekly check-ins" },
-          { featureText: "Basic nutritional guidance" },
-          { featureText: "Access to recipes" }
-        ],
-        isFeatured: false,
-        isActive: true
-      },
-      {
-        _id: "subscription-2",
-        title: "Weight Management Premium",
-        slug: { current: "weight-management-premium" },
-        price: 49.99,
-        billingPeriod: "monthly",
-        description: [],
-        features: [
-          { featureText: "Personalized meal planning" },
-          { featureText: "1-on-1 consultations" },
-          { featureText: "24/7 coach support" },
-          { featureText: "Prescription medication options" }
-        ],
-        isFeatured: true,
-        isActive: true
-      },
-      {
-        _id: "subscription-3",
-        title: "Weight Management Annual",
-        slug: { current: "weight-management-annual" },
-        price: 299.99,
-        billingPeriod: "annually",
-        description: [],
-        features: [
-          { featureText: "Everything in Premium" },
-          { featureText: "2 months free" },
-          { featureText: "Quarterly progress review" },
-          { featureText: "Custom exercise plan" }
-        ],
-        isFeatured: false,
-        isActive: true
-      }
-    ];
-  };
-
-  // Assign card type based on position
-  const getCardType = (index: number) => {
-    const types = ['basic', 'premium', 'standard'] as const;
-    return types[index % 3];
-  };
 
   // Function to start over
   const startOver = () => {
@@ -225,7 +222,7 @@ export default function ResultsPage() {
           </div>
         </section>
         
-        {/* Subscription Packages Section */}
+        {/* Subscription Packages Section - Using SubscriptionGrid component */}
         <section className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-[#e63946] mb-4">Enhance Your Results with a Subscription Plan</h2>
@@ -240,31 +237,15 @@ export default function ResultsPage() {
               <div className="w-16 h-16 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {subscriptions.map((subscription, index) => (
-                <SubscriptionCard
-                  key={subscription._id}
-                  id={subscription._id}
-                  title={subscription.title}
-                  titleEs={subscription.titleEs}
-                  description={subscription.description}
-                  descriptionEs={subscription.descriptionEs}
-                  price={subscription.price}
-                  billingPeriod={subscription.billingPeriod}
-                  features={subscription.features || []}
-                  featuresEs={subscription.featuresEs || []}
-                  categories={subscription.categories}
-                  cardType={getCardType(index)}
-                />
-              ))}
-            </div>
+            <SubscriptionGrid 
+              categories={subscriptionsData.categories}
+              subscriptionsByCategory={subscriptionsData.subscriptionsByCategory}
+              uncategorizedSubscriptions={subscriptionsData.uncategorizedSubscriptions}
+              featuredSubscriptions={subscriptionsData.featuredSubscriptions}
+              allSubscriptions={subscriptionsData.allSubscriptions}
+              error={subscriptionsData.error}
+            />
           )}
-
-          <div className="text-center mt-12">
-            <Link href="/subscriptions" className="inline-block bg-black text-white font-medium px-8 py-3 rounded-full hover:bg-gray-900">
-              View All Subscription Plans
-            </Link>
-          </div>
         </section>
       </main>
       

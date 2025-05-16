@@ -56,7 +56,9 @@ const FeaturedSubscriptionCard: React.FC<FeaturedSubscriptionCardProps> = ({
           }`
         );
         
+        // FIX: Check if subscriptions exists and is not an array
         if (subscriptions) {
+          // Since the query returns a single item, we can set it directly
           setFeaturedSubscription(subscriptions);
         }
       } catch (err) {

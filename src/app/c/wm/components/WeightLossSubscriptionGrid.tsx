@@ -25,7 +25,7 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
         setIsLoading(true);
         
         // Find the weight-loss category first
-        const categories: SubscriptionCategory[] = await client.fetch(
+        const categoriesResult = await client.fetch(
           groq`*[_type == "subscriptionCategory" && slug.current == "weight-loss"]{
             _id,
             title,
@@ -35,6 +35,9 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
             descriptionEs
           }`
         );
+        
+        // Properly cast the result
+        const categories = categoriesResult as SubscriptionCategory[];
         
         if (categories.length === 0) {
           // Weight loss category not found
@@ -47,7 +50,7 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
         setCategory(weightLossCategory);
         
         // Now fetch subscriptions that belong to this category
-        const subscriptions: Subscription[] = await client.fetch(
+        const subscriptionsResult = await client.fetch(
           groq`*[_type == "subscription" && references($categoryId) && isActive == true && isDeleted != true] {
             _id,
             title,
@@ -74,6 +77,8 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
           { categoryId: weightLossCategory._id }
         );
         
+        // Properly cast the result
+        const subscriptions = subscriptionsResult as Subscription[];
         setWeightLossSubscriptions(subscriptions);
       } catch (err) {
         console.error("Error fetching weight loss subscriptions:", err);

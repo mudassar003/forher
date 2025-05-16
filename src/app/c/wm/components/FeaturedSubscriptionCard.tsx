@@ -26,7 +26,7 @@ const FeaturedSubscriptionCard: React.FC<FeaturedSubscriptionCardProps> = ({
         
         // Query for weight loss subscription that is marked as featured
         // If none is marked as featured, get the first weight loss subscription
-        const subscriptions: Subscription[] = await client.fetch(
+        const result = await client.fetch(
           groq`*[
             _type == "subscription" && 
             references(*[_type == "subscriptionCategory" && slug.current == "weight-loss"]._id) && 
@@ -56,10 +56,12 @@ const FeaturedSubscriptionCard: React.FC<FeaturedSubscriptionCardProps> = ({
           }`
         );
         
-        // FIX: Check if subscriptions exists and is not an array
-        if (subscriptions) {
-          // Since the query returns a single item, we can set it directly
-          setFeaturedSubscription(subscriptions);
+        // Important fix: The GROQ query with [0] at the end should return a single object,
+        // but TypeScript still sees it as an array. We need to explicitly cast it.
+        if (result) {
+          // Cast the result to Subscription (not an array)
+          const subscription = result as Subscription;
+          setFeaturedSubscription(subscription);
         }
       } catch (err) {
         console.error("Error fetching featured subscription:", err);

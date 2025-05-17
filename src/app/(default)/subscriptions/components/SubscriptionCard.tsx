@@ -1,9 +1,9 @@
-//src/app/(default)/subscriptions/components/SubscriptionCard.tsx
-
+// src/app/(default)/subscriptions/components/SubscriptionCard.tsx with updated link
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
 import { SubscriptionFeature, BlockContent } from '@/types/subscription-page';
@@ -25,8 +25,14 @@ interface SubscriptionCardProps {
     _id: string;
     title: string;
     titleEs?: string;
+    slug?: {
+      current: string;
+    };
   }>;
   cardType?: 'basic' | 'standard' | 'premium';
+  slug?: {
+    current: string;
+  };
 }
 
 const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
@@ -40,7 +46,8 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   features = [],
   featuresEs = [],
   categories,
-  cardType = 'basic' // Default to basic styling
+  cardType = 'basic', // Default to basic styling
+  slug,
 }) => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isHovered, setIsHovered] = useState<boolean>(false);
@@ -186,6 +193,11 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     return currentLanguage === 'es' ? 'Ver Detalles' : 'View Details';
   };
 
+  // Get view more button text - not used for now but kept for future
+  const getViewMoreText = (): string => {
+    return currentLanguage === 'es' ? 'Más Información' : 'View More';
+  };
+
   return (
     <>
       <div 
@@ -208,6 +220,8 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         </div>
         
         <div className="plan-cta">
+          {/* View Details (modal) button - hidden for now */}
+          {/* 
           {hasDescription() && (
             <button
               onClick={() => setIsModalOpen(true)}
@@ -216,6 +230,18 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             >
               {getViewDetailsText()}
             </button>
+          )}
+          */}
+          
+          {/* View More (details page) button - only show if slug is available, styled like View Details */}
+          {slug && slug.current && (
+            <Link 
+              href={`/subscriptions/${slug.current}`}
+              className={`view-details-btn mb-3 ${cardType}-details-btn block text-center`}
+              aria-label="View subscription details page"
+            >
+              {getViewDetailsText()} {/* Use getViewDetailsText instead of getViewMoreText */}
+            </Link>
           )}
           
           <button
@@ -481,6 +507,18 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                 <PortableText value={getLocalizedDescription() || []} />
               ) : null}
             </div>
+            
+            {/* View Full Details button in modal if slug is available */}
+            {slug && slug.current && (
+              <div className="mt-6 text-center">
+                <Link
+                  href={`/subscriptions/${slug.current}`}
+                  className="inline-block px-6 py-2 bg-[#e63946] text-white rounded-full hover:bg-[#d52d3a] transition-colors"
+                >
+                  {t('subscriptions.viewFullDetails')}
+                </Link>
+              </div>
+            )}
           </div>
         </Modal>
       )}

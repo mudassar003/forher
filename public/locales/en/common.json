@@ -25,7 +25,9 @@
     "close": "Close",
     "back": "Back",
     "next": "Next",
-    "languageSelect": "Select Language"
+    "languageSelect": "Select Language",
+    "home": "Home",
+    "subscriptions": "Subscriptions"
   },
   "auth": {
     "email": "Email",
@@ -57,7 +59,16 @@
       "monthly": "/month",
       "quarterly": "/quarter",
       "annually": "/year"
-    }
+    },
+    "included": "What's Included",
+    "viewDetails": "View Details",
+    "viewMore": "View More",
+    "viewPlan": "View Plan",
+    "viewFullDetails": "View Full Details",
+    "relatedPlans": "Related Subscription Plans",
+    "featured": "Featured",
+    "cancelAnytime": "30-day guarantee • Cancel anytime",
+    "viewMoreDetails": "View More Details"
   },
   "rotatingHeadline": {
     "noMoreWaiting": "No More Waiting.",

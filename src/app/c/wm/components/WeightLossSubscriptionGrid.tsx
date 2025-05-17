@@ -156,6 +156,7 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
             features={subscription.features || []}
             featuresEs={subscription.featuresEs || []}
             categories={subscription.categories}
+            slug={subscription.slug}
             cardType={getCardType(index)}
           />
         ))}

@@ -25,7 +25,9 @@
     "close": "Cerrar",
     "back": "Atrás",
     "next": "Siguiente",
-    "languageSelect": "Seleccionar Idioma"
+    "languageSelect": "Seleccionar Idioma",
+    "home": "Inicio",
+    "subscriptions": "Suscripciones"
   },
   "auth": {
     "email": "Correo Electrónico",
@@ -57,7 +59,16 @@
       "monthly": "/mes",
       "quarterly": "/trimestre",
       "annually": "/año"
-    }
+    },
+    "included": "Qué Incluye",
+    "viewDetails": "Ver Detalles",
+    "viewMore": "Más Información",
+    "viewPlan": "Ver Plan",
+    "viewFullDetails": "Ver Detalles Completos",
+    "relatedPlans": "Planes de Suscripción Relacionados",
+    "featured": "Destacado",
+    "cancelAnytime": "Garantía de 30 días • Cancele en cualquier momento",
+    "viewMoreDetails": "Ver Más Detalles"
   },
   "rotatingHeadline": {
     "noMoreWaiting": "No Más Esperas.",

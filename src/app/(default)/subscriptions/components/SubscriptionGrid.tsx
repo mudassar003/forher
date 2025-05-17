@@ -1,4 +1,4 @@
-//src/app/%28default%29/subscriptions/components/SubscriptionGrid.tsx
+// src/app/(default)/subscriptions/components/SubscriptionGrid.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -69,6 +69,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
               features={subscription.features || []}
               featuresEs={subscription.featuresEs || []}
               categories={subscription.categories}
+              slug={subscription.slug}
               cardType={getCardType(index)}
             />
           ))}
@@ -166,6 +167,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 features={subscription.features || []}
                 featuresEs={subscription.featuresEs || []}
                 categories={subscription.categories}
+                slug={subscription.slug}
                 cardType={getCardType(index)}
               />
             ))}
@@ -222,6 +224,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                   features={subscription.features || []}
                   featuresEs={subscription.featuresEs || []}
                   categories={subscription.categories}
+                  slug={subscription.slug}
                   cardType={getCardType(index)}
                 />
               ))}
@@ -257,6 +260,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 features={subscription.features || []}
                 featuresEs={subscription.featuresEs || []}
                 categories={subscription.categories}
+                slug={subscription.slug}
                 cardType={getCardType(index)}
               />
             ))}

@@ -210,6 +210,18 @@ const FeaturedSubscriptionCard: React.FC<FeaturedSubscriptionCardProps> = ({
           ))}
         </div>
         
+        {/* View Details Button */}
+        {featuredSubscription.slug && featuredSubscription.slug.current && (
+          <div className="mb-4">
+            <Link 
+              href={`/subscriptions/${featuredSubscription.slug.current}`}
+              className="block w-full text-center border border-[#e63946] text-[#e63946] font-semibold py-3 px-6 rounded-full hover:bg-[#fff5f7] transition-colors mb-4"
+            >
+              View Plan Details
+            </Link>
+          </div>
+        )}
+        
         {/* CTA Button */}
         <Link href={featuredSubscription.stripePriceId ? `/checkout?plan=${featuredSubscription._id}` : `/subscriptions/${featuredSubscription.slug?.current}`}>
           <motion.button 

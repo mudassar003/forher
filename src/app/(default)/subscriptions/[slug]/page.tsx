@@ -1,24 +1,26 @@
 // src/app/(default)/subscriptions/[slug]/page.tsx
-import { Metadata } from 'next';
+import { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation';
 import SubscriptionDetails from '../components/SubscriptionDetails';
 import RelatedSubscriptions from '../components/RelatedSubscriptions';
 import { getSubscriptionBySlug, getAllSubscriptionSlugs, getPlainTextDescription, getRelatedSubscriptions } from '@/lib/subscription-helpers';
 import { urlFor } from '@/sanity/lib/image';
 
-// Define params type compatible with Next.js 15.2.4
-type PageParams = {
-  slug: string;
-}
+// Define types based on Next.js docs for App Router
+type GenerateMetadataProps = {
+  params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-// Define props type that matches Next.js 15.2.4 expectations
-type Props = {
-  params: PageParams;
-  searchParams: Record<string, string | string[] | undefined>;
-}
+type GenerateStaticParamsResult = {
+  slug: string;
+}[];
 
 // Generate metadata dynamically based on the subscription
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: GenerateMetadataProps,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
   const { slug } = params;
   
   // Fetch the subscription data for metadata
@@ -44,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 // Generate static params for common subscriptions
-export async function generateStaticParams(): Promise<PageParams[]> {
+export async function generateStaticParams(): Promise<GenerateStaticParamsResult> {
   const slugs = await getAllSubscriptionSlugs();
   
   return slugs.map((slug: string) => ({
@@ -52,8 +54,12 @@ export async function generateStaticParams(): Promise<PageParams[]> {
   }));
 }
 
-// Page component with fixed Props type
-export default async function SubscriptionPage({ params }: Props) {
+// Page component
+export default async function SubscriptionPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const { slug } = params;
   const subscription = await getSubscriptionBySlug(slug);
   

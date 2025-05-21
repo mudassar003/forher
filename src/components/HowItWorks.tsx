@@ -2,13 +2,22 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { useState } from "react";
 import useTranslations from "@/hooks/useTranslations";
 
-export default function HowItWorks() {
-  const [activeStep, setActiveStep] = useState(1);
+interface Step {
+  id: number;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export default function HowItWorks(): JSX.Element {
+  const [activeStep, setActiveStep] = useState<number>(1);
   const { t } = useTranslations();
+  
+  // Consistent color for all steps
+  const mainColor = "#e63946";
 
   // Animation variants for staggered animations
   const containerVariants = {
@@ -28,34 +37,30 @@ export default function HowItWorks() {
   };
 
   // Process steps data
-  const steps = [
+  const steps: Step[] = [
     {
       id: 1,
       title: t('howItWorks.steps.assessment.title'),
       description: t('howItWorks.steps.assessment.description'),
       icon: "/images/assessment-icon.svg",
-      color: "#e63946"
     },
     {
       id: 2,
       title: t('howItWorks.steps.exam.title'),
       description: t('howItWorks.steps.exam.description'),
       icon: "/images/doctor-icon.svg",
-      color: "#d81159"
     },
     {
       id: 3,
       title: t('howItWorks.steps.delivery.title'),
       description: t('howItWorks.steps.delivery.description'),
       icon: "/images/delivery-icon.svg",
-      color: "#8f2d56"
     },
     {
       id: 4,
       title: t('howItWorks.steps.support.title'),
       description: t('howItWorks.steps.support.description'),
       icon: "/images/support-icon.svg",
-      color: "#ff4d6d"
     }
   ];
 
@@ -75,7 +80,7 @@ export default function HowItWorks() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            style={{ color: "#e63946" }}
+            style={{ color: mainColor }}
           >
             {t('howItWorks.title')}
           </motion.h2>
@@ -106,7 +111,7 @@ export default function HowItWorks() {
               {/* Step number badge */}
               <div 
                 className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl mb-6 shadow-lg"
-                style={{ backgroundColor: step.color }}
+                style={{ backgroundColor: mainColor }}
               >
                 {step.id}
               </div>
@@ -114,19 +119,19 @@ export default function HowItWorks() {
               {/* Icon placeholder */}
               <div className="w-20 h-20 mb-5 flex items-center justify-center bg-[#ffe6f0] rounded-full">
                 {step.id === 1 && (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 )}
                 {step.id === 2 && (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 )}
                 {step.id === 3 && (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m7.5 4.27 9 5.15" />
                     <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
                     <path d="m3.3 7 8.7 5 8.7-5" />
@@ -134,14 +139,14 @@ export default function HowItWorks() {
                   </svg>
                 )}
                 {step.id === 4 && (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z" />
                     <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" />
                   </svg>
                 )}
               </div>
               
-              <h3 className="text-xl font-bold mb-2" style={{ color: step.color }}>
+              <h3 className="text-xl font-bold mb-2" style={{ color: mainColor }}>
                 {step.title}
               </h3>
               <p className="text-gray-600">{step.description}</p>
@@ -158,7 +163,7 @@ export default function HowItWorks() {
         <div className="md:hidden">
           {/* Mobile Progress Bar */}
           <div className="relative h-2 bg-gray-200 rounded-full mb-8 mx-4">
-            <div className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-[#e63946] to-[#ff4d6d]" 
+            <div className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-[#e63946] to-[#e63946]" 
                  style={{ width: `${(activeStep/4) * 100}%` }}>
             </div>
             {steps.map((step) => (
@@ -167,7 +172,7 @@ export default function HowItWorks() {
                 className={`absolute top-0 -mt-2 w-6 h-6 rounded-full border-2 border-white shadow-md transform -translate-x-1/2 transition-all duration-300 ${activeStep >= step.id ? 'scale-110' : 'bg-gray-300'}`}
                 style={{ 
                   left: `${((step.id - 1) / 3) * 100}%`, 
-                  backgroundColor: activeStep >= step.id ? step.color : '#e5e7eb'
+                  backgroundColor: activeStep >= step.id ? mainColor : '#e5e7eb'
                 }}
                 onClick={() => setActiveStep(step.id)}
                 aria-label={t('howItWorks.ariaLabels.viewStep', { step: step.id })}
@@ -188,7 +193,7 @@ export default function HowItWorks() {
                     : 'text-gray-500 bg-gray-100'
                 }`}
                 style={{ 
-                  backgroundColor: activeStep === step.id ? step.color : ''
+                  backgroundColor: activeStep === step.id ? mainColor : ''
                 }}
                 onClick={() => setActiveStep(step.id)}
               >
@@ -211,26 +216,26 @@ export default function HowItWorks() {
                 <div key={step.id} className="flex flex-col items-center">
                   <div 
                     className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg"
-                    style={{ backgroundColor: step.color }}
+                    style={{ backgroundColor: mainColor }}
                   >
                     {step.id}
                   </div>
                   
                   <div className="w-24 h-24 mb-5 flex items-center justify-center bg-[#ffe6f0] rounded-full">
                     {step.id === 1 && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     )}
                     {step.id === 2 && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
                     )}
                     {step.id === 3 && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m7.5 4.27 9 5.15" />
                         <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
                         <path d="m3.3 7 8.7 5 8.7-5" />
@@ -238,14 +243,14 @@ export default function HowItWorks() {
                       </svg>
                     )}
                     {step.id === 4 && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={mainColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z" />
                         <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" />
                       </svg>
                     )}
                   </div>
                   
-                  <h3 className="text-2xl font-bold mb-3 text-center" style={{ color: step.color }}>
+                  <h3 className="text-2xl font-bold mb-3 text-center" style={{ color: mainColor }}>
                     {step.title}
                   </h3>
                   <p className="text-gray-600 text-center text-lg">{step.description}</p>
@@ -284,8 +289,6 @@ export default function HowItWorks() {
             </div>
           </motion.div>
         </div>
-        
-
       </div>
     </section>
   );

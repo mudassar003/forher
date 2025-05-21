@@ -15,7 +15,7 @@ const faqData = [
   },
   {
     question: "Who are the providers at Lily's?",
-    answer: "At Lily's we connect our customers to licensed professionals. Qualiphy is our Telehealth company, who supplies supplements and products through their pharmacy Strive Pharmacy.",
+    answer: "At Lily's we connect our customers to licensed professionals. Qualiphy is our Telehealth company, who supplies supplements and products through their 503A pharmacy.",
   },
 ];
 

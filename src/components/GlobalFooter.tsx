@@ -143,6 +143,15 @@ const GlobalFooter: React.FC<GlobalFooterProps> = ({ className = "" }) => {
         </div>
       </div>
 
+      {/* FDA Disclaimer */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-6">
+        <div className="bg-gray-200 rounded-lg p-4">
+          <p className="text-sm text-gray-700">
+            <strong>FDA Disclaimer:</strong> Some of our products are not FDA approved.
+          </p>
+        </div>
+      </div>
+
       {/* Bottom Line */}
       <div className="border-t border-gray-300 pt-6 pb-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center">

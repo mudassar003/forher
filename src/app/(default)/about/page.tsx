@@ -1,6 +1,5 @@
 // src/app/(default)/about/page.tsx
 import { Metadata } from 'next';
-import Link from 'next/link';
 import React from 'react';
 import PageHeader from '@/components/PageHeader';
 
@@ -69,48 +68,28 @@ export default function AboutPage() {
       
       {/* Mission Section */}
       <div className="py-16 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
-            <div>
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                Our Mission
-              </h2>
-              <p className="mt-4 text-lg text-black">
-                At Lily's, we're on a mission to make medically guided weight loss simple, supportive, and accessible for every woman.
-              </p>
-              <p className="mt-4 text-lg text-black">
-                We understand that lasting change starts with trusted support, which is why we've built an easy-to-use platform that connects women with licensed doctors through secure telehealth consultations. While Lily's doesn't provide medical care directly, we work hand-in-hand with <strong>Qualiphy</strong>, a reputable telehealth provider, to ensure you receive expert care tailored to your goals.
-              </p>
-              <p className="mt-4 text-lg text-black">
-                Our focus is on <strong>clinically backed weight loss solutions</strong>, including prescriptions like GLP-1 medications (such as semaglutide or tirzepatide), all prescribed by licensed professionals when appropriate. Through our website, you can explore your options, complete an intake, and get connected to the care you need—all from the comfort of home.
-              </p>
-              <p className="mt-4 text-lg text-black">
-                We're here to guide you every step of the way, from discovery to results. At Lily's, you're not just starting a program—you're beginning a journey with the right support behind you.
-              </p>
-              <p className="mt-4 text-lg text-black">
-                Qualiphy Email: contact@qualiphy.me
-              </p>
-              <p className="mt-4 text-lg text-black">
-              Qualiphy Phone: +1 (424) 257-3977
-              </p>
-                <p className="mt-4 text-lg text-black">
-              Qualiphy Address: 13 N San Vicente Blvd, Beverly Hills, CA 90211
-              </p>
-              <div className="mt-6">
-                <Link href="/subscriptions" className="inline-flex px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-black shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-opacity-50">
-                  Book a Consultation
-                </Link>
-              </div>
-            </div>
-            <div className="mt-12 lg:mt-0">
-              <div className="rounded-lg overflow-hidden shadow-lg">
-                <div className="relative h-64 w-full bg-gradient-to-r from-pink-100 to-pink-200 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-pink-600 opacity-10"></div>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                  </svg>
-                </div>
-              </div>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl text-center mb-8">
+            Our Mission
+          </h2>
+          <div className="prose prose-lg max-w-none">
+            <p>
+              At Lily's, we're on a mission to make medically guided weight loss simple, supportive, and accessible for every woman.
+            </p>
+            <p>
+              We understand that lasting change starts with trusted support, which is why we've built an easy-to-use platform that connects women with licensed doctors through secure telehealth consultations. While Lily's doesn't provide medical care directly, we work hand-in-hand with <strong>Qualiphy</strong>, a reputable telehealth provider, to ensure you receive expert care tailored to your goals.
+            </p>
+            <p>
+              Our focus is on <strong>clinically backed weight loss solutions</strong>, including prescriptions like GLP-1 medications (such as semaglutide or tirzepatide), all prescribed by licensed professionals when appropriate. Through our website, you can explore your options, complete an intake, and get connected to the care you need—all from the comfort of home.
+            </p>
+            <p>
+              We're here to guide you every step of the way, from discovery to results. At Lily's, you're not just starting a program—you're beginning a journey with the right support behind you.
+            </p>
+            <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Contact Information</h3>
+              <p>Qualiphy Email: contact@qualiphy.me</p>
+              <p>Qualiphy Phone: +1 (424) 257-3977</p>
+              <p>Qualiphy Address: 13 N San Vicente Blvd, Beverly Hills, CA 90211</p>
             </div>
           </div>
         </div>

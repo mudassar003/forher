@@ -314,75 +314,84 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   Our clinically-backed weight management program combines medical expertise with ongoing support to help you achieve sustainable results. Members typically experience significant weight loss within the first 3 months.
                 </p>
                 
-                {/* Features Cards */}
+                {/* Features Cards - Using actual features from Sanity */}
                 <div className="space-y-4 mb-auto">
-                  <motion.div 
-                    className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                    transition={{ duration: 0.5, delay: 0 }}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Clinically Proven Results</h3>
-                      <p className="text-gray-600">Members experience an average of 15-20% weight loss over 6 months when following our program.</p>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Medical Provider Support</h3>
-                      <p className="text-gray-600">Ongoing access to licensed medical professionals who monitor your progress and adjust your treatment.</p>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Convenient & Discreet</h3>
-                      <p className="text-gray-600">Home delivery of your medication and virtual check-ins - no in-person visits required.</p>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                    transition={{ duration: 0.5, delay: 0.6 }}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">30-Day Guarantee</h3>
-                      <p className="text-gray-600">If you're not satisfied with our program in the first 30 days, we'll issue a full refund.</p>
-                    </div>
-                  </motion.div>
+                  {featuredSubscription.subscription && featuredSubscription.subscription.features && 
+                   featuredSubscription.subscription.features.length > 0 ? (
+                    // Render actual features from Sanity
+                    featuredSubscription.subscription.features.map((feature, index) => (
+                      <motion.div 
+                        key={`feature-${index}`}
+                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
+                        transition={{ duration: 0.5, delay: index * 0.2 }}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-gray-700">{feature.featureText}</p>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    // Fallback features in case none are available from Sanity
+                    <>
+                      <motion.div 
+                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
+                        transition={{ duration: 0.5, delay: 0 }}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Clinically Proven Results</h3>
+                          <p className="text-gray-600">Members experience an average of 15-20% weight loss over 6 months when following our program.</p>
+                        </div>
+                      </motion.div>
+                      
+                      <motion.div 
+                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Medical Provider Support</h3>
+                          <p className="text-gray-600">Ongoing access to licensed medical professionals who monitor your progress and adjust your treatment.</p>
+                        </div>
+                      </motion.div>
+                      
+                      <motion.div 
+                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Convenient & Discreet</h3>
+                          <p className="text-gray-600">Home delivery of your medication and virtual check-ins - no in-person visits required.</p>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
                 </div>
                 
                 {/* CTA Button */}

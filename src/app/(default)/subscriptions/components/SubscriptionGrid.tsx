@@ -71,6 +71,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
               categories={subscription.categories}
               slug={subscription.slug}
               cardType={getCardType(index)}
+              image={subscription.image}
             />
           ))}
         </div>
@@ -169,6 +170,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 categories={subscription.categories}
                 slug={subscription.slug}
                 cardType={getCardType(index)}
+                image={subscription.image}
               />
             ))}
           </div>
@@ -226,6 +228,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                   categories={subscription.categories}
                   slug={subscription.slug}
                   cardType={getCardType(index)}
+                  image={subscription.image}
                 />
               ))}
             </div>
@@ -262,6 +265,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
                 categories={subscription.categories}
                 slug={subscription.slug}
                 cardType={getCardType(index)}
+                image={subscription.image}
               />
             ))}
           </div>

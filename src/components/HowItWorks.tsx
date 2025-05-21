@@ -41,21 +41,21 @@ export default function HowItWorks() {
       title: t('howItWorks.steps.exam.title'),
       description: t('howItWorks.steps.exam.description'),
       icon: "/images/doctor-icon.svg",
-      color: "#d81159"
+      color: "#e63946"
     },
     {
       id: 3,
       title: t('howItWorks.steps.delivery.title'),
       description: t('howItWorks.steps.delivery.description'),
       icon: "/images/delivery-icon.svg",
-      color: "#8f2d56"
+      color: "#e63946"
     },
     {
       id: 4,
       title: t('howItWorks.steps.support.title'),
       description: t('howItWorks.steps.support.description'),
       icon: "/images/support-icon.svg",
-      color: "#ff4d6d"
+      color: "#e63946"
     }
   ];
 
@@ -158,7 +158,7 @@ export default function HowItWorks() {
         <div className="md:hidden">
           {/* Mobile Progress Bar */}
           <div className="relative h-2 bg-gray-200 rounded-full mb-8 mx-4">
-            <div className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-[#e63946] to-[#ff4d6d]" 
+            <div className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-[#e63946] to-[#e63946]" 
                  style={{ width: `${(activeStep/4) * 100}%` }}>
             </div>
             {steps.map((step) => (

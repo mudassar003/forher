@@ -32,6 +32,7 @@ export async function handleCheckoutSession(
     const subscriptionId = metadata?.subscriptionId;
     const orderId = metadata?.orderId;
     const sanityId = metadata?.sanityId;
+    const variantKey = metadata?.variantKey;
 
     // Get customer information if available
     let customerId = session.customer as string;
@@ -45,7 +46,7 @@ export async function handleCheckoutSession(
     
     // Handle different purchase types
     if (isSubscription && subscriptionId) {
-      await handleSubscriptionPurchase(session, subscriptionId, userId);
+      await handleSubscriptionPurchase(session, subscriptionId, userId, variantKey);
     } else if (isRegularOrder) {
       await handleRegularOrderPurchase(session, orderId, sanityId, customerId);
     } else {
@@ -116,12 +117,17 @@ async function getOrCreateCustomer(
 }
 
 /**
- * Handle subscription purchase
+ * Handle subscription purchase and retrieve variant information if necessary
+ * @param session The Stripe checkout session
+ * @param subscriptionId The subscription ID
+ * @param userId The user ID
+ * @param variantKey Optional variant key
  */
 async function handleSubscriptionPurchase(
   session: Stripe.Checkout.Session,
   subscriptionId: string,
-  userId?: string
+  userId?: string,
+  variantKey?: string
 ): Promise<void> {
   console.log(`Processing subscription purchase for ${subscriptionId}`);
   
@@ -130,11 +136,14 @@ async function handleSubscriptionPurchase(
     session.subscription as string
   );
   
+  // Get session metadata
+  const metadata = session.metadata || {};
+  
   // Update Sanity user subscription
   try {
     const { data: sanityUserSub, error } = await supabase
       .from('user_subscriptions')
-      .select('sanity_id, id')
+      .select('sanity_id, id, variant_key')
       .eq('stripe_session_id', session.id)
       .single();
     
@@ -145,6 +154,7 @@ async function handleSubscriptionPurchase(
     
     const userSubscriptionSanityId = sanityUserSub?.sanity_id;
     const supabaseSubscriptionId = sanityUserSub?.id;
+    const storedVariantKey = sanityUserSub?.variant_key || metadata.variantKey;
 
     if (userSubscriptionSanityId) {
       // Calculate end date based on billing period
@@ -194,7 +204,7 @@ async function handleSubscriptionPurchase(
         // Find the most recent subscription for this user
         const { data: userSubscriptions, error: userSubError } = await supabase
           .from('user_subscriptions')
-          .select('id, sanity_id, status, is_active')
+          .select('id, sanity_id, status, is_active, variant_key')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1);

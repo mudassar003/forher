@@ -1,4 +1,4 @@
-//src/sanity/schemaTypes/subscriptionType.ts
+// src/sanity/schemaTypes/subscriptionType.ts
 import { CreditCardIcon } from '@sanity/icons'
 import {defineField, defineType, defineArrayMember} from 'sanity'
 
@@ -264,4 +264,4 @@ export const subscriptionType = defineType({
       }
     },
   },
-})
+});

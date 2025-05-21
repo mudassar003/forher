@@ -63,6 +63,7 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
             features,
             featuresEs,
             image,
+            featuredImage,
             isActive,
             isFeatured,
             "categories": categories[]->{ 
@@ -92,7 +93,7 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
   }, []);
 
   // Assign card type based on position in grid
-  const getCardType = (index: number) => {
+  const getCardType = (index: number): 'basic' | 'premium' | 'standard' => {
     const types = ['basic', 'premium', 'standard'] as const;
     return types[index % 3];
   };
@@ -158,6 +159,8 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
             categories={subscription.categories}
             slug={subscription.slug}
             cardType={getCardType(index)}
+            image={subscription.image}
+            featuredImage={subscription.featuredImage}
           />
         ))}
       </div>

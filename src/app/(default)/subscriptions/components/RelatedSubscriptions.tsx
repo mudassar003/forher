@@ -70,6 +70,11 @@ const RelatedSubscriptions: React.FC<RelatedSubscriptionsProps> = ({ subscriptio
   
   // Prepare image URL or fallback
   const getImageUrl = (subscription: Partial<Subscription>): string => {
+    // First check for featuredImage for catalog display
+    if (subscription.featuredImage) {
+      return urlFor(subscription.featuredImage).width(600).height(400).url();
+    }
+    // Fall back to regular image
     if (subscription.image) {
       return urlFor(subscription.image).width(600).height(400).url();
     }

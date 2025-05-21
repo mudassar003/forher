@@ -62,6 +62,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             features,
             featuresEs,
             image,
+            featuredImage,
             isActive,
             isFeatured,
             stripePriceId
@@ -72,14 +73,24 @@ export default function ResultsPage({}: WeightLossResultsProps) {
           // Cast the result to Subscription (not an array)
           const subscription = result as Subscription;
           
-          // Generate image URL if available
-          const imageUrl = subscription.image 
-            ? urlFor(subscription.image).width(800).height(600).url()
-            : '/images/weight-loss-product.jpg';
+          // Generate image URL based on available images, with featuredImage as priority
+          let imgUrl = '/images/weight-loss-product.jpg'; // Default fallback
+          
+          if (subscription.featuredImage) {
+            imgUrl = urlFor(subscription.featuredImage)
+              .width(500)  // Optimized width for 4:3 aspect ratio
+              .height(375) // Optimized height for 4:3 aspect ratio
+              .url();
+          } else if (subscription.image) {
+            imgUrl = urlFor(subscription.image)
+              .width(500)  // Optimized width for 4:3 aspect ratio
+              .height(375) // Optimized height for 4:3 aspect ratio
+              .url();
+          }
           
           setFeaturedSubscription({
             subscription,
-            imageUrl,
+            imageUrl: imgUrl,
             isLoading: false,
             error: null
           });
@@ -257,150 +268,160 @@ export default function ResultsPage({}: WeightLossResultsProps) {
       {/* Main Content Section */}
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
-          {/* Featured Product Section with Large Image on Left, Features on Right */}
+          {/* Featured Product Section - Redesigned for better height balance */}
           <motion.div 
             className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
             transition={{ duration: 0.7 }}
           >
-            <div className="flex flex-col lg:flex-row">
-              {/* Left Side - Product Image and Basic Info */}
-              <div className="w-full lg:w-1/2 relative">
-                {/* Product Image */}
-                <div className="relative w-full h-[300px] lg:h-full min-h-[400px]">
+            {/* Use a card-style design with better proportions */}
+            <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <h2 className="text-2xl font-bold">
+                  {featuredSubscription.subscription?.title || "Weight Loss Subscription"}
+                </h2>
+                <span className="px-3 py-1 bg-white text-[#e63946] text-sm font-semibold rounded-full inline-block w-max">
+                  Recommended
+                </span>
+              </div>
+              <p className="opacity-80 mt-1">Personalized weight management program</p>
+            </div>
+            
+            <div className="flex flex-col md:flex-row">
+              {/* Left side - Image in a fixed ratio container */}
+              <div className="md:w-2/5 p-4">
+                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden">
                   {featuredSubscription.isLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                      <div className="w-16 h-16 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
+                      <div className="w-12 h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
                     </div>
                   ) : (
                     <Image 
                       src={featuredSubscription.imageUrl}
                       alt={featuredSubscription.subscription?.title || "Weight Loss Product"}
                       fill
-                      style={{ objectFit: 'cover' }}
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 400px"
                       priority
-                      sizes="(max-width: 1024px) 100vw, 50vw"
                     />
                   )}
                 </div>
                 
-                {/* Product Details Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6 text-white">
-                  <h2 className="text-2xl font-bold mb-2">
-                    {featuredSubscription.subscription?.title || "Weight Loss Subscription"}
-                  </h2>
-                  
-                  {featuredSubscription.subscription && (
-                    <div className="flex items-center">
-                      <span className="text-xl font-bold">
-                        {formatCurrency(featuredSubscription.subscription.price)}
-                      </span>
-                      <span className="ml-1 opacity-90">
-                        {getBillingPeriodDisplay(featuredSubscription.subscription.billingPeriod)}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {/* Price and billing details */}
+                {featuredSubscription.subscription && (
+                  <div className="mt-4 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-[#e63946]">
+                      {formatCurrency(featuredSubscription.subscription.price)}
+                    </span>
+                    <span className="ml-1 text-gray-600">
+                      {getBillingPeriodDisplay(featuredSubscription.subscription.billingPeriod)}
+                    </span>
+                  </div>
+                )}
               </div>
               
-              {/* Right Side - Features */}
-              <div className="w-full lg:w-1/2 p-6 lg:p-10 flex flex-col">
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                  Start Your Weight Loss Journey Today
-                </h2>
+              {/* Right side - Features and CTA */}
+              <div className="md:w-3/5 p-4 md:p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                  Program Features:
+                </h3>
                 
-                <p className="text-gray-700 mb-8">
-                  Our clinically-backed weight management program combines medical expertise with ongoing support to help you achieve sustainable results. Members typically experience significant weight loss within the first 3 months.
-                </p>
-                
-                {/* Features Cards - Using actual features from Sanity */}
-                <div className="space-y-4 mb-auto">
+                {/* Features with smaller, more compact design */}
+                <div className="space-y-3 mb-6">
                   {featuredSubscription.subscription && featuredSubscription.subscription.features && 
                    featuredSubscription.subscription.features.length > 0 ? (
                     // Render actual features from Sanity
                     featuredSubscription.subscription.features.map((feature, index) => (
                       <motion.div 
                         key={`feature-${index}`}
-                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                        transition={{ duration: 0.5, delay: index * 0.2 }}
+                        className="flex items-start gap-3"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                        transition={{ duration: 0.4, delay: index * 0.1 }}
                       >
-                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
-                        <div>
-                          <p className="text-gray-700">{feature.featureText}</p>
-                        </div>
+                        <p className="text-gray-700">{feature.featureText}</p>
                       </motion.div>
                     ))
                   ) : (
                     // Fallback features in case none are available from Sanity
                     <>
                       <motion.div 
-                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                        transition={{ duration: 0.5, delay: 0 }}
+                        className="flex items-start gap-3"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                        transition={{ duration: 0.4, delay: 0 }}
                       >
-                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Clinically Proven Results</h3>
-                          <p className="text-gray-600">Members experience an average of 15-20% weight loss over 6 months when following our program.</p>
+                          <p className="text-gray-700">Clinically proven results with 15-20% average weight loss</p>
                         </div>
                       </motion.div>
                       
                       <motion.div 
-                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="flex items-start gap-3"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                        transition={{ duration: 0.4, delay: 0.1 }}
                       >
-                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                           </svg>
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Medical Provider Support</h3>
-                          <p className="text-gray-600">Ongoing access to licensed medical professionals who monitor your progress and adjust your treatment.</p>
+                          <p className="text-gray-700">Medical provider support with personalized treatment</p>
                         </div>
                       </motion.div>
                       
                       <motion.div 
-                        className="bg-[#f9f9f9] rounded-xl p-5 flex items-start gap-4"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 10 }}
-                        transition={{ duration: 0.5, delay: 0.4 }}
+                        className="flex items-start gap-3"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                        transition={{ duration: 0.4, delay: 0.2 }}
                       >
-                        <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Convenient & Discreet</h3>
-                          <p className="text-gray-600">Home delivery of your medication and virtual check-ins - no in-person visits required.</p>
+                          <p className="text-gray-700">Convenient home delivery with virtual check-ins</p>
                         </div>
                       </motion.div>
                     </>
                   )}
                 </div>
                 
-                {/* CTA Button */}
-                <div className="mt-8">
+                {/* CTA Section */}
+                <div className="mt-4">
+                  {/* View Details Link */}
+                  {featuredSubscription.subscription?.slug && featuredSubscription.subscription.slug.current && (
+                    <div className="mb-3">
+                      <Link 
+                        href={`/subscriptions/${featuredSubscription.subscription.slug.current}`}
+                        className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-2 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
+                      >
+                        View Plan Details
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Subscribe Button */}
                   {featuredSubscription.subscription && (
                     <button
                       onClick={handleSubscribe}
                       disabled={isProcessing || isLoading}
-                      className={`w-full py-4 px-6 rounded-full text-white font-bold text-lg transition-all ${
+                      className={`w-full py-3 px-4 rounded-full text-white font-medium transition-colors ${
                         isProcessing || isLoading 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-black hover:bg-gray-900 shadow-md hover:shadow-lg'
@@ -411,12 +432,12 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   )}
                   
                   {error && (
-                    <p className="mt-2 text-sm text-red-600 text-center">
+                    <p className="mt-2 text-xs text-red-600 text-center">
                       {error}
                     </p>
                   )}
                   
-                  <p className="text-center text-gray-500 text-sm mt-4">
+                  <p className="text-center text-gray-500 text-xs mt-2">
                     30-day satisfaction guarantee • Cancel anytime
                   </p>
                 </div>

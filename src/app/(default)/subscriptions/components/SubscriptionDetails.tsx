@@ -141,6 +141,19 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return currentLanguage === 'es' ? 'Iniciar Sesión para Suscribirse' : 'Sign In to Subscribe';
   };
 
+  // Prepare image URL with proper fallbacks
+  const getImageUrl = (): string => {
+    // First check for the main image (preferred for detail page)
+    if (subscription.image) {
+      return urlFor(subscription.image).width(800).height(600).url();
+    }
+    // Fall back to featured catalog image if no main image exists
+    if (subscription.featuredImage) {
+      return urlFor(subscription.featuredImage).width(800).height(600).url();
+    }
+    return '/images/subscription-placeholder.jpg';
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -156,11 +169,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
   };
-
-  // Prepare image URL if it exists
-  const imageUrl = subscription.image 
-    ? urlFor(subscription.image).width(800).height(600).url()
-    : '/images/subscription-placeholder.jpg';
 
   return (
     <div className="bg-white min-h-screen">
@@ -219,7 +227,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
               {/* Main Image */}
               <div className="relative w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-8">
                 <Image
-                  src={imageUrl}
+                  src={getImageUrl()}
                   alt={getLocalizedTitle()}
                   fill
                   style={{ objectFit: 'cover' }}
@@ -244,7 +252,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
             <motion.div variants={itemVariants}>
               <div className="bg-gray-50 rounded-xl p-6 md:p-8 mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  {t('subscriptions.included')}
+                  {translations.included}
                 </h2>
                 
                 {/* Features List */}
@@ -282,7 +290,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   )}
                   
                   <p className="text-center text-sm text-gray-600 mt-4">
-                    {t('subscriptions.cancelAnytime')}
+                    {translations.cancelAnytime}
                   </p>
                 </div>
               </div>
@@ -297,7 +305,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                     {subscription.categories.map((category) => (
                       <Link
                         key={category._id}
-                        href={`/subscriptions?category=${category.slug.current}`}
+                        href={`/subscriptions?category=${category.slug?.current}`}
                         className="inline-block px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-[#e63946] hover:text-[#e63946] transition-colors"
                       >
                         {currentLanguage === 'es' && category.titleEs ? category.titleEs : category.title}
@@ -310,8 +318,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
           </div>
         </div>
       </motion.div>
-      
-      {/* Related Subscriptions - can be implemented later if needed */}
     </div>
   );
 };

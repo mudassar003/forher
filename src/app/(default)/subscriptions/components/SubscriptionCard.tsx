@@ -195,7 +195,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     );
   };
 
-  // Get view details button text
+  // Get view details text
   const getViewDetailsText = (): string => {
     return currentLanguage === 'es' ? 'Ver Detalles' : 'View Details';
   };
@@ -212,7 +212,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     }
     
     // Fallback images based on card type
-    const fallbackImages = {
+    const fallbackImages: Record<string, string> = {
       'basic': '/images/subscription-basic.jpg',
       'standard': '/images/subscription-standard.jpg',
       'premium': '/images/subscription-premium.jpg'

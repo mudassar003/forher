@@ -6,7 +6,9 @@ import { groq } from 'next-sanity';
 import { client } from '@/sanity/lib/client';
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Subscription } from '@/types/subscription-page';
+import { urlFor } from '@/sanity/lib/image';
 
 interface FeaturedSubscriptionCardProps {
   className?: string;
@@ -18,6 +20,7 @@ const FeaturedSubscriptionCard: React.FC<FeaturedSubscriptionCardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [featuredSubscription, setFeaturedSubscription] = useState<Subscription | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>('/images/weight-loss-product.jpg'); // Default fallback image
 
   useEffect(() => {
     const fetchFeaturedSubscription = async () => {
@@ -44,6 +47,7 @@ const FeaturedSubscriptionCard: React.FC<FeaturedSubscriptionCardProps> = ({
             features,
             featuresEs,
             image,
+            featuredImage,
             isActive,
             isFeatured,
             stripePriceId,
@@ -62,6 +66,13 @@ const FeaturedSubscriptionCard: React.FC<FeaturedSubscriptionCardProps> = ({
           // Cast the result to Subscription (not an array)
           const subscription = result as Subscription;
           setFeaturedSubscription(subscription);
+          
+          // Set the image URL based on available images
+          if (subscription.featuredImage) {
+            setImageUrl(urlFor(subscription.featuredImage).width(800).height(600).url());
+          } else if (subscription.image) {
+            setImageUrl(urlFor(subscription.image).width(800).height(600).url());
+          }
         }
       } catch (err) {
         console.error("Error fetching featured subscription:", err);

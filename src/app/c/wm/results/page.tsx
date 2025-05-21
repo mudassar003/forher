@@ -12,6 +12,7 @@ import { Subscription } from '@/types/subscription-page';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
 import WeightLossSubscriptionGrid from "../components/WeightLossSubscriptionGrid";
+import { formatPriceWithBillingPeriod } from '@/utils/subscriptionHelpers';
 
 // Define component properties
 interface WeightLossResultsProps {}
@@ -59,6 +60,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             descriptionEs,
             price,
             billingPeriod,
+            customBillingPeriodMonths,
             features,
             featuresEs,
             image,
@@ -139,28 +141,65 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     };
   }, []);
 
-  // Format currency
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Determine proper billing period display
-  const getBillingPeriodDisplay = (period: string): string => {
-    switch (period.toLowerCase()) {
-      case 'monthly':
-        return '/month';
-      case 'quarterly':
-        return '/quarter';
-      case 'annually':
-        return '/year';
-      default:
-        return `/${period}`;
+  // Get formatted price with billing period
+  const getFormattedPrice = (): React.ReactNode => {
+    if (!featuredSubscription.subscription) return null;
+    
+    const subscription = featuredSubscription.subscription;
+    const price = subscription.price;
+    const billingPeriod = subscription.billingPeriod;
+    const customBillingPeriodMonths = subscription.customBillingPeriodMonths;
+    
+    const fullPrice = formatPriceWithBillingPeriod(
+      price, 
+      billingPeriod, 
+      customBillingPeriodMonths,
+      { showMonthlyEquivalent: false }
+    );
+    
+    // For non-monthly plans, also show the monthly equivalent
+    if (billingPeriod !== 'monthly') {
+      // Calculate price per month
+      let monthsInPeriod: number;
+      
+      switch (billingPeriod) {
+        case 'annually':
+          monthsInPeriod = 12;
+          break;
+        case 'three_month':
+          monthsInPeriod = 3;
+          break;
+        case 'six_month':
+          monthsInPeriod = 6;
+          break;
+        case 'other':
+          monthsInPeriod = customBillingPeriodMonths || 1;
+          break;
+        default:
+          monthsInPeriod = 1;
+      }
+      
+      const monthlyPrice = price / monthsInPeriod;
+      
+      // Format monthly price
+      const formattedMonthlyPrice = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(monthlyPrice);
+      
+      return (
+        <div>
+          <span className="text-2xl font-bold">{fullPrice}</span>
+          <span className="block text-sm text-gray-600 mt-1">
+            ({formattedMonthlyPrice} per month)
+          </span>
+        </div>
+      );
     }
+    
+    return <span className="text-2xl font-bold">{fullPrice}</span>;
   };
   
   // Handle subscription purchase button click
@@ -311,11 +350,8 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                 {/* Price and billing details */}
                 {featuredSubscription.subscription && (
                   <div className="mt-4 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-[#e63946]">
-                      {formatCurrency(featuredSubscription.subscription.price)}
-                    </span>
-                    <span className="ml-1 text-gray-600">
-                      {getBillingPeriodDisplay(featuredSubscription.subscription.billingPeriod)}
+                    <span className="text-[#e63946]">
+                      {getFormattedPrice()}
                     </span>
                   </div>
                 )}

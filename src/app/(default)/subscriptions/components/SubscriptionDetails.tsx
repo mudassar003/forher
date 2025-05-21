@@ -1,16 +1,17 @@
 // src/app/(default)/subscriptions/components/SubscriptionDetails.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Subscription } from '@/types/subscription-page';
+import { Subscription, SubscriptionVariant } from '@/types/subscription-page';
 import PortableText from '@/components/PortableText';
 import useTranslations from '@/hooks/useTranslations';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
 import { urlFor } from '@/sanity/lib/image';
+import { formatPriceWithBillingPeriod } from '@/utils/subscriptionHelpers';
 
 interface SubscriptionDetailsProps {
   subscription: Subscription;
@@ -18,9 +19,21 @@ interface SubscriptionDetailsProps {
 
 const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription }) => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [selectedVariant, setSelectedVariant] = useState<SubscriptionVariant | null>(null);
   const { t, currentLanguage } = useTranslations();
   const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
   const { user, isAuthenticated, checkSession } = useAuthStore();
+  
+  // Find default variant or first variant when component mounts
+  useEffect(() => {
+    if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
+      // First look for a default variant
+      const defaultVariant = subscription.variants.find(variant => variant.isDefault);
+      
+      // If no default is marked, use the first variant
+      setSelectedVariant(defaultVariant || subscription.variants[0]);
+    }
+  }, [subscription.hasVariants, subscription.variants]);
   
   // Custom translations
   const translations = {
@@ -30,7 +43,12 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     viewMoreDetails: currentLanguage === 'es' ? 'Ver Más Detalles' : 'View More Details',
     relatedPlans: currentLanguage === 'es' ? 'Planes Relacionados' : 'Related Plans',
     viewPlan: currentLanguage === 'es' ? 'Ver Plan' : 'View Plan',
-    cancelAnytime: currentLanguage === 'es' ? 'Garantía de 30 días • Cancele en cualquier momento' : '30-day guarantee • Cancel anytime'
+    cancelAnytime: currentLanguage === 'es' ? 'Garantía de 30 días • Cancele en cualquier momento' : '30-day guarantee • Cancel anytime',
+    selectVariant: currentLanguage === 'es' ? 'Seleccione una opción' : 'Select an option',
+    dosage: currentLanguage === 'es' ? 'Dosis' : 'Dosage',
+    bestValue: currentLanguage === 'es' ? 'Mejor Valor' : 'Best Value',
+    mostPopular: currentLanguage === 'es' ? 'Más Popular' : 'Most Popular',
+    savePercent: currentLanguage === 'es' ? 'Ahorre' : 'Save'
   };
   
   // Get the content based on current language
@@ -55,41 +73,58 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return subscription.features || [];
   };
 
-  // Format currency
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  // Get formatted price with billing period
+  const getFormattedPrice = (useVariant: boolean = true): string => {
+    // If variants are being used and one is selected, use that variant's price
+    if (useVariant && subscription.hasVariants && selectedVariant) {
+      return formatPriceWithBillingPeriod(
+        selectedVariant.price, 
+        selectedVariant.billingPeriod, 
+        selectedVariant.customBillingPeriodMonths,
+        { 
+          showMonthlyEquivalent: true,
+          includeSlash: false, // Use "per month" style for details page
+          locale: currentLanguage
+        }
+      );
+    }
+    
+    // Otherwise fall back to the base subscription's price
+    return formatPriceWithBillingPeriod(
+      subscription.price, 
+      subscription.billingPeriod, 
+      subscription.customBillingPeriodMonths,
+      { 
+        showMonthlyEquivalent: true,
+        includeSlash: false, // Use "per month" style for details page
+        locale: currentLanguage
+      }
+    );
   };
 
-  // Determine proper billing period display
-  const getBillingPeriodDisplay = (): string => {
-    if (currentLanguage === 'es') {
-      switch (subscription.billingPeriod.toLowerCase()) {
-        case 'monthly':
-          return '/mes';
-        case 'quarterly':
-          return '/trimestre';
-        case 'annually':
-          return '/año';
-        default:
-          return `/${subscription.billingPeriod}`;
-      }
-    } else {
-      switch (subscription.billingPeriod.toLowerCase()) {
-        case 'monthly':
-          return '/month';
-        case 'quarterly':
-          return '/quarter';
-        case 'annually':
-          return '/year';
-        default:
-          return `/${subscription.billingPeriod}`;
-      }
+  // Get localized variant title
+  const getLocalizedVariantTitle = (variant: SubscriptionVariant): string => {
+    if (currentLanguage === 'es' && variant.titleEs) {
+      return variant.titleEs;
     }
+    return variant.title;
+  };
+
+  // Get localized variant description
+  const getLocalizedVariantDescription = (variant: SubscriptionVariant): string => {
+    if (currentLanguage === 'es' && variant.descriptionEs) {
+      return variant.descriptionEs;
+    }
+    return variant.description || '';
+  };
+
+  // Calculate discount percentage
+  const getDiscountPercentage = (compareAtPrice: number | undefined, price: number): number | null => {
+    if (!compareAtPrice || compareAtPrice <= price) return null;
+    
+    const discount = compareAtPrice - price;
+    const percentage = Math.round((discount / compareAtPrice) * 100);
+    return percentage;
   };
 
   // Handle the subscription purchase
@@ -104,6 +139,12 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     if (!isAuthenticated) {
       // Save intended subscription ID to purchase after login
       sessionStorage.setItem('pendingSubscriptionId', subscription._id);
+      
+      // If a variant is selected, store that too
+      if (subscription.hasVariants && selectedVariant) {
+        sessionStorage.setItem('pendingVariantKey', selectedVariant._key || '');
+      }
+      
       const returnUrl = encodeURIComponent(currentPath);
       window.location.href = `/login?returnUrl=${returnUrl}`;
       return;
@@ -115,11 +156,25 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       // Store appointment page as the return URL after successful purchase
       sessionStorage.setItem('loginReturnUrl', '/appointment');
       
-      const result = await purchaseSubscription(subscription._id);
-      
-      if (result.success && result.url) {
-        // Redirect to Stripe checkout
-        window.location.href = result.url;
+      // If using variants, include the selected variant info
+      if (subscription.hasVariants && selectedVariant) {
+        const result = await purchaseSubscription(
+          subscription._id, 
+          selectedVariant._key || undefined
+        );
+        
+        if (result.success && result.url) {
+          // Redirect to Stripe checkout
+          window.location.href = result.url;
+        }
+      } else {
+        // Standard subscription without variants
+        const result = await purchaseSubscription(subscription._id);
+        
+        if (result.success && result.url) {
+          // Redirect to Stripe checkout
+          window.location.href = result.url;
+        }
       }
     } catch (err) {
       console.error('Failed to initiate subscription purchase:', err);
@@ -215,14 +270,103 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
               </h1>
               
               {/* Price and Billing Period */}
-              <div className="flex items-center mb-6">
-                <span className="text-3xl font-bold text-[#e63946]">
-                  {formatCurrency(subscription.price)}
-                </span>
-                <span className="text-gray-600 ml-2">
-                  {getBillingPeriodDisplay()}
-                </span>
+              <div className="flex flex-col mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-3xl font-bold text-[#e63946]">
+                    {getFormattedPrice()}
+                  </span>
+                </div>
+                
+                {/* Show discount if available */}
+                {subscription.hasVariants && selectedVariant && selectedVariant.compareAtPrice &&
+                  selectedVariant.compareAtPrice > selectedVariant.price && (
+                    <div className="mt-1 flex items-center">
+                      <span className="text-gray-500 line-through mr-2">
+                        ${selectedVariant.compareAtPrice}
+                      </span>
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        {translations.savePercent} {getDiscountPercentage(selectedVariant.compareAtPrice, selectedVariant.price)}%
+                      </span>
+                    </div>
+                  )
+                }
+                
+                {/* Explanation for longer-term plans */}
+                {!subscription.hasVariants && subscription.billingPeriod !== 'monthly' && subscription.billingPeriod !== 'other' && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    {currentLanguage === 'es' 
+                      ? 'Pago único por el período completo'
+                      : 'Single payment for the full period'}
+                  </p>
+                )}
+                
+                {/* Variant-specific information */}
+                {subscription.hasVariants && selectedVariant && (
+                  <div className="mt-2 text-sm">
+                    <p className="text-gray-700">
+                      {translations.dosage}: {selectedVariant.dosageAmount} {selectedVariant.dosageUnit}
+                    </p>
+                    {getLocalizedVariantDescription(selectedVariant) && (
+                      <p className="text-gray-600 mt-1">{getLocalizedVariantDescription(selectedVariant)}</p>
+                    )}
+                  </div>
+                )}
               </div>
+              
+              {/* Variant Selector (if subscription has variants) */}
+              {subscription.hasVariants && subscription.variants && subscription.variants.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    {translations.selectVariant}
+                  </h3>
+                  <div className="space-y-3">
+                    {subscription.variants.map((variant) => (
+                      <div 
+                        key={variant._key || variant.title}
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-[#e63946] 
+                          ${selectedVariant && selectedVariant._key === variant._key 
+                            ? 'border-[#e63946] bg-[#fff8f8]' 
+                            : 'border-gray-200'}`}
+                        onClick={() => setSelectedVariant(variant)}
+                      >
+                        <div className="flex justify-between">
+                          <div>
+                            <h4 className="font-medium">{getLocalizedVariantTitle(variant)}</h4>
+                            <p className="text-sm text-gray-600">
+                              {translations.dosage}: {variant.dosageAmount} {variant.dosageUnit}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">
+                              {formatPriceWithBillingPeriod(
+                                variant.price, 
+                                variant.billingPeriod, 
+                                variant.customBillingPeriodMonths,
+                                { showMonthlyEquivalent: false, locale: currentLanguage }
+                              )}
+                            </p>
+                            {variant.isPopular && (
+                              <span className="inline-block bg-[#e63946] text-white text-xs px-2 py-0.5 rounded-full mt-1">
+                                {translations.mostPopular}
+                              </span>
+                            )}
+                            {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
+                              <div className="mt-1">
+                                <span className="text-xs text-gray-500 line-through">
+                                  ${variant.compareAtPrice}
+                                </span>
+                                <span className="text-xs text-green-600 ml-1">
+                                  -{getDiscountPercentage(variant.compareAtPrice, variant.price)}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Main Image */}
               <div className="relative w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-8">
@@ -273,9 +417,9 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 <div className="border-t border-gray-200 pt-6">
                   <button
                     onClick={handleSubscribe}
-                    disabled={isProcessing || isLoading}
+                    disabled={isProcessing || isLoading || (subscription.hasVariants && !selectedVariant)}
                     className={`w-full py-4 px-6 rounded-full text-white font-bold text-lg transition-all ${
-                      isProcessing || isLoading 
+                      isProcessing || isLoading || (subscription.hasVariants && !selectedVariant)
                         ? 'bg-gray-400 cursor-not-allowed' 
                         : 'bg-[#e63946] hover:bg-[#d52d3a] shadow-md hover:shadow-lg'
                     }`}

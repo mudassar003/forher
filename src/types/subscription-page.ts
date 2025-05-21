@@ -1,4 +1,4 @@
-//src/types/subscription-page.ts
+// src/types/subscription-page.ts
 import { SanityImageSource } from '@sanity/image-url/lib/types/types';
 
 export interface SubscriptionFeature {
@@ -43,6 +43,32 @@ export interface BlockContent {
   level?: number;
 }
 
+// Define all possible billing period types
+export type BillingPeriod = 
+  | 'monthly'
+  | 'three_month'
+  | 'six_month'
+  | 'annually'
+  | 'other';
+
+// Interface for subscription variant
+export interface SubscriptionVariant {
+  _key?: string;
+  title: string;
+  titleEs?: string;
+  description?: string;
+  descriptionEs?: string;
+  dosageAmount: number;
+  dosageUnit: string;
+  price: number;
+  compareAtPrice?: number;
+  billingPeriod: BillingPeriod;
+  customBillingPeriodMonths?: number | null;
+  stripePriceId?: string;
+  isDefault?: boolean;
+  isPopular?: boolean;
+}
+
 export interface Subscription {
   _id: string;
   title: string;
@@ -53,11 +79,15 @@ export interface Subscription {
   description?: BlockContent[]; // BlockContent array
   descriptionEs?: BlockContent[]; // BlockContent array
   price: number;
-  billingPeriod: string;
+  compareAtPrice?: number;
+  billingPeriod: BillingPeriod;
+  customBillingPeriodMonths?: number | null;
+  hasVariants?: boolean;
+  variants?: SubscriptionVariant[];
   features?: SubscriptionFeature[];
   featuresEs?: SubscriptionFeature[];
   image?: SanityImageSource;
-  featuredImage?: SanityImageSource; // New field for dedicated catalog images
+  featuredImage?: SanityImageSource; // Dedicated catalog images
   isFeatured: boolean;
   isActive: boolean;
   categories?: SubscriptionCategory[];

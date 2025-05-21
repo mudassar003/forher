@@ -13,6 +13,7 @@ import Modal from '@/components/Modal';
 import PortableText from '@/components/PortableText';
 import { urlFor } from '@/sanity/lib/image';
 import { SanityImageSource } from '@sanity/image-url/lib/types/types';
+import { formatPriceWithBillingPeriod } from '@/utils/subscriptionHelpers';
 
 interface SubscriptionCardProps {
   id: string;
@@ -22,6 +23,7 @@ interface SubscriptionCardProps {
   descriptionEs?: BlockContent[]; 
   price: number;
   billingPeriod: string;
+  customBillingPeriodMonths?: number | null;
   features: SubscriptionFeature[];
   featuresEs?: SubscriptionFeature[];
   categories?: Array<{
@@ -48,6 +50,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   descriptionEs,
   price,
   billingPeriod,
+  customBillingPeriodMonths,
   features = [],
   featuresEs = [],
   categories,
@@ -93,41 +96,18 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     return features;
   };
 
-  // Format currency
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Determine proper billing period display
-  const getBillingPeriodDisplay = (): string => {
-    if (currentLanguage === 'es') {
-      switch (billingPeriod.toLowerCase()) {
-        case 'monthly':
-          return '/mes';
-        case 'quarterly':
-          return '/trimestre';
-        case 'annually':
-          return '/año';
-        default:
-          return `/${billingPeriod}`;
+  // Format price with billing period
+  const getFormattedPrice = (): string => {
+    // For card display, show a simplified version without the monthly equivalent
+    return formatPriceWithBillingPeriod(
+      price, 
+      billingPeriod, 
+      customBillingPeriodMonths,
+      { 
+        showMonthlyEquivalent: false,
+        locale: currentLanguage
       }
-    } else {
-      switch (billingPeriod.toLowerCase()) {
-        case 'monthly':
-          return '/month';
-        case 'quarterly':
-          return '/quarter';
-        case 'annually':
-          return '/year';
-        default:
-          return `/${billingPeriod}`;
-      }
-    }
+    );
   };
 
   // Handle the subscription purchase or redirect to login
@@ -253,7 +233,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             {/* Featured Badge (if needed) */}
             {cardType === 'premium' && (
               <div className="absolute top-3 right-3 bg-white text-[#e63946] text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
-                Featured
+                {currentLanguage === 'es' ? 'Destacado' : 'Featured'}
               </div>
             )}
           </div>
@@ -261,12 +241,37 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           {/* Title and Price Below Image */}
           <div className={`p-4 border-b ${getBorderColor()}`}>
             <h3 className="text-xl font-bold text-gray-800">{getLocalizedTitle()}</h3>
-            <div className={`text-lg font-medium mt-1 ${
-              cardType === 'basic' ? 'text-[#d81159]' : 
-              cardType === 'premium' ? 'text-[#e63946]' : 
-              'text-[#ff4d6d]'
-            }`}>
-              {formatCurrency(price)}<span className="text-gray-600 text-sm">{getBillingPeriodDisplay()}</span>
+            <div className="mt-1">
+              <span className={`text-lg font-medium ${
+                cardType === 'basic' ? 'text-[#d81159]' : 
+                cardType === 'premium' ? 'text-[#e63946]' : 
+                'text-[#ff4d6d]'
+              }`}>
+                {formatPriceWithBillingPeriod(price, billingPeriod, customBillingPeriodMonths, { 
+                  showMonthlyEquivalent: false,
+                  locale: currentLanguage
+                })}
+              </span>
+              
+              {/* Show monthly price equivalent for non-monthly plans */}
+              {billingPeriod !== 'monthly' && (
+                <div className="text-sm text-gray-600 mt-1">
+                  {formatPriceWithBillingPeriod(
+                    price / (
+                      billingPeriod === 'annually' ? 12 : 
+                      billingPeriod === 'three_month' ? 3 : 
+                      billingPeriod === 'six_month' ? 6 : 
+                      billingPeriod === 'other' && customBillingPeriodMonths ? customBillingPeriodMonths : 1
+                    ), 
+                    'monthly', 
+                    null,
+                    { 
+                      showMonthlyEquivalent: false,
+                      locale: currentLanguage
+                    }
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -335,6 +340,16 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           className="max-w-2xl"
         >
           <div className="subscription-details">
+            {/* Price information with monthly equivalent */}
+            <div className="mb-4 pb-4 border-b border-gray-200">
+              <p className="font-bold text-xl text-[#e63946]">
+                {formatPriceWithBillingPeriod(price, billingPeriod, customBillingPeriodMonths, { 
+                  showMonthlyEquivalent: true,
+                  locale: currentLanguage
+                })}
+              </p>
+            </div>
+            
             {/* Description content */}
             <div className="description-content text-gray-700">
               {hasDescription() ? (

@@ -8,13 +8,30 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { v4 as uuidv4 } from 'uuid'; // Import UUID generator
 
 // Define types for Sanity content
+interface SanitySubscriptionVariant {
+  _key: string;
+  title: string;
+  dosageAmount: number;
+  dosageUnit: string;
+  price: number;
+  compareAtPrice?: number;
+  billingPeriod: string;
+  customBillingPeriodMonths?: number | null;
+  stripePriceId?: string;
+  isDefault?: boolean;
+  isPopular?: boolean;
+}
+
 interface SanitySubscription {
   _id: string;
   title: string;
   price: number;
-  billingPeriod: "monthly" | "quarterly" | "annually";
+  billingPeriod: string;
+  customBillingPeriodMonths?: number | null;
   stripePriceId?: string;
   stripeProductId?: string;
+  hasVariants?: boolean;
+  variants?: SanitySubscriptionVariant[];
   appointmentAccess: boolean;
   appointmentDiscountPercentage: number;
   features: Array<{
@@ -30,6 +47,7 @@ interface UserSubscription {
     _type: string;
     _ref: string;
   };
+  variantKey?: string; // Store the variant key if applicable
   startDate: string;
   isActive: boolean;
   status: string;
@@ -55,6 +73,9 @@ interface SupabaseUserSubscription {
   sanity_id: string;
   sanity_subscription_id: string;
   subscription_name: string;
+  variant_key?: string; // Store the variant key if applicable
+  variant_title?: string; // Store the variant title for easy reference
+  variant_dosage?: string; // Store variant dosage information
   plan_id: string;
   plan_name: string;
   stripe_session_id: string;
@@ -72,6 +93,7 @@ interface SubscriptionRequest {
   subscriptionId: string; // Sanity subscription ID
   userId: string;        // Supabase user ID
   userEmail: string;     // User's email
+  variantKey?: string;   // Optional variant key
 }
 
 // Initialize Stripe with latest API version (it will automatically use the latest)
@@ -88,6 +110,66 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+/**
+ * Convert Sanity billing period to Stripe interval configuration
+ * @param billingPeriod The billing period from Sanity
+ * @param customBillingPeriodMonths Optional custom billing period in months
+ * @returns Stripe interval configuration object
+ */
+function getStripeIntervalConfig(
+  billingPeriod: string, 
+  customBillingPeriodMonths?: number | null
+): { interval: Stripe.PriceCreateParams.Recurring.Interval; intervalCount: number } {
+  let interval: Stripe.PriceCreateParams.Recurring.Interval = "month";
+  let intervalCount = 1;
+  
+  switch (billingPeriod) {
+    case "monthly":
+      interval = "month";
+      intervalCount = 1;
+      break;
+    case "three_month":
+      interval = "month";
+      intervalCount = 3;
+      break;
+    case "six_month":
+      interval = "month";
+      intervalCount = 6;
+      break;
+    case "annually":
+      interval = "year";
+      intervalCount = 1;
+      break;
+    case "other":
+      // For custom billing periods, default to months
+      interval = "month";
+      // Default to 1 month if customBillingPeriodMonths is not set
+      intervalCount = customBillingPeriodMonths || 1;
+      
+      // Stripe has some limitations on interval_count:
+      // - For month interval, max is 12
+      // - For year interval, max is 1
+      if (intervalCount > 12) {
+        // If more than 12 months, convert to years if possible
+        if (intervalCount % 12 === 0) {
+          interval = "year";
+          intervalCount = intervalCount / 12;
+        } else {
+          // If not divisible by 12, cap at 12 months
+          // In a real implementation, you might want to handle this differently
+          console.warn(`Billing period of ${intervalCount} months exceeds Stripe's limit of 12. Capping at 12 months.`);
+          intervalCount = 12;
+        }
+      }
+      break;
+    default:
+      interval = "month";
+      intervalCount = 1;
+  }
+  
+  return { interval, intervalCount };
+}
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
@@ -137,8 +219,23 @@ export async function POST(req: Request): Promise<NextResponse> {
         title,
         price,
         billingPeriod,
+        customBillingPeriodMonths,
         stripePriceId,
         stripeProductId,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          dosageAmount,
+          dosageUnit,
+          price,
+          compareAtPrice,
+          billingPeriod,
+          customBillingPeriodMonths,
+          stripePriceId,
+          isDefault,
+          isPopular
+        },
         appointmentAccess,
         appointmentDiscountPercentage,
         features[] {
@@ -157,16 +254,45 @@ export async function POST(req: Request): Promise<NextResponse> {
     
     console.log(`Fetched subscription: ${subscription.title}`);
     
-    // 2. Create or get Stripe product and price IDs
+    // Check if we need to use a variant
+    let selectedVariant: SanitySubscriptionVariant | null = null;
+    
+    if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
+      if (data.variantKey) {
+        // Find the specific variant by key
+        selectedVariant = subscription.variants.find(v => v._key === data.variantKey) || null;
+        
+        if (!selectedVariant) {
+          return NextResponse.json(
+            { success: false, error: "Selected variant not found" },
+            { status: 404 }
+          );
+        }
+      } else {
+        // If no variant key provided, use the default variant or the first one
+        selectedVariant = subscription.variants.find(v => v.isDefault) || subscription.variants[0];
+      }
+      
+      console.log(`Using variant: ${selectedVariant.title} (${selectedVariant._key})`);
+    }
+    
+    // 2. Create or get Stripe product ID for the subscription
     let stripeProductId = subscription.stripeProductId;
-    let stripePriceId = subscription.stripePriceId;
+    let stripePriceId: string | undefined = undefined;
+    
+    // Determine which price to use (variant or main subscription)
+    if (selectedVariant) {
+      stripePriceId = selectedVariant.stripePriceId;
+    } else {
+      stripePriceId = subscription.stripePriceId;
+    }
     
     // If no Stripe product ID exists, create one
     if (!stripeProductId) {
       console.log("Creating new Stripe product");
       const product = await stripe.products.create({
         name: subscription.title,
-        description: `${subscription.title} - ${subscription.billingPeriod} subscription`,
+        description: `${subscription.title} subscription`,
         metadata: {
           sanityId: subscription._id
         }
@@ -183,54 +309,61 @@ export async function POST(req: Request): Promise<NextResponse> {
       console.log(`Created Stripe product: ${product.id}`);
     }
     
-    // If no Stripe price ID exists, create one
+    // If no Stripe price ID exists for the selected variant/subscription, create one
     if (!stripePriceId) {
       console.log("Creating new Stripe price");
       
-      // Convert billing period to interval and interval_count
-      let interval: Stripe.PriceCreateParams.Recurring.Interval = "month";
-      let intervalCount = 1;
+      // Get price details based on whether a variant is selected
+      const price = selectedVariant ? selectedVariant.price : subscription.price;
+      const billingPeriod = selectedVariant ? selectedVariant.billingPeriod : subscription.billingPeriod;
+      const customBillingPeriodMonths = selectedVariant 
+        ? selectedVariant.customBillingPeriodMonths 
+        : subscription.customBillingPeriodMonths;
       
-      switch (subscription.billingPeriod) {
-        case "monthly":
-          interval = "month";
-          intervalCount = 1;
-          break;
-        case "quarterly":
-          interval = "month";
-          intervalCount = 3;
-          break;
-        case "annually":
-          interval = "year";
-          intervalCount = 1;
-          break;
-        default:
-          interval = "month";
-          intervalCount = 1;
-      }
+      // Get interval configuration for Stripe
+      const { interval, intervalCount } = getStripeIntervalConfig(
+        billingPeriod,
+        customBillingPeriodMonths
+      );
       
-      const price = await stripe.prices.create({
+      // Create the price in Stripe
+      const stripePrice = await stripe.prices.create({
         product: stripeProductId,
-        unit_amount: Math.round(subscription.price * 100), // Convert to cents
+        unit_amount: Math.round(price * 100), // Convert to cents
         currency: 'usd',
         recurring: {
           interval: interval,
           interval_count: intervalCount,
         },
         metadata: {
-          sanityId: subscription._id
+          sanityId: subscription._id,
+          variantKey: selectedVariant ? selectedVariant._key : '',
+          billingPeriod: billingPeriod,
+          customBillingPeriodMonths: customBillingPeriodMonths?.toString() || ''
         }
       });
       
-      stripePriceId = price.id;
+      stripePriceId = stripePrice.id;
       
-      // Update Sanity with the Stripe price ID
-      await sanityClient
-        .patch(subscription._id)
-        .set({ stripePriceId: price.id })
-        .commit();
+      // Update the price ID in Sanity
+      if (selectedVariant) {
+        // Update the variant's price ID
+        await sanityClient
+          .patch(subscription._id)
+          .setIfMissing({ variants: [] })
+          .set({
+            [`variants[_key=="${selectedVariant._key}"].stripePriceId`]: stripePrice.id
+          })
+          .commit();
+      } else {
+        // Update the main subscription's price ID
+        await sanityClient
+          .patch(subscription._id)
+          .set({ stripePriceId: stripePrice.id })
+          .commit();
+      }
         
-      console.log(`Created Stripe price: ${price.id}`);
+      console.log(`Created Stripe price: ${stripePrice.id}`);
     }
     
     // 3. Check if customer exists, if not create one
@@ -269,6 +402,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       console.log(`Using existing Stripe customer: ${stripeCustomerId}`);
     }
 
+    // 4. Create a checkout session
     // Type for session creation parameters
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
@@ -287,6 +421,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         userId: userId,
         userEmail: userEmail,
         subscriptionId: subscription._id,
+        variantKey: selectedVariant ? selectedVariant._key : '',
         subscriptionType: "subscription" // To differentiate from one-time appointments
       },
       client_reference_id: userId,
@@ -307,13 +442,14 @@ export async function POST(req: Request): Promise<NextResponse> {
         _type: 'reference',
         _ref: subscription._id
       },
+      variantKey: selectedVariant ? selectedVariant._key : undefined,
       startDate: startDate,
       isActive: false, // Will be set to true when payment succeeds
       status: 'pending',
       stripeSubscriptionId: '', // Will be updated by webhook
       stripeCustomerId: stripeCustomerId,
-      billingPeriod: subscription.billingPeriod,
-      billingAmount: subscription.price,
+      billingPeriod: selectedVariant ? selectedVariant.billingPeriod : subscription.billingPeriod,
+      billingAmount: selectedVariant ? selectedVariant.price : subscription.price,
       hasAppointmentAccess: subscription.appointmentAccess || false,
       appointmentDiscountPercentage: subscription.appointmentDiscountPercentage || 0,
       stripeSessionId: session.id
@@ -334,14 +470,21 @@ export async function POST(req: Request): Promise<NextResponse> {
       plan_name: subscription.title, // Using subscription title as plan_name
       stripe_session_id: session.id,
       stripe_customer_id: stripeCustomerId,
-      billing_amount: subscription.price,
-      billing_period: subscription.billingPeriod,
+      billing_amount: selectedVariant ? selectedVariant.price : subscription.price,
+      billing_period: selectedVariant ? selectedVariant.billingPeriod : subscription.billingPeriod,
       start_date: startDate,
       status: 'pending',
       is_active: false,
       has_appointment_access: subscription.appointmentAccess || false,
       appointment_discount_percentage: subscription.appointmentDiscountPercentage || 0
     };
+    
+    // Add variant information if a variant was selected
+    if (selectedVariant) {
+      supabaseSubscription.variant_key = selectedVariant._key;
+      supabaseSubscription.variant_title = selectedVariant.title;
+      supabaseSubscription.variant_dosage = `${selectedVariant.dosageAmount} ${selectedVariant.dosageUnit}`;
+    }
     
     const { error: insertError } = await supabase
       .from('user_subscriptions')

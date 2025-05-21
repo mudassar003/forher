@@ -218,13 +218,25 @@ export const subscriptionType = defineType({
       description: 'Whether this subscription is currently available for purchase',
       initialValue: true,
     }),
+    // Standard main image field
     defineField({
       name: 'image',
-      title: 'Image',
+      title: 'Main Image',
       type: 'image',
       options: {
         hotspot: true,
       },
+      description: 'The main product image used on detail pages and throughout the site'
+    }),
+    // New field for featured image specifically for catalog/grid display
+    defineField({
+      name: 'featuredImage',
+      title: 'Featured Catalog Image',
+      type: 'image',
+      options: {
+        hotspot: true,
+      },
+      description: 'Optimized image for display in subscription catalog cards (if different from main image)'
     }),
     defineField({
       name: 'isDeleted',

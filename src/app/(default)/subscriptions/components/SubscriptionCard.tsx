@@ -37,6 +37,7 @@ interface SubscriptionCardProps {
     current: string;
   };
   image?: SanityImageSource;
+  featuredImage?: SanityImageSource;
 }
 
 const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
@@ -52,7 +53,8 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   categories,
   cardType = 'basic', // Default to basic styling
   slug,
-  image
+  image,
+  featuredImage
 }) => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isHovered, setIsHovered] = useState<boolean>(false);
@@ -200,8 +202,13 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 
   // Get image URL or fallback
   const getImageUrl = (): string => {
+    // First check for featuredImage for catalog display
+    if (featuredImage) {
+      return urlFor(featuredImage).width(600).height(450).url();
+    }
+    // Fall back to regular image
     if (image) {
-      return urlFor(image).width(600).height(400).url();
+      return urlFor(image).width(600).height(450).url();
     }
     
     // Fallback images based on card type

@@ -57,6 +57,7 @@ export interface Subscription {
   features?: SubscriptionFeature[];
   featuresEs?: SubscriptionFeature[];
   image?: SanityImageSource;
+  featuredImage?: SanityImageSource; // New field for dedicated catalog images
   isFeatured: boolean;
   isActive: boolean;
   categories?: SubscriptionCategory[];

@@ -40,12 +40,12 @@ export default function IntroductionStep() {
         </p>
       </div>
 
-      {/* Bottom Disclaimer Text */}
+      {/* Bottom Disclaimer Text with updated brand name and privacy policy link */}
       <div className="absolute bottom-20 w-full max-w-2xl text-center text-gray-500 text-sm px-4">
         <p>
-          By clicking 'Continue', you agree that Hers may use your responses to personalize your 
+          By clicking 'Continue', you agree that Lilys may use your responses to personalize your 
           experience and other purposes as described in our 
-          <a href="#" className="underline text-gray-600"> Privacy Policy</a>.
+          <a href="http://localhost:3000/privacy-policy" className="underline text-gray-600"> Privacy Policy</a>.
           Responses prior to account creation will not be used as part of your medical assessment.
         </p>
       </div>

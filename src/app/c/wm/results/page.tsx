@@ -1,4 +1,4 @@
-// src/app/c/wm/results/page.tsx
+//src/app/c/wm/results/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -307,6 +307,32 @@ export default function ResultsPage({}: WeightLossResultsProps) {
       {/* Main Content Section */}
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
+          {/* Note from Lilys Section - NEW ADDITION */}
+          <motion.div
+            className="bg-white rounded-xl shadow-lg p-6 mb-10 border-l-4 border-[#fe92b5]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
+            transition={{ duration: 0.7 }}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-black mb-2">Why We Chose This For You</h3>
+                <p className="text-black">
+                  Based on your responses, we've selected a weight management program that's tailored to your specific needs. 
+                  At Lilys, we believe that personalized care leads to better results. This recommendation takes into account 
+                  your health profile, weight management goals, and personal preferences to provide you with the most effective solution.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Featured Product Section - Redesigned for better height balance */}
           <motion.div 
             className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
@@ -359,7 +385,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
               
               {/* Right side - Features and CTA */}
               <div className="md:w-3/5 p-4 md:p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                <h3 className="text-xl font-semibold text-black mb-4">
                   Program Features:
                 </h3>
                 
@@ -381,7 +407,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
-                        <p className="text-gray-700">{feature.featureText}</p>
+                        <p className="text-black">{feature.featureText}</p>
                       </motion.div>
                     ))
                   ) : (
@@ -399,7 +425,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                           </svg>
                         </div>
                         <div>
-                          <p className="text-gray-700">Clinically proven results with 15-20% average weight loss</p>
+                          <p className="text-black">Clinically proven results with 15-20% average weight loss</p>
                         </div>
                       </motion.div>
                       
@@ -415,7 +441,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                           </svg>
                         </div>
                         <div>
-                          <p className="text-gray-700">Medical provider support with personalized treatment</p>
+                          <p className="text-black">Medical provider support with personalized treatment</p>
                         </div>
                       </motion.div>
                       
@@ -431,7 +457,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                           </svg>
                         </div>
                         <div>
-                          <p className="text-gray-700">Convenient home delivery with virtual check-ins</p>
+                          <p className="text-black">Convenient home delivery with virtual check-ins</p>
                         </div>
                       </motion.div>
                     </>
@@ -488,7 +514,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 20 }}
             transition={{ duration: 0.7, delay: 0.7 }}
           >
-            <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
+            <h2 className="text-2xl font-bold text-center text-black mb-8">
               Our Weight Loss Subscription Plans
             </h2>
             
@@ -505,7 +531,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                 Results may vary. These statements have not been evaluated by the FDA.
               </p>
               <p className="text-xs text-gray-400">
-                © {new Date().getFullYear()} All rights reserved.
+                © {new Date().getFullYear()} Lilys. All rights reserved.
               </p>
             </div>
           </div>

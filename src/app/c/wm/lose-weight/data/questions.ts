@@ -1,7 +1,7 @@
-// src/app/c/wm/lose-weight/data/questions.ts
+//src/app/c/wm/lose-weight/data/questions.ts
 import { Question, QuestionType } from "../types";
 
-// Define all questions for the weight loss form
+// Define all questions for the weight loss form - REDUCED SET
 export const weightLossQuestions: Question[] = [
   // Step 1: Basic Demographics
   {
@@ -79,7 +79,7 @@ export const weightLossQuestions: Question[] = [
     ]
   },
 
-  // Step 4: Medical History
+  // Step 4: Medical History - REDUCED
   {
     id: "medical-conditions",
     question: "Do you have any of the following medical conditions?",
@@ -108,15 +108,6 @@ export const weightLossQuestions: Question[] = [
     ]
   },
   {
-    id: "medications-list",
-    question: "Please list your current medications",
-    description: "This information helps us ensure there are no contraindications.",
-    type: QuestionType.TextInput,
-    placeholder: "Enter your medications, separated by commas",
-    inputType: "text",
-    conditionalDisplay: (formData) => formData["prescription-medications"] === "yes"
-  },
-  {
     id: "eating-disorder",
     question: "Have you been diagnosed with an eating disorder (Anorexia, Bulimia, Binge Eating)?",
     description: "Weight loss products may not be appropriate for those with eating disorders.",
@@ -138,44 +129,22 @@ export const weightLossQuestions: Question[] = [
       { id: "didnt-work", label: "Yes, but they didn't work" },
       { id: "worked-temporarily", label: "Yes, and they worked for a while" }
     ]
-  },
-  {
-    id: "previous-medications",
-    question: "Have you used any of the following weight loss medications before?",
-    description: "Select all that apply.",
-    type: QuestionType.MultiSelect,
-    options: [
-      { id: "phentermine", label: "Phentermine" },
-      { id: "orlistat", label: "Orlistat" },
-      { id: "semaglutide", label: "Semaglutide" },
-      { id: "tirzepatide", label: "Tirzepatide" },
-      { id: "none", label: "None of the above" }
-    ]
-  },
-
-  // Sleep & Stress section - keeping these as they weren't specified for removal
-  {
-    id: "sleep-hours",
-    question: "How many hours of sleep do you get per night?",
-    description: "Sleep can significantly impact weight management.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "less-than-5", label: "Less than 5 hours" },
-      { id: "5-7", label: "5-7 hours" },
-      { id: "8-plus", label: "8+ hours" }
-    ]
-  },
-  {
-    id: "stress-levels",
-    question: "How would you rate your stress levels?",
-    description: "Stress can affect weight and eating habits.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "low", label: "Low" },
-      { id: "moderate", label: "Moderate" },
-      { id: "high", label: "High" }
-    ]
   }
+  
+  // REMOVED:
+  // - previous-medications (weight loss medications before)
+  // - sleep-hours (Sleep & Stress section)
+  // - stress-levels (Sleep & Stress section)
+  // - activity-level (Activity Level & Metabolism)
+  // - metabolism (Activity Level & Metabolism)
+  // - recent-weight-gain (Activity Level & Metabolism)
+  // - eating-habits (Eating Habits & Cravings)
+  // - cravings (Eating Habits & Cravings)
+  // - eat-out (Eating Habits & Cravings)
+  // - alcohol (Eating Habits & Cravings)
+  // - doctor-consultation (Medical Eligibility Confirmation)
+  // - prescription-preference (Product Preference)
+  // - medication-type (Product Preference)
 ];
 
 // Calculate progress percentage based on current question index

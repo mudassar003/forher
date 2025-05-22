@@ -46,7 +46,7 @@ export default function WeightManagementEntry() {
       <div className="w-24 h-24 border-4 border-[#fe92b5] border-t-transparent rounded-full animate-spin mb-8"></div>
       
       {/* Loading Text */}
-      <p className="text-xl text-gray-600">
+      <p className="text-xl text-black">
         {completedSteps.length > 0 ? "Resuming your progress..." : "Preparing your survey..."}
       </p>
     </div>

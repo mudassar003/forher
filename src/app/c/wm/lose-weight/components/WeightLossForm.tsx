@@ -219,13 +219,13 @@ export default function WeightLossForm() {
       <ProgressBar progress={progressPercentage} />
 
       <div className="w-full max-w-2xl mt-16 mb-24">
-        {/* Question - Left-aligned, larger text */}
+        {/* Question - Left-aligned, larger text - Ensure black text */}
         <h2 className="text-4xl font-semibold text-black mb-10 text-left">
           {currentQuestion.question}
         </h2>
         
         {currentQuestion.description && (
-          <p className="text-gray-600 mb-8 text-left text-lg">
+          <p className="text-black mb-8 text-left text-lg">
             {currentQuestion.description}
           </p>
         )}
@@ -238,8 +238,8 @@ export default function WeightLossForm() {
             bmi < 30 ? 'bg-yellow-100' : 
             'bg-orange-100'
           }`}>
-            <p className="font-medium">Your calculated BMI: {bmi.toFixed(1)}</p>
-            <p className="text-sm mt-1">
+            <p className="font-medium text-black">Your calculated BMI: {bmi.toFixed(1)}</p>
+            <p className="text-sm mt-1 text-black">
               {bmi < 18.5 ? 'Underweight' : 
                bmi < 25 ? 'Normal weight' : 
                bmi < 30 ? 'Overweight' : 
@@ -253,7 +253,7 @@ export default function WeightLossForm() {
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
             <p className="font-medium text-red-700">Eligibility Notice:</p>
             <p className="text-red-600">{ineligibilityReason}</p>
-            <p className="text-sm mt-2 text-gray-600">
+            <p className="text-sm mt-2 text-black">
               You can continue with the assessment, but based on your responses, 
               our products may not be suitable for you.
             </p>

@@ -1,4 +1,4 @@
-// src/app/c/wm/submit/page.tsx
+//src/app/c/wm/submit/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -64,7 +64,7 @@ export default function SubmitStep() {
   }, []);
 
   // Gets the label for a given option ID for a specific question
-  const getOptionLabel = (questionId: string, optionId: string | string[]) => {
+  const getOptionLabel = (questionId: string, optionId: string | string[]): string => {
     const question = weightLossQuestions.find(q => q.id === questionId);
     if (!question) return "Not specified";
 
@@ -100,22 +100,9 @@ export default function SubmitStep() {
       'breastfeeding': 'Pregnancy & Breastfeeding',
       'medical-conditions': 'Medical History',
       'prescription-medications': 'Medical History',
-      'medications-list': 'Medical History',
       'eating-disorder': 'Medical History',
-      'previous-weight-loss': 'Previous Weight Loss Attempts',
-      'previous-medications': 'Previous Weight Loss Attempts',
-      'activity-level': 'Activity Level & Metabolism',
-      'metabolism': 'Activity Level & Metabolism',
-      'recent-weight-gain': 'Activity Level & Metabolism',
-      'eating-habits': 'Eating Habits & Cravings',
-      'cravings': 'Eating Habits & Cravings',
-      'eat-out': 'Eating Habits & Cravings',
-      'alcohol': 'Eating Habits & Cravings',
-      'sleep-hours': 'Sleep & Stress',
-      'stress-levels': 'Sleep & Stress',
-      'doctor-consultation': 'Medical Eligibility Confirmation',
-      'prescription-preference': 'Product Preference',
-      'medication-type': 'Product Preference'
+      'previous-weight-loss': 'Previous Weight Loss Attempts'
+      // Removed all other sections that are no longer included
     };
     
     return sectionMap[questionId] || 'Other Information';
@@ -170,7 +157,7 @@ export default function SubmitStep() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-        <p className="mt-4 text-lg">Loading your responses...</p>
+        <p className="mt-4 text-lg text-black">Loading your responses...</p>
       </div>
     );
   }
@@ -196,8 +183,8 @@ export default function SubmitStep() {
           bmi < 30 ? 'bg-yellow-100' : 
           'bg-orange-100'
         }`}>
-          <h3 className="text-lg font-semibold">Your BMI: {bmi.toFixed(1)}</h3>
-          <p className="mt-1">
+          <h3 className="text-lg font-semibold text-black">Your BMI: {bmi.toFixed(1)}</h3>
+          <p className="mt-1 text-black">
             Category: <strong>
               {bmi < 18.5 ? 'Underweight' : 
                bmi < 25 ? 'Normal weight' : 
@@ -213,7 +200,7 @@ export default function SubmitStep() {
         <div className="w-full max-w-2xl bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
           <p className="font-medium text-red-700">Eligibility Notice:</p>
           <p className="text-red-600">{ineligibilityReason}</p>
-          <p className="text-sm mt-2 text-gray-600">
+          <p className="text-sm mt-2 text-black">
             Based on your responses, our products may not be suitable for you. We can still
             provide general recommendations when you submit.
           </p>
@@ -223,12 +210,12 @@ export default function SubmitStep() {
       {/* Summary of selections grouped by section */}
       <div className="mt-4 w-full max-w-2xl mb-24">
         {Object.keys(responses).length === 0 ? (
-          <p className="text-gray-500 italic">No responses found. You may need to complete the questionnaire.</p>
+          <p className="text-black italic">No responses found. You may need to complete the questionnaire.</p>
         ) : (
           <div className="space-y-6">
             {Object.entries(getGroupedQuestions()).map(([section, questions]) => (
               <div key={section} className="border rounded-lg overflow-hidden">
-                <h3 className="bg-gray-100 px-4 py-2 font-semibold">{section}</h3>
+                <h3 className="bg-gray-100 px-4 py-2 font-semibold text-black">{section}</h3>
                 <ul className="divide-y">
                   {questions.map((question) => {
                     const response = responses[question.id];
@@ -236,8 +223,8 @@ export default function SubmitStep() {
 
                     return (
                       <li key={question.id} className="p-4">
-                        <p className="font-medium">{question.question}</p>
-                        <p className="mt-1 text-gray-700">
+                        <p className="font-medium text-black">{question.question}</p>
+                        <p className="mt-1 text-black">
                           {Array.isArray(response) 
                             ? getOptionLabel(question.id, response)
                             : getOptionLabel(question.id, response as string)}

@@ -26,7 +26,7 @@ export const SingleSelect: React.FC<{
               : "border-gray-300 hover:border-gray-400"
           }`}
         >
-          <span className="text-lg font-medium">{option.label}</span>
+          <span className="text-lg font-medium text-black">{option.label}</span>
         </button>
       ))}
     </div>
@@ -80,7 +80,7 @@ export const MultiSelect: React.FC<{
               : "border-gray-300 hover:border-gray-400"
           }`}
         >
-          <span className="text-lg font-medium">{option.label}</span>
+          <span className="text-lg font-medium text-black">{option.label}</span>
         </button>
       ))}
     </div>
@@ -126,7 +126,7 @@ export const TextInput: React.FC<{
         value={value}
         onChange={handleChange}
         placeholder={question.placeholder}
-        className={`w-full p-6 text-xl rounded-lg border-2 ${
+        className={`w-full p-6 text-xl rounded-lg border-2 text-black ${
           error ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
         } focus:outline-none`}
       />
@@ -163,6 +163,6 @@ export const QuestionRenderer: React.FC<{
         onChange={onChange} 
       />;
     default:
-      return <div>Unsupported question type</div>;
+      return <div className="text-black">Unsupported question type</div>;
   }
 };

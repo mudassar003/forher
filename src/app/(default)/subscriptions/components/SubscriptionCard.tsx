@@ -1,13 +1,13 @@
 // src/app/(default)/subscriptions/components/SubscriptionCard.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
-import { SubscriptionFeature, BlockContent } from '@/types/subscription-page';
+import { SubscriptionFeature, BlockContent, SubscriptionVariant } from '@/types/subscription-page';
 import useTranslations from '@/hooks/useTranslations';
 import Modal from '@/components/Modal';
 import PortableText from '@/components/PortableText';
@@ -24,6 +24,8 @@ interface SubscriptionCardProps {
   price: number;
   billingPeriod: string;
   customBillingPeriodMonths?: number | null;
+  hasVariants?: boolean;
+  variants?: SubscriptionVariant[];
   features: SubscriptionFeature[];
   featuresEs?: SubscriptionFeature[];
   categories?: Array<{
@@ -51,10 +53,12 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   price,
   billingPeriod,
   customBillingPeriodMonths,
+  hasVariants = false,
+  variants = [],
   features = [],
   featuresEs = [],
   categories,
-  cardType = 'basic', // Default to basic styling
+  cardType = 'basic',
   slug,
   image,
   featuredImage
@@ -62,10 +66,21 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedVariant, setSelectedVariant] = useState<SubscriptionVariant | null>(null);
+  
   const { user, isAuthenticated, checkSession } = useAuthStore();
   const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
   const router = useRouter();
   const { t, currentLanguage } = useTranslations();
+  
+  // Initialize selected variant when component mounts
+  useEffect(() => {
+    if (hasVariants && variants && variants.length > 0) {
+      // Find default variant or use first one
+      const defaultVariant = variants.find(variant => variant.isDefault) || variants[0];
+      setSelectedVariant(defaultVariant);
+    }
+  }, [hasVariants, variants]);
   
   // Check auth state when component mounts
   useEffect(() => {
@@ -73,6 +88,12 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       checkSession();
     }
   }, [isAuthenticated, checkSession]);
+
+  // Handle variant selection - simplified since no dropdown
+  const handleVariantSelect = useCallback((variant: SubscriptionVariant): void => {
+    console.log('Selected variant:', variant);
+    setSelectedVariant(variant);
+  }, []);
 
   // Get the content based on current language
   const getLocalizedTitle = (): string => {
@@ -96,13 +117,84 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     return features;
   };
 
+  // Get localized variant title
+  const getLocalizedVariantTitle = (variant: SubscriptionVariant): string => {
+    if (currentLanguage === 'es' && variant.titleEs) {
+      return variant.titleEs;
+    }
+    return variant.title;
+  };
+
+  // Get current price based on selected variant or base price
+  const getCurrentPrice = (): number => {
+    if (hasVariants && selectedVariant) {
+      return selectedVariant.price;
+    }
+    return price;
+  };
+
+  // Get current billing period based on selected variant or base period
+  const getCurrentBillingPeriod = (): string => {
+    if (hasVariants && selectedVariant) {
+      return selectedVariant.billingPeriod;
+    }
+    return billingPeriod;
+  };
+
+  // Get current custom billing period months
+  const getCurrentCustomBillingPeriodMonths = (): number | null => {
+    if (hasVariants && selectedVariant) {
+      return selectedVariant.customBillingPeriodMonths || null;
+    }
+    return customBillingPeriodMonths;
+  };
+
   // Format price with billing period
   const getFormattedPrice = (): string => {
-    // For card display, show a simplified version without the monthly equivalent
     return formatPriceWithBillingPeriod(
-      price, 
-      billingPeriod, 
-      customBillingPeriodMonths,
+      getCurrentPrice(),
+      getCurrentBillingPeriod(),
+      getCurrentCustomBillingPeriodMonths(),
+      { 
+        showMonthlyEquivalent: false,
+        locale: currentLanguage
+      }
+    );
+  };
+
+  // Get monthly equivalent for display
+  const getMonthlyEquivalent = (): string | null => {
+    const currentBillingPeriod = getCurrentBillingPeriod();
+    const currentPrice = getCurrentPrice();
+    const customMonths = getCurrentCustomBillingPeriodMonths();
+    
+    if (currentBillingPeriod === 'monthly') {
+      return null; // No need to show monthly equivalent for monthly plans
+    }
+    
+    let monthlyPrice = currentPrice;
+    
+    switch (currentBillingPeriod) {
+      case 'three_month':
+        monthlyPrice = currentPrice / 3;
+        break;
+      case 'six_month':
+        monthlyPrice = currentPrice / 6;
+        break;
+      case 'annually':
+        monthlyPrice = currentPrice / 12;
+        break;
+      case 'other':
+        if (customMonths && customMonths > 1) {
+          monthlyPrice = currentPrice / customMonths;
+        }
+        break;
+    }
+    
+    return formatPriceWithBillingPeriod(
+      monthlyPrice,
+      'monthly',
+      null,
       { 
         showMonthlyEquivalent: false,
         locale: currentLanguage
@@ -122,6 +214,12 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     if (!isAuthenticated) {
       // Save intended subscription ID to purchase after login
       sessionStorage.setItem('pendingSubscriptionId', id);
+      
+      // Save selected variant if applicable
+      if (hasVariants && selectedVariant && selectedVariant._key) {
+        sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
+      }
+      
       const returnUrl = encodeURIComponent('/subscriptions');
       router.push(`/login?returnUrl=${returnUrl}`);
       return;
@@ -133,7 +231,10 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       // Store appointment page as the return URL after successful purchase
       sessionStorage.setItem('loginReturnUrl', '/appointment');
       
-      const result = await purchaseSubscription(id);
+      const result = await purchaseSubscription(
+        id,
+        hasVariants && selectedVariant ? selectedVariant._key : undefined
+      );
       
       if (result.success && result.url) {
         // Redirect to Stripe checkout
@@ -163,12 +264,10 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const hasDescription = (): boolean => {
     const localizedDescription = getLocalizedDescription();
     
-    // First check if it exists and is an array
     if (!localizedDescription || !Array.isArray(localizedDescription) || localizedDescription.length === 0) {
       return false;
     }
     
-    // Then check if any block has actual text content
     return localizedDescription.some(block => 
       block && block.children && Array.isArray(block.children) && 
       block.children.some(child => child && child.text && child.text.trim().length > 0)
@@ -182,16 +281,13 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 
   // Get image URL or fallback
   const getImageUrl = (): string => {
-    // First check for featuredImage for catalog display
     if (featuredImage) {
       return urlFor(featuredImage).width(600).height(450).url();
     }
-    // Fall back to regular image
     if (image) {
       return urlFor(image).width(600).height(450).url();
     }
     
-    // Fallback images based on card type
     const fallbackImages: Record<string, string> = {
       'basic': '/images/subscription-basic.jpg',
       'standard': '/images/subscription-standard.jpg',
@@ -218,7 +314,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Image with significantly increased height */}
+        {/* Image */}
         <div className="w-full">
           <div className="relative h-72 w-full overflow-hidden">
             <Image
@@ -230,7 +326,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               style={{ objectPosition: 'center' }}
             />
             
-            {/* Featured Badge (if needed) */}
+            {/* Featured Badge */}
             {cardType === 'premium' && (
               <div className="absolute top-3 right-3 bg-white text-[#e63946] text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
                 {currentLanguage === 'es' ? 'Destacado' : 'Featured'}
@@ -247,37 +343,29 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                 cardType === 'premium' ? 'text-[#e63946]' : 
                 'text-[#ff4d6d]'
               }`}>
-                {formatPriceWithBillingPeriod(price, billingPeriod, customBillingPeriodMonths, { 
-                  showMonthlyEquivalent: false,
-                  locale: currentLanguage
-                })}
+                {getFormattedPrice()}
               </span>
               
               {/* Show monthly price equivalent for non-monthly plans */}
-              {billingPeriod !== 'monthly' && (
+              {getMonthlyEquivalent() && (
                 <div className="text-sm text-gray-600 mt-1">
-                  {formatPriceWithBillingPeriod(
-                    price / (
-                      billingPeriod === 'annually' ? 12 : 
-                      billingPeriod === 'three_month' ? 3 : 
-                      billingPeriod === 'six_month' ? 6 : 
-                      billingPeriod === 'other' && customBillingPeriodMonths ? customBillingPeriodMonths : 1
-                    ), 
-                    'monthly', 
-                    null,
-                    { 
-                      showMonthlyEquivalent: false,
-                      locale: currentLanguage
-                    }
-                  )}
+                  ({getMonthlyEquivalent()})
                 </div>
               )}
             </div>
+            
+            {/* Show selected variant info if variants exist */}
+            {hasVariants && selectedVariant && (
+              <div className="text-xs text-gray-500 mt-1">
+                {selectedVariant.dosageAmount} {selectedVariant.dosageUnit}
+              </div>
+            )}
           </div>
         </div>
         
-        {/* Features */}
+        {/* Features and Actions */}
         <div className="p-5">
+          {/* Features */}
           <div className="space-y-3 mb-6">
             {getLocalizedFeatures().filter(feature => feature && feature.featureText).map((feature, index) => (
               <div key={index} className="flex items-start gap-3">
@@ -308,15 +396,95 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               </Link>
             )}
             
+            {/* Variant Selector - NEW DESIGN: Always visible radio buttons */}
+            {hasVariants && variants && variants.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  {currentLanguage === 'es' ? 'Seleccionar opción:' : 'Select option:'}
+                </label>
+                <div className="space-y-2">
+                  {variants.map((variant, index) => {
+                    const isSelected = selectedVariant?._key === variant._key;
+                    return (
+                      <div
+                        key={variant._key || `variant-${index}`}
+                        onClick={() => handleVariantSelect(variant)}
+                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                          isSelected 
+                            ? `${cardType === 'basic' ? 'border-[#d81159] bg-[#d81159]/5' : 
+                                cardType === 'premium' ? 'border-[#e63946] bg-[#e63946]/5' : 
+                                'border-[#ff4d6d] bg-[#ff4d6d]/5'}` 
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            {/* Radio button indicator */}
+                            <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
+                              isSelected 
+                                ? `${cardType === 'basic' ? 'border-[#d81159]' : 
+                                    cardType === 'premium' ? 'border-[#e63946]' : 
+                                    'border-[#ff4d6d]'}` 
+                                : 'border-gray-300'
+                            }`}>
+                              {isSelected && (
+                                <div className={`w-2 h-2 rounded-full ${
+                                  cardType === 'basic' ? 'bg-[#d81159]' : 
+                                  cardType === 'premium' ? 'bg-[#e63946]' : 
+                                  'bg-[#ff4d6d]'
+                                }`}></div>
+                              )}
+                            </div>
+                            
+                            {/* Variant info */}
+                            <div>
+                              <div className="font-medium text-sm text-gray-900">
+                                {getLocalizedVariantTitle(variant)}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {variant.dosageAmount} {variant.dosageUnit}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Price and badges */}
+                          <div className="text-right">
+                            <div className="font-semibold text-sm">
+                              {formatPriceWithBillingPeriod(
+                                variant.price,
+                                variant.billingPeriod,
+                                variant.customBillingPeriodMonths,
+                                { showMonthlyEquivalent: false, locale: currentLanguage }
+                              )}
+                            </div>
+                            {variant.isPopular && (
+                              <div className={`text-xs font-medium mt-1 ${
+                                cardType === 'basic' ? 'text-[#d81159]' : 
+                                cardType === 'premium' ? 'text-[#e63946]' : 
+                                'text-[#ff4d6d]'
+                              }`}>
+                                {currentLanguage === 'es' ? 'Popular' : 'Popular'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
             {/* Subscribe Button */}
             <button
               onClick={handleSubscribe}
-              disabled={isProcessing || isLoading}
+              disabled={isProcessing || isLoading || (hasVariants && !selectedVariant)}
               className={`w-full py-3 px-4 rounded-lg text-white font-medium transition-colors ${
-                isProcessing || isLoading ? 'bg-gray-400 cursor-not-allowed' : 
-                cardType === 'basic' ? 'bg-[#d81159] hover:bg-[#c00f50]' : 
-                cardType === 'premium' ? 'bg-gradient-to-r from-[#e63946] to-[#ff4d6d] hover:from-[#d52d3a] hover:to-[#ff3c60]' : 
-                'bg-[#ff4d6d] hover:bg-[#ff3c60]'
+                isProcessing || isLoading || (hasVariants && !selectedVariant)
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : cardType === 'basic' ? 'bg-[#d81159] hover:bg-[#c00f50]' : 
+                    cardType === 'premium' ? 'bg-gradient-to-r from-[#e63946] to-[#ff4d6d] hover:from-[#d52d3a] hover:to-[#ff3c60]' : 
+                    'bg-[#ff4d6d] hover:bg-[#ff3c60]'
               }`}
             >
               {getSubscribeButtonText()}
@@ -331,7 +499,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         </div>
       </div>
 
-      {/* Description Modal - if needed */}
+      {/* Description Modal */}
       {isModalOpen && (
         <Modal
           isOpen={isModalOpen}
@@ -340,14 +508,16 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           className="max-w-2xl"
         >
           <div className="subscription-details">
-            {/* Price information with monthly equivalent */}
+            {/* Price information */}
             <div className="mb-4 pb-4 border-b border-gray-200">
               <p className="font-bold text-xl text-[#e63946]">
-                {formatPriceWithBillingPeriod(price, billingPeriod, customBillingPeriodMonths, { 
-                  showMonthlyEquivalent: true,
-                  locale: currentLanguage
-                })}
+                {getFormattedPrice()}
               </p>
+              {getMonthlyEquivalent() && (
+                <p className="text-sm text-gray-600 mt-1">
+                  ({getMonthlyEquivalent()})
+                </p>
+              )}
             </div>
             
             {/* Description content */}

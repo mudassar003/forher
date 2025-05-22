@@ -51,7 +51,7 @@ export type BillingPeriod =
   | 'annually'
   | 'other';
 
-// Interface for subscription variant
+// Interface for subscription variant with strict typing
 export interface SubscriptionVariant {
   _key?: string;
   title: string;
@@ -69,6 +69,7 @@ export interface SubscriptionVariant {
   isPopular?: boolean;
 }
 
+// Main subscription interface with strict typing
 export interface Subscription {
   _id: string;
   title: string;
@@ -76,30 +77,63 @@ export interface Subscription {
   slug: {
     current: string;
   };
-  description?: BlockContent[]; // BlockContent array
-  descriptionEs?: BlockContent[]; // BlockContent array
+  description?: BlockContent[];
+  descriptionEs?: BlockContent[];
+  // Base price (used when no variants)
   price: number;
   compareAtPrice?: number;
   billingPeriod: BillingPeriod;
   customBillingPeriodMonths?: number | null;
+  // Variant support
   hasVariants?: boolean;
   variants?: SubscriptionVariant[];
+  // Features
   features?: SubscriptionFeature[];
   featuresEs?: SubscriptionFeature[];
+  // Images
   image?: SanityImageSource;
-  featuredImage?: SanityImageSource; // Dedicated catalog images
+  featuredImage?: SanityImageSource;
+  // Status flags
   isFeatured: boolean;
   isActive: boolean;
+  // Relations
   categories?: SubscriptionCategory[];
+  // Stripe integration
   stripePriceId?: string;
   stripeProductId?: string;
 }
 
+// Data structure for subscription pages
 export interface SubscriptionsData {
   categories: SubscriptionCategory[];
   subscriptionsByCategory: Record<string, Subscription[]>;
   uncategorizedSubscriptions: Subscription[];
   featuredSubscriptions: Subscription[];
   allSubscriptions: Subscription[];
+  error?: string;
+}
+
+// Stripe webhook metadata interface
+export interface StripeSubscriptionMetadata {
+  userId: string;
+  userEmail: string;
+  subscriptionId: string;
+  variantKey?: string;
+  subscriptionType: 'subscription';
+}
+
+// Purchase request interface
+export interface SubscriptionPurchaseRequest {
+  subscriptionId: string;
+  userId: string;
+  userEmail: string;
+  variantKey?: string;
+}
+
+// Purchase response interface
+export interface SubscriptionPurchaseResponse {
+  success: boolean;
+  sessionId?: string;
+  url?: string;
   error?: string;
 }

@@ -8,10 +8,23 @@ interface SubscriptionPurchaseResult {
   sessionId?: string;
   url?: string;
   error?: string;
+  metadata?: {
+    subscriptionId: string;
+    variantKey?: string;
+    price: number;
+    billingPeriod: string;
+  };
+}
+
+interface SubscriptionPurchaseRequest {
+  subscriptionId: string;
+  userId: string;
+  userEmail: string;
+  variantKey?: string;
 }
 
 export function useSubscriptionPurchase() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { user, isAuthenticated, checkSession } = useAuthStore();
 
@@ -21,6 +34,13 @@ export function useSubscriptionPurchase() {
       subscriptionId: string,
       variantKey?: string
     ): Promise<SubscriptionPurchaseResult> => {
+      // Validate input parameters
+      if (!subscriptionId || typeof subscriptionId !== 'string') {
+        const errorMessage = "Invalid subscription ID provided";
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+
       // First, verify that the session is valid (cookie check)
       let hasValidSession = await verifySession();
       
@@ -50,22 +70,23 @@ export function useSubscriptionPurchase() {
         // Store return URL in sessionStorage to help with redirecting after auth
         sessionStorage.setItem('loginReturnUrl', '/appointment');
         
-        // Prepare request payload
-        const requestData: {
-          subscriptionId: string;
-          userId: string;
-          userEmail: string;
-          variantKey?: string;
-        } = {
+        // Prepare request payload with strict typing
+        const requestData: SubscriptionPurchaseRequest = {
           subscriptionId,
           userId: user.id,
           userEmail: user.email || '',
         };
         
         // Add variant information if provided
-        if (variantKey) {
+        if (variantKey && typeof variantKey === 'string') {
           requestData.variantKey = variantKey;
         }
+        
+        console.log('Purchasing subscription:', {
+          subscriptionId,
+          variantKey,
+          userId: user.id
+        });
         
         // Make API request to create subscription purchase
         const response = await fetch('/api/stripe/subscriptions', {
@@ -78,20 +99,31 @@ export function useSubscriptionPurchase() {
           credentials: 'include'
         });
         
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
-        if (!response.ok || !result.success) {
+        if (!result.success) {
           throw new Error(result.error || 'Failed to create subscription');
         }
         
-        // Return the Stripe checkout URL
+        console.log('Subscription purchase initiated successfully:', result);
+        
+        // Return the Stripe checkout URL and metadata
         return {
           success: true,
           sessionId: result.sessionId,
-          url: result.url
+          url: result.url,
+          metadata: result.metadata
         };
-      } catch (error: any) {
-        const errorMessage = error.message || 'An error occurred during subscription purchase';
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : 'An error occurred during subscription purchase';
+        
+        console.error('Subscription purchase error:', error);
         setError(errorMessage);
         return { success: false, error: errorMessage };
       } finally {
@@ -101,9 +133,15 @@ export function useSubscriptionPurchase() {
     [user, isAuthenticated, checkSession]
   );
   
+  // Function to clear error state
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+  
   return {
     isLoading,
     error,
-    purchaseSubscription
+    purchaseSubscription,
+    clearError
   };
 }

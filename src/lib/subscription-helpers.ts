@@ -4,7 +4,7 @@ import { client } from '@/sanity/lib/client';
 import { Subscription } from '@/types/subscription-page';
 
 /**
- * Fetch a subscription by its slug
+ * Fetch a subscription by its slug WITH VARIANTS
  * @param slug The subscription slug
  * @returns The subscription or null if not found
  */
@@ -19,10 +19,30 @@ export async function getSubscriptionBySlug(slug: string): Promise<Subscription 
         description,
         descriptionEs,
         price,
+        compareAtPrice,
         billingPeriod,
+        customBillingPeriodMonths,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          titleEs,
+          description,
+          descriptionEs,
+          dosageAmount,
+          dosageUnit,
+          price,
+          compareAtPrice,
+          billingPeriod,
+          customBillingPeriodMonths,
+          stripePriceId,
+          isDefault,
+          isPopular
+        },
         features,
         featuresEs,
         image,
+        featuredImage,
         stripePriceId,
         stripeProductId,
         isActive,
@@ -38,6 +58,12 @@ export async function getSubscriptionBySlug(slug: string): Promise<Subscription 
       }`,
       { slug }
     );
+    
+    console.log('Fetched subscription by slug:', {
+      slug,
+      hasVariants: subscription?.hasVariants,
+      variantCount: subscription?.variants?.length || 0
+    });
     
     return subscription || null;
   } catch (error) {
@@ -81,7 +107,7 @@ export async function getRelatedSubscriptions(subscription: Subscription, limit:
     // Get the first category ID
     const categoryId = subscription.categories[0]._id;
     
-    // Fetch related subscriptions from the same category
+    // Fetch related subscriptions from the same category WITH VARIANTS
     const related = await client.fetch(
       groq`*[_type == "subscription" && 
             references($categoryId) && 
@@ -94,8 +120,22 @@ export async function getRelatedSubscriptions(subscription: Subscription, limit:
         titleEs,
         slug,
         price,
+        compareAtPrice,
         billingPeriod,
+        customBillingPeriodMonths,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          titleEs,
+          price,
+          billingPeriod,
+          customBillingPeriodMonths,
+          isDefault,
+          isPopular
+        },
         image,
+        featuredImage,
         isFeatured
       }`,
       { 

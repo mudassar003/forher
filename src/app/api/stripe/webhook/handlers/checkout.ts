@@ -25,7 +25,7 @@ export async function handleCheckoutSession(
   console.log(`🔍 Processing checkout session: ${session.id}`);
   
   try {
-    // Extract metadata
+    // Extract metadata with proper typing
     const metadata = session.metadata as CheckoutSessionMetadata;
     const userId = metadata?.userId;
     const userEmail = metadata?.userEmail;
@@ -33,6 +33,7 @@ export async function handleCheckoutSession(
     const orderId = metadata?.orderId;
     const sanityId = metadata?.sanityId;
     const variantKey = metadata?.variantKey;
+    const subscriptionType = metadata?.subscriptionType;
 
     // Get customer information if available
     let customerId = session.customer as string;
@@ -41,7 +42,7 @@ export async function handleCheckoutSession(
     }
     
     // Check what type of purchase this is
-    const isSubscription = session.mode === 'subscription';
+    const isSubscription = session.mode === 'subscription' || subscriptionType === 'subscription';
     const isRegularOrder = orderId || sanityId;
     
     // Handle different purchase types
@@ -83,7 +84,7 @@ async function getOrCreateCustomer(
       throw new Error("Customer email is required");
     }
     
-    // Try to find an existing customer - fixed params structure
+    // Try to find an existing customer
     const customers = await stripe.customers.list({
       email: email,
       limit: 1
@@ -118,10 +119,6 @@ async function getOrCreateCustomer(
 
 /**
  * Handle subscription purchase and retrieve variant information if necessary
- * @param session The Stripe checkout session
- * @param subscriptionId The subscription ID
- * @param userId The user ID
- * @param variantKey Optional variant key
  */
 async function handleSubscriptionPurchase(
   session: Stripe.Checkout.Session,
@@ -129,7 +126,7 @@ async function handleSubscriptionPurchase(
   userId?: string,
   variantKey?: string
 ): Promise<void> {
-  console.log(`Processing subscription purchase for ${subscriptionId}`);
+  console.log(`Processing subscription purchase for ${subscriptionId}${variantKey ? ` with variant ${variantKey}` : ''}`);
   
   // Get Stripe subscription ID from the session
   const subscription = await stripe.subscriptions.retrieve(
@@ -182,8 +179,8 @@ async function handleSubscriptionPurchase(
       
       console.log(`✅ Activated subscription in Sanity with ID: ${userSubscriptionSanityId}`);
       
-      // Update Supabase user subscription
-      await updateSupabaseSubscription(supabaseSubscriptionId, {
+      // Update Supabase user subscription with variant information
+      const supabaseUpdateData = {
         status: 'active',
         is_active: true,
         stripe_subscription_id: subscription.id,
@@ -191,9 +188,19 @@ async function handleSubscriptionPurchase(
         end_date: endDate.toISOString(),
         next_billing_date: endDate.toISOString(),
         updated_at: new Date().toISOString()
-      });
+      };
+      
+      // Ensure variant key is preserved if it exists
+      if (storedVariantKey || variantKey) {
+        // Add variant_key to the update if it's not already there
+        Object.assign(supabaseUpdateData, {
+          variant_key: storedVariantKey || variantKey
+        });
+      }
+      
+      await updateSupabaseSubscription(supabaseSubscriptionId, supabaseUpdateData);
 
-      console.log(`✅ Activated subscription in Supabase with ID: ${supabaseSubscriptionId}`);
+      console.log(`✅ Activated subscription in Supabase with ID: ${supabaseSubscriptionId}${storedVariantKey ? ` (variant: ${storedVariantKey})` : ''}`);
     } else {
       console.error(`No user subscription found for session ID: ${session.id}`);
       
@@ -216,14 +223,23 @@ async function handleSubscriptionPurchase(
           
           // Update this subscription to be active if it's not already
           if (userSub.status !== 'active' || !userSub.is_active) {
-            await updateSupabaseSubscription(userSub.id, {
+            const fallbackUpdateData = {
               status: 'active',
               is_active: true,
               stripe_subscription_id: subscription.id,
               updated_at: new Date().toISOString()
-            });
+            };
             
-            console.log(`✅ Activated fallback subscription in Supabase with ID: ${userSub.id}`);
+            // Preserve variant key if it exists
+            if (userSub.variant_key || variantKey) {
+              Object.assign(fallbackUpdateData, {
+                variant_key: userSub.variant_key || variantKey
+              });
+            }
+            
+            await updateSupabaseSubscription(userSub.id, fallbackUpdateData);
+            
+            console.log(`✅ Activated fallback subscription in Supabase with ID: ${userSub.id}${userSub.variant_key ? ` (variant: ${userSub.variant_key})` : ''}`);
             
             // Update Sanity if we have a Sanity ID
             if (userSub.sanity_id) {

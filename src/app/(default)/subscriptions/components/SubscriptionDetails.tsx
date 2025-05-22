@@ -35,6 +35,13 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     }
   }, [subscription.hasVariants, subscription.variants]);
   
+  // Check auth state when component mounts
+  useEffect(() => {
+    if (!isAuthenticated) {
+      checkSession();
+    }
+  }, [isAuthenticated, checkSession]);
+  
   // Custom translations
   const translations = {
     home: currentLanguage === 'es' ? 'Inicio' : 'Home',
@@ -141,8 +148,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       sessionStorage.setItem('pendingSubscriptionId', subscription._id);
       
       // If a variant is selected, store that too
-      if (subscription.hasVariants && selectedVariant) {
-        sessionStorage.setItem('pendingVariantKey', selectedVariant._key || '');
+      if (subscription.hasVariants && selectedVariant && selectedVariant._key) {
+        sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
       }
       
       const returnUrl = encodeURIComponent(currentPath);
@@ -157,10 +164,10 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       sessionStorage.setItem('loginReturnUrl', '/appointment');
       
       // If using variants, include the selected variant info
-      if (subscription.hasVariants && selectedVariant) {
+      if (subscription.hasVariants && selectedVariant && selectedVariant._key) {
         const result = await purchaseSubscription(
           subscription._id, 
-          selectedVariant._key || undefined
+          selectedVariant._key
         );
         
         if (result.success && result.url) {
@@ -313,61 +320,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 )}
               </div>
               
-              {/* Variant Selector (if subscription has variants) */}
-              {subscription.hasVariants && subscription.variants && subscription.variants.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">
-                    {translations.selectVariant}
-                  </h3>
-                  <div className="space-y-3">
-                    {subscription.variants.map((variant) => (
-                      <div 
-                        key={variant._key || variant.title}
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-[#e63946] 
-                          ${selectedVariant && selectedVariant._key === variant._key 
-                            ? 'border-[#e63946] bg-[#fff8f8]' 
-                            : 'border-gray-200'}`}
-                        onClick={() => setSelectedVariant(variant)}
-                      >
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">{getLocalizedVariantTitle(variant)}</h4>
-                            <p className="text-sm text-gray-600">
-                              {translations.dosage}: {variant.dosageAmount} {variant.dosageUnit}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">
-                              {formatPriceWithBillingPeriod(
-                                variant.price, 
-                                variant.billingPeriod, 
-                                variant.customBillingPeriodMonths,
-                                { showMonthlyEquivalent: false, locale: currentLanguage }
-                              )}
-                            </p>
-                            {variant.isPopular && (
-                              <span className="inline-block bg-[#e63946] text-white text-xs px-2 py-0.5 rounded-full mt-1">
-                                {translations.mostPopular}
-                              </span>
-                            )}
-                            {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
-                              <div className="mt-1">
-                                <span className="text-xs text-gray-500 line-through">
-                                  ${variant.compareAtPrice}
-                                </span>
-                                <span className="text-xs text-green-600 ml-1">
-                                  -{getDiscountPercentage(variant.compareAtPrice, variant.price)}%
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
               {/* Main Image */}
               <div className="relative w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-8">
                 <Image
@@ -398,6 +350,66 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   {translations.included}
                 </h2>
+                
+                {/* Variant Selector (if subscription has variants) */}
+                {subscription.hasVariants && subscription.variants && subscription.variants.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      {translations.selectVariant}
+                    </h3>
+                    <div className="space-y-3">
+                      {subscription.variants.map((variant) => (
+                        <div 
+                          key={variant._key || variant.title}
+                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-[#e63946] 
+                            ${selectedVariant && selectedVariant._key === variant._key 
+                              ? 'border-[#e63946] bg-[#fff8f8]' 
+                              : 'border-gray-200'}`}
+                          onClick={() => setSelectedVariant(variant)}
+                        >
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium">{getLocalizedVariantTitle(variant)}</h4>
+                              <p className="text-sm text-gray-600">
+                                {translations.dosage}: {variant.dosageAmount} {variant.dosageUnit}
+                              </p>
+                              {getLocalizedVariantDescription(variant) && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {getLocalizedVariantDescription(variant)}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                {formatPriceWithBillingPeriod(
+                                  variant.price, 
+                                  variant.billingPeriod, 
+                                  variant.customBillingPeriodMonths,
+                                  { showMonthlyEquivalent: false, locale: currentLanguage }
+                                )}
+                              </p>
+                              {variant.isPopular && (
+                                <span className="inline-block bg-[#e63946] text-white text-xs px-2 py-0.5 rounded-full mt-1">
+                                  {translations.mostPopular}
+                                </span>
+                              )}
+                              {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
+                                <div className="mt-1">
+                                  <span className="text-xs text-gray-500 line-through">
+                                    ${variant.compareAtPrice}
+                                  </span>
+                                  <span className="text-xs text-green-600 ml-1">
+                                    -{getDiscountPercentage(variant.compareAtPrice, variant.price)}%
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Features List */}
                 <div className="space-y-4 mb-8">

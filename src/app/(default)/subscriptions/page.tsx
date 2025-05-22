@@ -11,10 +11,10 @@ export const metadata: Metadata = {
   description: 'Choose a subscription plan that best fits your needs',
 };
 
-// A more robust function to fetch subscriptions and organize by category
+// Enhanced function to fetch subscriptions with variants
 async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
   try {
-    // First fetch all subscriptions with translations
+    // First fetch all subscriptions with translations AND VARIANTS
     const subscriptions: Subscription[] = await client.fetch(
       groq`*[_type == "subscription" && isActive == true && isDeleted != true] {
         _id,
@@ -24,12 +24,34 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
         description,
         descriptionEs,
         price,
+        compareAtPrice,
         billingPeriod,
+        customBillingPeriodMonths,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          titleEs,
+          description,
+          descriptionEs,
+          dosageAmount,
+          dosageUnit,
+          price,
+          compareAtPrice,
+          billingPeriod,
+          customBillingPeriodMonths,
+          stripePriceId,
+          isDefault,
+          isPopular
+        },
         features,
         featuresEs,
         image,
+        featuredImage,
         isActive,
         isFeatured,
+        stripePriceId,
+        stripeProductId,
         "categories": categories[]->{ 
           _id, 
           title, 
@@ -81,6 +103,12 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
     const uncategorizedSubscriptions = subscriptions.filter(subscription => 
       !subscription.categories || subscription.categories.length === 0
     );
+    
+    console.log('Fetched subscriptions:', {
+      total: subscriptions.length,
+      withVariants: subscriptions.filter(s => s.hasVariants).length,
+      featured: featuredSubscriptions.length
+    });
     
     return {
       categories,

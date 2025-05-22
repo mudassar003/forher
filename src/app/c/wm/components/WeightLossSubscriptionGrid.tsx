@@ -195,9 +195,9 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
             key={subscription._id}
             className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 hover:transform hover:-translate-y-2"
           >
-            {/* Image */}
+            {/* Image - Updated to match main subscription cards */}
             <div className="w-full">
-              <div className="relative h-48 w-full overflow-hidden">
+              <div className="relative h-72 w-full overflow-hidden">
                 <Image
                   src={getImageUrl(subscription)}
                   alt={subscription.title}

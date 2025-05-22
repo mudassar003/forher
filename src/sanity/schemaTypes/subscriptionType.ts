@@ -1,6 +1,25 @@
-// src/sanity/schemaTypes/subscriptionType.ts
+//src/sanity/schemaTypes/subscriptionType.ts
 import { CreditCardIcon } from '@sanity/icons'
 import {defineField, defineType, defineArrayMember} from 'sanity'
+
+// Define the document context type for validation
+interface SubscriptionDocument {
+  hasVariants?: boolean;
+  billingPeriod?: string;
+  customBillingPeriodMonths?: number;
+}
+
+// Define the parent context type for variants
+interface VariantParent {
+  billingPeriod?: string;
+  customBillingPeriodMonths?: number;
+}
+
+// Define the validation context type
+interface ValidationContext {
+  document?: SubscriptionDocument;
+  parent?: VariantParent;
+}
 
 export const subscriptionType = defineType({
   name: 'subscription',
@@ -265,7 +284,8 @@ export const subscriptionType = defineType({
               description: 'If billing period is set to "Other", specify the number of months here',
               validation: (Rule) => 
                 Rule.custom((currentValue, context) => {
-                  const billingPeriod = context.parent?.billingPeriod;
+                  const typedContext = context as ValidationContext;
+                  const billingPeriod = typedContext.parent?.billingPeriod;
                   if (billingPeriod === 'other' && !currentValue) {
                     return 'Required when billing period is set to "Other"';
                   }
@@ -337,8 +357,8 @@ export const subscriptionType = defineType({
       ],
       description: 'Different variants of this subscription (dosages, pricing options)',
       validation: (Rule) => Rule.custom((variants, context) => {
-        // @ts-ignore - context.document exists but TypeScript doesn't recognize it
-        const hasVariants = context.document?.hasVariants;
+        const typedContext = context as ValidationContext;
+        const hasVariants = typedContext.document?.hasVariants;
         
         if (hasVariants && (!variants || variants.length === 0)) {
           return 'At least one variant is required when "Has Variants" is enabled';
@@ -362,8 +382,8 @@ export const subscriptionType = defineType({
       type: 'number',
       description: 'The price for this subscription (if no variants)',
       validation: (Rule) => Rule.custom((price, context) => {
-        // @ts-ignore - context.document exists but TypeScript doesn't recognize it
-        const hasVariants = context.document?.hasVariants;
+        const typedContext = context as ValidationContext;
+        const hasVariants = typedContext.document?.hasVariants;
         
         if (!hasVariants && (price === undefined || price === null)) {
           return 'Price is required when variants are not used';
@@ -393,8 +413,8 @@ export const subscriptionType = defineType({
         ],
       },
       validation: (Rule) => Rule.custom((billingPeriod, context) => {
-        // @ts-ignore - context.document exists but TypeScript doesn't recognize it
-        const hasVariants = context.document?.hasVariants;
+        const typedContext = context as ValidationContext;
+        const hasVariants = typedContext.document?.hasVariants;
         
         if (!hasVariants && !billingPeriod) {
           return 'Billing period is required when variants are not used';
@@ -410,10 +430,9 @@ export const subscriptionType = defineType({
       description: 'If billing period is set to "Other", specify the number of months here',
       validation: (Rule) => 
         Rule.custom((currentValue, context) => {
-          // @ts-ignore - context.document exists but TypeScript doesn't recognize it
-          const hasVariants = context.document?.hasVariants;
-          // @ts-ignore - context.document exists but TypeScript doesn't recognize it
-          const billingPeriod = context.document?.billingPeriod;
+          const typedContext = context as ValidationContext;
+          const hasVariants = typedContext.document?.hasVariants;
+          const billingPeriod = typedContext.document?.billingPeriod;
           
           if (!hasVariants && billingPeriod === 'other' && !currentValue) {
             return 'Required when billing period is set to "Other"';

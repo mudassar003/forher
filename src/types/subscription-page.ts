@@ -114,12 +114,14 @@ export interface SubscriptionsData {
 }
 
 // Stripe webhook metadata interface
-export interface StripeSubscriptionMetadata {
-  userId: string;
-  userEmail: string;
-  subscriptionId: string;
+export interface CheckoutSessionMetadata {
+  userId?: string;
+  userEmail?: string;
+  subscriptionId?: string;
+  orderId?: string;
+  sanityId?: string;
   variantKey?: string;
-  subscriptionType: 'subscription';
+  subscriptionType?: string;
 }
 
 // Purchase request interface

@@ -46,13 +46,15 @@ export interface WebhookResponse {
   error?: string;
 }
 
-// Common webhook metadata types
+// Common webhook metadata types - UPDATED WITH VARIANT KEY
 export interface CheckoutSessionMetadata {
   userId?: string;
   userEmail?: string;
   subscriptionId?: string;
   orderId?: string;
   sanityId?: string;
+  variantKey?: string;
+  subscriptionType?: string;
 }
 
 // Define known event types explicitly

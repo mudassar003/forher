@@ -45,6 +45,7 @@
     "title": "Subscription Plans",
     "subtitle": "Choose a subscription plan that best fits your needs and enjoy exclusive benefits",
     "featuredPlans": "Featured Plans",
+    "featuredPlan": "Featured Plan",
     "otherPlans": "Other Plans",
     "ourPlans": "Our Subscription Plans",
     "noPlans": "No subscription plans available",
@@ -55,6 +56,8 @@
     "subscribeNow": "Subscribe Now",
     "processing": "Processing...",
     "signInToSubscribe": "Sign In to Subscribe",
+    "description": "Description",
+    "categories": "Categories",
     "billingPeriods": {
       "monthly": "/month",
       "quarterly": "/quarter",

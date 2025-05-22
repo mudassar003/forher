@@ -45,6 +45,7 @@
     "title": "Planes de Suscripción",
     "subtitle": "Elija un plan de suscripción que se adapte mejor a sus necesidades y disfrute de beneficios exclusivos",
     "featuredPlans": "Planes Destacados",
+    "featuredPlan": "Plan Destacado",
     "otherPlans": "Otros Planes",
     "ourPlans": "Nuestros Planes de Suscripción",
     "noPlans": "No hay planes de suscripción disponibles",
@@ -55,6 +56,8 @@
     "subscribeNow": "Suscribirse Ahora",
     "processing": "Procesando...",
     "signInToSubscribe": "Iniciar Sesión para Suscribirse",
+    "description": "Descripción",
+    "categories": "Categorías",
     "billingPeriods": {
       "monthly": "/mes",
       "quarterly": "/trimestre",

@@ -5,7 +5,9 @@ import { useState, useEffect } from "react";
 import { groq } from 'next-sanity';
 import { client } from '@/sanity/lib/client';
 import { Subscription, SubscriptionCategory } from '@/types/subscription-page';
-import SubscriptionCard from '@/app/(default)/subscriptions/components/SubscriptionCard';
+import Image from 'next/image';
+import Link from 'next/link';
+import { urlFor } from '@/sanity/lib/image';
 
 interface WeightLossSubscriptionGridProps {
   className?: string;
@@ -60,6 +62,7 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
             descriptionEs,
             price,
             billingPeriod,
+            customBillingPeriodMonths,
             features,
             featuresEs,
             image,
@@ -92,10 +95,53 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
     fetchWeightLossSubscriptions();
   }, []);
 
-  // Assign card type based on position in grid
-  const getCardType = (index: number): 'basic' | 'premium' | 'standard' => {
-    const types = ['basic', 'premium', 'standard'] as const;
-    return types[index % 3];
+  // Format price - show only main price without monthly equivalent
+  const formatPrice = (subscription: Subscription): string => {
+    const formattedPrice = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(subscription.price);
+
+    // Get billing period display
+    let periodDisplay: string;
+    switch (subscription.billingPeriod) {
+      case 'monthly':
+        periodDisplay = '/month';
+        break;
+      case 'three_month':
+        periodDisplay = '/3 months';
+        break;
+      case 'six_month':
+        periodDisplay = '/6 months';
+        break;
+      case 'annually':
+        periodDisplay = '/year';
+        break;
+      case 'other':
+        if (subscription.customBillingPeriodMonths && subscription.customBillingPeriodMonths > 1) {
+          periodDisplay = `/${subscription.customBillingPeriodMonths} months`;
+        } else {
+          periodDisplay = '/month';
+        }
+        break;
+      default:
+        periodDisplay = `/${subscription.billingPeriod}`;
+    }
+
+    return `${formattedPrice}${periodDisplay}`;
+  };
+
+  // Get image URL or fallback
+  const getImageUrl = (subscription: Subscription): string => {
+    if (subscription.featuredImage) {
+      return urlFor(subscription.featuredImage).width(600).height(450).url();
+    }
+    if (subscription.image) {
+      return urlFor(subscription.image).width(600).height(450).url();
+    }
+    return '/images/subscription-placeholder.jpg';
   };
 
   if (isLoading) {
@@ -144,24 +190,69 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
     <div className={`w-full ${className}`}>
       {/* Subscription grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-        {weightLossSubscriptions.map((subscription, index) => (
-          <SubscriptionCard 
+        {weightLossSubscriptions.map((subscription) => (
+          <div 
             key={subscription._id}
-            id={subscription._id}
-            title={subscription.title}
-            titleEs={subscription.titleEs}
-            description={subscription.description}
-            descriptionEs={subscription.descriptionEs}
-            price={subscription.price}
-            billingPeriod={subscription.billingPeriod}
-            features={subscription.features || []}
-            featuresEs={subscription.featuresEs || []}
-            categories={subscription.categories}
-            slug={subscription.slug}
-            cardType={getCardType(index)}
-            image={subscription.image}
-            featuredImage={subscription.featuredImage}
-          />
+            className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 hover:transform hover:-translate-y-2"
+          >
+            {/* Image */}
+            <div className="w-full">
+              <div className="relative h-48 w-full overflow-hidden">
+                <Image
+                  src={getImageUrl(subscription)}
+                  alt={subscription.title}
+                  fill
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 400px"
+                  style={{ objectPosition: 'center' }}
+                />
+                
+                {/* Featured Badge */}
+                {subscription.isFeatured && (
+                  <div className="absolute top-3 right-3 bg-white text-[#e63946] text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
+                    Featured
+                  </div>
+                )}
+              </div>
+              
+              {/* Title and Price Below Image */}
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-xl font-bold text-gray-800">{subscription.title}</h3>
+                <div className="mt-1">
+                  <span className="text-lg font-medium text-[#e63946]">
+                    {formatPrice(subscription)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Features and Actions */}
+            <div className="p-5">
+              {/* Features */}
+              <div className="space-y-3 mb-6">
+                {subscription.features && subscription.features.filter(feature => feature && feature.featureText).map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#e63946] flex items-center justify-center text-white text-xs">
+                      ✓
+                    </div>
+                    <div className="text-gray-700 text-sm">{feature.featureText}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="space-y-3">
+                {/* View Details Link - Only Button */}
+                {subscription.slug && subscription.slug.current && (
+                  <Link 
+                    href={`/subscriptions/${subscription.slug.current}`}
+                    className="block w-full text-center py-3 px-4 border-2 border-[#e63946] text-[#e63946] hover:bg-[#e63946] hover:text-white rounded-lg transition-colors font-medium"
+                  >
+                    View Details
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

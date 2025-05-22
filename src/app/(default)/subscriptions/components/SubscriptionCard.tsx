@@ -146,7 +146,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     if (hasVariants && selectedVariant) {
       return selectedVariant.customBillingPeriodMonths || null;
     }
-    return customBillingPeriodMonths;
+    return customBillingPeriodMonths || null;
   };
 
   // Format price with billing period

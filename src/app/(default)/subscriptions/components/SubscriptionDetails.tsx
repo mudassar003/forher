@@ -80,33 +80,59 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return subscription.features || [];
   };
 
-  // Get formatted price with billing period
+  // Get formatted price with billing period - FIXED VERSION
   const getFormattedPrice = (useVariant: boolean = true): string => {
+    let price: number;
+    let billingPeriod: string;
+    let customBillingPeriodMonths: number | null | undefined;
+
     // If variants are being used and one is selected, use that variant's price
     if (useVariant && subscription.hasVariants && selectedVariant) {
-      return formatPriceWithBillingPeriod(
-        selectedVariant.price, 
-        selectedVariant.billingPeriod, 
-        selectedVariant.customBillingPeriodMonths,
-        { 
-          showMonthlyEquivalent: true,
-          includeSlash: false, // Use "per month" style for details page
-          locale: currentLanguage
-        }
-      );
+      price = selectedVariant.price;
+      billingPeriod = selectedVariant.billingPeriod;
+      customBillingPeriodMonths = selectedVariant.customBillingPeriodMonths;
+    } else {
+      // Otherwise fall back to the base subscription's price
+      price = subscription.price;
+      billingPeriod = subscription.billingPeriod;
+      customBillingPeriodMonths = subscription.customBillingPeriodMonths;
     }
-    
-    // Otherwise fall back to the base subscription's price
-    return formatPriceWithBillingPeriod(
-      subscription.price, 
-      subscription.billingPeriod, 
-      subscription.customBillingPeriodMonths,
-      { 
-        showMonthlyEquivalent: true,
-        includeSlash: false, // Use "per month" style for details page
-        locale: currentLanguage
-      }
-    );
+
+    // Format the price
+    const formattedPrice = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+
+    // Get billing period display
+    let periodDisplay: string;
+    switch (billingPeriod) {
+      case 'monthly':
+        periodDisplay = currentLanguage === 'es' ? '/mes' : '/month';
+        break;
+      case 'three_month':
+        periodDisplay = currentLanguage === 'es' ? '/3 meses' : '/3 months';
+        break;
+      case 'six_month':
+        periodDisplay = currentLanguage === 'es' ? '/6 meses' : '/6 months';
+        break;
+      case 'annually':
+        periodDisplay = currentLanguage === 'es' ? '/año' : '/year';
+        break;
+      case 'other':
+        if (customBillingPeriodMonths && customBillingPeriodMonths > 1) {
+          periodDisplay = currentLanguage === 'es' ? `/${customBillingPeriodMonths} meses` : `/${customBillingPeriodMonths} months`;
+        } else {
+          periodDisplay = currentLanguage === 'es' ? '/mes' : '/month';
+        }
+        break;
+      default:
+        periodDisplay = `/${billingPeriod}`;
+    }
+
+    return `${formattedPrice}${periodDisplay}`;
   };
 
   // Get localized variant title

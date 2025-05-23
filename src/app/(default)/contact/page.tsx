@@ -1,6 +1,5 @@
 // src/app/(default)/contact/page.tsx
 import { Metadata } from 'next';
-import Link from 'next/link';
 import PageHeader from '@/components/PageHeader';
 
 // Define metadata for SEO
@@ -56,7 +55,7 @@ export default function ContactPage() {
       {/* Main content with white background */}
       <div className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             {/* Contact Form */}
             <div className="md:col-span-3 bg-white p-8 rounded-lg shadow-sm border border-gray-200">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send Us a Message</h2>
@@ -105,7 +104,7 @@ export default function ContactPage() {
 
             {/* Contact Information */}
             <div className="md:col-span-2">
-              <div className="bg-pink-50 p-8 rounded-lg shadow-sm border border-pink-100 mb-8">
+              <div className="bg-pink-50 p-8 rounded-lg shadow-sm border border-pink-100">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6">Contact Information</h2>
                 
                 <div className="space-y-6">
@@ -149,94 +148,7 @@ export default function ContactPage() {
                   </div>
                 </div>
               </div>
-
-              <div className="bg-blue-50 p-8 rounded-lg shadow-sm border border-blue-100">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Need immediate assistance?</h3>
-                <p className="text-gray-600 mb-6">
-                  For urgent matters, you can schedule a telehealth consultation with one of our providers.
-                </p>
-                <Link 
-                  href="/subscriptions" 
-                  className="inline-block bg-[#fc4e87] text-white px-6 py-2 rounded-md font-medium hover:bg-pink-600 transition-colors"
-                >
-                  Book a Consultation
-                </Link>
-              </div>
             </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="bg-gray-50 rounded-lg p-8 mb-16">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
-              Frequently Asked Questions
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  How quickly can I get an appointment?
-                </h3>
-                <p className="text-gray-600">
-                  During 8AM-9PM CST an appointment can be made <strong>instantly</strong>, 7 days a week, 365 days a year.
-                </p>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  How do telehealth appointments work?
-                </h3>
-                <p className="text-gray-600">
-                  A customer creates an appointment for a Good Faith Exam. Good Faith Exams are simple and can take only 10 minutes. A licensed provider will review medical history, assess current goals and symptoms, take some health screening questions, and make a medical judgment for the patient. That's it!
-                </p>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  What insurance do you accept?
-                </h3>
-                <p className="text-gray-600">
-                  We do not take insurance, we are a cash only business.
-                </p>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  How can I refill my prescription?
-                </h3>
-                <p className="text-gray-600">
-                  Refills come on a monthly basis. In order to have your next month's order shipped, a check-in telehealth consultation is required. Once check-in is done, the next month's prescription will be sent.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Newsletter Signup */}
-          <div className="bg-pink-50 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Stay Updated
-            </h2>
-            <p className="max-w-2xl mx-auto text-gray-600 mb-6">
-              Subscribe to our newsletter for health tips, new services, and special offers.
-            </p>
-            
-            <form className="max-w-md mx-auto flex">
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="flex-grow p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                required
-              />
-              <button
-                type="submit"
-                className="bg-[#fc4e87] text-white px-6 py-3 rounded-r-md font-medium hover:bg-pink-600 transition-colors"
-              >
-                Subscribe
-              </button>
-            </form>
-            
-            <p className="text-xs text-gray-500 mt-4">
-              By subscribing, you agree to receive our marketing emails. You can unsubscribe at any time.
-            </p>
           </div>
         </div>
       </div>

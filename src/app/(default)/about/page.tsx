@@ -60,7 +60,7 @@ export default function AboutPage() {
 
   return (
     <main className="bg-white">
-      {/* Using our reusable PageHeader component */}
+      {/* Using our simplified PageHeader component */}
       <PageHeader 
         title="About Lily's"
         subtitle="Empowering women with personalized healthcare solutions and expert medical guidance."

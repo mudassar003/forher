@@ -143,12 +143,11 @@ export default async function SubscriptionsPage() {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Decorative Bubbles - Top Section */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-[#ffe6f0] opacity-20 blur-3xl"></div>
-      <div className="absolute top-40 right-0 w-96 h-96 rounded-full bg-[#f9dde5] opacity-30 blur-3xl"></div>
-      <div className="absolute -top-10 right-1/4 w-40 h-40 rounded-full bg-[#ffb3c1] opacity-10 blur-2xl"></div>
+      {/* Subtle decorative elements for the page */}
+      <div className="absolute top-0 left-0 w-64 h-64 rounded-full bg-[#ffe6f0] opacity-10 blur-3xl"></div>
+      <div className="absolute top-40 right-0 w-96 h-96 rounded-full bg-[#f9dde5] opacity-20 blur-3xl"></div>
       
-      {/* Using our new reusable PageHeader component */}
+      {/* Using our simplified PageHeader component */}
       <PageHeader 
         title="Subscription Plans"
         subtitle="Choose a subscription plan that best fits your needs and enjoy exclusive benefits"

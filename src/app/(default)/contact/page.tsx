@@ -45,11 +45,10 @@ export default function ContactPage() {
 
   return (
     <div className="bg-white">
-      {/* Using our reusable PageHeader component */}
+      {/* Using our simplified PageHeader component */}
       <PageHeader 
         title="Get in Touch"
-        subtitle="Have questions or need support? 
-         We're here to help. Send us a message or give us a call."
+        subtitle="Have questions or need support? We're here to help. Send us a message or give us a call."
       />
 
       {/* Main content with white background */}

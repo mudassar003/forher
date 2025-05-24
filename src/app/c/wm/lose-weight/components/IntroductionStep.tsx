@@ -1,16 +1,29 @@
 //src/app/c/wm/lose-weight/components/IntroductionStep.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
 export default function IntroductionStep() {
   const router = useRouter();
-  const { markStepCompleted } = useWMFormStore();
+  const { markStepCompleted, resetForm, setCurrentStep } = useWMFormStore();
   const pathname = "/c/wm/lose-weight";
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Reset stored responses and form progress
+  useEffect(() => {
+    // Reset the form state
+    resetForm();
+    setCurrentStep(pathname);
+    
+    // Also clear any stored responses in sessionStorage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem("weightLossResponses");
+      sessionStorage.removeItem("ineligibilityReason");
+    }
+  }, [resetForm, setCurrentStep, pathname]);
 
   const nextStep = () => {
     // Mark the introduction step as completed in the store

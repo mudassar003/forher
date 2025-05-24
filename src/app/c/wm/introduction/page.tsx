@@ -1,14 +1,34 @@
 //src/app/c/wm/introduction/page.tsx
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 
 export default function IntroductionPage() {
   const router = useRouter();
+  const { resetForm, setCurrentStep, markStepCompleted } = useWMFormStore();
+  
+  // Reset the form when this page loads
+  useEffect(() => {
+    resetForm();
+    setCurrentStep("/c/wm/introduction");
+    
+    // Clear any previous responses
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem("weightLossResponses");
+      sessionStorage.removeItem("ineligibilityReason");
+      sessionStorage.removeItem("finalResponses");
+    }
+  }, [resetForm, setCurrentStep]);
 
   const nextStep = () => {
-    router.push("/c/wm/lose-weight?offset=1"); // Navigate to the next step
+    // Mark this step as completed
+    markStepCompleted("/c/wm/introduction");
+    
+    // Navigate directly to the first question with offset=1
+    router.push("/c/wm/lose-weight?offset=1");
   };
 
   return (

@@ -3,8 +3,9 @@
 
 import { Suspense, useState, useEffect } from "react";
 import LoadingFallback from "./components/LoadingFallback";
-import IntroductionStep from "./components/IntroductionStep";
 import WeightLossForm from "./components/WeightLossForm";
+import { useWMFormStore } from "@/store/wmFormStore";
+import { useRouter } from "next/navigation";
 
 // The main page component
 export default function LoseWeightPage() {
@@ -19,16 +20,30 @@ export default function LoseWeightPage() {
 function ClientPageRouter() {
   const [offset, setOffset] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { currentStep, completedSteps } = useWMFormStore();
+  const router = useRouter();
 
   // Safely access window object only in browser environment after component mounts
   useEffect(() => {
     // Skip if we're in server-side rendering
     if (typeof window === 'undefined') return;
     
+    // Check if the introduction step is completed
+    const introCompleted = completedSteps.includes("/c/wm/introduction");
+    
+    if (!introCompleted) {
+      // If introduction is not completed, redirect back to the introduction page
+      router.push("/c/wm/introduction");
+      return;
+    }
+    
     const readUrlOffset = () => {
       const searchParams = new URL(window.location.href).searchParams;
-      const urlOffset = parseInt(searchParams.get("offset") || "0");
-      setOffset(urlOffset);
+      const urlOffset = parseInt(searchParams.get("offset") || "1");
+      
+      // Make sure offset is never 0 (avoid showing IntroductionStep again)
+      setOffset(urlOffset < 1 ? 1 : urlOffset);
+      
       // Mark as loaded once we've read the parameters
       setIsLoaded(true);
     };
@@ -43,7 +58,7 @@ function ClientPageRouter() {
     
     window.addEventListener('popstate', handleRouteChange);
     return () => window.removeEventListener('popstate', handleRouteChange);
-  }, []);
+  }, [router, completedSteps]);
 
   // If the offset is still being determined, render a minimal placeholder
   // This avoids the loading spinner flash between steps
@@ -51,11 +66,6 @@ function ClientPageRouter() {
     return <div className="min-h-screen bg-white"></div>;
   }
 
-  // If offset is 0, show the introduction step
-  if (offset === 0) {
-    return <IntroductionStep />;
-  }
-
-  // For all other offsets, show the form
-  return <WeightLossForm />;
+  // Always show the WeightLossForm with the appropriate offset
+  return <WeightLossForm initialOffset={offset} />;
 }

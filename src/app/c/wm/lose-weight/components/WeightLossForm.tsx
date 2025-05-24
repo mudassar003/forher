@@ -9,22 +9,28 @@ import { QuestionRenderer } from "./QuestionTypes";
 import { weightLossQuestions, getProgressPercentage, calculateBMI, checkEligibility } from "../data/questions";
 import { FormResponse } from "../types";
 
-export default function WeightLossForm() {
+interface WeightLossFormProps {
+  initialOffset?: number;
+}
+
+export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProps) {
   const router = useRouter();
   const pathname = "/c/wm/lose-weight";
   
-  // Get the current offset from URL directly instead of using useSearchParams hook
-  const [offset, setOffset] = useState(1); // Default to 1
+  // Use the provided initialOffset
+  const [offset, setOffset] = useState(initialOffset);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
   
-  // Use an effect to get the search params (safely in browser environment)
+  // Use an effect to update the offset when the URL changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // Get offset from URL
       const searchParams = new URL(window.location.href).searchParams;
       const urlOffset = parseInt(searchParams.get("offset") || "1");
-      setOffset(urlOffset);
+      if (urlOffset >= 1) {
+        setOffset(urlOffset);
+      }
     }
   }, []);
   
@@ -68,7 +74,7 @@ export default function WeightLossForm() {
   // Check if we have a valid question for this offset
   useEffect(() => {
     if (typeof window !== 'undefined' && !currentQuestion && offset > 0) {
-      // Handle case where offset is invalid
+      // Handle case where offset is invalid - go to first question
       router.push(`${pathname}?offset=1`);
     }
   }, [currentQuestion, offset, router, pathname]);
@@ -147,7 +153,7 @@ export default function WeightLossForm() {
       setIsTransitioning(true);
       
       // Navigate to the next step in the flow
-      window.location.href = "/c/wm/submit";
+      router.push("/c/wm/submit");
     } else {
       // For within-form navigation, do it without a full page refresh
       // First update the URL using history API

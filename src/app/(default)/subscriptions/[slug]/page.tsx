@@ -5,6 +5,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import SubscriptionDetails from '../components/SubscriptionDetails';
 import RelatedSubscriptions from '../components/RelatedSubscriptions';
+import SubscriptionFAQ from '../components/SubscriptionFAQ';
 import { getSubscriptionBySlug, getAllSubscriptionSlugs, getPlainTextDescription, getRelatedSubscriptions } from '@/lib/subscription-helpers';
 import { urlFor } from '@/sanity/lib/image';
 
@@ -56,6 +57,14 @@ export default async function SubscriptionPage({ params }) {
   return (
     <>
       <SubscriptionDetails subscription={subscription} />
+      
+      {/* FAQ Section */}
+      <div className="bg-gray-50 py-12">
+        <SubscriptionFAQ
+          title={`${subscription.title} FAQs`}
+          titleEs={subscription.titleEs ? `Preguntas Frecuentes sobre ${subscription.titleEs}` : undefined}
+        />
+      </div>
       
       {/* Show related subscriptions if any */}
       {relatedSubscriptions.length > 0 && (

@@ -1,4 +1,4 @@
-//src/sanity/schemaTypes/subscriptionType.ts
+// src/sanity/schemaTypes/subscriptionType.ts
 import { CreditCardIcon } from '@sanity/icons'
 import {defineField, defineType, defineArrayMember} from 'sanity'
 
@@ -493,6 +493,28 @@ export const subscriptionType = defineType({
       description: 'Soft deletion flag',
       initialValue: false,
       hidden: true, // Hide in the UI by default
+    }),
+
+    // === NEW FIELDS ===
+    defineField({
+      name: 'allowCoupons',
+      title: 'Allow Coupons',
+      type: 'boolean',
+      description: 'Enable coupon codes for this subscription plan',
+      initialValue: true,
+    }),
+    defineField({
+      name: 'excludedCoupons',
+      title: 'Excluded Coupons',
+      type: 'array',
+      of: [
+        {
+          type: 'reference',
+          to: [{ type: 'coupon' }],
+        },
+      ],
+      description: 'Specific coupons that should NOT work with this subscription',
+      hidden: ({ document }) => !document?.allowCoupons,
     }),
   ],
   preview: {

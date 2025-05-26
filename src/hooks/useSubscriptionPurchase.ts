@@ -1,4 +1,4 @@
-// src/hooks/useSubscriptionPurchase.ts
+// src/hooks/useSubscriptionPurchase.ts (updated version with coupon support)
 import { useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { verifySession, refreshSession } from '@/lib/auth';
@@ -13,6 +13,11 @@ interface SubscriptionPurchaseResult {
     variantKey?: string;
     price: number;
     billingPeriod: string;
+    couponApplied?: boolean;
+    couponCode?: string;
+    originalPrice?: number;
+    discountedPrice?: number;
+    discountAmount?: number;
   };
 }
 
@@ -21,6 +26,7 @@ interface SubscriptionPurchaseRequest {
   userId: string;
   userEmail: string;
   variantKey?: string;
+  couponCode?: string;
 }
 
 export function useSubscriptionPurchase() {
@@ -32,7 +38,8 @@ export function useSubscriptionPurchase() {
   const purchaseSubscription = useCallback(
     async (
       subscriptionId: string,
-      variantKey?: string
+      variantKey?: string,
+      couponCode?: string
     ): Promise<SubscriptionPurchaseResult> => {
       // Validate input parameters
       if (!subscriptionId || typeof subscriptionId !== 'string') {
@@ -82,9 +89,15 @@ export function useSubscriptionPurchase() {
           requestData.variantKey = variantKey;
         }
         
+        // Add coupon code if provided
+        if (couponCode && typeof couponCode === 'string') {
+          requestData.couponCode = couponCode;
+        }
+        
         console.log('Purchasing subscription:', {
           subscriptionId,
           variantKey,
+          couponCode,
           userId: user.id
         });
         

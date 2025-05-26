@@ -12,6 +12,7 @@ import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
 import { urlFor } from '@/sanity/lib/image';
 import { formatPriceWithBillingPeriod } from '@/utils/subscriptionHelpers';
+import CouponInput from '@/components/CouponInput';
 
 interface SubscriptionDetailsProps {
   subscription: Subscription;
@@ -20,6 +21,10 @@ interface SubscriptionDetailsProps {
 const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription }) => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [selectedVariant, setSelectedVariant] = useState<SubscriptionVariant | null>(null);
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string>('');
+  const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  
   const { t, currentLanguage } = useTranslations();
   const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
   const { user, isAuthenticated, checkSession } = useAuthStore();
@@ -41,6 +46,19 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       checkSession();
     }
   }, [isAuthenticated, checkSession]);
+  
+  // Coupon handlers
+  const handleCouponApplied = (code: string, newPrice: number, discount: number) => {
+    setAppliedCouponCode(code);
+    setDiscountedPrice(newPrice);
+    setDiscountAmount(discount);
+  };
+
+  const handleCouponRemoved = () => {
+    setAppliedCouponCode('');
+    setDiscountedPrice(null);
+    setDiscountAmount(0);
+  };
   
   // Custom translations
   const translations = {
@@ -80,7 +98,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return subscription.features || [];
   };
 
-  // Get formatted price with billing period - FIXED VERSION
+  // Get formatted price with billing period - with coupon support
   const getFormattedPrice = (useVariant: boolean = true): string => {
     let price: number;
     let billingPeriod: string;
@@ -96,6 +114,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       price = subscription.price;
       billingPeriod = subscription.billingPeriod;
       customBillingPeriodMonths = subscription.customBillingPeriodMonths;
+    }
+    
+    // Use discounted price if coupon is applied
+    if (discountedPrice !== null) {
+      price = discountedPrice;
     }
 
     // Format the price
@@ -160,7 +183,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return percentage;
   };
 
-  // Handle the subscription purchase
+  // Handle the subscription purchase with coupon support
   const handleSubscribe = async (): Promise<void> => {
     if (isProcessing || isLoading) return;
     
@@ -178,6 +201,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
         sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
       }
       
+      // Store coupon code if applied
+      if (appliedCouponCode) {
+        sessionStorage.setItem('pendingCouponCode', appliedCouponCode);
+      }
+      
       const returnUrl = encodeURIComponent(currentPath);
       window.location.href = `/login?returnUrl=${returnUrl}`;
       return;
@@ -189,25 +217,16 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       // Store appointment page as the return URL after successful purchase
       sessionStorage.setItem('loginReturnUrl', '/appointment');
       
-      // If using variants, include the selected variant info
-      if (subscription.hasVariants && selectedVariant && selectedVariant._key) {
-        const result = await purchaseSubscription(
-          subscription._id, 
-          selectedVariant._key
-        );
-        
-        if (result.success && result.url) {
-          // Redirect to Stripe checkout
-          window.location.href = result.url;
-        }
-      } else {
-        // Standard subscription without variants
-        const result = await purchaseSubscription(subscription._id);
-        
-        if (result.success && result.url) {
-          // Redirect to Stripe checkout
-          window.location.href = result.url;
-        }
+      // Include coupon code in the subscription purchase
+      const result = await purchaseSubscription(
+        subscription._id,
+        selectedVariant?._key,
+        appliedCouponCode || undefined
+      );
+      
+      if (result.success && result.url) {
+        // Redirect to Stripe checkout
+        window.location.href = result.url;
       }
     } catch (err) {
       console.error('Failed to initiate subscription purchase:', err);
@@ -312,7 +331,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 
                 {/* Show discount if available */}
                 {subscription.hasVariants && selectedVariant && selectedVariant.compareAtPrice &&
-                  selectedVariant.compareAtPrice > selectedVariant.price && (
+                  selectedVariant.compareAtPrice > selectedVariant.price && !discountedPrice && (
                     <div className="mt-1 flex items-center">
                       <span className="text-gray-500 line-through mr-2">
                         ${selectedVariant.compareAtPrice}
@@ -391,7 +410,13 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                             ${selectedVariant && selectedVariant._key === variant._key 
                               ? 'border-[#e63946] bg-[#fff8f8]' 
                               : 'border-gray-200'}`}
-                          onClick={() => setSelectedVariant(variant)}
+                          onClick={() => {
+                            setSelectedVariant(variant);
+                            // Reset coupon when variant changes
+                            if (appliedCouponCode) {
+                              handleCouponRemoved();
+                            }
+                          }}
                         >
                           <div className="flex justify-between">
                             <div>
@@ -453,6 +478,32 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 
                 {/* Subscription CTA */}
                 <div className="border-t border-gray-200 pt-6">
+                  {/* Coupon Input */}
+                  <CouponInput
+                    subscriptionId={subscription._id}
+                    variantKey={selectedVariant?._key}
+                    originalPrice={
+                      selectedVariant ? selectedVariant.price : subscription.price
+                    }
+                    onCouponApplied={handleCouponApplied}
+                    onCouponRemoved={handleCouponRemoved}
+                    className="mb-4"
+                  />
+                  
+                  {/* Show original price if coupon is applied */}
+                  {discountedPrice !== null && (
+                    <div className="mb-4 text-center">
+                      <p className="text-sm text-gray-500 line-through">
+                        {currentLanguage === 'es' ? 'Precio original: ' : 'Original price: '}
+                        ${selectedVariant ? selectedVariant.price : subscription.price}
+                      </p>
+                      <p className="text-lg font-bold text-green-600">
+                        {currentLanguage === 'es' ? 'Precio con descuento: ' : 'Discounted price: '}
+                        ${discountedPrice}
+                      </p>
+                    </div>
+                  )}
+                  
                   <button
                     onClick={handleSubscribe}
                     disabled={isProcessing || isLoading || (subscription.hasVariants && !selectedVariant)}

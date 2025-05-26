@@ -1,4 +1,4 @@
-// src/sanity/schemaTypes/index.ts
+// src/sanity/schemaTypes/index.ts (update to include coupon type)
 import { type SchemaTypeDefinition } from 'sanity'
 
 import {blockContentType} from './blockContentType'
@@ -13,6 +13,7 @@ import {subscriptionCategoryType} from './subscriptionCategoryType'
 import {appointmentType} from './appointmentType'
 import {userSubscriptionType} from './userSubscriptionType'
 import {userAppointmentType} from './userAppointmentType'
+import {couponType} from './couponType'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
@@ -27,6 +28,7 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     subscriptionCategoryType,
     appointmentType,
     userSubscriptionType,
-    userAppointmentType
+    userAppointmentType,
+    couponType
   ],
 }

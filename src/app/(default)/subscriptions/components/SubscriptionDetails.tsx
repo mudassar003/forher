@@ -242,10 +242,10 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     }
     
     if (isAuthenticated) {
-      return currentLanguage === 'es' ? 'Suscribirse Ahora' : 'Subscribe Now';
+      return currentLanguage === 'es' ? 'Comprar Ahora' : 'Purchase Now';
     }
     
-    return currentLanguage === 'es' ? 'Iniciar Sesión para Suscribirse' : 'Sign In to Subscribe';
+    return currentLanguage === 'es' ? 'Iniciar Sesión para Comprar' : 'Sign In to Purchase';
   };
 
   // Prepare image URL with proper fallbacks
@@ -462,23 +462,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   </div>
                 )}
                 
-                {/* Features List */}
-                <div className="space-y-4 mb-8">
-                  {getLocalizedFeatures().map((feature, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center mt-0.5 mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#e63946" className="w-4 h-4">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="text-gray-700">{feature.featureText}</div>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Subscription CTA */}
-                <div className="border-t border-gray-200 pt-6">
-                  {/* Coupon Input */}
+                {/* Coupon Input - Moved above features */}
+                <div className="mb-6">
                   <CouponInput
                     subscriptionId={subscription._id}
                     variantKey={selectedVariant?._key}
@@ -487,12 +472,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                     }
                     onCouponApplied={handleCouponApplied}
                     onCouponRemoved={handleCouponRemoved}
-                    className="mb-4"
                   />
                   
                   {/* Show original price if coupon is applied */}
                   {discountedPrice !== null && (
-                    <div className="mb-4 text-center">
+                    <div className="mt-4 text-center">
                       <p className="text-sm text-gray-500 line-through">
                         {currentLanguage === 'es' ? 'Precio original: ' : 'Original price: '}
                         ${selectedVariant ? selectedVariant.price : subscription.price}
@@ -503,7 +487,10 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                       </p>
                     </div>
                   )}
-                  
+                </div>
+                
+                {/* Purchase CTA Button - Moved above features */}
+                <div className="mb-8">
                   <button
                     onClick={handleSubscribe}
                     disabled={isProcessing || isLoading || (subscription.hasVariants && !selectedVariant)}
@@ -525,6 +512,23 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   <p className="text-center text-sm text-gray-600 mt-4">
                     {translations.cancelAnytime}
                   </p>
+                </div>
+                
+                {/* Features List - Now after purchase button */}
+                <div className="space-y-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    {t('subscriptions.features')}
+                  </h3>
+                  {getLocalizedFeatures().map((feature, index) => (
+                    <div key={index} className="flex items-start">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center mt-0.5 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#e63946" className="w-4 h-4">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="text-gray-700">{feature.featureText}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
               

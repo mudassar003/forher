@@ -54,10 +54,13 @@
     "somethingWrong": "Something went wrong",
     "tryAgain": "Try Again",
     "subscribeNow": "Subscribe Now",
+    "purchaseNow": "Purchase Now",
     "processing": "Processing...",
     "signInToSubscribe": "Sign In to Subscribe",
+    "signInToPurchase": "Sign In to Purchase",
     "description": "Description",
     "categories": "Categories",
+    "features": "Features",
     "billingPeriods": {
       "monthly": "/month",
       "quarterly": "/quarter",
@@ -153,4 +156,3 @@
       }
     }
   }
-}

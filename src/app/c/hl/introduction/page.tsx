@@ -1,20 +1,40 @@
 //src/app/c/hl/introduction/page.tsx
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import  ProgressBar  from "../components/ProgressBar"; 
+import { useHLFormStore } from "@/store/hlFormStore";
+import ProgressBar from "@/app/c/hl/components/ProgressBar";
 
-export default function StepOne() {
+export default function HairLossIntroductionPage() {
   const router = useRouter();
+  const { resetForm, setCurrentStep, markStepCompleted } = useHLFormStore();
+  
+  // Always reset the form when this page loads to ensure fresh start
+  useEffect(() => {
+    resetForm();
+    setCurrentStep("/c/hl/introduction");
+    
+    // Clear any previous responses from sessionStorage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem("hairLossResponses");
+      sessionStorage.removeItem("finalHairLossResponses");
+      sessionStorage.removeItem("ineligibilityReason");
+    }
+  }, [resetForm, setCurrentStep]);
 
   const nextStep = () => {
-    router.push("/c/hl/hair-loss?offset=1"); // Navigate to the next step
+    // Mark this step as completed
+    markStepCompleted("/c/hl/introduction");
+    
+    // Navigate directly to the first question with offset=1
+    router.push("/c/hl/hair-loss?offset=1");
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-white px-6">
       {/* Use the Progress Bar */}
-      <ProgressBar progress={20} /> {/* Set progress dynamically */}
+      <ProgressBar progress={20} />
 
       {/* Centered Content */}
       <div className="max-w-lg text-center mt-10">
@@ -27,9 +47,9 @@ export default function StepOne() {
       {/* Bottom Disclaimer Text */}
       <div className="absolute bottom-20 w-full max-w-lg text-center text-gray-500 text-sm px-4">
         <p>
-          By clicking 'Continue', you agree that Hers may use your responses to personalize your 
+          By clicking 'Continue', you agree that Lilys may use your responses to personalize your 
           experience and other purposes as described in our 
-          <a href="#" className="underline text-gray-600"> Privacy Policy</a>.
+          <a href="/privacy-policy" className="underline text-gray-600"> Privacy Policy</a>.
           Responses prior to account creation will not be used as part of your medical assessment.
         </p>
       </div>

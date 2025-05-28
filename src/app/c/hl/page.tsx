@@ -3,42 +3,30 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useHLFormStore, getLastCompletedStep } from "@/store/hlFormStore";
+import { useHLFormStore } from "@/store/hlFormStore";
 
 export default function HairLossEntry() {
   const router = useRouter();
-  const { completedSteps, formData } = useHLFormStore();
+  const { resetForm } = useHLFormStore();
 
   useEffect(() => {
-    // Check if the user has already started the form
-    if (completedSteps.length > 0) {
-      // Get the furthest step the user has completed
-      const lastCompletedStep = getLastCompletedStep(completedSteps);
-      
-      // Check if we need to resume at a specific offset
-      const stepOffsets = formData.stepOffsets || {};
-      let redirectPath = lastCompletedStep || "/c/hl/introduction";
-      
-      // If this step has a stored offset, include it in the redirect URL
-      if (stepOffsets[lastCompletedStep]) {
-        redirectPath = `${redirectPath}?offset=${stepOffsets[lastCompletedStep]}`;
-      }
-      
-      // Short delay to ensure smooth transition
-      const timer = setTimeout(() => {
-        router.push(redirectPath);
-      }, 1000); // 1 second delay for smooth transition
+    // Always reset the form to start fresh (no session carryover)
+    resetForm();
 
-      return () => clearTimeout(timer); // Cleanup timeout on unmount
-    } else {
-      // If no progress, redirect to the introduction page
-      const timer = setTimeout(() => {
-        router.push("/c/hl/introduction");
-      }, 1000);
-
-      return () => clearTimeout(timer);
+    // Clear any stored session data
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem("hairLossResponses");
+      sessionStorage.removeItem("finalHairLossResponses");
+      sessionStorage.removeItem("ineligibilityReason");
     }
-  }, [router, completedSteps, formData]);
+
+    // Always redirect to the introduction page for a fresh start
+    const timer = setTimeout(() => {
+      router.push("/c/hl/introduction");
+    }, 1000); // 1 second delay for smooth transition
+
+    return () => clearTimeout(timer);
+  }, [router, resetForm]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
@@ -47,7 +35,7 @@ export default function HairLossEntry() {
       
       {/* Loading Text */}
       <p className="text-xl text-gray-600">
-        {completedSteps.length > 0 ? "Resuming your progress..." : "Preparing your survey..."}
+        Preparing your hair loss survey...
       </p>
     </div>
   );

@@ -1,16 +1,15 @@
-// src/app/c/hl/hair-loss/data/questions.ts
+//src/app/c/hl/hair-loss/data/questions.ts
 import { Question, QuestionType, FormResponse } from "../types";
 
-// Define all questions for the hair loss form
+// Define simplified questions for the hair loss form - REDUCED TO 7 QUESTIONS
 export const hairLossQuestions: Question[] = [
-  // Step 1: Basic Demographics
+  // Question 1: Basic Demographics - Age
   {
     id: "age-group",
     question: "What is your age group?",
     description: "Please select your current age range.",
     type: QuestionType.SingleSelect,
     options: [
-      // { id: "under-18", label: "Under 18" },
       { id: "18-24", label: "18-24" },
       { id: "25-34", label: "25-34" },
       { id: "35-44", label: "35-44" },
@@ -18,6 +17,8 @@ export const hairLossQuestions: Question[] = [
       { id: "55-plus", label: "55+" }
     ]
   },
+  
+  // Question 2: Basic Demographics - Gender
   {
     id: "gender",
     question: "Are you female?",
@@ -29,7 +30,7 @@ export const hairLossQuestions: Question[] = [
     ]
   },
   
-  // Step 2: Hair Loss Assessment
+  // Question 3: Hair Loss Duration
   {
     id: "hair-loss-duration",
     question: "When did you first notice hair thinning or hair loss?",
@@ -41,6 +42,8 @@ export const hairLossQuestions: Question[] = [
       { id: "more-than-1-year", label: "More than 1 year ago" }
     ]
   },
+  
+  // Question 4: Affected Areas
   {
     id: "affected-areas",
     question: "What areas of your scalp are affected?",
@@ -54,18 +57,8 @@ export const hairLossQuestions: Question[] = [
       { id: "no-noticeable-loss", label: "No noticeable hair loss" }
     ]
   },
-  {
-    id: "excessive-shedding",
-    question: "Do you experience excessive hair shedding (losing more than 100 hairs per day)?",
-    description: "Excessive shedding is when you notice significantly more hair falling out than usual.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
   
-  // Step 3: Medical History
+  // Question 5: Medical Conditions
   {
     id: "medical-conditions",
     question: "Do you have any of the following medical conditions?",
@@ -79,16 +72,8 @@ export const hairLossQuestions: Question[] = [
       { id: "none", label: "None of the above" }
     ]
   },
-  {
-    id: "hair-loss-medications",
-    question: "Are you currently taking any medications known to cause hair loss?",
-    description: "E.g., chemotherapy, beta-blockers, hormonal medications",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
+  
+  // Question 6: Family History
   {
     id: "family-history",
     question: "Do you have a family history of hair loss?",
@@ -100,19 +85,7 @@ export const hairLossQuestions: Question[] = [
     ]
   },
   
-  // Step 4: Scalp Health
-  {
-    id: "scalp-issues",
-    question: "Do you experience dandruff, scalp irritation, or itchiness?",
-    description: "Scalp health is closely related to hair growth.",
-    type: QuestionType.SingleSelect,
-    options: [
-      { id: "yes", label: "Yes" },
-      { id: "no", label: "No" }
-    ]
-  },
-  
-  // Step 5: Treatment History
+  // Question 7: Previous Treatments
   {
     id: "previous-treatments",
     question: "Have you tried any hair loss treatments before?",
@@ -140,58 +113,11 @@ export const getProgressPercentage = (currentOffset: number): number => {
   return 25 + (questionIndex / totalQuestions * 70);
 };
 
-// Determine eligibility based on responses
+// Simplified eligibility check - now just returns basic validation
 export const checkEligibility = (responses: FormResponse): { eligible: boolean; reason: string } => {
-  // Check for disqualifying conditions based on the answers
-
-  // Age under 18
-  if (responses["age-group"] === "under-18") {
-    return {
-      eligible: false,
-      reason: "You are not eligible for hair loss treatments. Our treatments are designed for individuals 18 years and older."
-    };
-  }
-
-  // Gender not female
-  if (responses["gender"] === "no") {
-    return {
-      eligible: false,
-      reason: "Our products are specifically designed for women's hair loss needs. We recommend consulting with a healthcare provider for treatments better suited to your needs."
-    };
-  }
-
-  // No noticeable hair loss
-  if (responses["affected-areas"] && 
-      Array.isArray(responses["affected-areas"]) && 
-      responses["affected-areas"].includes("no-noticeable-loss") && 
-      responses["affected-areas"].length === 1) {
-    return {
-      eligible: false,
-      reason: "Based on your responses, you may not need hair loss treatment at this time. We recommend monitoring your hair and consulting with a doctor if you notice changes."
-    };
-  }
-
-  // Autoimmune disorder
-  if (responses["medical-conditions"] && 
-      Array.isArray(responses["medical-conditions"]) && 
-      responses["medical-conditions"].includes("autoimmune-disorder")) {
-    return {
-      eligible: false,
-      reason: "You may need medical consultation before using hair loss treatments. Autoimmune conditions can affect both hair loss and treatment effectiveness."
-    };
-  }
-
-  // Hair loss medications
-  if (responses["hair-loss-medications"] === "yes") {
-    return {
-      eligible: false,
-      reason: "Your hair loss may be medication-induced. We recommend consulting your doctor before starting any hair loss treatment."
-    };
-  }
-
-  // All checks passed, user is eligible
+  // Always return eligible since we're not using API validation anymore
   return {
     eligible: true,
-    reason: "Based on your responses, you appear to be eligible for our hair loss treatments. Please note that a medical consultation is still required before starting treatment."
+    reason: "Thank you for completing the assessment. Based on your responses, we'll provide personalized recommendations for your hair loss concerns."
   };
 };

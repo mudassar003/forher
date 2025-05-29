@@ -80,13 +80,13 @@ export default function ResultsPage({}: WeightLossResultsProps) {
           
           if (subscription.featuredImage) {
             imgUrl = urlFor(subscription.featuredImage)
-              .width(500)  // Optimized width for 4:3 aspect ratio
-              .height(375) // Optimized height for 4:3 aspect ratio
+              .width(600)  // Increased width for larger image
+              .height(450) // Increased height for larger image
               .url();
           } else if (subscription.image) {
             imgUrl = urlFor(subscription.image)
-              .width(500)  // Optimized width for 4:3 aspect ratio
-              .height(375) // Optimized height for 4:3 aspect ratio
+              .width(600)  // Increased width for larger image
+              .height(450) // Increased height for larger image
               .url();
           }
           
@@ -203,7 +203,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
   };
   
   // Handle subscription purchase button click
-  const handleSubscribe = async (): Promise<void> => {
+  const handlePurchase = async (): Promise<void> => {
     if (!featuredSubscription.subscription || isProcessing || isLoading) return;
     
     // Store current path in sessionStorage
@@ -239,16 +239,16 @@ export default function ResultsPage({}: WeightLossResultsProps) {
   };
 
   // Get subscription button text based on state
-  const getSubscribeButtonText = (): string => {
+  const getPurchaseButtonText = (): string => {
     if (isProcessing || isLoading) {
       return 'Processing...';
     }
     
     if (isAuthenticated) {
-      return 'Subscribe Now';
+      return 'Purchase Now';
     }
     
-    return 'Sign In to Subscribe';
+    return 'Sign In to Purchase';
   };
 
   return (
@@ -354,9 +354,9 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             </div>
             
             <div className="flex flex-col md:flex-row">
-              {/* Left side - Image in a fixed ratio container */}
-              <div className="md:w-2/5 p-4">
-                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden">
+              {/* Left side - Image in a fixed ratio container with larger dimensions */}
+              <div className="md:w-1/2 p-4">
+                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-md">
                   {featuredSubscription.isLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                       <div className="w-12 h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
@@ -367,7 +367,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                       alt={featuredSubscription.subscription?.title || "Weight Loss Product"}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 400px"
+                      sizes="(max-width: 768px) 100vw, 600px"
                       priority
                     />
                   )}
@@ -375,7 +375,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                 
                 {/* Price and billing details */}
                 {featuredSubscription.subscription && (
-                  <div className="mt-4 flex items-center justify-center">
+                  <div className="mt-6 flex items-center justify-center">
                     <span className="text-[#e63946]">
                       {getFormattedPrice()}
                     </span>
@@ -383,113 +383,116 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                 )}
               </div>
               
-              {/* Right side - Features and CTA */}
-              <div className="md:w-3/5 p-4 md:p-6">
-                <h3 className="text-xl font-semibold text-black mb-4">
-                  Program Features:
-                </h3>
-                
-                {/* Features with smaller, more compact design */}
-                <div className="space-y-3 mb-6">
-                  {featuredSubscription.subscription && featuredSubscription.subscription.features && 
-                   featuredSubscription.subscription.features.length > 0 ? (
-                    // Render actual features from Sanity
-                    featuredSubscription.subscription.features.map((feature, index) => (
-                      <motion.div 
-                        key={`feature-${index}`}
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <p className="text-black">{feature.featureText}</p>
-                      </motion.div>
-                    ))
-                  ) : (
-                    // Fallback features in case none are available from Sanity
-                    <>
-                      <motion.div 
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: 0 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-black">Clinically proven results with 15-20% average weight loss</p>
-                        </div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: 0.1 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-black">Medical provider support with personalized treatment</p>
-                        </div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-black">Convenient home delivery with virtual check-ins</p>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
+              {/* Right side - Features first, then CTA */}
+              <div className="md:w-1/2 p-4 md:p-6">
+                {/* Features Section */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold text-black mb-4">
+                    Program Features:
+                  </h3>
+                  
+                  {/* Features with smaller, more compact design */}
+                  <div className="space-y-3">
+                    {featuredSubscription.subscription && featuredSubscription.subscription.features && 
+                     featuredSubscription.subscription.features.length > 0 ? (
+                      // Render actual features from Sanity
+                      featuredSubscription.subscription.features.map((feature, index) => (
+                        <motion.div 
+                          key={`feature-${index}`}
+                          className="flex items-start gap-3"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                          transition={{ duration: 0.4, delay: index * 0.1 }}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <p className="text-black">{feature.featureText}</p>
+                        </motion.div>
+                      ))
+                    ) : (
+                      // Fallback features in case none are available from Sanity
+                      <>
+                        <motion.div 
+                          className="flex items-start gap-3"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                          transition={{ duration: 0.4, delay: 0 }}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-black">Clinically proven results with 15-20% average weight loss</p>
+                          </div>
+                        </motion.div>
+                        
+                        <motion.div 
+                          className="flex items-start gap-3"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                          transition={{ duration: 0.4, delay: 0.1 }}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-black">Medical provider support with personalized treatment</p>
+                          </div>
+                        </motion.div>
+                        
+                        <motion.div 
+                          className="flex items-start gap-3"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                          transition={{ duration: 0.4, delay: 0.2 }}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-black">Convenient home delivery with virtual check-ins</p>
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
-                {/* CTA Section */}
-                <div className="mt-4">
+                {/* CTA Section - MOVED BELOW FEATURES */}
+                <div>
                   {/* View Details Link */}
                   {featuredSubscription.subscription?.slug && featuredSubscription.subscription.slug.current && (
-                    <div className="mb-3">
+                    <div className="mb-4">
                       <Link 
                         href={`/subscriptions/${featuredSubscription.subscription.slug.current}`}
-                        className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-2 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
+                        className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
                       >
                         View Plan Details
                       </Link>
                     </div>
                   )}
 
-                  {/* Subscribe Button */}
+                  {/* Purchase Button - Changed from Subscribe to Purchase */}
                   {featuredSubscription.subscription && (
                     <button
-                      onClick={handleSubscribe}
+                      onClick={handlePurchase}
                       disabled={isProcessing || isLoading}
-                      className={`w-full py-3 px-4 rounded-full text-white font-medium transition-colors ${
+                      className={`w-full py-4 px-6 rounded-full text-white font-semibold text-lg transition-colors ${
                         isProcessing || isLoading 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-black hover:bg-gray-900 shadow-md hover:shadow-lg'
                       }`}
                     >
-                      {getSubscribeButtonText()}
+                      {getPurchaseButtonText()}
                     </button>
                   )}
                   

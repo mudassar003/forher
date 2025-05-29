@@ -54,13 +54,10 @@
     "somethingWrong": "Algo salió mal",
     "tryAgain": "Intentar de nuevo",
     "subscribeNow": "Suscribirse Ahora",
-    "purchaseNow": "Comprar Ahora",
     "processing": "Procesando...",
     "signInToSubscribe": "Iniciar Sesión para Suscribirse",
-    "signInToPurchase": "Iniciar Sesión para Comprar",
     "description": "Descripción",
     "categories": "Categorías",
-    "features": "Características",
     "billingPeriods": {
       "monthly": "/mes",
       "quarterly": "/trimestre",

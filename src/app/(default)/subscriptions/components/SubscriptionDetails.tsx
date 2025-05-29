@@ -21,6 +21,7 @@ interface SubscriptionDetailsProps {
 const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription }) => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [selectedVariant, setSelectedVariant] = useState<SubscriptionVariant | null>(null);
+  const [selectedBase, setSelectedBase] = useState<boolean>(false);
   const [appliedCouponCode, setAppliedCouponCode] = useState<string>('');
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
@@ -35,8 +36,15 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       // First look for a default variant
       const defaultVariant = subscription.variants.find(variant => variant.isDefault);
       
-      // If no default is marked, use the first variant
-      setSelectedVariant(defaultVariant || subscription.variants[0]);
+      // If no default is marked, select the base subscription by default
+      if (defaultVariant) {
+        setSelectedVariant(defaultVariant);
+        setSelectedBase(false);
+      } else {
+        // Select base subscription by default if no default variant
+        setSelectedBase(true);
+        setSelectedVariant(null);
+      }
     }
   }, [subscription.hasVariants, subscription.variants]);
   
@@ -59,6 +67,22 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     setDiscountedPrice(null);
     setDiscountAmount(0);
   };
+
+  // Handle variant selection
+  const handleVariantSelection = (variant: SubscriptionVariant | null, isBase: boolean = false) => {
+    if (isBase) {
+      setSelectedBase(true);
+      setSelectedVariant(null);
+    } else {
+      setSelectedBase(false);
+      setSelectedVariant(variant);
+    }
+    
+    // Reset coupon when selection changes
+    if (appliedCouponCode) {
+      handleCouponRemoved();
+    }
+  };
   
   // Custom translations
   const translations = {
@@ -73,7 +97,9 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     dosage: currentLanguage === 'es' ? 'Dosis' : 'Dosage',
     bestValue: currentLanguage === 'es' ? 'Mejor Valor' : 'Best Value',
     mostPopular: currentLanguage === 'es' ? 'Más Popular' : 'Most Popular',
-    savePercent: currentLanguage === 'es' ? 'Ahorre' : 'Save'
+    savePercent: currentLanguage === 'es' ? 'Ahorre' : 'Save',
+    baseOption: currentLanguage === 'es' ? 'Opción Base' : 'Base Option',
+    standardPlan: currentLanguage === 'es' ? 'Plan Estándar' : 'Standard Plan'
   };
   
   // Get the content based on current language
@@ -105,7 +131,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     let customBillingPeriodMonths: number | null | undefined;
 
     // If variants are being used and one is selected, use that variant's price
-    if (useVariant && subscription.hasVariants && selectedVariant) {
+    if (useVariant && subscription.hasVariants && selectedVariant && !selectedBase) {
       price = selectedVariant.price;
       billingPeriod = selectedVariant.billingPeriod;
       customBillingPeriodMonths = selectedVariant.customBillingPeriodMonths;
@@ -197,7 +223,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       sessionStorage.setItem('pendingSubscriptionId', subscription._id);
       
       // If a variant is selected, store that too
-      if (subscription.hasVariants && selectedVariant && selectedVariant._key) {
+      if (subscription.hasVariants && selectedVariant && selectedVariant._key && !selectedBase) {
         sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
       }
       
@@ -218,9 +244,10 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       sessionStorage.setItem('loginReturnUrl', '/appointment');
       
       // Include coupon code in the subscription purchase
+      // Only pass variant key if a variant is selected (not base)
       const result = await purchaseSubscription(
         subscription._id,
-        selectedVariant?._key,
+        selectedBase ? undefined : selectedVariant?._key,
         appliedCouponCode || undefined
       );
       
@@ -246,6 +273,26 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     }
     
     return currentLanguage === 'es' ? 'Iniciar Sesión para Comprar' : 'Sign In to Purchase';
+  };
+
+  // Check if something is selected (base or variant)
+  const isSomethingSelected = (): boolean => {
+    if (!subscription.hasVariants) return true;
+    return selectedBase || selectedVariant !== null;
+  };
+
+  // Get current price for coupon calculation
+  const getCurrentPrice = (): number => {
+    if (selectedBase || !selectedVariant) {
+      return subscription.price;
+    }
+    return selectedVariant.price;
+  };
+
+  // Get current variant key for coupon calculation
+  const getCurrentVariantKey = (): string | undefined => {
+    if (selectedBase) return undefined;
+    return selectedVariant?._key;
   };
 
   // Prepare image URL with proper fallbacks
@@ -330,7 +377,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 </div>
                 
                 {/* Show discount if available */}
-                {subscription.hasVariants && selectedVariant && selectedVariant.compareAtPrice &&
+                {selectedVariant && !selectedBase && selectedVariant.compareAtPrice &&
                   selectedVariant.compareAtPrice > selectedVariant.price && !discountedPrice && (
                     <div className="mt-1 flex items-center">
                       <span className="text-gray-500 line-through mr-2">
@@ -343,8 +390,23 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   )
                 }
                 
+                {/* Show base subscription discount if available */}
+                {(selectedBase || !subscription.hasVariants) && subscription.compareAtPrice &&
+                  subscription.compareAtPrice > subscription.price && !discountedPrice && (
+                    <div className="mt-1 flex items-center">
+                      <span className="text-gray-500 line-through mr-2">
+                        ${subscription.compareAtPrice}
+                      </span>
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        {translations.savePercent} {getDiscountPercentage(subscription.compareAtPrice, subscription.price)}%
+                      </span>
+                    </div>
+                  )
+                }
+                
                 {/* Explanation for longer-term plans */}
-                {!subscription.hasVariants && subscription.billingPeriod !== 'monthly' && subscription.billingPeriod !== 'other' && (
+                {((selectedBase || !subscription.hasVariants) && subscription.billingPeriod !== 'monthly' && subscription.billingPeriod !== 'other') ||
+                 (selectedVariant && !selectedBase && selectedVariant.billingPeriod !== 'monthly' && selectedVariant.billingPeriod !== 'other') && (
                   <p className="text-sm text-gray-600 mt-1">
                     {currentLanguage === 'es' 
                       ? 'Pago único por el período completo'
@@ -353,7 +415,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 )}
                 
                 {/* Variant-specific information */}
-                {subscription.hasVariants && selectedVariant && (
+                {subscription.hasVariants && selectedVariant && !selectedBase && (
                   <div className="mt-2 text-sm">
                     <p className="text-gray-700">
                       {translations.dosage}: {selectedVariant.dosageAmount} {selectedVariant.dosageUnit}
@@ -403,20 +465,58 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                       {translations.selectVariant}
                     </h3>
                     <div className="space-y-3">
+                      {/* Base Subscription Option */}
+                      <div 
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-[#e63946] 
+                          ${selectedBase 
+                            ? 'border-[#e63946] bg-[#fff8f8]' 
+                            : 'border-gray-200'}`}
+                        onClick={() => handleVariantSelection(null, true)}
+                      >
+                        <div className="flex justify-between">
+                          <div>
+                            <h4 className="font-medium">{translations.standardPlan}</h4>
+                            <p className="text-sm text-gray-600">
+                              {translations.baseOption}
+                            </p>
+                            {getLocalizedDescription() && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {currentLanguage === 'es' ? 'Plan básico sin variaciones' : 'Basic plan without variations'}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">
+                              {formatPriceWithBillingPeriod(
+                                subscription.price, 
+                                subscription.billingPeriod, 
+                                subscription.customBillingPeriodMonths,
+                                { showMonthlyEquivalent: false, locale: currentLanguage }
+                              )}
+                            </p>
+                            {subscription.compareAtPrice && subscription.compareAtPrice > subscription.price && (
+                              <div className="mt-1">
+                                <span className="text-xs text-gray-500 line-through">
+                                  ${subscription.compareAtPrice}
+                                </span>
+                                <span className="text-xs text-green-600 ml-1">
+                                  -{getDiscountPercentage(subscription.compareAtPrice, subscription.price)}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Variant Options */}
                       {subscription.variants.map((variant) => (
                         <div 
                           key={variant._key || variant.title}
                           className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-[#e63946] 
-                            ${selectedVariant && selectedVariant._key === variant._key 
+                            ${selectedVariant && selectedVariant._key === variant._key && !selectedBase
                               ? 'border-[#e63946] bg-[#fff8f8]' 
                               : 'border-gray-200'}`}
-                          onClick={() => {
-                            setSelectedVariant(variant);
-                            // Reset coupon when variant changes
-                            if (appliedCouponCode) {
-                              handleCouponRemoved();
-                            }
-                          }}
+                          onClick={() => handleVariantSelection(variant, false)}
                         >
                           <div className="flex justify-between">
                             <div>
@@ -466,10 +566,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 <div className="mb-6">
                   <CouponInput
                     subscriptionId={subscription._id}
-                    variantKey={selectedVariant?._key}
-                    originalPrice={
-                      selectedVariant ? selectedVariant.price : subscription.price
-                    }
+                    variantKey={getCurrentVariantKey()}
+                    originalPrice={getCurrentPrice()}
                     onCouponApplied={handleCouponApplied}
                     onCouponRemoved={handleCouponRemoved}
                   />
@@ -479,7 +577,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                     <div className="mt-4 text-center">
                       <p className="text-sm text-gray-500 line-through">
                         {currentLanguage === 'es' ? 'Precio original: ' : 'Original price: '}
-                        ${selectedVariant ? selectedVariant.price : subscription.price}
+                        ${getCurrentPrice()}
                       </p>
                       <p className="text-lg font-bold text-green-600">
                         {currentLanguage === 'es' ? 'Precio con descuento: ' : 'Discounted price: '}
@@ -493,9 +591,9 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 <div className="mb-8">
                   <button
                     onClick={handleSubscribe}
-                    disabled={isProcessing || isLoading || (subscription.hasVariants && !selectedVariant)}
+                    disabled={isProcessing || isLoading || !isSomethingSelected()}
                     className={`w-full py-4 px-6 rounded-full text-white font-bold text-lg transition-all ${
-                      isProcessing || isLoading || (subscription.hasVariants && !selectedVariant)
+                      isProcessing || isLoading || !isSomethingSelected()
                         ? 'bg-gray-400 cursor-not-allowed' 
                         : 'bg-[#e63946] hover:bg-[#d52d3a] shadow-md hover:shadow-lg'
                     }`}

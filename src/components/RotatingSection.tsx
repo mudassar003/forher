@@ -17,7 +17,7 @@ interface BenefitItem {
   descriptionKey: string;
   iconColor: string;
   bgColor: string;
-  icon: JSX.Element;
+  icon: React.ReactElement;
 }
 
 interface RotatingSection2Props {

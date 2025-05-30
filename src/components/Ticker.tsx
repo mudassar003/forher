@@ -1,44 +1,57 @@
+// src/components/Ticker.tsx
 "use client";
 
-import { useEffect, useState, JSX } from "react";
+import { useEffect, useState } from "react";
 import { FaMobileAlt, FaStar, FaHeart, FaCog, FaComments, FaShieldAlt, FaBox } from "react-icons/fa";
+import useTranslations from "@/hooks/useTranslations";
 
-type TickerItem = {
+// Strict TypeScript interfaces
+interface TickerItem {
   id: number;
-  icon: JSX.Element;
-  text: string;
-};
+  icon: React.ReactElement;
+  translationKey: string;
+}
+
+interface TickerProps {
+  className?: string;
+}
+
+// Brand colors - moved to constants for better maintainability
+const BRAND_COLORS = {
+  primary: "#fe92b5",
+  accent: "#f96897",
+  darkAccent: "#fc4e87",
+  lightBg: "#fff8fa",
+  text: "#333"
+} as const;
+
+// Animation speeds
+const ANIMATION_SPEEDS = {
+  desktop: 25,
+  mobile: 10
+} as const;
 
 const tickerItems: TickerItem[] = [
-  { id: 1, icon: <FaCog />, text: "Affordable pricing with no hidden fees" },
-  { id: 2, icon: <FaMobileAlt />, text: "100% online" },
-  { id: 3, icon: <FaStar />, text: "Personalized to your needs" },
-  { id: 4, icon: <FaHeart />, text: "Ongoing support" },
-  { id: 5, icon: <FaCog />, text: "US-Sourced ingredients" },
-  { id: 6, icon: <FaComments />, text: "Unlimited provider messaging" },
-  { id: 7, icon: <FaShieldAlt />, text: "FDA-regulated pharmacies" },
-  { id: 8, icon: <FaBox />, text: "Free & discreet shipping on all prescriptions" },
-  { id: 9, icon: <FaCog />, text: "Affordable pricing with no hidden fees" },
-  { id: 10, icon: <FaStar />, text: "Personalized to your needs" },
+  { id: 1, icon: <FaCog />, translationKey: "affordablePricing" },
+  { id: 2, icon: <FaMobileAlt />, translationKey: "onlineAccess" },
+  { id: 3, icon: <FaStar />, translationKey: "personalizedCare" },
+  { id: 4, icon: <FaHeart />, translationKey: "ongoingSupport" },
+  { id: 5, icon: <FaCog />, translationKey: "usSourcedIngredients" },
+  { id: 6, icon: <FaComments />, translationKey: "unlimitedMessaging" },
+  { id: 7, icon: <FaShieldAlt />, translationKey: "fdaRegulatedPharmacies" },
+  { id: 8, icon: <FaBox />, translationKey: "freeDiscreetShipping" },
+  { id: 9, icon: <FaCog />, translationKey: "affordablePricing" },
+  { id: 10, icon: <FaStar />, translationKey: "personalizedCare" },
 ];
 
-// Brand colors
-const primaryColor = "#fe92b5";
-const accentColor = "#f96897";
-const darkAccentColor = "#fc4e87";
-const lightBgColor = "#fff8fa";
-
-export default function Ticker() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  
-  // Different speeds for different devices
-  const desktopSpeed = 25;
-  const mobileSpeed = 10;
+export default function Ticker({ className = "" }: TickerProps): React.ReactElement {
+  const { t } = useTranslations();
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
 
   // Check if device is mobile on mount and when window resizes
   useEffect(() => {
-    const checkIfMobile = () => {
+    const checkIfMobile = (): void => {
       setIsMobile(window.innerWidth < 768);
     };
     
@@ -52,34 +65,44 @@ export default function Ticker() {
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
+  // Handle touch events for mobile
+  const handleTouchStart = (): void => setIsPaused(true);
+  const handleTouchEnd = (): void => setIsPaused(false);
+  
+  // Handle mouse events for desktop
+  const handleMouseEnter = (): void => setIsPaused(true);
+  const handleMouseLeave = (): void => setIsPaused(false);
+
   // Mobile specific ticker
-  const MobileTicker = () => (
+  const MobileTicker = (): React.ReactElement => (
     <div
       className="relative w-full overflow-hidden py-2 flex items-center animate-fade-in"
-      style={{ backgroundColor: lightBgColor }}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
+      style={{ backgroundColor: BRAND_COLORS.lightBg }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       <div 
         className="relative z-10 px-3 whitespace-nowrap font-medium flex items-center"
-        style={{ backgroundColor: lightBgColor, color: darkAccentColor }}
+        style={{ backgroundColor: BRAND_COLORS.lightBg, color: BRAND_COLORS.darkAccent }}
       >
-        <span className="text-xs">Why Lily’s</span>
-        <span className="ml-1 text-xs" style={{ color: accentColor }}>|</span>
+        <span className="text-xs">{t('ticker.whyLilys')}</span>
+        <span className="ml-1 text-xs" style={{ color: BRAND_COLORS.accent }}>|</span>
       </div>
       <div className="w-full overflow-hidden relative">
         <div
           className="flex space-x-16"
           style={{
-            animation: `slideMobile ${mobileSpeed}s linear infinite`,
+            animation: `slideMobile ${ANIMATION_SPEEDS.mobile}s linear infinite`,
             animationPlayState: isPaused ? 'paused' : 'running',
             whiteSpace: 'nowrap',
           }}
         >
           {[...tickerItems, ...tickerItems, ...tickerItems].map((item, index) => (
-            <div key={index} className="flex items-center space-x-1 text-xs font-normal">
-              <span className="text-sm" style={{ color: accentColor }}>{item.icon}</span>
-              <span style={{ color: "#333" }}>{item.text}</span>
+            <div key={`mobile-${index}`} className="flex items-center space-x-1 text-xs font-normal">
+              <span className="text-sm" style={{ color: BRAND_COLORS.accent }}>{item.icon}</span>
+              <span style={{ color: BRAND_COLORS.text }}>
+                {t(`ticker.items.${item.translationKey}`)}
+              </span>
             </div>
           ))}
         </div>
@@ -88,33 +111,35 @@ export default function Ticker() {
   );
 
   // Desktop specific ticker
-  const DesktopTicker = () => (
+  const DesktopTicker = (): React.ReactElement => (
     <div
       className="relative w-full overflow-hidden py-2 flex items-center animate-fade-in"
-      style={{ backgroundColor: lightBgColor }}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      style={{ backgroundColor: BRAND_COLORS.lightBg }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div 
         className="relative z-10 px-4 whitespace-nowrap font-medium flex items-center"
-        style={{ backgroundColor: lightBgColor, color: darkAccentColor }}
+        style={{ backgroundColor: BRAND_COLORS.lightBg, color: BRAND_COLORS.darkAccent }}
       >
-        <span className="text-base">Why Lily’s</span>
-        <span className="ml-2 text-base" style={{ color: accentColor }}>|</span>
+        <span className="text-base">{t('ticker.whyLilys')}</span>
+        <span className="ml-2 text-base" style={{ color: BRAND_COLORS.accent }}>|</span>
       </div>
       <div className="w-full overflow-hidden relative">
         <div
           className="flex space-x-36"
           style={{
-            animation: `slideDesktop ${desktopSpeed}s linear infinite`,
+            animation: `slideDesktop ${ANIMATION_SPEEDS.desktop}s linear infinite`,
             animationPlayState: isPaused ? 'paused' : 'running',
             whiteSpace: 'nowrap',
           }}
         >
           {[...tickerItems, ...tickerItems, ...tickerItems].map((item, index) => (
-            <div key={index} className="flex items-center space-x-2 text-sm font-normal">
-              <span className="text-lg" style={{ color: accentColor }}>{item.icon}</span>
-              <span style={{ color: "#333" }}>{item.text}</span>
+            <div key={`desktop-${index}`} className="flex items-center space-x-2 text-sm font-normal">
+              <span className="text-lg" style={{ color: BRAND_COLORS.accent }}>{item.icon}</span>
+              <span style={{ color: BRAND_COLORS.text }}>
+                {t(`ticker.items.${item.translationKey}`)}
+              </span>
             </div>
           ))}
         </div>
@@ -123,7 +148,7 @@ export default function Ticker() {
   );
 
   return (
-    <>
+    <div className={className}>
       {/* Render either mobile or desktop ticker based on screen width */}
       <div className="hidden md:block">
         <DesktopTicker />
@@ -164,6 +189,6 @@ export default function Ticker() {
           animation: fade-in 0.5s ease-out forwards;
         }
       `}</style>
-    </>
+    </div>
   );
 }

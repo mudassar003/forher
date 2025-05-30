@@ -13,7 +13,7 @@ interface GlobalFooterProps {
 
 interface SocialLink {
   href: string;
-  icon: JSX.Element;
+  icon: React.ReactElement;
   label: string;
 }
 

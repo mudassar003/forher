@@ -1,6 +1,5 @@
 // src/store/bcFormStore.ts
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 // Define the types for our form data
 interface BCFormData {
@@ -26,51 +25,44 @@ export const BC_FORM_STEPS = [
   "/c/b/submit"
 ];
 
-// Create the Zustand store with persistence
-export const useBCFormStore = create(
-  persist<BCFormState>(
-    (set) => ({
-      // Initial state
+// Create the Zustand store WITHOUT persistence to ensure fresh start every time
+export const useBCFormStore = create<BCFormState>((set) => ({
+  // Initial state
+  currentStep: BC_FORM_STEPS[0],
+  completedSteps: [],
+  formData: {
+    stepOffsets: {}, // Track offsets for each step
+  },
+
+  // Actions
+  setCurrentStep: (step) => set({ currentStep: step }),
+  
+  markStepCompleted: (step) => 
+    set((state) => ({
+      completedSteps: [...new Set([...state.completedSteps, step])]
+    })),
+  
+  // Set the offset for a specific step
+  setStepOffset: (step, offset) => 
+    set((state) => ({
+      formData: { 
+        ...state.formData, 
+        stepOffsets: {
+          ...state.formData.stepOffsets,
+          [step]: offset
+        }
+      }
+    })),
+  
+  resetForm: () => 
+    set({
       currentStep: BC_FORM_STEPS[0],
       completedSteps: [],
       formData: {
-        stepOffsets: {}, // Track offsets for each step
-      },
-
-      // Actions
-      setCurrentStep: (step) => set({ currentStep: step }),
-      
-      markStepCompleted: (step) => 
-        set((state) => ({
-          completedSteps: [...new Set([...state.completedSteps, step])]
-        })),
-      
-      // Set the offset for a specific step
-      setStepOffset: (step, offset) => 
-        set((state) => ({
-          formData: { 
-            ...state.formData, 
-            stepOffsets: {
-              ...state.formData.stepOffsets,
-              [step]: offset
-            }
-          }
-        })),
-      
-      resetForm: () => 
-        set({
-          currentStep: BC_FORM_STEPS[0],
-          completedSteps: [],
-          formData: {
-            stepOffsets: {},
-          }
-        }),
+        stepOffsets: {},
+      }
     }),
-    {
-      name: "bc-form-storage", // Name for localStorage key
-    }
-  )
-);
+}));
 
 // Helper function to determine if a user can access a specific step
 export const canAccessStep = (step: string, completedSteps: string[]): boolean => {
@@ -89,18 +81,8 @@ export const getNextStep = (currentStep: string): string | null => {
   return BC_FORM_STEPS[currentIndex + 1];
 };
 
-// Helper function to get last completed step (for resuming)
+// Helper function to get last completed step (for resuming) - NOT USED in this version
 export const getLastCompletedStep = (completedSteps: string[]): string => {
-  if (completedSteps.length === 0) return BC_FORM_STEPS[0];
-  
-  // Find the last completed step based on the order in BC_FORM_STEPS
-  const validCompletedSteps = completedSteps.filter(step => BC_FORM_STEPS.includes(step));
-  if (validCompletedSteps.length === 0) return BC_FORM_STEPS[0];
-  
-  // Sort by their index in the steps array
-  validCompletedSteps.sort((a, b) => 
-    BC_FORM_STEPS.indexOf(b) - BC_FORM_STEPS.indexOf(a)
-  );
-  
-  return validCompletedSteps[0];
+  // Always return first step since we're not persisting sessions
+  return BC_FORM_STEPS[0];
 };

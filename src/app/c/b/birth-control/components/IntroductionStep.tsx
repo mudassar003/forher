@@ -1,16 +1,37 @@
 //src/app/c/b/birth-control/components/IntroductionStep.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBCFormStore } from "@/store/bcFormStore";
 import ProgressBar from "@/app/c/b/components/ProgressBar";
 
 export default function IntroductionStep() {
   const router = useRouter();
-  const { markStepCompleted } = useBCFormStore();
+  const { markStepCompleted, resetForm, setCurrentStep } = useBCFormStore();
   const pathname = "/c/b/birth-control";
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Reset stored responses and form progress
+  useEffect(() => {
+    // Reset the form state
+    resetForm();
+    setCurrentStep(pathname);
+    
+    // Also clear any stored responses in sessionStorage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem("birthControlResponses");
+      sessionStorage.removeItem("finalBCResponses");
+      sessionStorage.removeItem("ineligibilityReason");
+      
+      // Clear any cookies related to the form
+      try {
+        document.cookie = "bc-form-storage=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      } catch (error) {
+        console.log("No cookies to clear");
+      }
+    }
+  }, [resetForm, setCurrentStep, pathname]);
 
   const nextStep = () => {
     // Mark the introduction step as completed in the store
@@ -43,9 +64,9 @@ export default function IntroductionStep() {
       {/* Bottom Disclaimer Text */}
       <div className="absolute bottom-20 w-full max-w-2xl text-center text-gray-500 text-sm px-4">
         <p>
-          By clicking 'Continue', you agree that Hers may use your responses to personalize your 
+          By clicking 'Continue', you agree that Lilys may use your responses to personalize your 
           experience and other purposes as described in our 
-          <a href="#" className="underline text-gray-600"> Privacy Policy</a>.
+          <a href="/privacy-policy" className="underline text-gray-600"> Privacy Policy</a>.
           Responses prior to account creation will not be used as part of your medical assessment.
         </p>
       </div>

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useBCFormStore } from "@/store/bcFormStore";
 import ProgressBar from "@/app/c/b/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
-import { birthControlQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
+import { birthControlQuestions, getProgressPercentage } from "../data/questions";
 import { FormResponse, QuestionType } from "../types";
 
 export default function BirthControlForm() {
@@ -16,7 +16,6 @@ export default function BirthControlForm() {
   // Get the current offset from URL directly instead of using useSearchParams hook
   const [offset, setOffset] = useState(1); // Default to 1
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
   
   // Use an effect to get the search params (safely in browser environment)
   useEffect(() => {
@@ -30,23 +29,16 @@ export default function BirthControlForm() {
   
   // Get states and actions from the store
   const {
-    formData,
     markStepCompleted,
     setStepOffset
   } = useBCFormStore();
   
-  // Form state for responses
+  // Form state for responses - using simple state instead of sessionStorage for reset functionality
   const [responses, setResponses] = useState<FormResponse>({});
-  
-  // Filter questions based on conditional display
-  const filteredQuestions = birthControlQuestions.filter(question => {
-    if (!question.conditionalDisplay) return true;
-    return question.conditionalDisplay(responses);
-  });
   
   // Get the current question based on offset
   const currentQuestionIndex = offset - 1; // Adjust for 0-based array index
-  const currentQuestion = filteredQuestions[currentQuestionIndex];
+  const currentQuestion = birthControlQuestions[currentQuestionIndex];
   
   // Progress percentage
   const progressPercentage = getProgressPercentage(offset);
@@ -59,21 +51,6 @@ export default function BirthControlForm() {
     }
   }, [currentQuestion, offset, router, pathname]);
   
-  // Load stored responses on mount
-  useEffect(() => {
-    // Only run in browser environment
-    if (typeof window !== 'undefined') {
-      try {
-        const storedResponses = sessionStorage.getItem("birthControlResponses");
-        if (storedResponses) {
-          setResponses(JSON.parse(storedResponses));
-        }
-      } catch (error) {
-        console.error("Error loading stored responses:", error);
-      }
-    }
-  }, []);
-  
   // Handle response change
   const handleResponseChange = (value: any) => {
     if (!currentQuestion) return;
@@ -85,25 +62,12 @@ export default function BirthControlForm() {
     
     setResponses(updatedResponses);
     
-    // Check for eligibility after any critical questions
-    const eligibilityCheckQuestions = [
-      'age',
-      'gender',
-      'pregnant',
-      'breastfeeding',
-      'medical-conditions',
-      'eating-disorder',
-      'blood-clots',
-      'doctor-consult'
-    ];
-    
-    if (eligibilityCheckQuestions.includes(currentQuestion.id)) {
-      const eligibility = checkEligibility(updatedResponses);
-      
-      if (!eligibility.eligible) {
-        setIneligibilityReason(eligibility.reason);
-      } else {
-        setIneligibilityReason(null);
+    // Store responses in sessionStorage for the submit page only
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem("birthControlResponses", JSON.stringify(updatedResponses));
+      } catch (error) {
+        console.error("Error storing responses:", error);
       }
     }
   };
@@ -130,31 +94,15 @@ export default function BirthControlForm() {
     // Store current screen's responses
     storeResponses();
     
-    // If user is ineligible, redirect to a dedicated ineligible page
-    if (ineligibilityReason) {
-      // Store the ineligibility reason for the results page
-      sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
-      
+    // If this is the last screen
+    if (currentQuestionIndex >= birthControlQuestions.length - 1) {
       // Mark step as completed
       markStepCompleted(pathname);
       
       // Set transitioning state
       setIsTransitioning(true);
       
-      // Navigate to the results page directly
-      window.location.href = "/c/b/submit";
-      return;
-    }
-    
-    // If this is the last screen
-    if (currentQuestionIndex >= filteredQuestions.length - 1) {
-      // Mark step as completed
-      markStepCompleted(pathname);
-      
-      // Set transitioning state (will be reset when the new page loads)
-      setIsTransitioning(true);
-      
-      // Navigate to the next step in the flow
+      // Navigate to the submit page
       window.location.href = "/c/b/submit";
     } else {
       // For within-form navigation, do it without a full page refresh
@@ -216,7 +164,7 @@ export default function BirthControlForm() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-        <p className="mt-4 text-lg">Analyzing your responses...</p>
+        <p className="mt-4 text-lg">Processing your responses...</p>
       </div>
     );
   }
@@ -236,33 +184,12 @@ export default function BirthControlForm() {
       
       // Step 3: Medical History
       'medical-conditions': 3,
-      'medications': 3,
-      'medication-specify': 3,
-      'eating-disorder': 3,
       
       // Step 4: Birth Control History
       'bc-history': 4,
-      'blood-clots': 4,
-      'daily-pill': 4,
       
-      // Step 5: Sexual Health & Libido
-      'libido-decrease': 5,
-      'stress-impact': 5,
-      'natural-support': 5,
-      'herbal-allergies': 5,
-      
-      // Step 6: Lifestyle & Preferences
-      'smoking': 6,
-      'regular-cycle': 6,
-      'overall-wellbeing': 6,
-      'daily-supplements': 6,
-      
-      // Step 7: Medical Eligibility Confirmation
-      'doctor-consult': 7,
-      
-      // Step 8: Product Preference
-      'non-prescription': 8,
-      'hormonal-bc': 8
+      // Step 5: Preferences
+      'daily-pill': 5
     };
     
     return stepMap[currentQuestion.id] || 1;
@@ -276,7 +203,7 @@ export default function BirthControlForm() {
       <div className="w-full max-w-2xl mt-16 mb-24">
         {/* Current Step Indicator */}
         <div className="mb-4 text-[#fe92b5] font-medium">
-          Step {getStepNumber()} of 8
+          Step {getStepNumber()} of 5
         </div>
         
         {/* Question - Left-aligned, larger text */}
@@ -288,18 +215,6 @@ export default function BirthControlForm() {
           <p className="text-gray-600 mb-8 text-left text-lg">
             {currentQuestion.description}
           </p>
-        )}
-        
-        {/* Display ineligibility warning if applicable */}
-        {ineligibilityReason && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
-            <p className="font-medium text-red-700">Eligibility Notice:</p>
-            <p className="text-red-600">{ineligibilityReason}</p>
-            <p className="text-sm mt-2 text-gray-600">
-              You can continue with the assessment, but based on your responses,
-              our products may not be suitable for you.
-            </p>
-          </div>
         )}
         
         {/* Render the appropriate question component */}
@@ -323,7 +238,7 @@ export default function BirthControlForm() {
           className={`text-white text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl ${isContinueEnabled() && !isTransitioning ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
             }`}
         >
-          {ineligibilityReason ? "Continue to Results" : "Continue"}
+          Continue
         </button>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBCFormStore } from "@/store/bcFormStore";
 import ProgressBar from "@/app/c/b/components/ProgressBar";
-import { birthControlQuestions, checkEligibility } from "../birth-control/data/questions";
+import { birthControlQuestions } from "../birth-control/data/questions";
 import { 
   FormResponse, 
   QuestionType, 
@@ -19,29 +19,16 @@ export default function SubmitStep() {
   const [responses, setResponses] = useState<FormResponse>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
 
   // Load responses from sessionStorage on component mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        // Check if there's an ineligibility reason stored
-        const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
-        if (storedIneligibilityReason) {
-          setIneligibilityReason(storedIneligibilityReason);
-        }
-        
         // Load responses
         const storedResponses = sessionStorage.getItem("birthControlResponses");
         if (storedResponses) {
           const parsedResponses = JSON.parse(storedResponses);
           setResponses(parsedResponses);
-          
-          // Check eligibility based on all responses
-          const eligibility = checkEligibility(parsedResponses);
-          if (!eligibility.eligible && !storedIneligibilityReason) {
-            setIneligibilityReason(eligibility.reason);
-          }
         } else {
           console.log("No responses found in sessionStorage");
         }
@@ -54,7 +41,7 @@ export default function SubmitStep() {
   }, []);
 
   // Gets the label for a given option ID for a specific question
-  const getOptionLabel = (questionId: string, optionId: string | string[]) => {
+  const getOptionLabel = (questionId: string, optionId: string | string[]): string => {
     const question = birthControlQuestions.find(q => q.id === questionId);
     if (!question) return "Not specified";
 
@@ -82,9 +69,13 @@ export default function SubmitStep() {
   // Group questions by their sections for better organization
   const getSectionForQuestion = (questionId: string): string => {
     const sectionMap: Record<string, string> = {
-      'bc-type': 'Birth Control Preference',
-      'experience': 'Previous Experience'
-      // Add more section mappings as needed
+      'age': 'Basic Demographics',
+      'gender': 'Basic Demographics',
+      'pregnant': 'Pregnancy & Breastfeeding',
+      'breastfeeding': 'Pregnancy & Breastfeeding',
+      'medical-conditions': 'Medical History',
+      'bc-history': 'Birth Control History',
+      'daily-pill': 'Preferences'
     };
     
     return sectionMap[questionId] || 'Other Information';
@@ -111,7 +102,7 @@ export default function SubmitStep() {
     return grouped;
   };
 
-  // Handle the form submission
+  // Handle the form submission - NO API CALLS, direct navigation to results
   const handleSubmit = async () => {
     setIsProcessing(true);
     
@@ -119,15 +110,13 @@ export default function SubmitStep() {
       // Mark this step as completed
       markStepCompleted("/c/b/submit");
       
-      // Store the responses for the results page
+      // Store the responses for the results page (keep in sessionStorage for results page)
       sessionStorage.setItem("finalBCResponses", JSON.stringify(responses));
       
-      // If we have an ineligibility reason, make sure it's also stored
-      if (ineligibilityReason) {
-        sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
-      }
+      // Add a small delay to show processing state
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to results page
+      // Navigate directly to results page (no API call)
       router.push("/c/b/results");
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -156,18 +145,6 @@ export default function SubmitStep() {
       <p className="text-xl font-medium text-black mt-3 mb-8">
         You've made it to the final step. Please review your responses before submitting.
       </p>
-
-      {/* Display any notices if applicable */}
-      {ineligibilityReason && (
-        <div className="w-full max-w-2xl bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
-          <p className="font-medium text-red-700">Eligibility Notice:</p>
-          <p className="text-red-600">{ineligibilityReason}</p>
-          <p className="text-sm mt-2 text-gray-600">
-            Based on your responses, our products may not be suitable for you. We can still
-            provide general recommendations when you submit.
-          </p>
-        </div>
-      )}
 
       {/* Summary of selections grouped by section */}
       <div className="mt-4 w-full max-w-2xl mb-24">

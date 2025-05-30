@@ -3,42 +3,37 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useBCFormStore, getLastCompletedStep } from "@/store/bcFormStore";
+import { useBCFormStore } from "@/store/bcFormStore";
 
 export default function BirthControlEntry() {
   const router = useRouter();
-  const { completedSteps, formData } = useBCFormStore();
+  const { resetForm } = useBCFormStore();
 
   useEffect(() => {
-    // Check if the user has already started the form
-    if (completedSteps.length > 0) {
-      // Get the furthest step the user has completed
-      const lastCompletedStep = getLastCompletedStep(completedSteps);
+    // Always reset the form to start fresh - no session persistence
+    resetForm();
+
+    // Clear any stored session data
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem("birthControlResponses");
+      sessionStorage.removeItem("finalBCResponses");
+      sessionStorage.removeItem("ineligibilityReason");
       
-      // Check if we need to resume at a specific offset
-      const stepOffsets = formData.stepOffsets || {};
-      let redirectPath = lastCompletedStep || "/c/b/introduction";
-      
-      // If this step has a stored offset, include it in the redirect URL
-      if (stepOffsets[lastCompletedStep]) {
-        redirectPath = `${redirectPath}?offset=${stepOffsets[lastCompletedStep]}`;
+      // Also clear any potential cookies related to BC form
+      try {
+        document.cookie = "bc-form-storage=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      } catch (error) {
+        console.log("No cookies to clear");
       }
-      
-      // Short delay to ensure smooth transition
-      const timer = setTimeout(() => {
-        router.push(redirectPath);
-      }, 1000); // 1 second delay for smooth transition
-
-      return () => clearTimeout(timer); // Cleanup timeout on unmount
-    } else {
-      // If no progress, redirect to the introduction page
-      const timer = setTimeout(() => {
-        router.push("/c/b/introduction");
-      }, 1000);
-
-      return () => clearTimeout(timer);
     }
-  }, [router, completedSteps, formData]);
+
+    // Redirect to the introduction page
+    const timer = setTimeout(() => {
+      router.push("/c/b/introduction");
+    }, 1000); // 1 second delay for smooth transition
+
+    return () => clearTimeout(timer);
+  }, [router, resetForm]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
@@ -47,7 +42,7 @@ export default function BirthControlEntry() {
       
       {/* Loading Text */}
       <p className="text-xl text-gray-600">
-        {completedSteps.length > 0 ? "Resuming your progress..." : "Preparing your survey..."}
+        Preparing your birth control survey...
       </p>
     </div>
   );

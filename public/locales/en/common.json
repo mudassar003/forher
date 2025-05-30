@@ -1,3 +1,4 @@
+
 {
   "header": {
     "home": "Home",
@@ -13,7 +14,21 @@
   "footer": {
     "allRightsReserved": "All rights reserved",
     "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service"
+    "termsOfService": "Terms of Service",
+    "empoweringMessage": "Empowering you to look and feel your best every day.",
+    "customerReviews": "Customer Reviews",
+    "customerReviewsDescription": "See what our customers say about us.",
+    "viewTrustpilotReviews": "View our Trustpilot reviews",
+    "quickLinks": "Quick Links",
+    "aboutUs": "About Us",
+    "weightLoss": "Weight Loss",
+    "hairLoss": "Hair Loss",
+    "contact": "Contact",
+    "legal": "Legal",
+    "cookiePolicy": "Cookie Policy",
+    "ccpaNotice": "CCPA Notice",
+    "fdaDisclaimer": "FDA Disclaimer:",
+    "fdaDisclaimerText": "Some of our products are not FDA approved."
   },
   "common": {
     "loading": "Loading...",
@@ -73,6 +88,8 @@
     "cancelAnytime": "30-day guarantee • Cancel anytime",
     "viewMoreDetails": "View More Details"
   },
+  
+
   "rotatingHeadline": {
     "noMoreWaiting": "No More Waiting.",
     "be": "Be",
@@ -121,6 +138,8 @@
     "makeAppointment": "Make an Appointment",
     "takeAssessment": "Take Assessment Survey"
   },
+
+
   "howItWorks": {
     "title": "How Lily's Works",
     "subtitle": "Get personalized healthcare from the comfort of your home in just a few simple steps.",
@@ -151,6 +170,79 @@
         "title": "Ongoing Support",
         "description": "Access to our medical team for questions, adjustments, and regular check-ins."
       }
+    }
+  },
+
+
+  "ticker": {
+    "whyLilys": "Why Lily's",
+    "items": {
+      "affordablePricing": "Affordable pricing with no hidden fees",
+      "onlineAccess": "100% online",
+      "personalizedCare": "Personalized to your needs",
+      "ongoingSupport": "Ongoing support",
+      "usSourcedIngredients": "US-Sourced ingredients",
+      "unlimitedMessaging": "Unlimited provider messaging",
+      "fdaRegulatedPharmacies": "FDA-regulated pharmacies",
+      "freeDiscreetShipping": "Free & discreet shipping on all prescriptions"
+    }
+  },
+
+
+  "rotatingSection": {
+    "title": "Start Your Weight Loss Journey",
+    "titleHighlight": "The Right Way",
+    "subtitle": "Expert guidance and effective solutions tailored to your body's unique needs",
+    "beText": "Be",
+    "todayText": "today",
+    "description": "Our clinically-backed approach helps you achieve sustainable results with personalized support.",
+    "animatedWords": {
+      "healthier": "healthier",
+      "happier": "happier",
+      "stronger": "stronger",
+      "confident": "confident"
+    },
+    "benefits": {
+      "fsaHsa": {
+        "title": "Save 30% with FSA & HSA",
+        "description": "Use pre-tax dollars to save on your health journey"
+      },
+      "noInsurance": {
+        "title": "No Insurance Needed",
+        "description": "Direct access to quality care without insurance hassles"
+      },
+      "medicalExpertise": {
+        "title": "Medical Expertise",
+        "description": "Board-certified professionals guide your weight loss journey"
+      }
+    }
+  },
+
+
+  "faqAccordion": {
+    "title": "Frequently Asked Questions",
+    "questions": {
+      "whatIsLilys": {
+        "question": "What is Lily's?",
+        "answer": "Lily's is an online platform that connects women with licensed healthcare providers through secure, convenient telehealth. We make it easy to access trusted medical care from home—starting with a simple intake through our website."
+      },
+      "howItWorks": {
+        "question": "How does Lily's work?",
+        "answer": "It's simple, a patient fills out a quick medical questionnaire on our website, chooses a product, starts a consultation, and finally receives the prescribed products right to their door."
+      },
+      "whoAreProviders": {
+        "question": "Who are the providers at Lily's?",
+        "answer": "At Lily's we connect our customers to licensed professionals. Qualiphy is our Telehealth company, who supplies supplements and products through their 503A pharmacy."
+      }
+    }
+  },
+
+
+  "languageSwitcher": {
+    "changeLanguage": "Change language",
+    "languages": {
+      "english": "English",
+      "spanish": "Español"
     }
   }
 }

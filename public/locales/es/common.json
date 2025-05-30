@@ -1,3 +1,4 @@
+
 {
   "header": {
     "home": "Inicio",
@@ -13,7 +14,21 @@
   "footer": {
     "allRightsReserved": "Todos los derechos reservados",
     "privacyPolicy": "Política de Privacidad",
-    "termsOfService": "Términos de Servicio"
+    "termsOfService": "Términos de Servicio",
+    "empoweringMessage": "Empoderándote para que te veas y te sientas lo mejor cada día.",
+    "customerReviews": "Reseñas de Clientes",
+    "customerReviewsDescription": "Mira lo que dicen nuestros clientes sobre nosotros.",
+    "viewTrustpilotReviews": "Ver nuestras reseñas de Trustpilot",
+    "quickLinks": "Enlaces Rápidos",
+    "aboutUs": "Sobre Nosotros",
+    "weightLoss": "Pérdida de Peso",
+    "hairLoss": "Pérdida de Cabello",
+    "contact": "Contacto",
+    "legal": "Legal",
+    "cookiePolicy": "Política de Cookies",
+    "ccpaNotice": "Aviso CCPA",
+    "fdaDisclaimer": "Descargo de responsabilidad de la FDA:",
+    "fdaDisclaimerText": "Algunos de nuestros productos no están aprobados por la FDA."
   },
   "common": {
     "loading": "Cargando...",
@@ -73,6 +88,7 @@
     "cancelAnytime": "Garantía de 30 días • Cancele en cualquier momento",
     "viewMoreDetails": "Ver Más Detalles"
   },
+
   "rotatingHeadline": {
     "noMoreWaiting": "No Más Esperas.",
     "be": "Sé",
@@ -121,6 +137,8 @@
     "makeAppointment": "Programar una Cita",
     "takeAssessment": "Realizar Evaluación"
   },
+
+
   "howItWorks": {
     "title": "Cómo Funciona Lily's",
     "subtitle": "Obtenga atención médica personalizada desde la comodidad de su hogar en unos sencillos pasos.",
@@ -151,6 +169,79 @@
         "title": "Soporte Continuo",
         "description": "Acceso a nuestro equipo médico para preguntas, ajustes y revisiones regulares."
       }
+    }
+  },
+
+ 
+  "ticker": {
+    "whyLilys": "Por qué Lily's",
+    "items": {
+      "affordablePricing": "Precios accesibles sin tarifas ocultas",
+      "onlineAccess": "100% en línea",
+      "personalizedCare": "Personalizado a tus necesidades",
+      "ongoingSupport": "Apoyo continuo",
+      "usSourcedIngredients": "Ingredientes de origen estadounidense",
+      "unlimitedMessaging": "Mensajería ilimitada con proveedores",
+      "fdaRegulatedPharmacies": "Farmacias reguladas por la FDA",
+      "freeDiscreetShipping": "Envío gratuito y discreto en todas las recetas"
+    }
+  },
+
+
+  "rotatingSection": {
+    "title": "Comienza Tu Viaje de Pérdida de Peso",
+    "titleHighlight": "De la Manera Correcta",
+    "subtitle": "Orientación experta y soluciones efectivas adaptadas a las necesidades únicas de tu cuerpo",
+    "beText": "Sé",
+    "todayText": "hoy",
+    "description": "Nuestro enfoque respaldado clínicamente te ayuda a lograr resultados sostenibles con apoyo personalizado.",
+    "animatedWords": {
+      "healthier": "más saludable",
+      "happier": "más feliz",
+      "stronger": "más fuerte",
+      "confident": "segura"
+    },
+    "benefits": {
+      "fsaHsa": {
+        "title": "Ahorra 30% con FSA y HSA",
+        "description": "Usa dólares antes de impuestos para ahorrar en tu viaje de salud"
+      },
+      "noInsurance": {
+        "title": "No Se Necesita Seguro",
+        "description": "Acceso directo a atención de calidad sin complicaciones de seguros"
+      },
+      "medicalExpertise": {
+        "title": "Experiencia Médica",
+        "description": "Profesionales certificados guían tu viaje de pérdida de peso"
+      }
+    }
+  },
+
+ 
+  "faqAccordion": {
+    "title": "Preguntas Frecuentes",
+    "questions": {
+      "whatIsLilys": {
+        "question": "¿Qué es Lily's?",
+        "answer": "Lily's es una plataforma en línea que conecta a las mujeres con proveedores de atención médica con licencia a través de telesalud segura y conveniente. Facilitamos el acceso a atención médica confiable desde casa, comenzando con una evaluación simple a través de nuestro sitio web."
+      },
+      "howItWorks": {
+        "question": "¿Cómo funciona Lily's?",
+        "answer": "Es simple, un paciente completa un cuestionario médico rápido en nuestro sitio web, elige un producto, inicia una consulta y finalmente recibe los productos recetados directamente en su puerta."
+      },
+      "whoAreProviders": {
+        "question": "¿Quiénes son los proveedores de Lily's?",
+        "answer": "En Lily's conectamos a nuestros clientes con profesionales con licencia. Qualiphy es nuestra empresa de Telesalud, que suministra suplementos y productos a través de su farmacia 503A."
+      }
+    }
+  },
+
+
+  "languageSwitcher": {
+    "changeLanguage": "Cambiar idioma",
+    "languages": {
+      "english": "English",
+      "spanish": "Español"
     }
   }
 }

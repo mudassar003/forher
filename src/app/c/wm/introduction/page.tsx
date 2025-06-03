@@ -7,7 +7,7 @@ import { useWMFormStore } from "@/store/wmFormStore";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-export default function IntroductionPage(): JSX.Element {
+export default function IntroductionPage() {
   const router = useRouter();
   const { resetForm, setCurrentStep, markStepCompleted } = useWMFormStore();
   
@@ -132,37 +132,7 @@ export default function IntroductionPage(): JSX.Element {
               Personalized plans backed by medical professionals for lasting results.
             </motion.p>
             
-            {/* Stats or highlights */}
-            <motion.div
-              className="grid grid-cols-3 gap-4 w-full max-w-md"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
-              <motion.div 
-                className="text-center"
-                variants={staggerItem}
-              >
-                <p className="text-3xl font-bold">15%+</p>
-                <p className="text-sm opacity-80">Average Weight Loss</p>
-              </motion.div>
-              
-              <motion.div 
-                className="text-center"
-                variants={staggerItem}
-              >
-                <p className="text-3xl font-bold">98%</p>
-                <p className="text-sm opacity-80">Success Rate</p>
-              </motion.div>
-              
-              <motion.div 
-                className="text-center"
-                variants={staggerItem}
-              >
-                <p className="text-3xl font-bold">24/7</p>
-                <p className="text-sm opacity-80">Medical Support</p>
-              </motion.div>
-            </motion.div>
+            {/* Statistics section removed as requested */}
           </div>
         </div>
         

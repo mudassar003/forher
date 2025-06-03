@@ -11,6 +11,7 @@ import { urlFor } from '@/sanity/lib/image';
 import { Subscription } from '@/types/subscription-page';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
+import HairLossSubscriptionGrid from "../components/HairLossSubscriptionGrid";
 import { formatPriceWithBillingPeriod } from '@/utils/subscriptionHelpers';
 
 // Define component properties
@@ -39,15 +40,15 @@ export default function HairLossResultsPage({}: HairLossResultsProps) {
     error: null
   });
   
-  // Fetch featured subscription for hair loss category
+  // Fetch featured subscription
   useEffect(() => {
     const fetchFeaturedSubscription = async (): Promise<void> => {
       try {
-        // Query for hair loss subscription that is marked as featured
+        // Query for hair care subscription that is marked as featured
         const result = await client.fetch(
           groq`*[
             _type == "subscription" && 
-            references(*[_type == "subscriptionCategory" && slug.current == "hair-loss"]._id) && 
+            references(*[_type == "subscriptionCategory" && slug.current == "hair-care"]._id) && 
             isActive == true && 
             isDeleted != true
           ] | order(isFeatured desc) [0] {
@@ -79,13 +80,13 @@ export default function HairLossResultsPage({}: HairLossResultsProps) {
           
           if (subscription.featuredImage) {
             imgUrl = urlFor(subscription.featuredImage)
-              .width(500)  // Optimized width for 4:3 aspect ratio
-              .height(375) // Optimized height for 4:3 aspect ratio
+              .width(600)  // Increased width for larger image
+              .height(450) // Increased height for larger image
               .url();
           } else if (subscription.image) {
             imgUrl = urlFor(subscription.image)
-              .width(500)  // Optimized width for 4:3 aspect ratio
-              .height(375) // Optimized height for 4:3 aspect ratio
+              .width(600)  // Increased width for larger image
+              .height(450) // Increased height for larger image
               .url();
           }
           
@@ -202,7 +203,7 @@ export default function HairLossResultsPage({}: HairLossResultsProps) {
   };
   
   // Handle subscription purchase button click
-  const handleSubscribe = async (): Promise<void> => {
+  const handlePurchase = async (): Promise<void> => {
     if (!featuredSubscription.subscription || isProcessing || isLoading) return;
     
     // Store current path in sessionStorage
@@ -238,16 +239,16 @@ export default function HairLossResultsPage({}: HairLossResultsProps) {
   };
 
   // Get subscription button text based on state
-  const getSubscribeButtonText = (): string => {
+  const getPurchaseButtonText = (): string => {
     if (isProcessing || isLoading) {
       return 'Processing...';
     }
     
     if (isAuthenticated) {
-      return 'Subscribe Now';
+      return 'Purchase Now';
     }
     
-    return 'Sign In to Subscribe';
+    return 'Sign In to Purchase';
   };
 
   return (
@@ -306,7 +307,7 @@ export default function HairLossResultsPage({}: HairLossResultsProps) {
       {/* Main Content Section */}
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
-          {/* Note from Lilys Section */}
+          {/* Note from Lilys Section - NEW ADDITION */}
           <motion.div
             className="bg-white rounded-xl shadow-lg p-6 mb-10 border-l-4 border-[#fe92b5]"
             initial={{ opacity: 0, y: 20 }}
@@ -326,232 +327,324 @@ export default function HairLossResultsPage({}: HairLossResultsProps) {
                 <p className="text-black">
                   Based on your responses, we've selected a hair loss treatment program that's tailored to your specific needs. 
                   At Lilys, we believe that personalized care leads to better results. This recommendation takes into account 
-                  your hair loss pattern, duration, medical history, and personal preferences to provide you with the most effective solution for healthier, thicker hair.
+                  your hair loss pattern, duration, medical history, and personal preferences to provide you with the most effective solution.
                 </p>
               </div>
             </div>
           </motion.div>
 
-          {/* Featured Product Section */}
-          <motion.div 
-            className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
-            transition={{ duration: 0.7 }}
-          >
-            <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-6 text-white">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                <h2 className="text-2xl font-bold">
-                  {featuredSubscription.subscription?.title || "Hair Loss Treatment Subscription"}
-                </h2>
-                <span className="px-3 py-1 bg-white text-[#e63946] text-sm font-semibold rounded-full inline-block w-max">
-                  Recommended
-                </span>
-              </div>
-              <p className="opacity-80 mt-1">Personalized hair restoration program</p>
-            </div>
-            
-            <div className="flex flex-col md:flex-row">
-              {/* Left side - Image in a fixed ratio container */}
-              <div className="md:w-2/5 p-4">
-                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden">
-                  {featuredSubscription.isLoading ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                      <div className="w-12 h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
-                    </div>
-                  ) : (
-                    <Image 
-                      src={featuredSubscription.imageUrl}
-                      alt={featuredSubscription.subscription?.title || "Hair Loss Product"}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 400px"
-                      priority
-                    />
-                  )}
+          {/* Conditional rendering based on whether we have a featured subscription */}
+          {featuredSubscription.subscription ? (
+            // Featured Product Section - Redesigned for better height balance
+            <motion.div 
+              className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
+              transition={{ duration: 0.7 }}
+            >
+              {/* Use a card-style design with better proportions */}
+              <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-6 text-white">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <h2 className="text-2xl font-bold">
+                    {featuredSubscription.subscription.title}
+                  </h2>
+                  <span className="px-3 py-1 bg-white text-[#e63946] text-sm font-semibold rounded-full inline-block w-max">
+                    Recommended
+                  </span>
                 </div>
-                
-                {/* Price and billing details */}
-                {featuredSubscription.subscription && (
-                  <div className="mt-4 flex items-center justify-center">
+                <p className="opacity-80 mt-1">Personalized hair restoration program</p>
+              </div>
+              
+              <div className="flex flex-col md:flex-row">
+                {/* Left side - Image in a fixed ratio container with larger dimensions */}
+                <div className="md:w-1/2 p-4">
+                  <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-md">
+                    {featuredSubscription.isLoading ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                        <div className="w-12 h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      <Image 
+                        src={featuredSubscription.imageUrl}
+                        alt={featuredSubscription.subscription.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 600px"
+                        priority
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Price and billing details */}
+                  <div className="mt-6 flex items-center justify-center">
                     <span className="text-[#e63946]">
                       {getFormattedPrice()}
                     </span>
                   </div>
-                )}
-              </div>
-              
-              {/* Right side - Features and CTA */}
-              <div className="md:w-3/5 p-4 md:p-6">
-                <h3 className="text-xl font-semibold text-black mb-4">
-                  Treatment Features:
-                </h3>
-                
-                {/* Features with smaller, more compact design */}
-                <div className="space-y-3 mb-6">
-                  {featuredSubscription.subscription && featuredSubscription.subscription.features && 
-                   featuredSubscription.subscription.features.length > 0 ? (
-                    // Render actual features from Sanity
-                    featuredSubscription.subscription.features.map((feature, index) => (
-                      <motion.div 
-                        key={`feature-${index}`}
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <p className="text-black">{feature.featureText}</p>
-                      </motion.div>
-                    ))
-                  ) : (
-                    // Fallback features for hair loss treatment
-                    <>
-                      <motion.div 
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: 0 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-black">Clinically proven hair regrowth with FDA-approved treatments</p>
-                        </div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: 0.1 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-black">Expert dermatologist consultation and personalized treatment plan</p>
-                        </div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-black">Convenient home delivery with progress tracking</p>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
                 </div>
                 
-                {/* CTA Section */}
-                <div className="mt-4">
-                  {/* View Details Link */}
-                  {featuredSubscription.subscription?.slug && featuredSubscription.subscription.slug.current && (
-                    <div className="mb-3">
-                      <Link 
-                        href={`/subscriptions/${featuredSubscription.subscription.slug.current}`}
-                        className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-2 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
-                      >
-                        View Plan Details
-                      </Link>
+                {/* Right side - Features first, then CTA */}
+                <div className="md:w-1/2 p-4 md:p-6">
+                  {/* Features Section */}
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold text-black mb-4">
+                      Treatment Features:
+                    </h3>
+                    
+                    {/* Features with smaller, more compact design */}
+                    <div className="space-y-3">
+                      {featuredSubscription.subscription.features && 
+                       featuredSubscription.subscription.features.length > 0 ? (
+                        // Render actual features from Sanity
+                        featuredSubscription.subscription.features.map((feature, index) => (
+                          <motion.div 
+                            key={`feature-${index}`}
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: index * 0.1 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <p className="text-black">{feature.featureText}</p>
+                          </motion.div>
+                        ))
+                      ) : (
+                        // Fallback features in case none are available from Sanity
+                        <>
+                          <motion.div 
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: 0 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-black">Clinically proven hair regrowth with FDA-approved treatments</p>
+                            </div>
+                          </motion.div>
+                          
+                          <motion.div 
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: 0.1 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-black">Expert dermatologist consultation and personalized treatment plan</p>
+                            </div>
+                          </motion.div>
+                          
+                          <motion.div 
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: 0.2 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-black">Convenient home delivery with progress tracking</p>
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  
+                  {/* CTA Section - MOVED BELOW FEATURES */}
+                  <div>
+                    {/* View Details Link */}
+                    {featuredSubscription.subscription.slug && featuredSubscription.subscription.slug.current && (
+                      <div className="mb-4">
+                        <Link 
+                          href={`/subscriptions/${featuredSubscription.subscription.slug.current}`}
+                          className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
+                        >
+                          View Plan Details
+                        </Link>
+                      </div>
+                    )}
 
-                  {/* Subscribe Button */}
-                  {featuredSubscription.subscription && (
+                    {/* Purchase Button - Changed from Subscribe to Purchase */}
                     <button
-                      onClick={handleSubscribe}
+                      onClick={handlePurchase}
                       disabled={isProcessing || isLoading}
-                      className={`w-full py-3 px-4 rounded-full text-white font-medium transition-colors ${
+                      className={`w-full py-4 px-6 rounded-full text-white font-semibold text-lg transition-colors ${
                         isProcessing || isLoading 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-black hover:bg-gray-900 shadow-md hover:shadow-lg'
                       }`}
                     >
-                      {getSubscribeButtonText()}
+                      {getPurchaseButtonText()}
                     </button>
-                  )}
-                  
-                  {error && (
-                    <p className="mt-2 text-xs text-red-600 text-center">
-                      {error}
+                    
+                    {error && (
+                      <p className="mt-2 text-xs text-red-600 text-center">
+                        {error}
+                      </p>
+                    )}
+                    
+                    <p className="text-center text-gray-500 text-xs mt-2">
+                      30-day satisfaction guarantee • Cancel anytime
                     </p>
-                  )}
-                  
-                  <p className="text-center text-gray-500 text-xs mt-2">
-                    30-day satisfaction guarantee • Cancel anytime
-                  </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          ) : (
+            // No Featured Product Available Section
+            <motion.div 
+              className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
+              transition={{ duration: 0.7 }}
+            >
+              <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-6 text-white">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <h2 className="text-2xl font-bold">Hair Loss Treatment Subscription</h2>
+                  <span className="px-3 py-1 bg-white text-[#e63946] text-sm font-semibold rounded-full inline-block w-max">
+                    Coming Soon
+                  </span>
+                </div>
+                <p className="opacity-80 mt-1">Personalized hair restoration program</p>
+              </div>
+              
+              <div className="p-8 text-center">
+                <div className="mb-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <h3 className="text-2xl font-bold text-black mb-4">Hair Loss Plans Coming Soon</h3>
+                  <p className="text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
+                    Thank you for completing our comprehensive hair loss assessment. Your responses are valuable and help us develop 
+                    personalized treatment solutions. We're currently working on bringing you targeted hair loss subscription plans 
+                    that will address your specific needs and concerns.
+                  </p>
+                </div>
+                
+                {/* Features List */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto">
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Personalized Hair Loss Treatment</p>
+                      <p className="text-gray-600 text-sm">Tailored solutions based on your assessment</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Expert Dermatologist Support</p>
+                      <p className="text-gray-600 text-sm">Professional guidance and monitoring</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Convenient Home Delivery</p>
+                      <p className="text-gray-600 text-sm">Treatments delivered to your door</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Progress Tracking & Support</p>
+                      <p className="text-gray-600 text-sm">Monitor your hair growth journey</p>
+                    </div>
+                  </motion.div>
+                </div>
+                
+                {/* CTA Button */}
+                <Link href="/subscriptions">
+                  <motion.button 
+                    className="w-full max-w-md mx-auto bg-black text-white font-semibold py-4 px-8 rounded-full text-lg hover:bg-gray-900 transition-colors shadow-md hover:shadow-lg"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Browse All Subscriptions
+                  </motion.button>
+                </Link>
+                
+                <p className="text-center text-gray-500 text-sm mt-4">
+                  Be the first to know when our hair loss plans launch
+                </p>
+              </div>
+            </motion.div>
+          )}
           
-          {/* Additional Information Section */}
+          {/* Hair Loss Subscription Grid */}
           <motion.div 
             className="mt-16 mb-12"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 20 }}
             transition={{ duration: 0.7, delay: 0.7 }}
           >
+            <h2 className="text-2xl font-bold text-center text-black mb-8">
+              Our Hair Loss Subscription Plans
+            </h2>
+            
+            {/* Import and use the HairLossSubscriptionGrid component */}
             <div className="bg-[#f9f9f9] rounded-xl p-8">
-              <h2 className="text-2xl font-bold text-center text-black mb-6">
-                What to Expect From Your Hair Loss Treatment
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-[#ffe6f0] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-black mb-2">Month 1-3</h3>
-                  <p className="text-gray-700">Initial treatment begins. You may notice reduced hair shedding and improved scalp health.</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-[#ffe6f0] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-black mb-2">Month 3-6</h3>
-                  <p className="text-gray-700">New hair growth becomes visible. Hair appears thicker and healthier with continued treatment.</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-[#ffe6f0] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-black mb-2">Month 6+</h3>
-                  <p className="text-gray-700">Significant improvement in hair density and coverage. Ongoing maintenance for best results.</p>
-                </div>
-              </div>
+              <HairLossSubscriptionGrid />
             </div>
           </motion.div>
           
-          {/* Minimal Footer */}
+          {/* Minimal Footer - No Button or CTA Text */}
           <div className="bg-gray-50 py-8 text-center mt-16">
             <div className="container mx-auto px-4">
               <p className="text-xs text-gray-400 mb-2">

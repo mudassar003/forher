@@ -99,7 +99,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     mostPopular: currentLanguage === 'es' ? 'Más Popular' : 'Most Popular',
     savePercent: currentLanguage === 'es' ? 'Ahorre' : 'Save',
     baseOption: currentLanguage === 'es' ? 'Opción Base' : 'Base Option',
-    standardPlan: currentLanguage === 'es' ? 'Plan Estándar' : 'Standard Plan'
+    standardPlan: currentLanguage === 'es' ? 'Plan Estándar' : 'Standard Plan',
+    imageDisclaimer: currentLanguage === 'es' ? 'La imagen es ilustrativa. El producto enviado puede variar en apariencia.' : 'Product image for illustration. Actual product appearance may vary when shipped.'
   };
   
   // Get the content based on current language
@@ -299,11 +300,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
   const getImageUrl = (): string => {
     // First check for the main image (preferred for detail page)
     if (subscription.image) {
-      return urlFor(subscription.image).width(800).height(600).url();
+      return urlFor(subscription.image).width(1000).height(800).url();
     }
     // Fall back to featured catalog image if no main image exists
     if (subscription.featuredImage) {
-      return urlFor(subscription.featuredImage).width(800).height(600).url();
+      return urlFor(subscription.featuredImage).width(1000).height(800).url();
     }
     return '/images/subscription-placeholder.jpg';
   };
@@ -427,8 +428,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 )}
               </div>
               
-              {/* Main Image */}
-              <div className="relative w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-8">
+              {/* Main Image - UPDATED FOR LARGER SIZE */}
+              <div className="relative w-full h-[450px] md:h-[550px] rounded-lg overflow-hidden mb-4">
                 <Image
                   src={getImageUrl()}
                   alt={getLocalizedTitle()}
@@ -439,6 +440,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   priority
                 />
               </div>
+
+              {/* Image Disclaimer */}
+              <p className="text-sm text-gray-500 italic mb-8 text-center">
+                {translations.imageDisclaimer}
+              </p>
               
               {/* Description */}
               <div className="prose max-w-none mb-8">

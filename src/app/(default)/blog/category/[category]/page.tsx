@@ -88,7 +88,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: BlogCategoryPageProps): Promise<Metadata> {
-  const categoryData = await getPostsByCategory(params.category, 1, 1);
+  const { category } = await params;
+  const categoryData = await getPostsByCategory(category, 1, 1);
   
   if (!categoryData) {
     return {
@@ -118,9 +119,12 @@ export async function generateMetadata({ params }: BlogCategoryPageProps): Promi
 }
 
 export default async function BlogCategoryPage({ params, searchParams }: BlogCategoryPageProps) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  
   return (
     <Suspense fallback={<BlogLoading />}>
-      <CategoryContent category={params.category} searchParams={searchParams} />
+      <CategoryContent category={resolvedParams.category} searchParams={resolvedSearchParams} />
     </Suspense>
   );
 }

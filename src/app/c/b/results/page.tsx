@@ -10,40 +10,19 @@ import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { useAuthStore } from '@/store/authStore';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
+import CycleManagementSubscriptionGrid from "../components/CycleManagementSubscriptionGrid";
+import { formatPriceWithBillingPeriod } from '@/utils/subscriptionHelpers';
+import { Subscription } from '@/types/subscription-page';
 
-// Static product interface for the hardcoded recommendation
-interface StaticProduct {
-  _id: string;
-  title: string;
-  slug: { current: string };
-  price: number;
-  description: string;
-  mainImage: string;
-  productType: string;
-  administrationType: string;
+// Interface for featured subscription with image
+interface FeaturedSubscriptionWithImage {
+  subscription: Subscription | null;
+  imageUrl: string;
+  isLoading: boolean;
+  error: string | null;
 }
 
-// Interface for birth control products from Sanity
-interface Product {
-  _id: string;
-  title: string;
-  slug: { current: string };
-  price: number;
-  description: string;
-  mainImage?: any;
-  productType?: string;
-  administrationType?: string;
-}
-
-// Static recommendation interface
-interface StaticRecommendation {
-  eligible: boolean;
-  recommendedProductId: string | null;
-  explanation: string;
-  product: StaticProduct;
-}
-
-export default function ResultsPage() {
+export default function BirthControlResultsPage() {
   // Animation states
   const [showContent, setShowContent] = useState<boolean>(false);
   const [showFeatures, setShowFeatures] = useState<boolean>(false);
@@ -51,60 +30,98 @@ export default function ResultsPage() {
   const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
   const { user, isAuthenticated, checkSession } = useAuthStore();
   
-  // State for products from Sanity
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(true);
-  const [productError, setProductError] = useState<string | null>(null);
-
-  // Static hardcoded recommendation (replaces API call)
-  const staticRecommendation: StaticRecommendation = {
-    eligible: true,
-    recommendedProductId: "static-bc-product-1",
-    explanation: "Based on your assessment, we recommend a comprehensive birth control solution that aligns with your preferences and lifestyle. This option provides reliable contraception with the convenience and support you're looking for.",
-    product: {
-      _id: "static-bc-product-1",
-      title: "Birth Control Plan",
-      slug: { current: "birth-control-plan" },
-      price: 89,
-      description: "A comprehensive birth control solution designed to meet your reproductive health needs with convenience and reliability.",
-      mainImage: "/images/birth-control-product.jpg", // Default fallback image
-      productType: "Prescription",
-      administrationType: "Oral"
-    }
-  };
-
+  const [featuredSubscription, setFeaturedSubscription] = useState<FeaturedSubscriptionWithImage>({
+    subscription: null,
+    imageUrl: '/images/birth-control-product.jpg', // Default fallback image
+    isLoading: true,
+    error: null
+  });
+  
+  // Fetch featured subscription
+  useEffect(() => {
+    const fetchFeaturedSubscription = async (): Promise<void> => {
+      try {
+        // Query for cycle management subscription that is marked as featured
+        const result = await client.fetch(
+          groq`*[
+            _type == "subscription" && 
+            references(*[_type == "subscriptionCategory" && slug.current == "cycle-management"]._id) && 
+            isActive == true && 
+            isDeleted != true
+          ] | order(isFeatured desc) [0] {
+            _id,
+            title,
+            titleEs,
+            slug,
+            description,
+            descriptionEs,
+            price,
+            billingPeriod,
+            customBillingPeriodMonths,
+            features,
+            featuresEs,
+            image,
+            featuredImage,
+            isActive,
+            isFeatured,
+            stripePriceId
+          }`
+        );
+        
+        if (result) {
+          // Cast the result to Subscription (not an array)
+          const subscription = result as Subscription;
+          
+          // Generate image URL based on available images, with featuredImage as priority
+          let imgUrl = '/images/birth-control-product.jpg'; // Default fallback
+          
+          if (subscription.featuredImage) {
+            imgUrl = urlFor(subscription.featuredImage)
+              .width(600)  // Increased width for larger image
+              .height(450) // Increased height for larger image
+              .url();
+          } else if (subscription.image) {
+            imgUrl = urlFor(subscription.image)
+              .width(600)  // Increased width for larger image
+              .height(450) // Increased height for larger image
+              .url();
+          }
+          
+          setFeaturedSubscription({
+            subscription,
+            imageUrl: imgUrl,
+            isLoading: false,
+            error: null
+          });
+        } else {
+          setFeaturedSubscription({
+            subscription: null,
+            imageUrl: '/images/birth-control-product.jpg',
+            isLoading: false,
+            error: "No featured subscription found"
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching featured subscription:", err);
+        setFeaturedSubscription({
+          subscription: null,
+          imageUrl: '/images/birth-control-product.jpg',
+          isLoading: false,
+          error: err instanceof Error ? err.message : "An unknown error occurred"
+        });
+      }
+    };
+    
+    fetchFeaturedSubscription();
+  }, []);
+  
   // Check auth state when component mounts
   useEffect(() => {
     if (!isAuthenticated) {
       checkSession();
     }
   }, [isAuthenticated, checkSession]);
-
-  // Fetch birth control products from Sanity
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoadingProducts(true);
-        
-        // Fetch birth control products from Sanity
-        const products: Product[] = await client.fetch(`
-          *[_type == "product" && references(*[_type=="productCategory" && slug.current=="sexual-health-and-birth-control"]._id)] {
-            _id, title, slug, price, description, mainImage, productType, administrationType
-          }
-        `);
-        
-        setAllProducts(products || []);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setProductError("Unable to load additional products");
-      } finally {
-        setIsLoadingProducts(false);
-      }
-    };
-    
-    fetchProducts();
-  }, []);
-
+  
   // Sequential animations
   useEffect(() => {
     const contentTimer = setTimeout(() => {
@@ -121,9 +138,70 @@ export default function ResultsPage() {
     };
   }, []);
 
+  // Get formatted price with billing period
+  const getFormattedPrice = (): React.ReactNode => {
+    if (!featuredSubscription.subscription) return null;
+    
+    const subscription = featuredSubscription.subscription;
+    const price = subscription.price;
+    const billingPeriod = subscription.billingPeriod;
+    const customBillingPeriodMonths = subscription.customBillingPeriodMonths;
+    
+    const fullPrice = formatPriceWithBillingPeriod(
+      price, 
+      billingPeriod, 
+      customBillingPeriodMonths,
+      { showMonthlyEquivalent: false }
+    );
+    
+    // For non-monthly plans, also show the monthly equivalent
+    if (billingPeriod !== 'monthly') {
+      // Calculate price per month
+      let monthsInPeriod: number;
+      
+      switch (billingPeriod) {
+        case 'annually':
+          monthsInPeriod = 12;
+          break;
+        case 'three_month':
+          monthsInPeriod = 3;
+          break;
+        case 'six_month':
+          monthsInPeriod = 6;
+          break;
+        case 'other':
+          monthsInPeriod = customBillingPeriodMonths || 1;
+          break;
+        default:
+          monthsInPeriod = 1;
+      }
+      
+      const monthlyPrice = price / monthsInPeriod;
+      
+      // Format monthly price
+      const formattedMonthlyPrice = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(monthlyPrice);
+      
+      return (
+        <div>
+          <span className="text-2xl font-bold">{fullPrice}</span>
+          <span className="block text-sm text-gray-600 mt-1">
+            ({formattedMonthlyPrice} per month)
+          </span>
+        </div>
+      );
+    }
+    
+    return <span className="text-2xl font-bold">{fullPrice}</span>;
+  };
+  
   // Handle subscription purchase button click
   const handlePurchase = async (): Promise<void> => {
-    if (isProcessing || isLoading) return;
+    if (!featuredSubscription.subscription || isProcessing || isLoading) return;
     
     // Store current path in sessionStorage
     const currentPath = window.location.pathname;
@@ -131,8 +209,8 @@ export default function ResultsPage() {
     
     // If not authenticated, redirect to login with return URL
     if (!isAuthenticated) {
-      // Save intended product ID to purchase after login
-      sessionStorage.setItem('pendingProductId', staticRecommendation.product._id);
+      // Save intended subscription ID to purchase after login
+      sessionStorage.setItem('pendingSubscriptionId', featuredSubscription.subscription._id);
       const returnUrl = encodeURIComponent(currentPath);
       window.location.href = `/login?returnUrl=${returnUrl}`;
       return;
@@ -141,27 +219,33 @@ export default function ResultsPage() {
     setIsProcessing(true);
     
     try {
-      // For now, just redirect to a general product page or subscription page
-      // Since this is a static recommendation, we'll redirect to the subscription page
-      window.location.href = '/subscriptions';
+      // Store appointment page as the return URL after successful purchase
+      sessionStorage.setItem('loginReturnUrl', '/appointment');
+      
+      const result = await purchaseSubscription(featuredSubscription.subscription._id);
+      
+      if (result.success && result.url) {
+        // Redirect to Stripe checkout
+        window.location.href = result.url;
+      }
     } catch (err) {
-      console.error('Failed to initiate purchase:', err);
+      console.error('Failed to initiate subscription purchase:', err);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Get purchase button text based on state
+  // Get subscription button text based on state
   const getPurchaseButtonText = (): string => {
     if (isProcessing || isLoading) {
       return 'Processing...';
     }
     
     if (isAuthenticated) {
-      return 'Explore Options';
+      return 'Purchase Now';
     }
     
-    return 'Sign In to Continue';
+    return 'Sign In to Purchase';
   };
 
   // Function to clear stored responses and start over
@@ -206,7 +290,7 @@ export default function ResultsPage() {
       <div className="relative min-h-[40vh] flex items-center justify-center bg-gradient-to-r from-[#ffe6f0] to-[#fff8f9] overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute top-20 left-[10%] w-32 h-32 rounded-full bg-[#ff92b5] opacity-10 blur-3xl"></div>
-        <div className="absolute bottom-10 right-[15%] w-40 h-40 rounded-full bg-[#e63946] opacity-10 blur-3xl"></div>
+        <div className="absolute bottom-10 right-[15%] w-40 h-40 rounded-full bg-[#fe92b5] opacity-10 blur-3xl"></div>
         
         <div className="container mx-auto px-4 py-16 relative z-10">
           <motion.div 
@@ -264,168 +348,325 @@ export default function ResultsPage() {
             </div>
           </motion.div>
 
-          {/* Recommended Product Section */}
-          <motion.div 
-            className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
-            transition={{ duration: 0.7 }}
-          >
-            <div className="bg-gradient-to-r from-[#fe92b5] to-[#ff92b5] p-6 text-white">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                <h2 className="text-2xl font-bold">{staticRecommendation.product.title}</h2>
-                <span className="px-3 py-1 bg-white text-[#fe92b5] text-sm font-semibold rounded-full inline-block w-max">
-                  Recommended
-                </span>
-              </div>
-              <p className="opacity-80 mt-1">Personalized birth control solution</p>
-            </div>
-            
-            <div className="flex flex-col md:flex-row">
-              {/* Left side - Image */}
-              <div className="md:w-1/2 p-4">
-                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-md">
-                  <Image 
-                    src={staticRecommendation.product.mainImage}
-                    alt={staticRecommendation.product.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 600px"
-                    priority
-                  />
-                </div>
-                
-                {/* Price and details */}
-                <div className="mt-6 flex items-center justify-center">
-                  <span className="text-[#fe92b5] text-2xl font-bold">
-                    ${staticRecommendation.product.price}/month
+          {/* Conditional rendering based on whether we have a featured subscription */}
+          {featuredSubscription.subscription ? (
+            // Featured Product Section - Redesigned for better height balance
+            <motion.div 
+              className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
+              transition={{ duration: 0.7 }}
+            >
+              {/* Use a card-style design with better proportions */}
+              <div className="bg-gradient-to-r from-[#fe92b5] to-[#ff92b5] p-6 text-white">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <h2 className="text-2xl font-bold">
+                    {featuredSubscription.subscription.title}
+                  </h2>
+                  <span className="px-3 py-1 bg-white text-[#fe92b5] text-sm font-semibold rounded-full inline-block w-max">
+                    Recommended
                   </span>
                 </div>
-                
-                {/* Product type badges */}
-                <div className="mt-4 flex justify-center gap-2">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                    {staticRecommendation.product.productType}
-                  </span>
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                    {staticRecommendation.product.administrationType}
-                  </span>
-                </div>
+                <p className="opacity-80 mt-1">Personalized birth control program</p>
               </div>
               
-              {/* Right side - Features and CTA */}
-              <div className="md:w-1/2 p-4 md:p-6">
-                {/* Explanation */}
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-black mb-4">
-                    Why This Is Right For You:
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-black">{staticRecommendation.explanation}</p>
+              <div className="flex flex-col md:flex-row">
+                {/* Left side - Image in a fixed ratio container with larger dimensions */}
+                <div className="md:w-1/2 p-4">
+                  <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-md">
+                    {featuredSubscription.isLoading ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                        <div className="w-12 h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      <Image 
+                        src={featuredSubscription.imageUrl}
+                        alt={featuredSubscription.subscription.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 600px"
+                        priority
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Price and billing details */}
+                  <div className="mt-6 flex items-center justify-center">
+                    <span className="text-[#fe92b5]">
+                      {getFormattedPrice()}
+                    </span>
                   </div>
                 </div>
                 
-                {/* Features */}
-                <div className="mb-8">
-                  <h4 className="text-lg font-semibold text-black mb-4">What's Included:</h4>
-                  
-                  <div className="space-y-3">
-                    <motion.div 
-                      className="flex items-start gap-3"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                      transition={{ duration: 0.4, delay: 0 }}
-                    >
-                      <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <p className="text-black">Personalized birth control consultation</p>
-                    </motion.div>
+                {/* Right side - Features first, then CTA */}
+                <div className="md:w-1/2 p-4 md:p-6">
+                  {/* Features Section */}
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold text-black mb-4">
+                      Treatment Features:
+                    </h3>
                     
-                    <motion.div 
-                      className="flex items-start gap-3"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                      transition={{ duration: 0.4, delay: 0.1 }}
-                    >
-                      <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <p className="text-black">Medical provider support and guidance</p>
-                    </motion.div>
-                    
-                    <motion.div 
-                      className="flex items-start gap-3"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                      transition={{ duration: 0.4, delay: 0.2 }}
-                    >
-                      <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <p className="text-black">Convenient home delivery service</p>
-                    </motion.div>
-                    
-                    <motion.div 
-                      className="flex items-start gap-3"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
-                      transition={{ duration: 0.4, delay: 0.3 }}
-                    >
-                      <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <p className="text-black">Ongoing health monitoring and support</p>
-                    </motion.div>
+                    {/* Features with smaller, more compact design */}
+                    <div className="space-y-3">
+                      {featuredSubscription.subscription.features && 
+                       featuredSubscription.subscription.features.length > 0 ? (
+                        // Render actual features from Sanity
+                        featuredSubscription.subscription.features.map((feature, index) => (
+                          <motion.div 
+                            key={`feature-${index}`}
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: index * 0.1 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <p className="text-black">{feature.featureText}</p>
+                          </motion.div>
+                        ))
+                      ) : (
+                        // Fallback features in case none are available from Sanity
+                        <>
+                          <motion.div 
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: 0 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-black">Personalized birth control consultation</p>
+                            </div>
+                          </motion.div>
+                          
+                          <motion.div 
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: 0.1 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-black">Medical provider support and guidance</p>
+                            </div>
+                          </motion.div>
+                          
+                          <motion.div 
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: 0.2 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-black">Convenient home delivery service</p>
+                            </div>
+                          </motion.div>
+                          
+                          <motion.div 
+                            className="flex items-start gap-3"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                            transition={{ duration: 0.4, delay: 0.3 }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-black">Ongoing health monitoring and support</p>
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                {/* CTA Section */}
-                <div className="space-y-4">
-                  {/* Primary CTA Button */}
-                  <button
-                    onClick={handlePurchase}
-                    disabled={isProcessing || isLoading}
-                    className={`w-full py-4 px-6 rounded-full text-white font-semibold text-lg transition-colors ${
-                      isProcessing || isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-black hover:bg-gray-900 shadow-md hover:shadow-lg'
-                    }`}
-                  >
-                    {getPurchaseButtonText()}
-                  </button>
                   
-                  {/* Retake Assessment Button */}
-                  <button 
-                    onClick={startOver}
-                    className="w-full text-center border border-[#fe92b5] text-[#fe92b5] font-medium py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
-                  >
-                    Retake Assessment
-                  </button>
-                  
-                  {error && (
-                    <p className="mt-2 text-xs text-red-600 text-center">
-                      {error}
+                  {/* CTA Section - MOVED BELOW FEATURES */}
+                  <div>
+                    {/* View Details Link */}
+                    {featuredSubscription.subscription.slug && featuredSubscription.subscription.slug.current && (
+                      <div className="mb-4">
+                        <Link 
+                          href={`/subscriptions/${featuredSubscription.subscription.slug.current}`}
+                          className="block w-full text-center border border-[#fe92b5] text-[#fe92b5] font-medium py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
+                        >
+                          View Plan Details
+                        </Link>
+                      </div>
+                    )}
+
+                    {/* Purchase Button - Changed from Subscribe to Purchase */}
+                    <button
+                      onClick={handlePurchase}
+                      disabled={isProcessing || isLoading}
+                      className={`w-full py-4 px-6 rounded-full text-white font-semibold text-lg transition-colors ${
+                        isProcessing || isLoading 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-black hover:bg-gray-900 shadow-md hover:shadow-lg'
+                      }`}
+                    >
+                      {getPurchaseButtonText()}
+                    </button>
+                    
+                    {/* Retake Assessment Button */}
+                    <button 
+                      onClick={startOver}
+                      className="w-full mt-4 text-center border border-[#fe92b5] text-[#fe92b5] font-medium py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
+                    >
+                      Retake Assessment
+                    </button>
+                    
+                    {error && (
+                      <p className="mt-2 text-xs text-red-600 text-center">
+                        {error}
+                      </p>
+                    )}
+                    
+                    <p className="text-center text-gray-500 text-xs mt-2">
+                      Personalized care • FDA-approved options
                     </p>
-                  )}
-                  
-                  <p className="text-center text-gray-500 text-xs mt-2">
-                    Personalized care • FDA-approved options
-                  </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          ) : (
+            // No Featured Product Available Section
+            <motion.div 
+              className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
+              transition={{ duration: 0.7 }}
+            >
+              <div className="bg-gradient-to-r from-[#fe92b5] to-[#ff92b5] p-6 text-white">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <h2 className="text-2xl font-bold">Birth Control Treatment Subscription</h2>
+                  <span className="px-3 py-1 bg-white text-[#fe92b5] text-sm font-semibold rounded-full inline-block w-max">
+                    Coming Soon
+                  </span>
+                </div>
+                <p className="opacity-80 mt-1">Personalized birth control program</p>
+              </div>
+              
+              <div className="p-8 text-center">
+                <div className="mb-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <h3 className="text-2xl font-bold text-black mb-4">Birth Control Plans Coming Soon</h3>
+                  <p className="text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
+                    Thank you for completing our comprehensive birth control assessment. Your responses are valuable and help us develop 
+                    personalized treatment solutions. We're currently working on bringing you targeted birth control subscription plans 
+                    that will address your specific needs and concerns.
+                  </p>
+                </div>
+                
+                {/* Features List */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto">
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Personalized Birth Control Treatment</p>
+                      <p className="text-gray-600 text-sm">Tailored solutions based on your assessment</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Expert Healthcare Provider Support</p>
+                      <p className="text-gray-600 text-sm">Professional guidance and monitoring</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Convenient Home Delivery</p>
+                      <p className="text-gray-600 text-sm">Treatments delivered to your door</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start gap-3 text-left"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#fe92b5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-black font-medium">Progress Tracking & Support</p>
+                      <p className="text-gray-600 text-sm">Monitor your reproductive health journey</p>
+                    </div>
+                  </motion.div>
+                </div>
+                
+                {/* CTA Button */}
+                <Link href="/subscriptions">
+                  <motion.button 
+                    className="w-full max-w-md mx-auto bg-black text-white font-semibold py-4 px-8 rounded-full text-lg hover:bg-gray-900 transition-colors shadow-md hover:shadow-lg"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Browse All Subscriptions
+                  </motion.button>
+                </Link>
+                
+                <p className="text-center text-gray-500 text-sm mt-4">
+                  Be the first to know when our birth control plans launch
+                </p>
+              </div>
+            </motion.div>
+          )}
           
-          {/* Browse Other Products Section */}
+          {/* Cycle Management Subscription Grid */}
           <motion.div 
             className="mt-16 mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -433,81 +674,12 @@ export default function ResultsPage() {
             transition={{ duration: 0.7, delay: 0.7 }}
           >
             <h2 className="text-2xl font-bold text-center text-black mb-8">
-              Sexual Health & Birth Control Products
+              Our Birth Control Subscription Plans
             </h2>
-            <p className="text-gray-600 max-w-3xl mx-auto text-center mb-8">
-              Browse our selection of sexual health and birth control options designed to match your lifestyle and preferences.
-            </p>
             
-            {isLoadingProducts ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading products...</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {allProducts.slice(0, 8).map((product: Product) => (
-                  <Link 
-                    href={`/products/${product.slug?.current}`} 
-                    key={product._id} 
-                    className="group"
-                  >
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1 h-full flex flex-col">
-                      {/* Product Image */}
-                      <div className="relative h-48 w-full bg-gray-100">
-                        {product.mainImage ? (
-                          <Image 
-                            src={urlFor(product.mainImage).url()} 
-                            alt={product.title} 
-                            fill 
-                            style={{objectFit: 'cover'}} 
-                            className="transition-transform group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        )}
-                        
-                        {/* Recommended Badge for the static recommendation */}
-                        {product._id === staticRecommendation.product._id && (
-                          <div className="absolute top-2 right-2 bg-[#fe92b5] text-white text-xs py-1 px-2 rounded-full">
-                            Recommended
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Product Details */}
-                      <div className="p-4 flex-grow flex flex-col">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{product.title}</h3>
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-grow">{product.description}</p>
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-gray-900">${product.price}</span>
-                          <div className="flex flex-col items-end">
-                            {product.productType && (
-                              <span className="text-xs text-gray-500">{product.productType === 'OTC' ? 'Over-the-counter' : 'Prescription'}</span>
-                            )}
-                            {product.administrationType && (
-                              <span className="text-xs text-gray-500">{product.administrationType}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-            
-            <div className="text-center mt-10">
-              <Link 
-                href="/products" 
-                className="inline-block bg-black text-white font-medium px-6 py-3 rounded-full hover:bg-gray-900"
-              >
-                View All Products
-              </Link>
+            {/* Import and use the CycleManagementSubscriptionGrid component */}
+            <div className="bg-[#f9f9f9] rounded-xl p-8">
+              <CycleManagementSubscriptionGrid />
             </div>
           </motion.div>
           

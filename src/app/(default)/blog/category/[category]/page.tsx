@@ -24,7 +24,7 @@ async function CategoryContent({ category, searchParams = {} }: CategoryContentP
   
   return (
     <main className="bg-white">
-      {/* Category Header */}
+      {/* Category Header u */}
       <PageHeader
         title={categoryData.category.title}
         subtitle={categoryData.category.description || `Browse all articles in the ${categoryData.category.title} category`}

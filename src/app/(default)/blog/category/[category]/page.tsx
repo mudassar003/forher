@@ -11,10 +11,10 @@ import PageHeader from '@/components/PageHeader';
 
 interface CategoryContentProps {
   category: string;
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
-async function CategoryContent({ category, searchParams }: CategoryContentProps) {
+async function CategoryContent({ category, searchParams = {} }: CategoryContentProps) {
   const page = typeof searchParams.page === 'string' ? parseInt(searchParams.page, 10) : 1;
   const categoryData = await getPostsByCategory(category, page, 12);
   
@@ -88,8 +88,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: BlogCategoryPageProps): Promise<Metadata> {
-  const { category } = await params;
-  const categoryData = await getPostsByCategory(category, 1, 1);
+  const categoryData = await getPostsByCategory(params.category, 1, 1);
   
   if (!categoryData) {
     return {
@@ -119,12 +118,9 @@ export async function generateMetadata({ params }: BlogCategoryPageProps): Promi
 }
 
 export default async function BlogCategoryPage({ params, searchParams }: BlogCategoryPageProps) {
-  const { category } = await params;
-  const resolvedSearchParams = await searchParams;
-  
   return (
     <Suspense fallback={<BlogLoading />}>
-      <CategoryContent category={category} searchParams={resolvedSearchParams} />
+      <CategoryContent category={params.category} searchParams={searchParams} />
     </Suspense>
   );
 }

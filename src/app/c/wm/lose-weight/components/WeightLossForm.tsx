@@ -18,8 +18,8 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
   const pathname = "/c/wm/lose-weight";
   
   // Use the provided initialOffset
-  const [offset, setOffset] = useState(initialOffset);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [offset, setOffset] = useState<number>(initialOffset);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
   
   // Use an effect to update the offset when the URL changes
@@ -59,7 +59,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
   }, [responses['current-weight'], responses['height']]);
   
   // Filter questions based on conditional display
-  const filteredQuestions = weightLossQuestions.filter(question => {
+  const filteredQuestions = weightLossQuestions.filter((question) => {
     if (!question.conditionalDisplay) return true;
     return question.conditionalDisplay(responses);
   });
@@ -68,8 +68,11 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
   const currentQuestionIndex = offset - 1; // Adjust for 0-based array index
   const currentQuestion = filteredQuestions[currentQuestionIndex];
   
-  // Progress percentage
-  const progressPercentage = getProgressPercentage(offset);
+  // Check if this is the last question
+  const isLastQuestion = currentQuestionIndex >= filteredQuestions.length - 1;
+  
+  // Progress percentage - make last question show 100%
+  const progressPercentage = isLastQuestion ? 100 : getProgressPercentage(offset);
   
   // Check if we have a valid question for this offset
   useEffect(() => {
@@ -95,10 +98,10 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
   }, []);
   
   // Handle response change
-  const handleResponseChange = (value: any) => {
+  const handleResponseChange = (value: any): void => {
     if (!currentQuestion) return;
     
-    const updatedResponses = {
+    const updatedResponses: FormResponse = {
       ...responses,
       [currentQuestion.id]: value
     };
@@ -106,7 +109,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
     setResponses(updatedResponses);
     
     // Check for eligibility criteria after certain critical questions
-    const eligibilityCheckQuestions = [
+    const eligibilityCheckQuestions: string[] = [
       'age-group', 'gender', 'pregnant', 'breastfeeding', 
       'medical-conditions', 'eating-disorder', 'doctor-consultation'
     ];
@@ -123,7 +126,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
   };
   
   // Store the current responses
-  const storeResponses = () => {
+  const storeResponses = (): void => {
     if (typeof window !== 'undefined') {
       // Store the current offset
       setStepOffset(pathname, offset);
@@ -131,29 +134,37 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
       // Store responses in sessionStorage
       try {
         sessionStorage.setItem("weightLossResponses", JSON.stringify(responses));
+        
+        // Also store final responses for results page
+        sessionStorage.setItem("finalResponses", JSON.stringify(responses));
+        
+        // Store ineligibility reason if exists
+        if (ineligibilityReason) {
+          sessionStorage.setItem("ineligibilityReason", ineligibilityReason);
+        }
       } catch (error) {
         console.error("Error storing responses:", error);
       }
     }
   };
   
-  // Handle navigation to next screen
-  const handleContinue = () => {
+  // Handle navigation to next screen or results
+  const handleContinue = (): void => {
     if (typeof window === 'undefined') return;
     
     // Store current screen's responses
     storeResponses();
     
-    // If this is the last screen
-    if (currentQuestionIndex >= filteredQuestions.length - 1) {
+    // If this is the last question, go directly to results
+    if (isLastQuestion) {
       // Mark step as completed
       markStepCompleted(pathname);
       
-      // Set transitioning state (will be reset when the new page loads)
+      // Set transitioning state
       setIsTransitioning(true);
       
-      // Navigate to the next step in the flow
-      router.push("/c/wm/submit");
+      // Navigate directly to results page
+      router.push("/c/wm/results");
     } else {
       // For within-form navigation, do it without a full page refresh
       // First update the URL using history API
@@ -167,7 +178,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
   };
   
   // Check if continue button should be enabled
-  const isContinueEnabled = () => {
+  const isContinueEnabled = (): boolean => {
     if (!currentQuestion) return false;
     
     const response = responses[currentQuestion.id];
@@ -186,10 +197,18 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
     }
   };
   
+  // Get button text based on whether it's the last question
+  const getButtonText = (): string => {
+    if (isTransitioning) return "Processing...";
+    if (isLastQuestion) return "Get My Results";
+    if (ineligibilityReason) return "Continue to Results";
+    return "Continue";
+  };
+  
   // When URL changes via browser back/forward buttons, update the offset
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const handlePopState = () => {
+      const handlePopState = (): void => {
         const searchParams = new URL(window.location.href).searchParams;
         const urlOffset = parseInt(searchParams.get("offset") || "1");
         setOffset(urlOffset);
@@ -288,7 +307,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
             isContinueEnabled() && !isTransitioning ? "bg-black hover:bg-gray-900" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          {ineligibilityReason ? "Continue to Results" : "Continue"}
+          {getButtonText()}
         </button>
       </div>
     </div>

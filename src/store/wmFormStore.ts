@@ -1,4 +1,4 @@
-// src/store/wmFormStore.ts
+//src/store/wmFormStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -19,11 +19,11 @@ interface WMFormState extends WMFormData {
   resetForm: () => void;
 }
 
-// Define the form steps in order
-export const WM_FORM_STEPS = [
+// Define the form steps in order - removed submit step
+export const WM_FORM_STEPS: string[] = [
   "/c/wm/introduction",
   "/c/wm/lose-weight",
-  "/c/wm/submit"
+  "/c/wm/results"
 ];
 
 // Create the Zustand store with persistence
@@ -38,15 +38,15 @@ export const useWMFormStore = create(
       },
 
       // Actions
-      setCurrentStep: (step) => set({ currentStep: step }),
+      setCurrentStep: (step: string) => set({ currentStep: step }),
       
-      markStepCompleted: (step) => 
+      markStepCompleted: (step: string) => 
         set((state) => ({
           completedSteps: [...new Set([...state.completedSteps, step])]
         })),
       
       // Set the offset for a specific step
-      setStepOffset: (step, offset) => 
+      setStepOffset: (step: string, offset: number) => 
         set((state) => ({
           formData: { 
             ...state.formData, 
@@ -94,11 +94,11 @@ export const getLastCompletedStep = (completedSteps: string[]): string => {
   if (completedSteps.length === 0) return WM_FORM_STEPS[0];
   
   // Find the last completed step based on the order in WM_FORM_STEPS
-  const validCompletedSteps = completedSteps.filter(step => WM_FORM_STEPS.includes(step));
+  const validCompletedSteps = completedSteps.filter((step: string) => WM_FORM_STEPS.includes(step));
   if (validCompletedSteps.length === 0) return WM_FORM_STEPS[0];
   
   // Sort by their index in the steps array
-  validCompletedSteps.sort((a, b) => 
+  validCompletedSteps.sort((a: string, b: string) => 
     WM_FORM_STEPS.indexOf(b) - WM_FORM_STEPS.indexOf(a)
   );
   

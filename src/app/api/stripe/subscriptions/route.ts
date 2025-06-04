@@ -1,611 +1,299 @@
 // src/app/api/stripe/subscriptions/route.ts
-import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
-import { client as sanityClient } from "@/sanity/lib/client";
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { v4 as uuidv4 } from 'uuid';
+import { NextRequest, NextResponse } from 'next/server';
+import { createCheckoutSession } from '@/lib/stripe';
+import { client as sanityClient } from '@/sanity/lib/client';
+import { getAuthenticatedUser } from '@/utils/apiAuth';
+import { Subscription, SubscriptionVariant } from '@/types/subscription-page';
 import { Coupon } from '@/types/coupon';
 
-// Interfaces for strict typing
-interface SanitySubscriptionVariant {
-  _key: string;
-  title: string;
-  titleEs?: string;
-  description?: string;
-  descriptionEs?: string;
-  dosageAmount: number;
-  dosageUnit: string;
-  price: number;
-  compareAtPrice?: number;
-  billingPeriod: string;
-  customBillingPeriodMonths?: number | null;
-  stripePriceId?: string;
-  isDefault?: boolean;
-  isPopular?: boolean;
-}
-
-interface SanitySubscription {
-  _id: string;
-  title: string;
-  price: number;
-  billingPeriod: string;
-  customBillingPeriodMonths?: number | null;
-  stripePriceId?: string;
-  stripeProductId?: string;
-  hasVariants?: boolean;
-  variants?: SanitySubscriptionVariant[];
-  appointmentAccess?: boolean;
-  appointmentDiscountPercentage?: number;
-  features?: Array<{
-    featureText: string;
-  }>;
-  allowCoupons?: boolean;
-  excludedCoupons?: Array<{ _id: string }>;
-}
-
-interface UserSubscription {
-  _type: string;
-  userId: string;
-  userEmail: string;
-  subscription: {
-    _type: string;
-    _ref: string;
-  };
-  variantKey?: string;
-  startDate: string;
-  isActive: boolean;
-  status: string;
-  stripeSubscriptionId: string;
-  stripeCustomerId: string;
-  billingPeriod: string;
-  billingAmount: number;
-  hasAppointmentAccess: boolean;
-  appointmentDiscountPercentage: number;
-  stripeSessionId: string;
-  // Coupon fields
-  appliedCouponId?: string;
-  appliedCouponCode?: string;
-  discountType?: string;
-  discountValue?: number;
-  originalPrice?: number;
-}
-
-interface SupabaseUserSubscription {
-  id: string;
-  user_id: string;
-  user_email: string;
-  sanity_id: string;
-  sanity_subscription_id: string;
-  subscription_name: string;
-  variant_key?: string;
-  variant_title?: string;
-  variant_dosage?: string;
-  plan_id: string;
-  plan_name: string;
-  stripe_session_id: string;
-  stripe_customer_id: string;
-  billing_amount: number;
-  billing_period: string;
-  start_date: string;
-  status: string;
-  is_active: boolean;
-  has_appointment_access: boolean;
-  appointment_discount_percentage: number;
-  // Coupon fields
-  coupon_code?: string;
-  coupon_discount_type?: string;
-  coupon_discount_value?: number;
-  original_price?: number;
-}
-
-interface SubscriptionRequest {
+interface SubscriptionPurchaseRequest {
   subscriptionId: string;
   userId: string;
   userEmail: string;
   variantKey?: string;
-  couponCode?: string; // New field for coupon code
-}
-
-interface StripeCustomer {
-  stripe_customer_id: string;
-  user_id: string;
-  email: string;
-}
-
-interface CouponMetadata {
-  couponId?: string;
   couponCode?: string;
-  discountType?: string;
-  discountValue?: number;
-  originalPrice?: number;
-  discountedPrice?: number;
 }
 
-// Initialize Stripe with latest API version
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: undefined, // Use latest API version
-});
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error("Missing required Supabase environment variables");
+interface SubscriptionPurchaseResponse {
+  success: boolean;
+  sessionId?: string;
+  url?: string;
+  error?: string;
+  metadata?: {
+    subscriptionId: string;
+    variantKey?: string;
+    price: number;
+    billingPeriod: string;
+    couponApplied?: boolean;
+    couponCode?: string;
+    originalPrice?: number;
+    discountedPrice?: number;
+    discountAmount?: number;
+  };
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-/**
- * Convert Sanity billing period to Stripe interval configuration
- */
-function getStripeIntervalConfig(
-  billingPeriod: string, 
-  customBillingPeriodMonths?: number | null
-): { interval: Stripe.PriceCreateParams.Recurring.Interval; intervalCount: number } {
-  let interval: Stripe.PriceCreateParams.Recurring.Interval = "month";
-  let intervalCount = 1;
-  
-  switch (billingPeriod) {
-    case "monthly":
-      interval = "month";
-      intervalCount = 1;
-      break;
-    case "three_month":
-      interval = "month";
-      intervalCount = 3;
-      break;
-    case "six_month":
-      interval = "month";
-      intervalCount = 6;
-      break;
-    case "annually":
-      interval = "year";
-      intervalCount = 1;
-      break;
-    case "other":
-      interval = "month";
-      intervalCount = customBillingPeriodMonths || 1;
-      
-      if (intervalCount > 12) {
-        if (intervalCount % 12 === 0) {
-          interval = "year";
-          intervalCount = intervalCount / 12;
-        } else {
-          console.warn(`Billing period of ${intervalCount} months exceeds Stripe's limit. Capping at 12 months.`);
-          intervalCount = 12;
-        }
-      }
-      break;
-    default:
-      interval = "month";
-      intervalCount = 1;
-  }
-  
-  return { interval, intervalCount };
+interface SanitySubscription extends Subscription {
+  allowCoupons?: boolean;
+  excludedCoupons?: Array<{ _id: string }>;
 }
 
-export async function POST(req: Request): Promise<NextResponse> {
+export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionPurchaseResponse>> {
   try {
-    // Authenticate user
-    const cookieStore = cookies();
-    const authClient = createRouteHandlerClient({ cookies: () => cookieStore });
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
-    
-    if (authError || !user) {
+    // Verify authentication
+    const user = await getAuthenticatedUser();
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: "Authentication required" },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
+
+    const data: SubscriptionPurchaseRequest = await req.json();
     
-    // Parse request
-    const data: SubscriptionRequest = await req.json();
-    
-    if (!data.subscriptionId) {
+    // Validate required fields
+    if (!data.subscriptionId || !data.userId || !data.userEmail) {
       return NextResponse.json(
-        { success: false, error: "Missing subscription ID" },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
-    
-    const userId = user.id;
-    const userEmail = user.email || data.userEmail;
-    
-    if (!userEmail) {
+
+    // Verify the user matches the authenticated user
+    if (data.userId !== user.id) {
       return NextResponse.json(
-        { success: false, error: "User email is required" },
-        { status: 400 }
+        { success: false, error: 'User mismatch' },
+        { status: 403 }
       );
     }
-    
-    console.log(`Creating subscription for user ${userId} with plan ${data.subscriptionId}`);
-    if (data.variantKey) {
-      console.log(`Using variant: ${data.variantKey}`);
-    }
-    if (data.couponCode) {
-      console.log(`Applying coupon: ${data.couponCode}`);
-    }
-    
-    // Fetch subscription data with coupons included
+
+    // Fetch subscription details from Sanity
     const subscription = await sanityClient.fetch<SanitySubscription>(
-      `*[_type == "subscription" && _id == $id][0]{
+      `*[_type == "subscription" && _id == $id && isActive == true && isDeleted != true][0] {
         _id,
         title,
         price,
+        compareAtPrice,
         billingPeriod,
         customBillingPeriodMonths,
-        stripePriceId,
-        stripeProductId,
         hasVariants,
         variants[]{
           _key,
           title,
-          titleEs,
-          description,
-          descriptionEs,
-          dosageAmount,
-          dosageUnit,
           price,
           compareAtPrice,
           billingPeriod,
           customBillingPeriodMonths,
-          stripePriceId,
-          isDefault,
-          isPopular
+          stripePriceId
         },
-        appointmentAccess,
-        appointmentDiscountPercentage,
-        features[] {
-          featureText
-        },
+        stripePriceId,
+        stripeProductId,
         allowCoupons,
         "excludedCoupons": excludedCoupons[]->{ _id }
       }`,
       { id: data.subscriptionId }
     );
-    
+
     if (!subscription) {
       return NextResponse.json(
-        { success: false, error: "Subscription plan not found" },
+        { success: false, error: 'Subscription not found or not active' },
         { status: 404 }
       );
     }
-    
-    // Select variant if applicable
-    let selectedVariant: SanitySubscriptionVariant | null = null;
-    if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
-      if (data.variantKey) {
-        selectedVariant = subscription.variants.find(v => v._key === data.variantKey) || null;
-        if (!selectedVariant) {
-          return NextResponse.json(
-            { success: false, error: "Selected variant not found" },
-            { status: 404 }
-          );
-        }
-      } else {
-        selectedVariant = subscription.variants.find(v => v.isDefault) || subscription.variants[0];
+
+    // Determine which price and Stripe price ID to use
+    let finalPrice: number;
+    let stripePriceId: string | undefined;
+    let selectedVariant: SubscriptionVariant | null = null;
+    let billingPeriod: string;
+    let customBillingPeriodMonths: number | null | undefined;
+
+    if (subscription.hasVariants && data.variantKey) {
+      // Find the specific variant
+      selectedVariant = subscription.variants?.find(v => v._key === data.variantKey) || null;
+      
+      if (!selectedVariant) {
+        return NextResponse.json(
+          { success: false, error: 'Selected variant not found' },
+          { status: 404 }
+        );
       }
+      
+      finalPrice = selectedVariant.price;
+      stripePriceId = selectedVariant.stripePriceId;
+      billingPeriod = selectedVariant.billingPeriod;
+      customBillingPeriodMonths = selectedVariant.customBillingPeriodMonths;
+    } else {
+      // Use base subscription pricing
+      finalPrice = subscription.price;
+      stripePriceId = subscription.stripePriceId;
+      billingPeriod = subscription.billingPeriod;
+      customBillingPeriodMonths = subscription.customBillingPeriodMonths;
     }
-    
-    // Calculate effective price and billing period
-    let effectivePrice = selectedVariant ? selectedVariant.price : subscription.price;
-    const effectiveBillingPeriod = selectedVariant ? selectedVariant.billingPeriod : subscription.billingPeriod;
-    const effectiveCustomMonths = selectedVariant 
-      ? selectedVariant.customBillingPeriodMonths 
-      : subscription.customBillingPeriodMonths;
-    
-    // Coupon handling
-    let couponMetadata: CouponMetadata = {};
+
+    // Store original price for coupon calculations
+    const originalPrice = finalPrice;
+    let discountAmount = 0;
     let appliedCoupon: Coupon | null = null;
-    
-    if (data.couponCode && subscription.allowCoupons !== false) {
-      const couponCode = data.couponCode.toUpperCase().trim();
-      
-      // Fetch coupon from Sanity
-      const coupon = await sanityClient.fetch<Coupon>(
-        `*[_type == "coupon" && code == $code && isActive == true][0]{
-          _id,
-          code,
-          description,
-          discountType,
-          discountValue,
-          "subscriptions": subscriptions[]->{ _id },
-          usageLimit,
-          usageCount,
-          validFrom,
-          validUntil,
-          minimumPurchaseAmount
-        }`,
-        { code: couponCode }
+
+    // Handle coupon validation and application
+    if (data.couponCode) {
+      const couponValidation = await validateAndApplyCoupon(
+        data.couponCode,
+        subscription,
+        data.variantKey,
+        finalPrice
       );
-      
-      if (coupon) {
-        const now = new Date();
-        const validFrom = new Date(coupon.validFrom);
-        const validUntil = new Date(coupon.validUntil);
-        
-        let isValid = true;
-        let errorMessage = "";
-        
-        if (now < validFrom || now > validUntil) {
-          isValid = false;
-          errorMessage = "Coupon is not valid at this time";
-        } else if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
-          isValid = false;
-          errorMessage = "Coupon has reached its usage limit";
-        } else if (coupon.minimumPurchaseAmount && effectivePrice < coupon.minimumPurchaseAmount) {
-          isValid = false;
-          errorMessage = `Minimum purchase amount of $${coupon.minimumPurchaseAmount} required`;
-        } else if (coupon.subscriptions && coupon.subscriptions.length > 0) {
-          const isApplicable = coupon.subscriptions.some(sub => sub._id === data.subscriptionId);
-          if (!isApplicable) {
-            isValid = false;
-            errorMessage = "Coupon is not valid for this subscription";
-          }
-        } else if (subscription.excludedCoupons?.some(ex => ex._id === coupon._id)) {
-          isValid = false;
-          errorMessage = "This coupon cannot be used with this subscription";
-        }
-        
-        if (isValid) {
-          appliedCoupon = coupon;
-          const originalPrice = effectivePrice;
-          
-          if (coupon.discountType === 'percentage') {
-            const discountAmount = (effectivePrice * coupon.discountValue) / 100;
-            effectivePrice = Math.max(0, effectivePrice - discountAmount);
-          } else if (coupon.discountType === 'fixed') {
-            effectivePrice = Math.max(0, effectivePrice - coupon.discountValue);
-          }
-          
-          couponMetadata = {
-            couponId: coupon._id,
-            couponCode: coupon.code,
-            discountType: coupon.discountType,
-            discountValue: coupon.discountValue,
-            originalPrice: originalPrice,
-            discountedPrice: effectivePrice
-          };
-          
-          console.log(`Applied coupon ${coupon.code}: $${originalPrice} -> $${effectivePrice}`);
-        } else {
-          console.log(`Invalid coupon: ${errorMessage}`);
-          // Do not fail request; proceed without coupon discount
-        }
+
+      if (!couponValidation.isValid) {
+        return NextResponse.json(
+          { success: false, error: couponValidation.error || 'Invalid coupon' },
+          { status: 400 }
+        );
+      }
+
+      if (couponValidation.coupon && couponValidation.discountedPrice !== undefined) {
+        appliedCoupon = couponValidation.coupon;
+        finalPrice = couponValidation.discountedPrice;
+        discountAmount = couponValidation.discountAmount || 0;
       }
     }
-    
-    // Stripe product creation if missing
-    let stripeProductId = subscription.stripeProductId;
-    if (!stripeProductId) {
-      console.log("Creating new Stripe product");
-      const product = await stripe.products.create({
-        name: subscription.title,
-        description: `${subscription.title} subscription`,
-        metadata: {
-          sanityId: subscription._id
-        }
-      });
-      stripeProductId = product.id;
-      await sanityClient.patch(subscription._id).set({ stripeProductId: product.id }).commit();
-    }
-    
-    // Stripe price creation or retrieval
-    let stripePriceId: string;
-    if (appliedCoupon) {
-      console.log("Creating new Stripe price with coupon discount");
-      const { interval, intervalCount } = getStripeIntervalConfig(effectiveBillingPeriod, effectiveCustomMonths);
-      const stripePrice = await stripe.prices.create({
-        product: stripeProductId,
-        unit_amount: Math.round(effectivePrice * 100),
-        currency: 'usd',
-        recurring: {
-          interval,
-          interval_count: intervalCount,
-        },
-        metadata: {
-          sanityId: subscription._id,
-          variantKey: selectedVariant ? selectedVariant._key : '',
-          billingPeriod: effectiveBillingPeriod,
-          customBillingPeriodMonths: effectiveCustomMonths?.toString() || '',
-          couponCode: appliedCoupon.code,
-          originalPrice: couponMetadata.originalPrice?.toString() || ''
-        }
-      });
-      stripePriceId = stripePrice.id;
-    } else {
-      if (selectedVariant && selectedVariant.stripePriceId) {
-        stripePriceId = selectedVariant.stripePriceId;
-      } else if (!selectedVariant && subscription.stripePriceId) {
-        stripePriceId = subscription.stripePriceId;
-      } else {
-        console.log("Creating new Stripe price");
-        const { interval, intervalCount } = getStripeIntervalConfig(effectiveBillingPeriod, effectiveCustomMonths);
-        const stripePrice = await stripe.prices.create({
-          product: stripeProductId,
-          unit_amount: Math.round(effectivePrice * 100),
+
+    // Prepare line items for Stripe
+    const lineItems = [
+      {
+        price_data: {
           currency: 'usd',
-          recurring: {
-            interval,
-            interval_count: intervalCount,
+          product_data: {
+            name: selectedVariant 
+              ? `${subscription.title} - ${selectedVariant.title}`
+              : subscription.title,
+            metadata: {
+              subscriptionId: subscription._id,
+              variantKey: data.variantKey || '',
+              originalPrice: originalPrice.toString(),
+              ...(appliedCoupon && {
+                couponCode: appliedCoupon.code,
+                discountAmount: discountAmount.toString(),
+              }),
+            },
           },
-          metadata: {
-            sanityId: subscription._id,
-            variantKey: selectedVariant ? selectedVariant._key : '',
-            billingPeriod: effectiveBillingPeriod,
-            customBillingPeriodMonths: effectiveCustomMonths?.toString() || ''
-          }
-        });
-        stripePriceId = stripePrice.id;
-        if (selectedVariant) {
-          await sanityClient
-            .patch(subscription._id)
-            .setIfMissing({ variants: [] })
-            .set({ [`variants[_key=="${selectedVariant._key}"].stripePriceId`]: stripePrice.id })
-            .commit();
-        } else {
-          await sanityClient.patch(subscription._id).set({ stripePriceId: stripePrice.id }).commit();
-        }
-      }
-    }
-    
-    // Stripe customer retrieval or creation
-    const { data: customerData, error: customerError } = await supabase
-      .from('stripe_customers')
-      .select('stripe_customer_id, user_id, email')
-      .eq('user_id', userId)
-      .single();
-    
-    let stripeCustomerId: string;
-    if (customerError || !customerData) {
-      console.log(`Creating new customer for user ${userId}`);
-      const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: { userId }
-      });
-      stripeCustomerId = customer.id;
-      await supabase.from('stripe_customers').insert({
-        user_id: userId,
-        stripe_customer_id: customer.id,
-        email: userEmail
-      });
-    } else {
-      stripeCustomerId = customerData.stripe_customer_id;
-    }
-    
-    // Create Stripe checkout session
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      payment_method_types: ['card'],
-      line_items: [{ price: stripePriceId, quantity: 1 }],
-      mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/appointment?subscription_success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscriptions?canceled=true`,
-      customer: stripeCustomerId,
-      metadata: {
-        userId,
-        userEmail,
-        subscriptionId: subscription._id,
-        variantKey: selectedVariant ? selectedVariant._key : '',
-        subscriptionType: "subscription",
-        ...(appliedCoupon && {
-          couponId: appliedCoupon._id,
-          couponCode: appliedCoupon.code,
-          originalPrice: couponMetadata.originalPrice?.toString() || '',
-          discountedPrice: effectivePrice.toString()
-        })
+          unit_amount: Math.round(finalPrice * 100), // Convert to cents
+        },
+        quantity: 1,
       },
-      client_reference_id: userId,
+    ];
+
+    // Create checkout session
+    const checkoutSession = await createCheckoutSession({
+      lineItems,
+      successUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/subscriptions/${subscription._id}`,
+      metadata: {
+        subscriptionId: subscription._id,
+        userId: data.userId,
+        userEmail: data.userEmail,
+        variantKey: data.variantKey || '',
+        originalPrice: originalPrice.toString(),
+        finalPrice: finalPrice.toString(),
+        ...(appliedCoupon && {
+          couponCode: appliedCoupon.code,
+          couponId: appliedCoupon._id,
+          discountAmount: discountAmount.toString(),
+        }),
+      },
+      customerEmail: data.userEmail,
+    });
+
+    // Prepare response metadata
+    const responseMetadata = {
+      subscriptionId: subscription._id,
+      variantKey: data.variantKey,
+      price: finalPrice,
+      billingPeriod,
+      couponApplied: !!appliedCoupon,
+      couponCode: appliedCoupon?.code,
+      originalPrice,
+      discountedPrice: appliedCoupon ? finalPrice : undefined,
+      discountAmount: appliedCoupon ? discountAmount : undefined,
     };
-    
-    const session = await stripe.checkout.sessions.create(sessionParams);
-    console.log(`Created checkout session: ${session.id}`);
-    
-    // Increment coupon usage count if applied
-    if (appliedCoupon) {
-      await sanityClient.patch(appliedCoupon._id).inc({ usageCount: 1 }).commit();
-      console.log(`Incremented usage count for coupon ${appliedCoupon.code}`);
-    }
-    
-    // Create pending user subscription in Sanity
-    const startDate = new Date().toISOString();
-    const userSubscription: UserSubscription = {
-      _type: 'userSubscription',
-      userId,
-      userEmail,
-      subscription: { _type: 'reference', _ref: subscription._id },
-      variantKey: selectedVariant ? selectedVariant._key : undefined,
-      startDate,
-      isActive: false,
-      status: 'pending',
-      stripeSubscriptionId: '',
-      stripeCustomerId,
-      billingPeriod: effectiveBillingPeriod,
-      billingAmount: effectivePrice,
-      hasAppointmentAccess: subscription.appointmentAccess || false,
-      appointmentDiscountPercentage: subscription.appointmentDiscountPercentage || 0,
-      stripeSessionId: session.id,
-      ...(appliedCoupon && {
-        appliedCouponId: appliedCoupon._id,
-        appliedCouponCode: appliedCoupon.code,
-        discountType: appliedCoupon.discountType,
-        discountValue: appliedCoupon.discountValue,
-        originalPrice: couponMetadata.originalPrice,
-      }),
-    };
-    
-    const sanityResponse = await sanityClient.create(userSubscription);
-    console.log(`Created pending Sanity user subscription: ${sanityResponse._id}`);
-    
-    // Create pending subscription in Supabase
-    const supabaseSubscription: SupabaseUserSubscription = {
-      id: uuidv4(),
-      user_id: userId,
-      user_email: userEmail,
-      sanity_id: sanityResponse._id,
-      sanity_subscription_id: subscription._id,
-      subscription_name: subscription.title,
-      plan_id: subscription._id,
-      plan_name: subscription.title,
-      stripe_session_id: session.id,
-      stripe_customer_id: stripeCustomerId,
-      billing_amount: effectivePrice,
-      billing_period: effectiveBillingPeriod,
-      start_date: startDate,
-      status: 'pending',
-      is_active: false,
-      has_appointment_access: subscription.appointmentAccess || false,
-      appointment_discount_percentage: subscription.appointmentDiscountPercentage || 0,
-      ...(selectedVariant && {
-        variant_key: selectedVariant._key,
-        variant_title: selectedVariant.title,
-        variant_dosage: `${selectedVariant.dosageAmount} ${selectedVariant.dosageUnit}`,
-      }),
-      ...(appliedCoupon && {
-        coupon_code: appliedCoupon.code,
-        coupon_discount_type: appliedCoupon.discountType,
-        coupon_discount_value: appliedCoupon.discountValue,
-        original_price: couponMetadata.originalPrice,
-      }),
-    };
-    
-    const { error: insertError } = await supabase.from('user_subscriptions').insert(supabaseSubscription);
-    if (insertError) {
-      console.error("Supabase insertion error:", insertError);
-      throw new Error(`Failed to create Supabase record: ${insertError.message}`);
-    }
-    
-    console.log(`✅ Created subscription records successfully`);
-    
+
     return NextResponse.json({
       success: true,
-      sessionId: session.id,
-      url: session.url,
-      metadata: {
-        subscriptionId: subscription._id,
-        variantKey: selectedVariant?._key,
-        price: effectivePrice,
-        billingPeriod: effectiveBillingPeriod,
-        ...(appliedCoupon && {
-          couponApplied: true,
-          couponCode: appliedCoupon.code,
-          originalPrice: couponMetadata.originalPrice,
-          discountedPrice: effectivePrice,
-          discountAmount: (couponMetadata.originalPrice || 0) - effectivePrice
-        }),
-      }
+      sessionId: checkoutSession.id,
+      url: checkoutSession.url || undefined,
+      metadata: responseMetadata,
     });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error creating subscription:", error);
+
+  } catch (error) {
+    console.error('Subscription purchase error:', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: errorMessage || "Failed to create subscription"
-      }, 
+        error: error instanceof Error ? error.message : 'Failed to create subscription purchase' 
+      },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Validates and applies a coupon to a subscription
+ */
+async function validateAndApplyCoupon(
+  couponCode: string,
+  subscription: SanitySubscription,
+  variantKey?: string,
+  currentPrice?: number
+): Promise<{
+  isValid: boolean;
+  error?: string;
+  coupon?: Coupon;
+  discountedPrice?: number;
+  discountAmount?: number;
+}> {
+  try {
+    // Validate coupon via API
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code: couponCode,
+        subscriptionId: subscription._id,
+        variantKey,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        isValid: false,
+        error: errorData.error || 'Coupon validation failed',
+      };
+    }
+
+    const result = await response.json();
+    
+    if (!result.success || !result.isValid) {
+      return {
+        isValid: false,
+        error: result.error || 'Invalid coupon',
+      };
+    }
+
+    return {
+      isValid: true,
+      coupon: result.coupon,
+      discountedPrice: result.discountedPrice,
+      discountAmount: result.discountAmount,
+    };
+
+  } catch (error) {
+    console.error('Error validating coupon:', error);
+    return {
+      isValid: false,
+      error: 'Failed to validate coupon',
+    };
   }
 }

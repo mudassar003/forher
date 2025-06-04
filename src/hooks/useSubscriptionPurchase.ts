@@ -1,4 +1,4 @@
-// src/hooks/useSubscriptionPurchase.ts (updated version with coupon support)
+// src/hooks/useSubscriptionPurchase.ts
 import { useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { verifySession, refreshSession } from '@/lib/auth';

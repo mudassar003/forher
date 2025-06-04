@@ -1,10 +1,15 @@
 // src/app/api/coupons/validate/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { client as sanityClient } from "@/sanity/lib/client";
-import { ValidateCouponRequest, ValidateCouponResponse, Coupon } from "@/types/coupon";
+import { ValidateCouponRequest, ValidateCouponResponse, Coupon, VariantTarget } from "@/types/coupon";
 import { Subscription, SubscriptionVariant } from "@/types/subscription-page";
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+interface SanitySubscription extends Subscription {
+  allowCoupons?: boolean;
+  excludedCoupons?: Array<{ _id: string }>;
+}
+
+export async function POST(req: NextRequest): Promise<NextResponse<ValidateCouponResponse>> {
   try {
     const data: ValidateCouponRequest = await req.json();
     
@@ -23,7 +28,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Normalize coupon code to uppercase
     const couponCode = data.code.toUpperCase().trim();
     
-    // Fetch the coupon
+    // Fetch the coupon with new structure
     const coupon = await sanityClient.fetch<Coupon>(
       `*[_type == "coupon" && code == $code][0]{
         _id,
@@ -31,7 +36,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         description,
         discountType,
         discountValue,
+        applicationType,
         "subscriptions": subscriptions[]->{ _id, title },
+        "variantTargets": variantTargets[]{
+          "subscription": subscription->{ _id, title },
+          variantKey,
+          variantTitle
+        },
         usageLimit,
         usageCount,
         validFrom,
@@ -105,7 +116,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     
     // Fetch the subscription to check if coupons are allowed
-    const subscription = await sanityClient.fetch<Subscription & { allowCoupons?: boolean; excludedCoupons?: Array<{ _id: string }> }>(
+    const subscription = await sanityClient.fetch<SanitySubscription>(
       `*[_type == "subscription" && _id == $id][0]{
         _id,
         title,
@@ -161,19 +172,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
     
-    // Check if coupon is restricted to specific subscriptions
-    if (coupon.subscriptions && coupon.subscriptions.length > 0) {
-      const isApplicable = coupon.subscriptions.some(sub => sub._id === data.subscriptionId);
-      if (!isApplicable) {
-        return NextResponse.json(
-          { 
-            success: false, 
-            isValid: false,
-            error: "This coupon is not valid for this subscription" 
-          },
-          { status: 400 }
-        );
-      }
+    // Check coupon application type and validity
+    const isValidForTarget = validateCouponTarget(coupon, data.subscriptionId, data.variantKey);
+    if (!isValidForTarget) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          isValid: false,
+          error: "This coupon is not valid for this subscription or variant" 
+        },
+        { status: 400 }
+      );
     }
     
     // Determine the price to use (variant or base)
@@ -221,6 +230,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         code: coupon.code,
         discountType: coupon.discountType,
         discountValue: coupon.discountValue,
+        applicationType: coupon.applicationType,
       },
       originalPrice,
       discountAmount,
@@ -237,5 +247,48 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Validates if a coupon can be applied to a specific subscription and variant
+ */
+function validateCouponTarget(
+  coupon: Coupon, 
+  subscriptionId: string, 
+  variantKey?: string
+): boolean {
+  switch (coupon.applicationType) {
+    case 'all':
+      // Applies to all subscriptions
+      return true;
+      
+    case 'specific':
+      // Check if subscription is in the allowed list
+      if (!coupon.subscriptions || coupon.subscriptions.length === 0) {
+        return false;
+      }
+      return coupon.subscriptions.some(sub => sub._id === subscriptionId);
+      
+    case 'variants':
+      // Check if specific variant/subscription combination is targeted
+      if (!coupon.variantTargets || coupon.variantTargets.length === 0) {
+        return false;
+      }
+      
+      return coupon.variantTargets.some(target => {
+        const subscriptionMatches = target.subscription._id === subscriptionId;
+        
+        // If no variantKey is provided in the target, it applies to base subscription
+        if (!target.variantKey) {
+          return subscriptionMatches && !variantKey;
+        }
+        
+        // If variantKey is provided in target, it must match exactly
+        return subscriptionMatches && target.variantKey === variantKey;
+      });
+      
+    default:
+      return false;
   }
 }

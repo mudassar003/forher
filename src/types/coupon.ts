@@ -1,5 +1,15 @@
 // src/types/coupon.ts
 export type DiscountType = 'percentage' | 'fixed';
+export type ApplicationType = 'all' | 'specific' | 'variants';
+
+export interface VariantTarget {
+  subscription: {
+    _id: string;
+    title: string;
+  };
+  variantKey?: string;
+  variantTitle?: string;
+}
 
 export interface Coupon {
   _id: string;
@@ -7,10 +17,12 @@ export interface Coupon {
   description?: string;
   discountType: DiscountType;
   discountValue: number;
+  applicationType: ApplicationType;
   subscriptions?: Array<{
     _id: string;
     title: string;
   }>;
+  variantTargets?: VariantTarget[];
   usageLimit?: number;
   usageCount: number;
   validFrom: string;
@@ -36,7 +48,7 @@ export interface ValidateCouponRequest {
 export interface ValidateCouponResponse {
   success: boolean;
   isValid: boolean;
-  coupon?: Coupon;
+  coupon?: Partial<Coupon>;
   discountedPrice?: number;
   discountAmount?: number;
   originalPrice?: number;

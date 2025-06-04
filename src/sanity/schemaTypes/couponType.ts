@@ -50,6 +50,20 @@ export const couponType = defineType({
       }),
     }),
     defineField({
+      name: 'applicationType',
+      title: 'Application Type',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'All Subscriptions', value: 'all' },
+          { title: 'Specific Subscriptions', value: 'specific' },
+          { title: 'Specific Variants', value: 'variants' },
+        ],
+      },
+      initialValue: 'all',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'subscriptions',
       title: 'Applicable Subscriptions',
       type: 'array',
@@ -59,7 +73,57 @@ export const couponType = defineType({
           to: [{ type: 'subscription' }],
         },
       ],
-      description: 'Leave empty to apply to all subscriptions',
+      description: 'Select specific subscriptions this coupon applies to',
+      hidden: ({ document }) => document?.applicationType !== 'specific',
+    }),
+    defineField({
+      name: 'variantTargets',
+      title: 'Specific Variant Targets',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'variantTarget',
+          title: 'Variant Target',
+          fields: [
+            {
+              name: 'subscription',
+              title: 'Subscription',
+              type: 'reference',
+              to: [{ type: 'subscription' }],
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'variantKey',
+              title: 'Variant Key',
+              type: 'string',
+              description: 'The _key of the specific variant (leave empty for base subscription)',
+            },
+            {
+              name: 'variantTitle',
+              title: 'Variant Title',
+              type: 'string',
+              description: 'Display title for identification (auto-populated)',
+              readOnly: true,
+            },
+          ],
+          preview: {
+            select: {
+              subscriptionTitle: 'subscription.title',
+              variantKey: 'variantKey',
+              variantTitle: 'variantTitle',
+            },
+            prepare({ subscriptionTitle, variantKey, variantTitle }) {
+              return {
+                title: subscriptionTitle || 'Unknown Subscription',
+                subtitle: variantKey ? (variantTitle || `Variant: ${variantKey}`) : 'Base Subscription',
+              };
+            },
+          },
+        },
+      ],
+      description: 'Select specific subscription variants this coupon applies to',
+      hidden: ({ document }) => document?.applicationType !== 'variants',
     }),
     defineField({
       name: 'usageLimit',
@@ -117,11 +181,12 @@ export const couponType = defineType({
       description: 'description',
       discountType: 'discountType',
       discountValue: 'discountValue',
+      applicationType: 'applicationType',
       isActive: 'isActive',
       usageCount: 'usageCount',
       usageLimit: 'usageLimit',
     },
-    prepare({ code, description, discountType, discountValue, isActive, usageCount, usageLimit }) {
+    prepare({ code, description, discountType, discountValue, applicationType, isActive, usageCount, usageLimit }) {
       const discountText = discountType === 'percentage' 
         ? `${discountValue}% off` 
         : `$${discountValue} off`;
@@ -130,9 +195,12 @@ export const couponType = defineType({
         ? `Used ${usageCount || 0}/${usageLimit}` 
         : `Used ${usageCount || 0} times`;
       
+      const applicationText = applicationType === 'all' ? 'All' : 
+                             applicationType === 'specific' ? 'Specific' : 'Variants';
+      
       return {
         title: `${code}${!isActive ? ' (Inactive)' : ''}`,
-        subtitle: `${discountText} • ${usageText}`,
+        subtitle: `${discountText} • ${applicationText} • ${usageText}`,
         media: TagIcon,
       };
     },

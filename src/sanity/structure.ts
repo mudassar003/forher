@@ -1,5 +1,5 @@
-// src/sanity/structure.ts (updated to include coupons)
-import type {StructureResolver} from 'sanity/structure'
+// src/sanity/structure.ts
+import type {StructureResolver} from 'sanity'
 
 export const structure: StructureResolver = (S) =>
   S.list()
@@ -43,7 +43,55 @@ export const structure: StructureResolver = (S) =>
               S.documentTypeListItem('subscription').title('Subscription Plans'),
               S.documentTypeListItem('subscriptionCategory').title('Subscription Categories'),
               S.documentTypeListItem('userSubscription').title('User Subscriptions'),
-              S.documentTypeListItem('coupon').title('Coupons'),
+              S.divider(),
+              S.listItem()
+                .title('Coupons & Discounts')
+                .child(
+                  S.list()
+                    .title('Coupons & Discounts')
+                    .items([
+                      S.documentTypeListItem('coupon').title('All Coupons'),
+                      S.divider(),
+                      S.listItem()
+                        .title('Active Coupons')
+                        .child(
+                          S.documentList()
+                            .title('Active Coupons')
+                            .filter('_type == "coupon" && isActive == true')
+                        ),
+                      S.listItem()
+                        .title('Expired Coupons')
+                        .child(
+                          S.documentList()
+                            .title('Expired Coupons')
+                            .filter('_type == "coupon" && validUntil < now()')
+                        ),
+                      S.listItem()
+                        .title('Usage Reports')
+                        .child(
+                          S.documentList()
+                            .title('Coupon Usage Reports')
+                            .filter('_type == "coupon"')
+                            .child((id) =>
+                              S.document()
+                                .documentId(id)
+                                .schemaType('coupon')
+                                .views([
+                                  S.view.form(),
+                                  S.view
+                                    .component(() => {
+                                      return S.component(() => 
+                                        // This would be a custom component showing usage analytics
+                                        // For now, just show the form view
+                                        null
+                                      ).title('Usage Analytics');
+                                    })
+                                    .title('Usage Analytics'),
+                                ])
+                            )
+                        ),
+                    ])
+                ),
             ])
         ),
         

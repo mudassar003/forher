@@ -10,7 +10,7 @@ interface StepLayoutProps {
   children: React.ReactNode;
 }
 
-export default function StepLayout({ children }: StepLayoutProps) {
+export default function StepLayout({ children }: StepLayoutProps): JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
   
@@ -22,25 +22,32 @@ export default function StepLayout({ children }: StepLayoutProps) {
     markStepCompleted 
   } = useBCFormStore();
 
-  // Calculate progress
-  const currentStepIndex = BC_FORM_STEPS.indexOf(pathname);
-  const progressPercentage = ((currentStepIndex + 1) / BC_FORM_STEPS.length) * 100;
+  // Calculate progress - updated to exclude submit step
+  const filteredSteps = BC_FORM_STEPS.filter((step: string) => step !== "/c/b/submit");
+  const currentStepIndex = filteredSteps.indexOf(pathname);
+  const progressPercentage = ((currentStepIndex + 1) / filteredSteps.length) * 100;
 
   // Update current step in the store when pathname changes
   useEffect(() => {
-    if (pathname && BC_FORM_STEPS.includes(pathname)) {
+    if (pathname && filteredSteps.includes(pathname)) {
       setCurrentStep(pathname);
     }
-  }, [pathname, setCurrentStep]);
+  }, [pathname, setCurrentStep, filteredSteps]);
 
-  const nextStep = () => {
+  const nextStep = (): void => {
     // Mark current step as completed
     if (pathname) {
       markStepCompleted(pathname);
     }
 
-    // Navigate to next step
-    const next = getNextStep(pathname || "");
+    // Navigate to next step - skip submit step and go directly to results
+    let next = getNextStep(pathname || "");
+    
+    // If next step is submit, skip to results
+    if (next === "/c/b/submit") {
+      next = "/c/b/results";
+    }
+    
     if (next) {
       router.push(next);
     }

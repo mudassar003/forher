@@ -22,11 +22,11 @@ export const SingleSelect: React.FC<{
           onClick={() => onChange(option.id)}
           className={`w-full p-6 text-left rounded-lg border-2 transition-colors ${
             value === option.id
-              ? "border-[#6366f1] bg-gray-50"
+              ? "border-[#fe92b5] bg-gray-50"
               : "border-gray-300 hover:border-gray-400"
           }`}
         >
-          <span className="text-lg font-medium">{option.label}</span>
+          <span className="text-lg font-medium text-black">{option.label}</span>
         </button>
       ))}
     </div>
@@ -40,7 +40,7 @@ export const MultiSelect: React.FC<{
   onChange: (value: string[]) => void;
 }> = ({ question, value = [], onChange }) => {
   
-  const handleOptionSelect = (optionId: string) => {
+  const handleOptionSelect = (optionId: string): void => {
     // Check if "none" option exists and handle special case
     const hasNoneOption = question.options.some(opt => opt.id === "none");
     
@@ -76,11 +76,11 @@ export const MultiSelect: React.FC<{
           onClick={() => handleOptionSelect(option.id)}
           className={`w-full p-6 text-left rounded-lg border-2 transition-colors ${
             value.includes(option.id)
-              ? "border-[#6366f1] bg-gray-50"
+              ? "border-[#fe92b5] bg-gray-50"
               : "border-gray-300 hover:border-gray-400"
           }`}
         >
-          <span className="text-lg font-medium">{option.label}</span>
+          <span className="text-lg font-medium text-black">{option.label}</span>
         </button>
       ))}
     </div>
@@ -95,7 +95,7 @@ export const TextInput: React.FC<{
 }> = ({ question, value = "", onChange }) => {
   const [error, setError] = useState<string | null>(null);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
     
     // Apply input type restrictions
@@ -126,8 +126,8 @@ export const TextInput: React.FC<{
         value={value}
         onChange={handleChange}
         placeholder={question.placeholder}
-        className={`w-full p-6 text-xl rounded-lg border-2 ${
-          error ? "border-red-500" : "border-gray-300 focus:border-[#6366f1]"
+        className={`w-full p-6 text-xl rounded-lg border-2 text-black ${
+          error ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
         } focus:outline-none`}
       />
       {error && (
@@ -163,6 +163,6 @@ export const QuestionRenderer: React.FC<{
         onChange={onChange} 
       />;
     default:
-      return <div>Unsupported question type</div>;
+      return <div className="text-black">Unsupported question type</div>;
   }
 };

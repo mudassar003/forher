@@ -1,4 +1,4 @@
-// src/store/bcFormStore.ts
+//src/store/bcFormStore.ts
 import { create } from "zustand";
 
 // Define the types for our form data
@@ -18,11 +18,11 @@ interface BCFormState extends BCFormData {
   resetForm: () => void;
 }
 
-// Define the form steps in order
-export const BC_FORM_STEPS = [
+// Define the form steps in order - removed submit step
+export const BC_FORM_STEPS: string[] = [
   "/c/b/introduction",
   "/c/b/birth-control",
-  "/c/b/submit"
+  "/c/b/results"
 ];
 
 // Create the Zustand store WITHOUT persistence to ensure fresh start every time
@@ -35,15 +35,15 @@ export const useBCFormStore = create<BCFormState>((set) => ({
   },
 
   // Actions
-  setCurrentStep: (step) => set({ currentStep: step }),
+  setCurrentStep: (step: string) => set({ currentStep: step }),
   
-  markStepCompleted: (step) => 
+  markStepCompleted: (step: string) => 
     set((state) => ({
       completedSteps: [...new Set([...state.completedSteps, step])]
     })),
   
   // Set the offset for a specific step
-  setStepOffset: (step, offset) => 
+  setStepOffset: (step: string, offset: number) => 
     set((state) => ({
       formData: { 
         ...state.formData, 

@@ -80,13 +80,13 @@ export default function ResultsPage({}: WeightLossResultsProps) {
           
           if (subscription.featuredImage) {
             imgUrl = urlFor(subscription.featuredImage)
-              .width(600)  // Increased width for larger image
-              .height(450) // Increased height for larger image
+              .width(1000)  // Increased width for larger image
+              .height(750) // Increased height for larger image
               .url();
           } else if (subscription.image) {
             imgUrl = urlFor(subscription.image)
-              .width(600)  // Increased width for larger image
-              .height(450) // Increased height for larger image
+              .width(1000)  // Increased width for larger image
+              .height(750) // Increased height for larger image
               .url();
           }
           
@@ -354,7 +354,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             </div>
             
             <div className="flex flex-col md:flex-row">
-              {/* Left side - Image in a fixed ratio container with larger dimensions */}
+              {/* Left side - Image in a fixed ratio container with LARGER dimensions */}
               <div className="md:w-1/2 p-4">
                 <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-md">
                   {featuredSubscription.isLoading ? (
@@ -372,6 +372,11 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                     />
                   )}
                 </div>
+                
+                {/* Image Disclaimer */}
+                <p className="text-xs text-gray-500 italic mt-2 text-center">
+                  Product image for illustration. Actual product appearance may vary when shipped.
+                </p>
                 
                 {/* Price and billing details */}
                 {featuredSubscription.subscription && (

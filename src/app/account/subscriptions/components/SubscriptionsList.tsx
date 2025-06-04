@@ -208,7 +208,7 @@ export const SubscriptionsList: React.FC = () => {
           )}
           
           {!loading && subscriptions.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-[700px] overflow-x-auto">
               {subscriptions.map((subscription) => (
                 <SubscriptionCard 
                   key={subscription.id} 

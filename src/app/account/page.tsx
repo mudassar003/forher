@@ -44,7 +44,7 @@ export default function AccountPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <p className="text-gray-600">Email</p>
-              <p className="font-medium">{user?.email}</p>
+              <p className="font-medium text-black">{user?.email}</p>
             </div>
             <div>
               <p className="text-gray-600">Account Status</p>

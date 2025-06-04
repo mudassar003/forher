@@ -165,7 +165,7 @@ const AccountSettingsPage = () => {
               id="email"
               value={user.email || ""}
               disabled
-              className="w-full p-3 border border-gray-300 rounded-md bg-gray-100"
+              className="w-full p-3 border border-gray-300 rounded-md bg-gray-100 text-black"
             />
             <p className="text-sm text-gray-500 mt-1">
               Email cannot be changed
@@ -181,7 +181,7 @@ const AccountSettingsPage = () => {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black"
             />
           </div>
           
@@ -194,7 +194,7 @@ const AccountSettingsPage = () => {
               id="dateOfBirth"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black"
             />
           </div>
           
@@ -232,7 +232,7 @@ const AccountSettingsPage = () => {
               id="currentPassword"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black"
               required
             />
           </div>
@@ -246,7 +246,7 @@ const AccountSettingsPage = () => {
               id="newPassword"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black"
               required
               minLength={6}
             />
@@ -264,7 +264,7 @@ const AccountSettingsPage = () => {
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black"
               required
               minLength={6}
             />

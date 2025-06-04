@@ -86,42 +86,70 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     return features;
   };
 
-  // Format price - show only main price without monthly equivalent
+  // Get the price and billing details to use (default variant or base subscription)
+  const getPriceDetails = (): { price: number; billingPeriod: string; customBillingPeriodMonths?: number | null } => {
+    // If has variants, look for default variant first
+    if (hasVariants && variants && variants.length > 0) {
+      const defaultVariant = variants.find(variant => variant.isDefault);
+      if (defaultVariant) {
+        return {
+          price: defaultVariant.price,
+          billingPeriod: defaultVariant.billingPeriod,
+          customBillingPeriodMonths: defaultVariant.customBillingPeriodMonths
+        };
+      }
+    }
+    
+    // Fall back to base subscription price
+    return {
+      price,
+      billingPeriod,
+      customBillingPeriodMonths
+    };
+  };
+
+  // Format price - show monthly equivalent
   const getFormattedPrice = (): string => {
+    const priceDetails = getPriceDetails();
+    const subscriptionPrice = priceDetails.price;
+    const period = priceDetails.billingPeriod;
+    const customMonths = priceDetails.customBillingPeriodMonths;
+
+    // Calculate monthly equivalent
+    let monthlyPrice: number;
+    switch (period) {
+      case 'monthly':
+        monthlyPrice = subscriptionPrice;
+        break;
+      case 'three_month':
+        monthlyPrice = subscriptionPrice / 3;
+        break;
+      case 'six_month':
+        monthlyPrice = subscriptionPrice / 6;
+        break;
+      case 'annually':
+        monthlyPrice = subscriptionPrice / 12;
+        break;
+      case 'other':
+        if (customMonths && customMonths > 1) {
+          monthlyPrice = subscriptionPrice / customMonths;
+        } else {
+          monthlyPrice = subscriptionPrice;
+        }
+        break;
+      default:
+        monthlyPrice = subscriptionPrice;
+    }
+
     const formattedPrice = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(price);
+    }).format(monthlyPrice);
 
-    // Get billing period display
-    let periodDisplay: string;
-    switch (billingPeriod) {
-      case 'monthly':
-        periodDisplay = currentLanguage === 'es' ? '/mes' : '/month';
-        break;
-      case 'three_month':
-        periodDisplay = currentLanguage === 'es' ? '/3 meses' : '/3 months';
-        break;
-      case 'six_month':
-        periodDisplay = currentLanguage === 'es' ? '/6 meses' : '/6 months';
-        break;
-      case 'annually':
-        periodDisplay = currentLanguage === 'es' ? '/año' : '/year';
-        break;
-      case 'other':
-        if (customBillingPeriodMonths && customBillingPeriodMonths > 1) {
-          periodDisplay = currentLanguage === 'es' ? `/${customBillingPeriodMonths} meses` : `/${customBillingPeriodMonths} months`;
-        } else {
-          periodDisplay = currentLanguage === 'es' ? '/mes' : '/month';
-        }
-        break;
-      default:
-        periodDisplay = `/${billingPeriod}`;
-    }
-
-    return `${formattedPrice}${periodDisplay}`;
+    const monthText = currentLanguage === 'es' ? '/mes' : '/month';
+    return `${formattedPrice}${monthText}`;
   };
 
   // Check if description exists and has content

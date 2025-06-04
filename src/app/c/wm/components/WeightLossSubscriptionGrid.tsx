@@ -188,69 +188,70 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
 
   return (
     <div className={`w-full ${className}`}>
-      {/* Subscription grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      {/* Subscription grid - Updated with better responsive design */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {weightLossSubscriptions.map((subscription) => (
           <div 
             key={subscription._id}
-            className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 hover:transform hover:-translate-y-2"
+            className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 hover:transform hover:-translate-y-1"
           >
-            {/* Image - Updated to match main subscription cards */}
-            <div className="w-full">
-              <div className="relative h-72 w-full overflow-hidden">
-                <Image
-                  src={getImageUrl(subscription)}
-                  alt={subscription.title}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 400px"
-                  style={{ objectPosition: 'center' }}
-                />
-                
-                {/* Featured Badge */}
-                {subscription.isFeatured && (
-                  <div className="absolute top-3 right-3 bg-white text-[#e63946] text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
-                    Featured
-                  </div>
-                )}
-              </div>
+            {/* Image - Updated with better aspect ratio for mobile */}
+            <div className="relative h-48 sm:h-56 w-full overflow-hidden">
+              <Image
+                src={getImageUrl(subscription)}
+                alt={subscription.title}
+                fill
+                className="object-cover hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 400px"
+                style={{ objectPosition: 'center' }}
+              />
               
-              {/* Title and Price Below Image */}
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-800">{subscription.title}</h3>
-                <div className="mt-1">
-                  <span className="text-lg font-medium text-[#e63946]">
-                    {formatPrice(subscription)}
-                  </span>
+              {/* Featured Badge - Repositioned for better visibility */}
+              {subscription.isFeatured && (
+                <div className="absolute top-3 right-3 bg-white text-[#e63946] text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
+                  Featured
                 </div>
+              )}
+            </div>
+            
+            {/* Title and Price Below Image - Made more compact */}
+            <div className="p-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 line-clamp-2">{subscription.title}</h3>
+              <div className="mt-1">
+                <span className="text-lg font-medium text-[#e63946]">
+                  {formatPrice(subscription)}
+                </span>
               </div>
             </div>
             
-            {/* Features and Actions */}
-            <div className="p-5">
-              {/* Features */}
-              <div className="space-y-3 mb-6">
-                {subscription.features && subscription.features.filter(feature => feature && feature.featureText).map((feature, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#e63946] flex items-center justify-center text-white text-xs">
-                      ✓
-                    </div>
-                    <div className="text-gray-700 text-sm">{feature.featureText}</div>
-                  </div>
-                ))}
+            {/* Features and Actions - More compact for mobile */}
+            <div className="p-4">
+              {/* Features - Limited to show at most 3 for consistency */}
+              <div className="space-y-2 mb-4">
+                {subscription.features && 
+                  subscription.features
+                    .filter(feature => feature && feature.featureText)
+                    .slice(0, 3) // Only show top 3 features
+                    .map((feature, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#e63946] flex items-center justify-center text-white text-xs mt-0.5">
+                          ✓
+                        </div>
+                        <div className="text-gray-700 text-sm line-clamp-2">{feature.featureText}</div>
+                      </div>
+                    ))
+                }
               </div>
               
-              <div className="space-y-3">
-                {/* View Details Link - Only Button */}
-                {subscription.slug && subscription.slug.current && (
-                  <Link 
-                    href={`/subscriptions/${subscription.slug.current}`}
-                    className="block w-full text-center py-3 px-4 border-2 border-[#e63946] text-[#e63946] hover:bg-[#e63946] hover:text-white rounded-lg transition-colors font-medium"
-                  >
-                    View Details
-                  </Link>
-                )}
-              </div>
+              {/* View Details Link - Full width button with improved styling */}
+              {subscription.slug && subscription.slug.current && (
+                <Link 
+                  href={`/subscriptions/${subscription.slug.current}`}
+                  className="block w-full text-center py-2.5 px-4 border-2 border-[#e63946] text-[#e63946] hover:bg-[#e63946] hover:text-white rounded-lg transition-colors font-medium text-sm sm:text-base"
+                >
+                  View Details
+                </Link>
+              )}
             </div>
           </div>
         ))}

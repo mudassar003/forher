@@ -1,4 +1,4 @@
-//src/app/c/wm/results/page.tsx
+// src/app/c/wm/results/page.tsx - Complete mobile-optimized version
 "use client";
 
 import { useState, useEffect } from "react";
@@ -254,7 +254,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
   return (
     <div className="min-h-screen bg-white">
       {/* Logo Only - No Link */}
-      <div className="absolute top-6 left-6 z-10">
+      <div className="absolute top-4 sm:top-6 left-4 sm:left-6 z-10">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -265,32 +265,32 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             alt="Logo" 
             width={100} 
             height={40} 
-            className="h-10 w-auto"
+            className="h-8 sm:h-10 w-auto"
           />
         </motion.div>
       </div>
       
       {/* Hero Section with Gradient Background */}
-      <div className="relative min-h-[40vh] flex items-center justify-center bg-gradient-to-r from-[#ffe6f0] to-[#fff8f9] overflow-hidden">
+      <div className="relative pt-16 sm:pt-0 min-h-[30vh] sm:min-h-[40vh] flex items-center justify-center bg-gradient-to-r from-[#ffe6f0] to-[#fff8f9] overflow-hidden">
         {/* Background decorative elements */}
-        <div className="absolute top-20 left-[10%] w-32 h-32 rounded-full bg-[#ff92b5] opacity-10 blur-3xl"></div>
-        <div className="absolute bottom-10 right-[15%] w-40 h-40 rounded-full bg-[#e63946] opacity-10 blur-3xl"></div>
+        <div className="absolute top-20 left-[10%] w-24 sm:w-32 h-24 sm:h-32 rounded-full bg-[#ff92b5] opacity-10 blur-3xl"></div>
+        <div className="absolute bottom-10 right-[15%] w-32 sm:w-40 h-32 sm:h-40 rounded-full bg-[#e63946] opacity-10 blur-3xl"></div>
         
-        <div className="container mx-auto px-4 py-16 relative z-10">
+        <div className="container mx-auto px-4 py-8 sm:py-16 relative z-10">
           <motion.div 
-            className="text-center max-w-3xl mx-auto"
+            className="text-center max-w-xs sm:max-w-lg md:max-w-3xl mx-auto"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white text-[#e63946] rounded-full mb-6 shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 bg-white text-[#e63946] rounded-full mb-4 sm:mb-6 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Your Personalized Recommendation</h1>
-            <div className="h-1 w-24 bg-[#e63946] mx-auto mb-6"></div>
-            <p className="text-xl text-gray-700">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">Your Personalized Recommendation</h1>
+            <div className="h-1 w-14 sm:w-24 bg-[#e63946] mx-auto mb-4 sm:mb-6"></div>
+            <p className="text-base sm:text-xl text-gray-700">
               Based on your assessment, we've found the perfect weight loss solution for you.
             </p>
           </motion.div>
@@ -305,26 +305,26 @@ export default function ResultsPage({}: WeightLossResultsProps) {
       </div>
       
       {/* Main Content Section */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-6 sm:py-12">
         <div className="max-w-6xl mx-auto">
-          {/* Note from Lilys Section - NEW ADDITION */}
+          {/* Note from Lilys Section - Fully responsive */}
           <motion.div
-            className="bg-white rounded-xl shadow-lg p-6 mb-10 border-l-4 border-[#fe92b5]"
+            className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-10 border-l-4 border-[#fe92b5]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
             transition={{ duration: 0.7 }}
           >
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#ffe6f0] flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-black mb-2">Why We Chose This For You</h3>
-                <p className="text-black">
+                <h3 className="text-base sm:text-xl font-semibold text-black mb-1 sm:mb-2">Why We Chose This For You</h3>
+                <p className="text-sm sm:text-base text-black">
                   Based on your responses, we've selected a weight management program that's tailored to your specific needs. 
                   At Lilys, we believe that personalized care leads to better results. This recommendation takes into account 
                   your health profile, weight management goals, and personal preferences to provide you with the most effective solution.
@@ -333,33 +333,33 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             </div>
           </motion.div>
 
-          {/* Featured Product Section - Redesigned for better height balance */}
+          {/* Featured Product Section - Fully responsive */}
           <motion.div 
-            className="bg-white rounded-xl shadow-xl overflow-hidden mb-16"
+            className="bg-white rounded-xl shadow-xl overflow-hidden mb-8 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
             transition={{ duration: 0.7 }}
           >
-            {/* Use a card-style design with better proportions */}
-            <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-6 text-white">
+            {/* Header section */}
+            <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-4 sm:p-6 text-white">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                <h2 className="text-2xl font-bold">
+                <h2 className="text-xl sm:text-2xl font-bold">
                   {featuredSubscription.subscription?.title || "Weight Loss Subscription"}
                 </h2>
-                <span className="px-3 py-1 bg-white text-[#e63946] text-sm font-semibold rounded-full inline-block w-max">
+                <span className="px-3 py-1 bg-white text-[#e63946] text-xs sm:text-sm font-semibold rounded-full inline-block w-max">
                   Recommended
                 </span>
               </div>
-              <p className="opacity-80 mt-1">Personalized weight management program</p>
+              <p className="opacity-80 mt-1 text-sm sm:text-base">Personalized weight management program</p>
             </div>
             
-            <div className="flex flex-col md:flex-row">
-              {/* Left side - Image in a fixed ratio container with LARGER dimensions */}
-              <div className="md:w-1/2 p-4">
+            <div className="flex flex-col lg:flex-row">
+              {/* Left side - Image */}
+              <div className="lg:w-1/2 p-4">
                 <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-md">
                   {featuredSubscription.isLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                      <div className="w-12 h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
                     </div>
                   ) : (
                     <Image 
@@ -367,7 +367,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                       alt={featuredSubscription.subscription?.title || "Weight Loss Product"}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 600px"
+                      sizes="(max-width: 1024px) 100vw, 600px"
                       priority
                     />
                   )}
@@ -378,9 +378,9 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   Product image for illustration. Actual product appearance may vary when shipped.
                 </p>
                 
-                {/* Price and billing details */}
+                {/* Price and billing details - mobile only */}
                 {featuredSubscription.subscription && (
-                  <div className="mt-6 flex items-center justify-center">
+                  <div className="mt-4 flex items-center justify-center lg:hidden">
                     <span className="text-[#e63946]">
                       {getFormattedPrice()}
                     </span>
@@ -389,109 +389,112 @@ export default function ResultsPage({}: WeightLossResultsProps) {
               </div>
               
               {/* Right side - Features first, then CTA */}
-              <div className="md:w-1/2 p-4 md:p-6">
+              <div className="lg:w-1/2 p-4 sm:p-6">
+                {/* Price and billing details - desktop only */}
+                {featuredSubscription.subscription && (
+                  <div className="mb-4 hidden lg:flex lg:items-center">
+                    <span className="text-[#e63946]">
+                      {getFormattedPrice()}
+                    </span>
+                  </div>
+                )}
+                
                 {/* Features Section */}
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-black mb-4">
+                <div className="mb-6 sm:mb-8">
+                  <h3 className="text-lg sm:text-xl font-semibold text-black mb-3 sm:mb-4">
                     Program Features:
                   </h3>
                   
-                  {/* Features with smaller, more compact design */}
-                  <div className="space-y-3">
+                  {/* Features with improved spacing for mobile */}
+                  <div className="space-y-2 sm:space-y-3">
                     {featuredSubscription.subscription && featuredSubscription.subscription.features && 
                      featuredSubscription.subscription.features.length > 0 ? (
                       // Render actual features from Sanity
                       featuredSubscription.subscription.features.map((feature, index) => (
                         <motion.div 
                           key={`feature-${index}`}
-                          className="flex items-start gap-3"
+                          className="flex items-start gap-2 sm:gap-3"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
                           transition={{ duration: 0.4, delay: index * 0.1 }}
                         >
-                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <p className="text-black">{feature.featureText}</p>
+                          <p className="text-sm sm:text-base text-black">{feature.featureText}</p>
                         </motion.div>
                       ))
                     ) : (
                       // Fallback features in case none are available from Sanity
                       <>
                         <motion.div 
-                          className="flex items-start gap-3"
+                          className="flex items-start gap-2 sm:gap-3"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
                           transition={{ duration: 0.4, delay: 0 }}
                         >
-                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                           </div>
-                          <div>
-                            <p className="text-black">Clinically proven results with 15-20% average weight loss</p>
-                          </div>
+                          <p className="text-sm sm:text-base text-black">Clinically proven results with 15-20% average weight loss</p>
                         </motion.div>
                         
                         <motion.div 
-                          className="flex items-start gap-3"
+                          className="flex items-start gap-2 sm:gap-3"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
                           transition={{ duration: 0.4, delay: 0.1 }}
                         >
-                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                             </svg>
                           </div>
-                          <div>
-                            <p className="text-black">Medical provider support with personalized treatment</p>
-                          </div>
+                          <p className="text-sm sm:text-base text-black">Medical provider support with personalized treatment</p>
                         </motion.div>
                         
                         <motion.div 
-                          className="flex items-start gap-3"
+                          className="flex items-start gap-2 sm:gap-3"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: showFeatures ? 1 : 0, x: showFeatures ? 0 : -10 }}
                           transition={{ duration: 0.4, delay: 0.2 }}
                         >
-                          <div className="w-6 h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#ffe6f0] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-[#e63946]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
-                          <div>
-                            <p className="text-black">Convenient home delivery with virtual check-ins</p>
-                          </div>
+                          <p className="text-sm sm:text-base text-black">Convenient home delivery with virtual check-ins</p>
                         </motion.div>
                       </>
                     )}
                   </div>
                 </div>
                 
-                {/* CTA Section - MOVED BELOW FEATURES */}
-                <div>
+                {/* CTA Section - with better responsive padding */}
+                <div className="space-y-3 sm:space-y-4">
                   {/* View Details Link */}
                   {featuredSubscription.subscription?.slug && featuredSubscription.subscription.slug.current && (
-                    <div className="mb-4">
+                    <div>
                       <Link 
                         href={`/subscriptions/${featuredSubscription.subscription.slug.current}`}
-                        className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors"
+                        className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-2.5 sm:py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors text-sm sm:text-base"
                       >
                         View Plan Details
                       </Link>
                     </div>
                   )}
 
-                  {/* Purchase Button - Changed from Subscribe to Purchase */}
+                  {/* Purchase Button - with responsive text sizing */}
                   {featuredSubscription.subscription && (
                     <button
                       onClick={handlePurchase}
                       disabled={isProcessing || isLoading}
-                      className={`w-full py-4 px-6 rounded-full text-white font-semibold text-lg transition-colors ${
+                      className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-full text-white font-semibold text-sm sm:text-base transition-colors ${
                         isProcessing || isLoading 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-black hover:bg-gray-900 shadow-md hover:shadow-lg'
@@ -515,25 +518,25 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             </div>
           </motion.div>
           
-          {/* Weight Loss Subscription Grid */}
+          {/* Weight Loss Subscription Grid - with proper mobile spacing */}
           <motion.div 
-            className="mt-16 mb-12"
+            className="mt-8 sm:mt-16 mb-8 sm:mb-12"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 20 }}
             transition={{ duration: 0.7, delay: 0.7 }}
           >
-            <h2 className="text-2xl font-bold text-center text-black mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold text-center text-black mb-4 sm:mb-8">
               Our Weight Loss Subscription Plans
             </h2>
             
-            {/* Import and use the WeightLossSubscriptionGrid component */}
-            <div className="bg-[#f9f9f9] rounded-xl p-8">
+            {/* Fully responsive grid container */}
+            <div className="bg-[#f9f9f9] rounded-xl p-3 sm:p-8">
               <WeightLossSubscriptionGrid />
             </div>
           </motion.div>
           
-          {/* Minimal Footer - No Button or CTA Text */}
-          <div className="bg-gray-50 py-8 text-center mt-16">
+          {/* Minimal Footer with proper responsive spacing */}
+          <div className="bg-gray-50 py-5 sm:py-8 text-center mt-8 sm:mt-16 rounded-lg">
             <div className="container mx-auto px-4">
               <p className="text-xs text-gray-400 mb-2">
                 Results may vary. These statements have not been evaluated by the FDA.

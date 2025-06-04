@@ -16,13 +16,13 @@ interface WeightLossSubscriptionGridProps {
 const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({ 
   className = "" 
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [weightLossSubscriptions, setWeightLossSubscriptions] = useState<Subscription[]>([]);
   const [category, setCategory] = useState<SubscriptionCategory | null>(null);
 
   useEffect(() => {
-    const fetchWeightLossSubscriptions = async () => {
+    const fetchWeightLossSubscriptions = async (): Promise<void> => {
       try {
         setIsLoading(true);
         
@@ -188,15 +188,15 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
 
   return (
     <div className={`w-full ${className}`}>
-      {/* Subscription grid - Updated with better responsive design */}
+      {/* Subscription grid - Updated with increased image height */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {weightLossSubscriptions.map((subscription) => (
           <div 
             key={subscription._id}
             className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 hover:transform hover:-translate-y-1"
           >
-            {/* Image - Updated with better aspect ratio for mobile */}
-            <div className="relative h-48 sm:h-56 w-full overflow-hidden">
+            {/* Image - Increased height from h-48 sm:h-56 to h-64 sm:h-72 */}
+            <div className="relative h-64 sm:h-72 w-full overflow-hidden">
               <Image
                 src={getImageUrl(subscription)}
                 alt={subscription.title}

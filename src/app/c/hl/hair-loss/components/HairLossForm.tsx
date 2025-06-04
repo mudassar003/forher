@@ -9,7 +9,7 @@ import { QuestionRenderer } from "./QuestionTypes";
 import { hairLossQuestions, getProgressPercentage, checkEligibility } from "../data/questions";
 import { FormResponse } from "../types";
 
-export default function HairLossForm(): JSX.Element {
+export default function HairLossForm(): React.JSX.Element {
   const router = useRouter();
   const pathname = "/c/hl/hair-loss";
   

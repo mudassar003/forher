@@ -9,7 +9,7 @@ import { QuestionRenderer } from "./QuestionTypes";
 import { birthControlQuestions, getProgressPercentage } from "../data/questions";
 import { FormResponse, QuestionType } from "../types";
 
-export default function BirthControlForm(): JSX.Element {
+export default function BirthControlForm(): React.JSX.Element {
   const router = useRouter();
   const pathname = "/c/b/birth-control";
   

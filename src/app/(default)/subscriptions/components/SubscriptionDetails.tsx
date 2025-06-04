@@ -89,6 +89,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     home: currentLanguage === 'es' ? 'Inicio' : 'Home',
     subscriptions: currentLanguage === 'es' ? 'Suscripciones' : 'Subscriptions',
     included: currentLanguage === 'es' ? 'Qué Incluye' : "What's Included",
+    description: currentLanguage === 'es' ? 'Descripción' : 'Description',
     viewMoreDetails: currentLanguage === 'es' ? 'Ver Más Detalles' : 'View More Details',
     relatedPlans: currentLanguage === 'es' ? 'Planes Relacionados' : 'Related Plans',
     viewPlan: currentLanguage === 'es' ? 'Ver Plan' : 'View Plan',
@@ -352,7 +353,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       >
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
-            {/* Left Column - Image and Details */}
+            {/* Left Column - Image only */}
             <motion.div variants={itemVariants}>
               {/* Featured Badge (if applicable) */}
               {subscription.isFeatured && (
@@ -444,16 +445,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
               <p className="text-sm text-gray-500 italic mb-8 text-center">
                 {translations.imageDisclaimer}
               </p>
-              
-              {/* Description */}
-              <div className="prose max-w-none mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  {t('subscriptions.description')}
-                </h2>
-                {getLocalizedDescription() && (
-                  <PortableText value={getLocalizedDescription() || []} className="text-gray-700" />
-                )}
-              </div>
             </motion.div>
             
             {/* Right Column - Features and CTA */}
@@ -609,7 +600,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   )}
                 </div>
                 
-                {/* Features List with "What's Included" header MOVED HERE */}
+                {/* Features List with "What's Included" header */}
                 <div className="space-y-4 pt-4 border-t border-gray-200">
                   <h3 className="text-lg font-medium text-gray-900 mb-3">
                     {translations.included}
@@ -625,6 +616,18 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                     </div>
                   ))}
                 </div>
+
+                {/* Description Section - Moved below features */}
+                {getLocalizedDescription() && (
+                  <div className="mt-8 pt-8 border-t border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      {translations.description}
+                    </h3>
+                    <div className="prose max-w-none">
+                      <PortableText value={getLocalizedDescription() || []} className="text-gray-700" />
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

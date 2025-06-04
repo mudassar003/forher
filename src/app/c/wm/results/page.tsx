@@ -12,7 +12,6 @@ import { Subscription } from '@/types/subscription-page';
 import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
 import { useAuthStore } from '@/store/authStore';
 import WeightLossSubscriptionGrid from "../components/WeightLossSubscriptionGrid";
-import { formatPriceWithBillingPeriod } from '@/utils/subscriptionHelpers';
 
 // Define component properties
 interface WeightLossResultsProps {}
@@ -40,18 +39,18 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     error: null
   });
   
-  // Fetch featured subscription
+  // Fetch featured subscription - MODIFIED to specifically get semaglutide-starter-kit
   useEffect(() => {
     const fetchFeaturedSubscription = async (): Promise<void> => {
       try {
-        // Query for weight loss subscription that is marked as featured
+        // Query specifically for semaglutide-starter-kit subscription
         const result = await client.fetch(
           groq`*[
             _type == "subscription" && 
-            references(*[_type == "subscriptionCategory" && slug.current == "weight-loss"]._id) && 
+            slug.current == "semaglutide-starter-kit" &&
             isActive == true && 
             isDeleted != true
-          ] | order(isFeatured desc) [0] {
+          ][0] {
             _id,
             title,
             titleEs,
@@ -72,7 +71,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
         );
         
         if (result) {
-          // Cast the result to Subscription (not an array)
+          // Cast the result to Subscription
           const subscription = result as Subscription;
           
           // Generate image URL based on available images, with featuredImage as priority
@@ -101,11 +100,11 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             subscription: null,
             imageUrl: '/images/weight-loss-product.jpg',
             isLoading: false,
-            error: "No featured subscription found"
+            error: "Semaglutide starter kit not found"
           });
         }
       } catch (err) {
-        console.error("Error fetching featured subscription:", err);
+        console.error("Error fetching semaglutide starter kit:", err);
         setFeaturedSubscription({
           subscription: null,
           imageUrl: '/images/weight-loss-product.jpg',
@@ -141,7 +140,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     };
   }, []);
 
-  // Get formatted price with billing period
+  // Get formatted monthly price - MODIFIED to show monthly equivalent
   const getFormattedPrice = (): React.ReactNode => {
     if (!featuredSubscription.subscription) return null;
     
@@ -150,56 +149,40 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     const billingPeriod = subscription.billingPeriod;
     const customBillingPeriodMonths = subscription.customBillingPeriodMonths;
     
-    const fullPrice = formatPriceWithBillingPeriod(
-      price, 
-      billingPeriod, 
-      customBillingPeriodMonths,
-      { showMonthlyEquivalent: false }
-    );
+    // Calculate price per month
+    let monthsInPeriod: number;
     
-    // For non-monthly plans, also show the monthly equivalent
-    if (billingPeriod !== 'monthly') {
-      // Calculate price per month
-      let monthsInPeriod: number;
-      
-      switch (billingPeriod) {
-        case 'annually':
-          monthsInPeriod = 12;
-          break;
-        case 'three_month':
-          monthsInPeriod = 3;
-          break;
-        case 'six_month':
-          monthsInPeriod = 6;
-          break;
-        case 'other':
-          monthsInPeriod = customBillingPeriodMonths || 1;
-          break;
-        default:
-          monthsInPeriod = 1;
-      }
-      
-      const monthlyPrice = price / monthsInPeriod;
-      
-      // Format monthly price
-      const formattedMonthlyPrice = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(monthlyPrice);
-      
-      return (
-        <div>
-          <span className="text-2xl font-bold">{fullPrice}</span>
-          <span className="block text-sm text-gray-600 mt-1">
-            ({formattedMonthlyPrice} per month)
-          </span>
-        </div>
-      );
+    switch (billingPeriod) {
+      case 'monthly':
+        monthsInPeriod = 1;
+        break;
+      case 'three_month':
+        monthsInPeriod = 3;
+        break;
+      case 'six_month':
+        monthsInPeriod = 6;
+        break;
+      case 'annually':
+        monthsInPeriod = 12;
+        break;
+      case 'other':
+        monthsInPeriod = customBillingPeriodMonths || 1;
+        break;
+      default:
+        monthsInPeriod = 1;
     }
     
-    return <span className="text-2xl font-bold">{fullPrice}</span>;
+    const monthlyPrice = price / monthsInPeriod;
+    
+    // Format monthly price
+    const formattedMonthlyPrice = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(monthlyPrice);
+    
+    return <span className="text-2xl font-bold">{formattedMonthlyPrice}/month</span>;
   };
   
   // Handle subscription purchase button click
@@ -344,7 +327,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-3 sm:p-6 text-white">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
                 <h2 className="text-xl sm:text-2xl font-bold">
-                  {featuredSubscription.subscription?.title || "Weight Loss Subscription"}
+                  {featuredSubscription.subscription?.title || "Semaglutide Starter Kit"}
                 </h2>
                 <span className="px-3 py-1 bg-white text-[#e63946] text-xs sm:text-sm font-semibold rounded-full inline-block w-max">
                   Recommended
@@ -364,7 +347,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   ) : (
                     <Image 
                       src={featuredSubscription.imageUrl}
-                      alt={featuredSubscription.subscription?.title || "Weight Loss Product"}
+                      alt={featuredSubscription.subscription?.title || "Semaglutide Starter Kit"}
                       fill
                       className="object-cover hover:scale-105 transition-transform duration-700"
                       sizes="(max-width: 1024px) 90vw, 600px"

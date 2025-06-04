@@ -270,26 +270,26 @@ export default function ResultsPage({}: WeightLossResultsProps) {
         </motion.div>
       </div>
       
-      {/* Hero Section with Gradient Background */}
-      <div className="relative pt-16 sm:pt-0 min-h-[30vh] sm:min-h-[40vh] flex items-center justify-center bg-gradient-to-r from-[#ffe6f0] to-[#fff8f9] overflow-hidden">
+      {/* Hero Section with Gradient Background - More compact on mobile */}
+      <div className="relative pt-14 sm:pt-0 min-h-[28vh] sm:min-h-[40vh] flex items-center justify-center bg-gradient-to-r from-[#ffe6f0] to-[#fff8f9] overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute top-20 left-[10%] w-24 sm:w-32 h-24 sm:h-32 rounded-full bg-[#ff92b5] opacity-10 blur-3xl"></div>
         <div className="absolute bottom-10 right-[15%] w-32 sm:w-40 h-32 sm:h-40 rounded-full bg-[#e63946] opacity-10 blur-3xl"></div>
         
-        <div className="container mx-auto px-4 py-8 sm:py-16 relative z-10">
+        <div className="container mx-auto px-4 py-6 sm:py-16 relative z-10">
           <motion.div 
             className="text-center max-w-xs sm:max-w-lg md:max-w-3xl mx-auto"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 bg-white text-[#e63946] rounded-full mb-4 sm:mb-6 shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-20 sm:h-20 bg-white text-[#e63946] rounded-full mb-3 sm:mb-6 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">Your Personalized Recommendation</h1>
-            <div className="h-1 w-14 sm:w-24 bg-[#e63946] mx-auto mb-4 sm:mb-6"></div>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2 sm:mb-4">Your Personalized Recommendation</h1>
+            <div className="h-1 w-12 sm:w-24 bg-[#e63946] mx-auto mb-3 sm:mb-6"></div>
             <p className="text-base sm:text-xl text-gray-700">
               Based on your assessment, we've found the perfect weight loss solution for you.
             </p>
@@ -304,12 +304,12 @@ export default function ResultsPage({}: WeightLossResultsProps) {
         </div>
       </div>
       
-      {/* Main Content Section */}
-      <div className="container mx-auto px-4 py-6 sm:py-12">
+      {/* Main Content Section - Adjusted margins for better image prominence */}
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-12">
         <div className="max-w-6xl mx-auto">
-          {/* Note from Lilys Section - Fully responsive */}
+          {/* Note from Lilys Section - More compact on mobile */}
           <motion.div
-            className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-10 border-l-4 border-[#fe92b5]"
+            className="bg-white rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-10 border-l-4 border-[#fe92b5]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
             transition={{ duration: 0.7 }}
@@ -333,16 +333,16 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             </div>
           </motion.div>
 
-          {/* Featured Product Section - Fully responsive */}
+          {/* Featured Product Section - Enhanced for better mobile selling power */}
           <motion.div 
-            className="bg-white rounded-xl shadow-xl overflow-hidden mb-8 sm:mb-16"
+            className="bg-white rounded-xl shadow-xl overflow-hidden mb-6 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
             transition={{ duration: 0.7 }}
           >
-            {/* Header section */}
-            <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-4 sm:p-6 text-white">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            {/* Header section - More eye-catching */}
+            <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-3 sm:p-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
                 <h2 className="text-xl sm:text-2xl font-bold">
                   {featuredSubscription.subscription?.title || "Weight Loss Subscription"}
                 </h2>
@@ -350,13 +350,13 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   Recommended
                 </span>
               </div>
-              <p className="opacity-80 mt-1 text-sm sm:text-base">Personalized weight management program</p>
+              <p className="opacity-90 mt-1 text-sm sm:text-base">Personalized weight management program</p>
             </div>
             
             <div className="flex flex-col lg:flex-row">
-              {/* Left side - Image */}
-              <div className="lg:w-1/2 p-4">
-                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-md">
+              {/* Left side - Image - ENHANCED FOR MOBILE with larger, more prominent display */}
+              <div className="lg:w-1/2 p-2 sm:p-4">
+                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden shadow-lg">
                   {featuredSubscription.isLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-gray-300 border-t-[#fe92b5] rounded-full animate-spin"></div>
@@ -366,30 +366,30 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                       src={featuredSubscription.imageUrl}
                       alt={featuredSubscription.subscription?.title || "Weight Loss Product"}
                       fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 600px"
+                      className="object-cover hover:scale-105 transition-transform duration-700"
+                      sizes="(max-width: 1024px) 90vw, 600px"
                       priority
                     />
                   )}
                 </div>
                 
-                {/* Image Disclaimer */}
-                <p className="text-xs text-gray-500 italic mt-2 text-center">
-                  Product image for illustration. Actual product appearance may vary when shipped.
+                {/* Image Disclaimer - More subtle */}
+                <p className="text-xs text-gray-500 italic mt-1 text-center">
+                Product image for illustration. Actual product appearance may vary when shipped.
                 </p>
                 
-                {/* Price and billing details - mobile only */}
+                {/* Price and billing details - mobile only - More prominent */}
                 {featuredSubscription.subscription && (
-                  <div className="mt-4 flex items-center justify-center lg:hidden">
-                    <span className="text-[#e63946]">
+                  <div className="mt-3 flex items-center justify-center lg:hidden">
+                    <span className="text-[#e63946] text-xl sm:text-2xl font-bold">
                       {getFormattedPrice()}
                     </span>
                   </div>
                 )}
               </div>
               
-              {/* Right side - Features first, then CTA */}
-              <div className="lg:w-1/2 p-4 sm:p-6">
+              {/* Right side - Features first, then CTA - More compact on mobile */}
+              <div className="lg:w-1/2 p-3 sm:p-6">
                 {/* Price and billing details - desktop only */}
                 {featuredSubscription.subscription && (
                   <div className="mb-4 hidden lg:flex lg:items-center">
@@ -399,9 +399,9 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   </div>
                 )}
                 
-                {/* Features Section */}
-                <div className="mb-6 sm:mb-8">
-                  <h3 className="text-lg sm:text-xl font-semibold text-black mb-3 sm:mb-4">
+                {/* Features Section - More compact */}
+                <div className="mb-4 sm:mb-8">
+                  <h3 className="text-lg sm:text-xl font-semibold text-black mb-2 sm:mb-4">
                     Program Features:
                   </h3>
                   
@@ -475,8 +475,8 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   </div>
                 </div>
                 
-                {/* CTA Section - with better responsive padding */}
-                <div className="space-y-3 sm:space-y-4">
+                {/* CTA Section - Enhanced for better mobile conversion */}
+                <div className="space-y-2 sm:space-y-4">
                   {/* View Details Link */}
                   {featuredSubscription.subscription?.slug && featuredSubscription.subscription.slug.current && (
                     <div>
@@ -489,15 +489,15 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                     </div>
                   )}
 
-                  {/* Purchase Button - with responsive text sizing */}
+                  {/* Purchase Button - Larger and more prominent on mobile */}
                   {featuredSubscription.subscription && (
                     <button
                       onClick={handlePurchase}
                       disabled={isProcessing || isLoading}
-                      className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-full text-white font-semibold text-sm sm:text-base transition-colors ${
+                      className={`w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-full text-white font-semibold text-base sm:text-lg transition-colors ${
                         isProcessing || isLoading 
                           ? 'bg-gray-400 cursor-not-allowed' 
-                          : 'bg-black hover:bg-gray-900 shadow-md hover:shadow-lg'
+                          : 'bg-black hover:bg-gray-900 shadow-lg hover:shadow-xl'
                       }`}
                     >
                       {getPurchaseButtonText()}
@@ -505,12 +505,12 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   )}
                   
                   {error && (
-                    <p className="mt-2 text-xs text-red-600 text-center">
+                    <p className="mt-1 text-xs text-red-600 text-center">
                       {error}
                     </p>
                   )}
                   
-                  <p className="text-center text-gray-500 text-xs mt-2">
+                  <p className="text-center text-gray-500 text-xs mt-1">
                     30-day satisfaction guarantee • Cancel anytime
                   </p>
                 </div>
@@ -518,9 +518,9 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             </div>
           </motion.div>
           
-          {/* Weight Loss Subscription Grid - with proper mobile spacing */}
+          {/* Weight Loss Subscription Grid - Reduced top margin to prioritize featured plan */}
           <motion.div 
-            className="mt-8 sm:mt-16 mb-8 sm:mb-12"
+            className="mt-6 sm:mt-16 mb-6 sm:mb-12"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showFeatures ? 1 : 0, y: showFeatures ? 0 : 20 }}
             transition={{ duration: 0.7, delay: 0.7 }}

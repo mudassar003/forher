@@ -92,7 +92,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     viewMoreDetails: currentLanguage === 'es' ? 'Ver Más Detalles' : 'View More Details',
     relatedPlans: currentLanguage === 'es' ? 'Planes Relacionados' : 'Related Plans',
     viewPlan: currentLanguage === 'es' ? 'Ver Plan' : 'View Plan',
-    cancelAnytime: currentLanguage === 'es' ? 'Garantía de 30 días • Cancele en cualquier momento' : '30-day guarantee • Cancel anytime',
     selectVariant: currentLanguage === 'es' ? 'Seleccione una opción' : 'Select an option',
     dosage: currentLanguage === 'es' ? 'Dosis' : 'Dosage',
     bestValue: currentLanguage === 'es' ? 'Mejor Valor' : 'Best Value',
@@ -460,10 +459,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
             {/* Right Column - Features and CTA */}
             <motion.div variants={itemVariants}>
               <div className="bg-gray-50 rounded-xl p-6 md:p-8 mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  {translations.included}
-                </h2>
-                
                 {/* Variant Selector (if subscription has variants) */}
                 {subscription.hasVariants && subscription.variants && subscription.variants.length > 0 && (
                   <div className="mb-8">
@@ -612,16 +607,12 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                       {error}
                     </p>
                   )}
-                  
-                  <p className="text-center text-sm text-gray-600 mt-4">
-                    {translations.cancelAnytime}
-                  </p>
                 </div>
                 
-                {/* Features List - Now after purchase button */}
+                {/* Features List with "What's Included" header MOVED HERE */}
                 <div className="space-y-4 pt-4 border-t border-gray-200">
                   <h3 className="text-lg font-medium text-gray-900 mb-3">
-                    {t('subscriptions.features')}
+                    {translations.included}
                   </h3>
                   {getLocalizedFeatures().map((feature, index) => (
                     <div key={index} className="flex items-start">
@@ -635,26 +626,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   ))}
                 </div>
               </div>
-              
-              {/* Categories */}
-              {subscription.categories && subscription.categories.length > 0 && (
-                <div className="bg-gray-50 rounded-xl p-6 md:p-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    {t('subscriptions.categories')}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {subscription.categories.map((category) => (
-                      <Link
-                        key={category._id}
-                        href={`/subscriptions?category=${category.slug?.current}`}
-                        className="inline-block px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-[#e63946] hover:text-[#e63946] transition-colors"
-                      >
-                        {currentLanguage === 'es' && category.titleEs ? category.titleEs : category.title}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </motion.div>
           </div>
         </div>

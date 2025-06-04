@@ -1,7 +1,7 @@
 // src/sanity/structure.ts
-import type {StructureResolver} from 'sanity'
+import type { StructureBuilder } from 'sanity/structure'
 
-export const structure: StructureResolver = (S) =>
+export const structure = (S: StructureBuilder) =>
   S.list()
     .title('Content')
     .items([
@@ -72,23 +72,6 @@ export const structure: StructureResolver = (S) =>
                           S.documentList()
                             .title('Coupon Usage Reports')
                             .filter('_type == "coupon"')
-                            .child((id) =>
-                              S.document()
-                                .documentId(id)
-                                .schemaType('coupon')
-                                .views([
-                                  S.view.form(),
-                                  S.view
-                                    .component(() => {
-                                      return S.component(() => 
-                                        // This would be a custom component showing usage analytics
-                                        // For now, just show the form view
-                                        null
-                                      ).title('Usage Analytics');
-                                    })
-                                    .title('Usage Analytics'),
-                                ])
-                            )
                         ),
                     ])
                 ),

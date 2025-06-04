@@ -5,9 +5,11 @@ import { Suspense, useState, useEffect } from "react";
 import LoadingFallback from "./components/LoadingFallback";
 import IntroductionStep from "./components/IntroductionStep";
 import BirthControlForm from "./components/BirthControlForm";
+import { useBCFormStore } from "@/store/bcFormStore";
+import { useRouter } from "next/navigation";
 
 // The main page component
-export default function BirthControlPage() {
+export default function BirthControlPage(): React.JSX.Element {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <ClientPageRouter />
@@ -16,16 +18,18 @@ export default function BirthControlPage() {
 }
 
 // This client-side router handles the URL parameters
-function ClientPageRouter() {
+function ClientPageRouter(): React.JSX.Element {
   const [offset, setOffset] = useState<number | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const { currentStep, completedSteps } = useBCFormStore();
+  const router = useRouter();
 
   // Safely access window object only in browser environment after component mounts
   useEffect(() => {
     // Skip if we're in server-side rendering
     if (typeof window === 'undefined') return;
     
-    const readUrlOffset = () => {
+    const readUrlOffset = (): void => {
       const searchParams = new URL(window.location.href).searchParams;
       const urlOffset = parseInt(searchParams.get("offset") || "0");
       setOffset(urlOffset);
@@ -37,7 +41,7 @@ function ClientPageRouter() {
     readUrlOffset();
     
     // Set up a listener for URL changes (back/forward navigation)
-    const handleRouteChange = () => {
+    const handleRouteChange = (): void => {
       readUrlOffset();
     };
     

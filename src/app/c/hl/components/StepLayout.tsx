@@ -10,7 +10,7 @@ interface StepLayoutProps {
   children: React.ReactNode;
 }
 
-export default function StepLayout({ children }: StepLayoutProps): JSX.Element {
+export default function StepLayout({ children }: StepLayoutProps): React.JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
   

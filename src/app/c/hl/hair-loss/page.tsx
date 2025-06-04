@@ -8,7 +8,7 @@ import { useHLFormStore } from "@/store/hlFormStore";
 import { useRouter } from "next/navigation";
 
 // The main page component
-export default function HairLossPage() {
+export default function HairLossPage(): React.JSX.Element {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <ClientPageRouter />
@@ -17,9 +17,9 @@ export default function HairLossPage() {
 }
 
 // This client-side router handles the URL parameters
-function ClientPageRouter() {
+function ClientPageRouter(): React.JSX.Element {
   const [offset, setOffset] = useState<number | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const { currentStep, completedSteps } = useHLFormStore();
   const router = useRouter();
 
@@ -37,7 +37,7 @@ function ClientPageRouter() {
       return;
     }
     
-    const readUrlOffset = () => {
+    const readUrlOffset = (): void => {
       const searchParams = new URL(window.location.href).searchParams;
       const urlOffset = parseInt(searchParams.get("offset") || "1");
       
@@ -52,7 +52,7 @@ function ClientPageRouter() {
     readUrlOffset();
     
     // Set up a listener for URL changes (back/forward navigation)
-    const handleRouteChange = () => {
+    const handleRouteChange = (): void => {
       readUrlOffset();
     };
     

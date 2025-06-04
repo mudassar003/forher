@@ -7,7 +7,7 @@ import { useHLFormStore } from "@/store/hlFormStore";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-export default function HairLossIntroductionPage(): JSX.Element {
+export default function HairLossIntroductionPage(): React.JSX.Element {
   const router = useRouter();
   const { resetForm, setCurrentStep, markStepCompleted } = useHLFormStore();
   

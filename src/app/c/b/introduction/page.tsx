@@ -7,7 +7,7 @@ import { useBCFormStore } from "@/store/bcFormStore";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-export default function BirthControlIntroductionPage(): JSX.Element {
+export default function BirthControlIntroductionPage(): React.JSX.Element {
   const router = useRouter();
   const { resetForm, setCurrentStep, markStepCompleted } = useBCFormStore();
   

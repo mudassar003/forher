@@ -63,6 +63,23 @@ const HairLossSubscriptionGrid: React.FC<HairLossSubscriptionGridProps> = ({
             price,
             billingPeriod,
             customBillingPeriodMonths,
+            hasVariants,
+            variants[]{
+              _key,
+              title,
+              titleEs,
+              description,
+              descriptionEs,
+              dosageAmount,
+              dosageUnit,
+              price,
+              compareAtPrice,
+              billingPeriod,
+              customBillingPeriodMonths,
+              stripePriceId,
+              isDefault,
+              isPopular
+            },
             features,
             featuresEs,
             image,
@@ -95,42 +112,69 @@ const HairLossSubscriptionGrid: React.FC<HairLossSubscriptionGridProps> = ({
     fetchHairLossSubscriptions();
   }, []);
 
-  // Format price - show only main price without monthly equivalent
+  // Get the price and billing details to use (default variant or base subscription)
+  const getPriceDetails = (subscription: Subscription): { price: number; billingPeriod: string; customBillingPeriodMonths?: number | null } => {
+    // If has variants, look for default variant first
+    if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
+      const defaultVariant = subscription.variants.find(variant => variant.isDefault);
+      if (defaultVariant) {
+        return {
+          price: defaultVariant.price,
+          billingPeriod: defaultVariant.billingPeriod,
+          customBillingPeriodMonths: defaultVariant.customBillingPeriodMonths
+        };
+      }
+    }
+    
+    // Fall back to base subscription price
+    return {
+      price: subscription.price,
+      billingPeriod: subscription.billingPeriod,
+      customBillingPeriodMonths: subscription.customBillingPeriodMonths
+    };
+  };
+
+  // Format price - show monthly equivalent
   const formatPrice = (subscription: Subscription): string => {
+    const priceDetails = getPriceDetails(subscription);
+    const subscriptionPrice = priceDetails.price;
+    const period = priceDetails.billingPeriod;
+    const customMonths = priceDetails.customBillingPeriodMonths;
+
+    // Calculate monthly equivalent
+    let monthlyPrice: number;
+    switch (period) {
+      case 'monthly':
+        monthlyPrice = subscriptionPrice;
+        break;
+      case 'three_month':
+        monthlyPrice = subscriptionPrice / 3;
+        break;
+      case 'six_month':
+        monthlyPrice = subscriptionPrice / 6;
+        break;
+      case 'annually':
+        monthlyPrice = subscriptionPrice / 12;
+        break;
+      case 'other':
+        if (customMonths && customMonths > 1) {
+          monthlyPrice = subscriptionPrice / customMonths;
+        } else {
+          monthlyPrice = subscriptionPrice;
+        }
+        break;
+      default:
+        monthlyPrice = subscriptionPrice;
+    }
+
     const formattedPrice = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(subscription.price);
+    }).format(monthlyPrice);
 
-    // Get billing period display
-    let periodDisplay: string;
-    switch (subscription.billingPeriod) {
-      case 'monthly':
-        periodDisplay = '/month';
-        break;
-      case 'three_month':
-        periodDisplay = '/3 months';
-        break;
-      case 'six_month':
-        periodDisplay = '/6 months';
-        break;
-      case 'annually':
-        periodDisplay = '/year';
-        break;
-      case 'other':
-        if (subscription.customBillingPeriodMonths && subscription.customBillingPeriodMonths > 1) {
-          periodDisplay = `/${subscription.customBillingPeriodMonths} months`;
-        } else {
-          periodDisplay = '/month';
-        }
-        break;
-      default:
-        periodDisplay = `/${subscription.billingPeriod}`;
-    }
-
-    return `${formattedPrice}${periodDisplay}`;
+    return `${formattedPrice}/month`;
   };
 
   // Get image URL or fallback

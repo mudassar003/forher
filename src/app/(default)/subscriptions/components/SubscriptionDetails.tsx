@@ -125,14 +125,14 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return subscription.features || [];
   };
 
-  // Get formatted price with billing period - with coupon support
-  const getFormattedPrice = (useVariant: boolean = true): string => {
+  // Get monthly equivalent price for display above image
+  const getMonthlyEquivalentPrice = (): string => {
     let price: number;
     let billingPeriod: string;
     let customBillingPeriodMonths: number | null | undefined;
 
     // If variants are being used and one is selected, use that variant's price
-    if (useVariant && subscription.hasVariants && selectedVariant && !selectedBase) {
+    if (subscription.hasVariants && selectedVariant && !selectedBase) {
       price = selectedVariant.price;
       billingPeriod = selectedVariant.billingPeriod;
       customBillingPeriodMonths = selectedVariant.customBillingPeriodMonths;
@@ -148,7 +148,65 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       price = discountedPrice;
     }
 
-    // Format the price
+    // Calculate monthly equivalent
+    let monthlyPrice: number;
+    switch (billingPeriod) {
+      case 'monthly':
+        monthlyPrice = price;
+        break;
+      case 'three_month':
+        monthlyPrice = price / 3;
+        break;
+      case 'six_month':
+        monthlyPrice = price / 6;
+        break;
+      case 'annually':
+        monthlyPrice = price / 12;
+        break;
+      case 'other':
+        if (customBillingPeriodMonths && customBillingPeriodMonths > 1) {
+          monthlyPrice = price / customBillingPeriodMonths;
+        } else {
+          monthlyPrice = price;
+        }
+        break;
+      default:
+        monthlyPrice = price;
+    }
+
+    const formattedPrice = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(monthlyPrice);
+
+    return `${formattedPrice}/month`;
+  };
+
+  // Get total price text for small font below monthly price
+  const getTotalPriceText = (): string => {
+    let price: number;
+    let billingPeriod: string;
+    let customBillingPeriodMonths: number | null | undefined;
+
+    // If variants are being used and one is selected, use that variant's price
+    if (subscription.hasVariants && selectedVariant && !selectedBase) {
+      price = selectedVariant.price;
+      billingPeriod = selectedVariant.billingPeriod;
+      customBillingPeriodMonths = selectedVariant.customBillingPeriodMonths;
+    } else {
+      // Otherwise fall back to the base subscription's price
+      price = subscription.price;
+      billingPeriod = subscription.billingPeriod;
+      customBillingPeriodMonths = subscription.customBillingPeriodMonths;
+    }
+    
+    // Use discounted price if coupon is applied
+    if (discountedPrice !== null) {
+      price = discountedPrice;
+    }
+
     const formattedPrice = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -156,33 +214,36 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       maximumFractionDigits: 0,
     }).format(price);
 
-    // Get billing period display
+    // Get billing period display for total price
     let periodDisplay: string;
     switch (billingPeriod) {
       case 'monthly':
-        periodDisplay = currentLanguage === 'es' ? '/mes' : '/month';
-        break;
+        return `${formattedPrice} total per month`;
       case 'three_month':
-        periodDisplay = currentLanguage === 'es' ? '/3 meses' : '/3 months';
-        break;
+        return `${formattedPrice} total for 3 months`;
       case 'six_month':
-        periodDisplay = currentLanguage === 'es' ? '/6 meses' : '/6 months';
-        break;
+        return `${formattedPrice} total for 6 months`;
       case 'annually':
-        periodDisplay = currentLanguage === 'es' ? '/año' : '/year';
-        break;
+        return `${formattedPrice} total per year`;
       case 'other':
         if (customBillingPeriodMonths && customBillingPeriodMonths > 1) {
-          periodDisplay = currentLanguage === 'es' ? `/${customBillingPeriodMonths} meses` : `/${customBillingPeriodMonths} months`;
+          return `${formattedPrice} total for ${customBillingPeriodMonths} months`;
         } else {
-          periodDisplay = currentLanguage === 'es' ? '/mes' : '/month';
+          return `${formattedPrice} total per month`;
         }
-        break;
       default:
-        periodDisplay = `/${billingPeriod}`;
+        return `${formattedPrice} total`;
     }
+  };
 
-    return `${formattedPrice}${periodDisplay}`;
+  // Get simplified price for variant selector (just the number)
+  const getSimplifiedPrice = (price: number): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
   };
 
   // Get localized variant title
@@ -373,7 +434,12 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
               <div className="flex flex-col mb-6">
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold text-[#e63946]">
-                    {getFormattedPrice()}
+                    {getMonthlyEquivalentPrice()}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  <span className="text-sm text-gray-600">
+                    {getTotalPriceText()}
                   </span>
                 </div>
                 
@@ -416,14 +482,9 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                 )}
                 
                 {/* Variant-specific information */}
-                {subscription.hasVariants && selectedVariant && !selectedBase && (
+                {subscription.hasVariants && selectedVariant && !selectedBase && getLocalizedVariantDescription(selectedVariant) && (
                   <div className="mt-2 text-sm">
-                    <p className="text-gray-700">
-                      {translations.dosage}: {selectedVariant.dosageAmount} {selectedVariant.dosageUnit}
-                    </p>
-                    {getLocalizedVariantDescription(selectedVariant) && (
-                      <p className="text-gray-600 mt-1">{getLocalizedVariantDescription(selectedVariant)}</p>
-                    )}
+                    <p className="text-gray-600">{getLocalizedVariantDescription(selectedVariant)}</p>
                   </div>
                 )}
               </div>
@@ -479,12 +540,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                           </div>
                           <div className="text-right">
                             <p className="font-semibold">
-                              {formatPriceWithBillingPeriod(
-                                subscription.price, 
-                                subscription.billingPeriod, 
-                                subscription.customBillingPeriodMonths,
-                                { showMonthlyEquivalent: false, locale: currentLanguage }
-                              )}
+                              {getSimplifiedPrice(subscription.price)}
                             </p>
                             {subscription.compareAtPrice && subscription.compareAtPrice > subscription.price && (
                               <div className="mt-1">
@@ -524,12 +580,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                             </div>
                             <div className="text-right">
                               <p className="font-semibold">
-                                {formatPriceWithBillingPeriod(
-                                  variant.price, 
-                                  variant.billingPeriod, 
-                                  variant.customBillingPeriodMonths,
-                                  { showMonthlyEquivalent: false, locale: currentLanguage }
-                                )}
+                                {getSimplifiedPrice(variant.price)}
                               </p>
                               {variant.isPopular && (
                                 <span className="inline-block bg-[#e63946] text-white text-xs px-2 py-0.5 rounded-full mt-1">

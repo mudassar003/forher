@@ -1,4 +1,4 @@
-// src/app/c/wm/results/page.tsx - Complete mobile-optimized version
+// src/app/c/wm/results/page.tsx - Complete mobile-optimized version without purchase button
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,8 +9,6 @@ import { groq } from 'next-sanity';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { Subscription } from '@/types/subscription-page';
-import { useSubscriptionPurchase } from '@/hooks/useSubscriptionPurchase';
-import { useAuthStore } from '@/store/authStore';
 import WeightLossSubscriptionGrid from "../components/WeightLossSubscriptionGrid";
 
 // Define component properties
@@ -28,9 +26,6 @@ export default function ResultsPage({}: WeightLossResultsProps) {
   // Animation states
   const [showContent, setShowContent] = useState<boolean>(false);
   const [showFeatures, setShowFeatures] = useState<boolean>(false);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
-  const { user, isAuthenticated, checkSession } = useAuthStore();
   
   const [featuredSubscription, setFeaturedSubscription] = useState<FeaturedSubscriptionWithImage>({
     subscription: null,
@@ -39,15 +34,15 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     error: null
   });
   
-  // Fetch featured subscription - MODIFIED to specifically get semaglutide-starter-kit
+  // Fetch featured subscription - MODIFIED to specifically get semaglutide
   useEffect(() => {
     const fetchFeaturedSubscription = async (): Promise<void> => {
       try {
-        // Query specifically for semaglutide-starter-kit subscription
+        // Query specifically for semaglutide subscription
         const result = await client.fetch(
           groq`*[
             _type == "subscription" && 
-            slug.current == "semaglutide-starter-kit" &&
+            slug.current == "semaglutide" &&
             isActive == true && 
             isDeleted != true
           ][0] {
@@ -60,6 +55,23 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             price,
             billingPeriod,
             customBillingPeriodMonths,
+            hasVariants,
+            variants[]{
+              _key,
+              title,
+              titleEs,
+              description,
+              descriptionEs,
+              dosageAmount,
+              dosageUnit,
+              price,
+              compareAtPrice,
+              billingPeriod,
+              customBillingPeriodMonths,
+              stripePriceId,
+              isDefault,
+              isPopular
+            },
             features,
             featuresEs,
             image,
@@ -100,11 +112,11 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             subscription: null,
             imageUrl: '/images/weight-loss-product.jpg',
             isLoading: false,
-            error: "Semaglutide starter kit not found"
+            error: "Semaglutide subscription not found"
           });
         }
       } catch (err) {
-        console.error("Error fetching semaglutide starter kit:", err);
+        console.error("Error fetching semaglutide subscription:", err);
         setFeaturedSubscription({
           subscription: null,
           imageUrl: '/images/weight-loss-product.jpg',
@@ -116,13 +128,6 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     
     fetchFeaturedSubscription();
   }, []);
-  
-  // Check auth state when component mounts
-  useEffect(() => {
-    if (!isAuthenticated) {
-      checkSession();
-    }
-  }, [isAuthenticated, checkSession]);
   
   // Sequential animations
   useEffect(() => {
@@ -140,39 +145,80 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     };
   }, []);
 
-  // Get formatted monthly price - MODIFIED to show monthly equivalent
+  // Get formatted monthly price - Shows only default variant monthly price
   const getFormattedPrice = (): React.ReactNode => {
     if (!featuredSubscription.subscription) return null;
     
     const subscription = featuredSubscription.subscription;
+    
+    // First check if subscription has variants and find default variant
+    if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
+      const defaultVariant = subscription.variants.find(variant => variant.isDefault);
+      if (defaultVariant) {
+        // Calculate monthly price from default variant
+        let monthlyPrice: number;
+        const variantPrice = defaultVariant.price;
+        const variantBillingPeriod = defaultVariant.billingPeriod;
+        const variantCustomMonths = defaultVariant.customBillingPeriodMonths;
+        
+        switch (variantBillingPeriod) {
+          case 'monthly':
+            monthlyPrice = variantPrice;
+            break;
+          case 'three_month':
+            monthlyPrice = variantPrice / 3;
+            break;
+          case 'six_month':
+            monthlyPrice = variantPrice / 6;
+            break;
+          case 'annually':
+            monthlyPrice = variantPrice / 12;
+            break;
+          case 'other':
+            monthlyPrice = variantCustomMonths ? variantPrice / variantCustomMonths : variantPrice;
+            break;
+          default:
+            monthlyPrice = variantPrice;
+        }
+        
+        // Format monthly price
+        const formattedMonthlyPrice = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(monthlyPrice);
+        
+        return <span className="text-2xl font-bold">{formattedMonthlyPrice}/month</span>;
+      }
+    }
+    
+    // Fallback to base subscription price if no default variant found
     const price = subscription.price;
     const billingPeriod = subscription.billingPeriod;
     const customBillingPeriodMonths = subscription.customBillingPeriodMonths;
     
-    // Calculate price per month
-    let monthsInPeriod: number;
+    let monthlyPrice: number;
     
     switch (billingPeriod) {
       case 'monthly':
-        monthsInPeriod = 1;
+        monthlyPrice = price;
         break;
       case 'three_month':
-        monthsInPeriod = 3;
+        monthlyPrice = price / 3;
         break;
       case 'six_month':
-        monthsInPeriod = 6;
+        monthlyPrice = price / 6;
         break;
       case 'annually':
-        monthsInPeriod = 12;
+        monthlyPrice = price / 12;
         break;
       case 'other':
-        monthsInPeriod = customBillingPeriodMonths || 1;
+        monthlyPrice = customBillingPeriodMonths ? price / customBillingPeriodMonths : price;
         break;
       default:
-        monthsInPeriod = 1;
+        monthlyPrice = price;
     }
-    
-    const monthlyPrice = price / monthsInPeriod;
     
     // Format monthly price
     const formattedMonthlyPrice = new Intl.NumberFormat('en-US', {
@@ -183,55 +229,6 @@ export default function ResultsPage({}: WeightLossResultsProps) {
     }).format(monthlyPrice);
     
     return <span className="text-2xl font-bold">{formattedMonthlyPrice}/month</span>;
-  };
-  
-  // Handle subscription purchase button click
-  const handlePurchase = async (): Promise<void> => {
-    if (!featuredSubscription.subscription || isProcessing || isLoading) return;
-    
-    // Store current path in sessionStorage
-    const currentPath = window.location.pathname;
-    sessionStorage.setItem('subscriptionReturnPath', currentPath);
-    
-    // If not authenticated, redirect to login with return URL
-    if (!isAuthenticated) {
-      // Save intended subscription ID to purchase after login
-      sessionStorage.setItem('pendingSubscriptionId', featuredSubscription.subscription._id);
-      const returnUrl = encodeURIComponent(currentPath);
-      window.location.href = `/login?returnUrl=${returnUrl}`;
-      return;
-    }
-    
-    setIsProcessing(true);
-    
-    try {
-      // Store appointment page as the return URL after successful purchase
-      sessionStorage.setItem('loginReturnUrl', '/appointment');
-      
-      const result = await purchaseSubscription(featuredSubscription.subscription._id);
-      
-      if (result.success && result.url) {
-        // Redirect to Stripe checkout
-        window.location.href = result.url;
-      }
-    } catch (err) {
-      console.error('Failed to initiate subscription purchase:', err);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Get subscription button text based on state
-  const getPurchaseButtonText = (): string => {
-    if (isProcessing || isLoading) {
-      return 'Processing...';
-    }
-    
-    if (isAuthenticated) {
-      return 'Purchase Now';
-    }
-    
-    return 'Sign In to Purchase';
   };
 
   return (
@@ -327,7 +324,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             <div className="bg-gradient-to-r from-[#e63946] to-[#ff4d6d] p-3 sm:p-6 text-white">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
                 <h2 className="text-xl sm:text-2xl font-bold">
-                  {featuredSubscription.subscription?.title || "Semaglutide Starter Kit"}
+                  {featuredSubscription.subscription?.title || "Semaglutide"}
                 </h2>
                 <span className="px-3 py-1 bg-white text-[#e63946] text-xs sm:text-sm font-semibold rounded-full inline-block w-max">
                   Recommended
@@ -347,7 +344,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   ) : (
                     <Image 
                       src={featuredSubscription.imageUrl}
-                      alt={featuredSubscription.subscription?.title || "Semaglutide Starter Kit"}
+                      alt={featuredSubscription.subscription?.title || "Semaglutide"}
                       fill
                       className="object-cover hover:scale-105 transition-transform duration-700"
                       sizes="(max-width: 1024px) 90vw, 600px"
@@ -458,42 +455,19 @@ export default function ResultsPage({}: WeightLossResultsProps) {
                   </div>
                 </div>
                 
-                {/* CTA Section - Enhanced for better mobile conversion */}
+                {/* CTA Section - Only view details link, no purchase button */}
                 <div className="space-y-2 sm:space-y-4">
-                  {/* View Details Link */}
+                  {/* View Details Link - Full width */}
                   {featuredSubscription.subscription?.slug && featuredSubscription.subscription.slug.current && (
                     <div>
                       <Link 
                         href={`/subscriptions/${featuredSubscription.subscription.slug.current}`}
-                        className="block w-full text-center border border-[#e63946] text-[#e63946] font-medium py-2.5 sm:py-3 px-4 rounded-full hover:bg-[#fff5f7] transition-colors text-sm sm:text-base"
+                        className="block w-full text-center bg-black text-white font-semibold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full hover:bg-gray-900 transition-colors text-base sm:text-lg shadow-lg hover:shadow-xl"
                       >
                         View Plan Details
                       </Link>
                     </div>
                   )}
-
-                  {/* Purchase Button - Larger and more prominent on mobile */}
-                  {featuredSubscription.subscription && (
-                    <button
-                      onClick={handlePurchase}
-                      disabled={isProcessing || isLoading}
-                      className={`w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-full text-white font-semibold text-base sm:text-lg transition-colors ${
-                        isProcessing || isLoading 
-                          ? 'bg-gray-400 cursor-not-allowed' 
-                          : 'bg-black hover:bg-gray-900 shadow-lg hover:shadow-xl'
-                      }`}
-                    >
-                      {getPurchaseButtonText()}
-                    </button>
-                  )}
-                  
-                  {error && (
-                    <p className="mt-1 text-xs text-red-600 text-center">
-                      {error}
-                    </p>
-                  )}
-                  
-                 
                 </div>
               </div>
             </div>

@@ -90,7 +90,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListAccess
     // Build query based on status filter
     let query = supabaseAdmin
       .from('user_subscriptions')
-      .select(`
+      .select(
+        `
         user_id,
         user_email,
         plan_name,
@@ -100,7 +101,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListAccess
         appointment_access_duration,
         created_at,
         updated_at
-      `)
+      `,
+        { count: 'exact' }
+      )
       .order('updated_at', { ascending: false });
 
     // Apply status filters
@@ -121,14 +124,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListAccess
         break;
     }
 
-    // Get total count for pagination
-    const { count } = await query.select('*', { count: 'exact', head: true });
+    // Get paginated results and total count
+    const { data: subscriptions, error, count } = await query.range(
+      offset,
+      offset + limit - 1
+    );
+
     const totalUsers = count || 0;
     const totalPages = Math.ceil(totalUsers / limit);
-
-    // Get paginated results
-    const { data: subscriptions, error } = await query
-      .range(offset, offset + limit - 1);
 
     if (error) {
       throw new Error(`Failed to fetch appointment access data: ${error.message}`);

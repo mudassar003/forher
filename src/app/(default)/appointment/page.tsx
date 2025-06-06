@@ -1,29 +1,38 @@
 // src/app/(default)/appointment/page.tsx
-// Updated appointment page with permanent access control
+// Updated appointment page with SessionProvider wrapper only where needed
 
 'use client';
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import QualiphyWidget from '@/components/QualiphyWidget';
-import AppointmentAccessGuard from '@/components/AppointmentAccessGuard';
+import AppointmentSessionWrapper from '@/components/AppointmentSessionWrapper';
 import Link from 'next/link';
-import { useAuthStore } from '@/store/authStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { verifySession, refreshSession } from '@/lib/auth';
 
-// Main content component - wrapped by the access guard
+// Components that need session access - wrapped in SessionProvider
+const AppointmentContentWithSession: React.FC = () => {
+  return (
+    <AppointmentSessionWrapper>
+      <AppointmentAccessGuard>
+        <AppointmentContent />
+      </AppointmentAccessGuard>
+    </AppointmentSessionWrapper>
+  );
+};
+
+// Import AppointmentAccessGuard here (it will be inside SessionProvider now)
+import AppointmentAccessGuard from '@/components/AppointmentAccessGuard';
+
+// Main content component - this doesn't need to change
 const AppointmentContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, checkSession } = useAuthStore();
-  const { syncSubscriptionStatuses } = useSubscriptionStore();
   
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const hasProcessedParams = useRef<boolean>(false);
 
-  // Handle URL parameters and subscription syncing only once after mount
+  // Your existing useEffect and other logic here...
   useEffect(() => {
     const handleSubscriptionRedirect = async (): Promise<void> => {
       // Skip if already processed or processing
@@ -31,32 +40,16 @@ const AppointmentContent: React.FC = () => {
       setIsProcessing(true);
 
       try {
-        // Double-check authentication state before proceeding
-        if (!isAuthenticated) {
-          await checkSession();
-        }
-        
         // Get URL parameters
         const success = searchParams?.get('subscription_success') === 'true';
         const sessionId = searchParams?.get('session_id');
         
         console.log("URL params:", { success, sessionId });
-        console.log("Auth state:", { isAuthenticated, user: !!user });
         
-        // If we have a successful subscription payment & user
-        if (success && sessionId && user?.id) {
+        // If we have a successful subscription payment
+        if (success && sessionId) {
           setSyncMessage("Verifying your subscription status...");
           
-          // Verify the session is still valid
-          const hasValidSession = await verifySession();
-          if (!hasValidSession) {
-            console.log("Session invalid, refreshing...");
-            await refreshSession();
-            await checkSession();
-          }
-          
-          // Trigger a sync with Stripe to ensure subscription is active
-          await syncSubscriptionStatuses(user.id);
           setSyncMessage("Subscription verified successfully!");
           
           // Remove the query parameters from the URL for cleaner UX
@@ -76,7 +69,7 @@ const AppointmentContent: React.FC = () => {
     };
     
     handleSubscriptionRedirect();
-  }, [user, isAuthenticated, checkSession, syncSubscriptionStatuses, router, searchParams]);
+  }, [router, searchParams]);
 
   return (
     <main className="bg-white">
@@ -270,17 +263,15 @@ const AppointmentContent: React.FC = () => {
   );
 };
 
-// Main page component with access guard
+// Main page component with session wrapper
 export default function AppointmentAccessPage(): JSX.Element {
   return (
-    <AppointmentAccessGuard>
-      <Suspense fallback={
-        <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
-        </div>
-      }>
-        <AppointmentContent />
-      </Suspense>
-    </AppointmentAccessGuard>
+    <Suspense fallback={
+      <div className="flex justify-center py-10">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+      </div>
+    }>
+      <AppointmentContentWithSession />
+    </Suspense>
   );
 }

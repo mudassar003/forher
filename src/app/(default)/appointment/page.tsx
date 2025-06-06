@@ -1,29 +1,15 @@
 // src/app/(default)/appointment/page.tsx
-// Updated appointment page with SessionProvider wrapper only where needed
+// Updated appointment page without NextAuth dependency
 
 'use client';
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import QualiphyWidget from '@/components/QualiphyWidget';
-import AppointmentSessionWrapper from '@/components/AppointmentSessionWrapper';
+import AppointmentAccessGuard from '@/components/AppointmentAccessGuard';
 import Link from 'next/link';
 
-// Components that need session access - wrapped in SessionProvider
-const AppointmentContentWithSession: React.FC = () => {
-  return (
-    <AppointmentSessionWrapper>
-      <AppointmentAccessGuard>
-        <AppointmentContent />
-      </AppointmentAccessGuard>
-    </AppointmentSessionWrapper>
-  );
-};
-
-// Import AppointmentAccessGuard here (it will be inside SessionProvider now)
-import AppointmentAccessGuard from '@/components/AppointmentAccessGuard';
-
-// Main content component - this doesn't need to change
+// Main content component
 const AppointmentContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,7 +18,7 @@ const AppointmentContent: React.FC = () => {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const hasProcessedParams = useRef<boolean>(false);
 
-  // Your existing useEffect and other logic here...
+  // Handle subscription redirect processing
   useEffect(() => {
     const handleSubscriptionRedirect = async (): Promise<void> => {
       // Skip if already processed or processing
@@ -263,7 +249,7 @@ const AppointmentContent: React.FC = () => {
   );
 };
 
-// Main page component with session wrapper
+// Main page component with access guard
 export default function AppointmentAccessPage(): JSX.Element {
   return (
     <Suspense fallback={
@@ -271,7 +257,9 @@ export default function AppointmentAccessPage(): JSX.Element {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
       </div>
     }>
-      <AppointmentContentWithSession />
+      <AppointmentAccessGuard>
+        <AppointmentContent />
+      </AppointmentAccessGuard>
     </Suspense>
   );
 }

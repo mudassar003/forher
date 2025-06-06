@@ -2,9 +2,8 @@
 // API routes for managing appointment page access
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/database';
+import { getAuthenticatedUser } from '@/utils/apiAuth';
+import { supabase } from '@/lib/supabase';
 import { 
   AppointmentAccessResponse, 
   AppointmentAccessStatus, 
@@ -15,9 +14,9 @@ import {
 // GET - Check current appointment access status
 export async function GET(request: NextRequest): Promise<NextResponse<AppointmentAccessResponse>> {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getAuthenticatedUser();
     
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({
         success: false,
         message: 'Unauthorized',
@@ -34,27 +33,31 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
       }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     
     // Get user's active subscription with appointment access data
-    const subscription = await db.query(`
-      SELECT 
+    const { data: subscriptions, error: fetchError } = await supabase
+      .from('user_subscriptions')
+      .select(`
         id,
         user_id,
         status,
+        has_appointment_access,
         appointment_accessed_at,
         appointment_access_expired,
         appointment_access_duration
-      FROM user_subscriptions 
-      WHERE user_id = $1 AND status = 'active'
-      ORDER BY created_at DESC 
-      LIMIT 1
-    `, [userId]);
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .eq('has_appointment_access', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (!subscription.rows.length) {
+    if (fetchError) {
+      console.error('Error fetching subscription:', fetchError);
       return NextResponse.json({
         success: false,
-        message: 'No active subscription found',
+        message: 'Error checking subscription',
         data: {
           hasAccess: false,
           isExpired: true,
@@ -65,11 +68,31 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
           expiresAt: null,
           needsSupportContact: false
         }
-      }, { status:403 });
+      }, { status: 500 });
     }
 
-    const sub = subscription.rows[0];
+    if (!subscriptions || subscriptions.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'No active subscription found with appointment access',
+        data: {
+          hasAccess: false,
+          isExpired: true,
+          isFirstAccess: false,
+          accessedAt: null,
+          timeRemaining: 0,
+          accessDuration: 0,
+          expiresAt: null,
+          needsSupportContact: false
+        }
+      }, { status: 403 });
+    }
+
+    const sub = subscriptions[0];
     const now = new Date();
+    
+    // Default access duration (10 minutes in seconds)
+    const defaultAccessDuration = sub.appointment_access_duration || 600;
     
     // If never accessed before
     if (!sub.appointment_accessed_at) {
@@ -78,8 +101,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
         isExpired: false,
         isFirstAccess: true,
         accessedAt: null,
-        timeRemaining: sub.appointment_access_duration,
-        accessDuration: sub.appointment_access_duration,
+        timeRemaining: defaultAccessDuration,
+        accessDuration: defaultAccessDuration,
         expiresAt: null,
         needsSupportContact: false
       };
@@ -99,7 +122,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
         isFirstAccess: false,
         accessedAt: sub.appointment_accessed_at,
         timeRemaining: 0,
-        accessDuration: sub.appointment_access_duration,
+        accessDuration: defaultAccessDuration,
         expiresAt: null,
         needsSupportContact: true
       };
@@ -113,17 +136,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
 
     // Calculate time remaining
     const accessedAt = new Date(sub.appointment_accessed_at);
-    const expiresAt = new Date(accessedAt.getTime() + (sub.appointment_access_duration * 1000));
+    const expiresAt = new Date(accessedAt.getTime() + (defaultAccessDuration * 1000));
     const timeRemaining = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
 
     // Check if access has expired
     if (timeRemaining <= 0) {
       // Mark as permanently expired
-      await db.query(`
-        UPDATE user_subscriptions 
-        SET appointment_access_expired = true, updated_at = NOW()
-        WHERE id = $1
-      `, [sub.id]);
+      const { error: updateError } = await supabase
+        .from('user_subscriptions')
+        .update({ 
+          appointment_access_expired: true, 
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sub.id);
+
+      if (updateError) {
+        console.error('Error updating subscription:', updateError);
+      }
 
       const accessStatus: AppointmentAccessStatus = {
         hasAccess: false,
@@ -131,7 +160,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
         isFirstAccess: false,
         accessedAt: sub.appointment_accessed_at,
         timeRemaining: 0,
-        accessDuration: sub.appointment_access_duration,
+        accessDuration: defaultAccessDuration,
         expiresAt: expiresAt.toISOString(),
         needsSupportContact: true
       };
@@ -150,7 +179,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
       isFirstAccess: false,
       accessedAt: sub.appointment_accessed_at,
       timeRemaining,
-      accessDuration: sub.appointment_access_duration,
+      accessDuration: defaultAccessDuration,
       expiresAt: expiresAt.toISOString(),
       needsSupportContact: false
     };
@@ -184,9 +213,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
 // POST - Grant appointment access (marks first access)
 export async function POST(request: NextRequest): Promise<NextResponse<GrantAccessResponse>> {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getAuthenticatedUser();
     
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({
         success: false,
         message: 'Unauthorized',
@@ -198,25 +227,41 @@ export async function POST(request: NextRequest): Promise<NextResponse<GrantAcce
       }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     
     // Get user's active subscription
-    const subscription = await db.query(`
-      SELECT 
+    const { data: subscriptions, error: fetchError } = await supabase
+      .from('user_subscriptions')
+      .select(`
         id,
+        has_appointment_access,
         appointment_accessed_at,
         appointment_access_expired,
         appointment_access_duration
-      FROM user_subscriptions 
-      WHERE user_id = $1 AND status = 'active'
-      ORDER BY created_at DESC 
-      LIMIT 1
-    `, [userId]);
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .eq('has_appointment_access', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (!subscription.rows.length) {
+    if (fetchError) {
+      console.error('Error fetching subscription:', fetchError);
       return NextResponse.json({
         success: false,
-        message: 'No active subscription found',
+        message: 'Error checking subscription',
+        data: {
+          accessGrantedAt: '',
+          expiresAt: '',
+          duration: 0
+        }
+      }, { status: 500 });
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'No active subscription found with appointment access',
         data: {
           accessGrantedAt: '',
           expiresAt: '',
@@ -225,8 +270,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<GrantAcce
       }, { status: 403 });
     }
 
-    const sub = subscription.rows[0];
+    const sub = subscriptions[0];
     const now = new Date();
+    const accessDuration = sub.appointment_access_duration || 600; // Default 10 minutes
 
     // Check if already accessed or expired
     if (sub.appointment_accessed_at || sub.appointment_access_expired) {
@@ -236,22 +282,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<GrantAcce
         data: {
           accessGrantedAt: sub.appointment_accessed_at || '',
           expiresAt: '',
-          duration: sub.appointment_access_duration
+          duration: accessDuration
         }
       }, { status: 403 });
     }
 
     // Grant access by marking the timestamp
     const accessGrantedAt = now.toISOString();
-    const expiresAt = new Date(now.getTime() + (sub.appointment_access_duration * 1000)).toISOString();
+    const expiresAt = new Date(now.getTime() + (accessDuration * 1000)).toISOString();
 
-    await db.query(`
-      UPDATE user_subscriptions 
-      SET 
-        appointment_accessed_at = $1,
-        updated_at = NOW()
-      WHERE id = $2
-    `, [accessGrantedAt, sub.id]);
+    const { error: updateError } = await supabase
+      .from('user_subscriptions')
+      .update({
+        appointment_accessed_at: accessGrantedAt,
+        updated_at: now.toISOString()
+      })
+      .eq('id', sub.id);
+
+    if (updateError) {
+      console.error('Error updating subscription:', updateError);
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to grant access',
+        data: {
+          accessGrantedAt: '',
+          expiresAt: '',
+          duration: 0
+        }
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
@@ -259,7 +318,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GrantAcce
       data: {
         accessGrantedAt,
         expiresAt,
-        duration: sub.appointment_access_duration
+        duration: accessDuration
       }
     });
 

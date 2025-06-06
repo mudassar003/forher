@@ -2,7 +2,7 @@
 // React hook for managing appointment access with permanent lock after time expires
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuthStore } from '@/store/authStore';
 import { AppointmentAccessResponse, AppointmentAccessStatus } from '@/types/subscription';
 
 interface UseAppointmentAccessReturn {
@@ -16,7 +16,7 @@ interface UseAppointmentAccessReturn {
 }
 
 export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
-  const { data: session, status: sessionStatus } = useSession();
+  const { user, isAuthenticated } = useAuthStore();
   const [accessStatus, setAccessStatus] = useState<AppointmentAccessStatus | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
 
   // Check appointment access status
   const checkAccess = useCallback(async (): Promise<void> => {
-    if (sessionStatus !== 'authenticated' || !session?.user?.id) {
+    if (!isAuthenticated || !user?.id) {
       setAccessStatus(null);
       setIsLoading(false);
       return;
@@ -67,11 +67,11 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.id, sessionStatus]);
+  }, [user?.id, isAuthenticated]);
 
   // Grant appointment access (first time access)
   const grantAccess = useCallback(async (): Promise<boolean> => {
-    if (sessionStatus !== 'authenticated' || !session?.user?.id) {
+    if (!isAuthenticated || !user?.id) {
       setError('User not authenticated');
       return false;
     }
@@ -105,7 +105,7 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.id, sessionStatus, checkAccess]);
+  }, [user?.id, isAuthenticated, checkAccess]);
 
   // Refresh access status
   const refreshAccess = useCallback(async (): Promise<void> => {
@@ -155,13 +155,13 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
 
   // Initial access check
   useEffect(() => {
-    if (sessionStatus === 'authenticated') {
+    if (isAuthenticated && user?.id) {
       checkAccess();
-    } else if (sessionStatus === 'unauthenticated') {
+    } else if (!isAuthenticated) {
       setAccessStatus(null);
       setIsLoading(false);
     }
-  }, [sessionStatus, checkAccess]);
+  }, [isAuthenticated, user?.id, checkAccess]);
 
   // Cleanup interval on unmount
   useEffect(() => {

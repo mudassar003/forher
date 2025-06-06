@@ -4,8 +4,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
 import { useAppointmentAccess } from '@/hooks/useAppointmentAccess';
 import { Loader2, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
@@ -71,8 +71,8 @@ const AccessGrantModal: React.FC<AccessGrantModalProps> = ({
 };
 
 const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ children }) => {
-  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
+  const { user, isAuthenticated, loading: authLoading } = useAuthStore();
   const {
     accessStatus,
     isLoading,
@@ -86,10 +86,11 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (sessionStatus === 'unauthenticated') {
-      router.push('/auth/signin?callbackUrl=/appointment');
+    if (!authLoading && !isAuthenticated) {
+      const currentPath = encodeURIComponent('/appointment');
+      router.push(`/login?returnUrl=${currentPath}`);
     }
-  }, [sessionStatus, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   // Handle granting access
   const handleGrantAccess = async (): Promise<void> => {
@@ -107,7 +108,7 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
   };
 
   // Show loading state
-  if (sessionStatus === 'loading' || isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -119,7 +120,7 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
   }
 
   // Show authentication required
-  if (sessionStatus === 'unauthenticated') {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

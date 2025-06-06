@@ -59,15 +59,12 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
         cache: 'no-store'
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const data: AppointmentAccessResponse = await response.json();
-      
-      console.log('Appointment access response:', data);
-      
-      if (data.success) {
+
+      if (!response.ok) {
+        setAccessStatus(data.data);
+        setError(data.message);
+      } else if (data.success) {
         setAccessStatus(data.data);
         lastCheckRef.current = Date.now();
       } else {
@@ -104,12 +101,13 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
         cache: 'no-store'
       });
 
+      const data: AppointmentAccessResponse = await response.json();
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        setError(data.message);
+        return false;
       }
 
-      const data = await response.json();
-      
       if (data.success) {
         // Refresh access status after granting
         await checkAccess();

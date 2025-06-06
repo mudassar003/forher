@@ -1,4 +1,6 @@
 // src/types/supabase.ts
+// Updated with appointment access tracking fields
+
 export type Json =
   | string
   | number
@@ -192,6 +194,10 @@ export interface Database {
           created_at: string
           updated_at: string
           is_deleted: boolean | null
+          // NEW APPOINTMENT ACCESS FIELDS
+          appointment_accessed_at: string | null
+          appointment_access_expired: boolean
+          appointment_access_duration: number
         }
         Insert: {
           id?: string
@@ -219,6 +225,10 @@ export interface Database {
           created_at?: string
           updated_at?: string
           is_deleted?: boolean | null
+          // NEW APPOINTMENT ACCESS FIELDS
+          appointment_accessed_at?: string | null
+          appointment_access_expired?: boolean
+          appointment_access_duration?: number
         }
         Update: {
           id?: string
@@ -246,6 +256,10 @@ export interface Database {
           created_at?: string
           updated_at?: string
           is_deleted?: boolean | null
+          // NEW APPOINTMENT ACCESS FIELDS
+          appointment_accessed_at?: string | null
+          appointment_access_expired?: boolean
+          appointment_access_duration?: number
         }
       }
       user_appointments: {
@@ -377,6 +391,10 @@ export interface Database {
           plan_name: string | null
           stripe_subscription_id: string | null
           billing_period: string | null
+          // NEW APPOINTMENT ACCESS FIELDS
+          appointment_accessed_at: string | null
+          appointment_access_expired: boolean | null
+          appointment_access_duration: number | null
         }
       }
     }

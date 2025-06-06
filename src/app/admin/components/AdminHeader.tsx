@@ -14,6 +14,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title }) => {
   const navItems = [
     { name: 'Dashboard', href: '/admin' },
     { name: 'Subscriptions', href: '/admin/subscriptions' },
+    { name: 'Appointment Access', href: '/admin/appointment-access' },
   ];
 
   return (
@@ -38,7 +39,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title }) => {
             <Link
               key={item.name}
               href={item.href}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${
+              className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
                 isActive
                   ? 'bg-pink-100 text-pink-700'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'

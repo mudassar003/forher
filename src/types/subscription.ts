@@ -1,5 +1,58 @@
 //src/types/subscription.ts
 
+// src/types/subscription.ts
+// Updated subscription types with appointment access tracking
+
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  subscription_id: string;
+  plan_name: string;
+  status: 'active' | 'inactive' | 'cancelled' | 'expired';
+  created_at: string;
+  updated_at: string;
+  expires_at: string | null;
+  // New appointment access fields
+  appointment_accessed_at: string | null;
+  appointment_access_expired: boolean;
+  appointment_access_duration: number; // in seconds
+}
+
+export interface AppointmentAccessStatus {
+  hasAccess: boolean;
+  isExpired: boolean;
+  isFirstAccess: boolean;
+  accessedAt: string | null;
+  timeRemaining: number; // in seconds, 0 if expired
+  accessDuration: number; // total allowed duration in seconds
+  expiresAt: string | null;
+  needsSupportContact: boolean;
+}
+
+export interface AppointmentAccessResponse {
+  success: boolean;
+  message: string;
+  data: AppointmentAccessStatus;
+  error?: string;
+}
+
+export interface GrantAccessRequest {
+  userId: string;
+  subscriptionId: string;
+  accessDuration?: number; // optional override, defaults to 600 seconds (10 minutes)
+}
+
+export interface GrantAccessResponse {
+  success: boolean;
+  message: string;
+  data: {
+    accessGrantedAt: string;
+    expiresAt: string;
+    duration: number;
+  };
+  error?: string;
+}
+
 // Define subscription status types
 export type SubscriptionStatus = 
   | 'active'

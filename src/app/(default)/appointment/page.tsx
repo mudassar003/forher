@@ -1,29 +1,31 @@
 // src/app/(default)/appointment/page.tsx
+// Updated appointment page with permanent access control
+
 'use client';
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import QualiphyWidget from '@/components/QualiphyWidget';
-import QualiphyWidgetAuthWrapper from '@/components/QualiphyWidgetAuthWrapper';
+import AppointmentAccessGuard from '@/components/AppointmentAccessGuard';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { verifySession, refreshSession } from '@/lib/auth';
 
-// Main content component
+// Main content component - wrapped by the access guard
 const AppointmentContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, checkSession } = useAuthStore();
   const { syncSubscriptionStatuses } = useSubscriptionStore();
   
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const hasProcessedParams = useRef<boolean>(false);
 
   // Handle URL parameters and subscription syncing only once after mount
   useEffect(() => {
-    const handleSubscriptionRedirect = async () => {
+    const handleSubscriptionRedirect = async (): Promise<void> => {
       // Skip if already processed or processing
       if (hasProcessedParams.current || isProcessing) return;
       setIsProcessing(true);
@@ -80,7 +82,7 @@ const AppointmentContent: React.FC = () => {
     <main className="bg-white">
       {/* Status message for subscription verification */}
       {syncMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-green-50 shadow-md border-l-4 border-green-500 p-4 rounded-r-md">
+        <div className="fixed top-20 right-4 z-50 bg-green-50 shadow-md border-l-4 border-green-500 p-4 rounded-r-md">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -119,6 +121,7 @@ const AppointmentContent: React.FC = () => {
                 <div className="p-1 bg-gradient-to-r from-[#e63946] to-[#ff4d6d]"></div>
                 <div className="p-6">
                   <h2 className="text-xl font-semibold text-[#e63946] mb-4">Start Your Consultation</h2>
+                  {/* QualiphyWidget will be protected by access guard - no changes needed to widget */}
                   <QualiphyWidget className="mb-6" />
                 </div>
               </div>
@@ -267,13 +270,17 @@ const AppointmentContent: React.FC = () => {
   );
 };
 
-// Main page component with Suspense boundary and auth wrapper
-export default function AppointmentAccessPage() {
+// Main page component with access guard
+export default function AppointmentAccessPage(): JSX.Element {
   return (
-    <QualiphyWidgetAuthWrapper>
-      <Suspense fallback={<div className="flex justify-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div></div>}>
+    <AppointmentAccessGuard>
+      <Suspense fallback={
+        <div className="flex justify-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+        </div>
+      }>
         <AppointmentContent />
       </Suspense>
-    </QualiphyWidgetAuthWrapper>
+    </AppointmentAccessGuard>
   );
 }

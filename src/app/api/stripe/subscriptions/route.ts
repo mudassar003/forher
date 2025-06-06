@@ -184,10 +184,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     ];
 
     // Create checkout session
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
     const checkoutSession = await createCheckoutSession({
       lineItems,
-      successUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/subscriptions/${subscription._id}`,
+      successUrl: `${baseUrl}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${baseUrl}/subscriptions/${subscription._id}`,
       metadata: {
         subscriptionId: subscription._id,
         userId: data.userId,
@@ -253,7 +258,12 @@ async function validateAndApplyCoupon(
 }> {
   try {
     // Validate coupon via API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/validate`, {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
+    const response = await fetch(`${baseUrl}/api/coupons/validate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

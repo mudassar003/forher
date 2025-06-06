@@ -3,13 +3,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/utils/apiAuth';
-import { supabase } from '@/lib/supabase';
+import { createClient } from "@supabase/supabase-js";
 import { 
   AppointmentAccessResponse, 
   AppointmentAccessStatus, 
   GrantAccessRequest, 
   GrantAccessResponse 
 } from '@/types/subscription';
+
+// Initialize Supabase admin client for server operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 // GET - Check current appointment access status
 export async function GET(request: NextRequest): Promise<NextResponse<AppointmentAccessResponse>> {
@@ -36,7 +41,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
     const userId = user.id;
     
     // Get user's active subscription with appointment access data
-    const { data: subscriptions, error: fetchError } = await supabase
+    const { data: subscriptions, error: fetchError } = await supabaseAdmin
       .from('user_subscriptions')
       .select(`
         id,
@@ -48,7 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
         appointment_access_duration
       `)
       .eq('user_id', userId)
-      .eq('status', 'active')
+      .eq('is_active', true)
       .eq('has_appointment_access', true)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -142,7 +147,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Appointmen
     // Check if access has expired
     if (timeRemaining <= 0) {
       // Mark as permanently expired
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('user_subscriptions')
         .update({ 
           appointment_access_expired: true, 
@@ -230,7 +235,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GrantAcce
     const userId = user.id;
     
     // Get user's active subscription
-    const { data: subscriptions, error: fetchError } = await supabase
+    const { data: subscriptions, error: fetchError } = await supabaseAdmin
       .from('user_subscriptions')
       .select(`
         id,
@@ -240,7 +245,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GrantAcce
         appointment_access_duration
       `)
       .eq('user_id', userId)
-      .eq('status', 'active')
+      .eq('is_active', true)
       .eq('has_appointment_access', true)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -291,7 +296,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GrantAcce
     const accessGrantedAt = now.toISOString();
     const expiresAt = new Date(now.getTime() + (accessDuration * 1000)).toISOString();
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('user_subscriptions')
       .update({
         appointment_accessed_at: accessGrantedAt,

@@ -107,6 +107,18 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
     }
   };
 
+  // Debug logging
+  useEffect(() => {
+    console.log('AppointmentAccessGuard state:', {
+      authLoading,
+      isAuthenticated,
+      isLoading,
+      accessStatus,
+      error,
+      user: user?.id
+    });
+  }, [authLoading, isAuthenticated, isLoading, accessStatus, error, user?.id]);
+
   // Show loading state
   if (authLoading || isLoading) {
     return (
@@ -114,6 +126,9 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Checking appointment access...</p>
+          {error && (
+            <p className="text-red-600 text-sm mt-2">Debug: {error}</p>
+          )}
         </div>
       </div>
     );
@@ -151,8 +166,8 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
     );
   }
 
-  // No active subscription
-  if (!accessStatus) {
+  // No active subscription - either no access or subscription required
+  if (!accessStatus || (!accessStatus.hasAccess && !accessStatus.isFirstAccess)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -161,12 +176,20 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
           <p className="text-gray-600 mb-4">
             You need an active subscription to access the appointment booking page.
           </p>
-          <button
-            onClick={() => router.push('/pricing')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            View Pricing
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => router.push('/pricing')}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              View Pricing
+            </button>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-full px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -276,6 +299,9 @@ const AppointmentAccessGuard: React.FC<AppointmentAccessGuardProps> = ({ childre
       <div className="text-center">
         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
         <p className="text-gray-600">Loading...</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Debug: accessStatus={JSON.stringify(accessStatus)}
+        </p>
       </div>
     </div>
   );

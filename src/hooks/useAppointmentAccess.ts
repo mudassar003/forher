@@ -22,6 +22,7 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastCheckRef = useRef<number>(0);
+  const checkingRef = useRef<boolean>(false);
 
   // Format time remaining as MM:SS
   const formatTimeRemaining = useCallback((seconds: number): string => {
@@ -35,23 +36,36 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
 
   // Check appointment access status
   const checkAccess = useCallback(async (): Promise<void> => {
-    if (!isAuthenticated || !user?.id) {
-      setAccessStatus(null);
-      setIsLoading(false);
+    if (!isAuthenticated || !user?.id || checkingRef.current) {
+      if (!isAuthenticated || !user?.id) {
+        setAccessStatus(null);
+        setIsLoading(false);
+      }
       return;
     }
 
+    checkingRef.current = true;
+    setIsLoading(true);
+
     try {
       setError(null);
+      
       const response = await fetch('/api/subscriptions/appointment-access', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         cache: 'no-store'
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data: AppointmentAccessResponse = await response.json();
+      
+      console.log('Appointment access response:', data);
       
       if (data.success) {
         setAccessStatus(data.data);
@@ -66,6 +80,7 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
       setAccessStatus(null);
     } finally {
       setIsLoading(false);
+      checkingRef.current = false;
     }
   }, [user?.id, isAuthenticated]);
 
@@ -85,8 +100,13 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         cache: 'no-store'
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
       
@@ -155,13 +175,23 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
 
   // Initial access check
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      checkAccess();
-    } else if (!isAuthenticated) {
-      setAccessStatus(null);
-      setIsLoading(false);
-    }
-  }, [isAuthenticated, user?.id, checkAccess]);
+    let mounted = true;
+    
+    const initializeAccess = async () => {
+      if (isAuthenticated && user?.id && mounted) {
+        await checkAccess();
+      } else if (!isAuthenticated && mounted) {
+        setAccessStatus(null);
+        setIsLoading(false);
+      }
+    };
+
+    initializeAccess();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAuthenticated, user?.id]);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -169,6 +199,7 @@ export const useAppointmentAccess = (): UseAppointmentAccessReturn => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      checkingRef.current = false;
     };
   }, []);
 

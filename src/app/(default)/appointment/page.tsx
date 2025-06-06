@@ -250,7 +250,7 @@ const AppointmentContent: React.FC = () => {
 };
 
 // Main page component with access guard
-export default function AppointmentAccessPage(): JSX.Element {
+export default function AppointmentAccessPage(): React.JSX.Element {
   return (
     <Suspense fallback={
       <div className="flex justify-center py-10">

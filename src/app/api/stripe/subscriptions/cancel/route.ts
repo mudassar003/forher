@@ -1,4 +1,4 @@
-//src/app/api/stripe/subscriptions/cancel/route.ts
+// src/app/api/stripe/subscriptions/cancel/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
@@ -32,26 +32,92 @@ export async function POST(req: Request) {
 
     console.log(`Cancelling subscription: ${data.subscriptionId}`);
     
-    // Cancel subscription in Stripe
-    const subscription = await stripe.subscriptions.update(data.subscriptionId, {
-      cancel_at_period_end: true,
-    });
+    // First, try to find the subscription in our database using the subscriptionId
+    // Check if it's a Supabase ID (UUID format) or Stripe ID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.subscriptionId);
     
-    // Get end date for updating records
-    const cancelDate = new Date(subscription.current_period_end * 1000).toISOString();
+    let userSubscriptionData;
+    let stripeSubscriptionId;
     
-    // Find the user subscription in Supabase
-    const { data: userSubscriptionData, error: fetchError } = await supabase
-      .from('user_subscriptions')
-      .select('id, sanity_id')
-      .eq('stripe_subscription_id', data.subscriptionId)
-      .single();
-    
-    if (fetchError) {
-      console.error("Error fetching subscription:", fetchError);
-      throw new Error(`Subscription not found: ${fetchError.message}`);
+    if (isUuid) {
+      // It's a Supabase UUID, fetch by ID
+      const { data: subData, error: fetchError } = await supabase
+        .from('user_subscriptions')
+        .select('id, stripe_subscription_id, sanity_id')
+        .eq('id', data.subscriptionId)
+        .single();
+      
+      if (fetchError || !subData) {
+        return NextResponse.json(
+          { success: false, error: "Subscription not found" },
+          { status: 404 }
+        );
+      }
+      
+      userSubscriptionData = subData;
+      stripeSubscriptionId = subData.stripe_subscription_id;
+    } else {
+      // It's a Stripe ID, fetch by Stripe subscription ID
+      const { data: subData, error: fetchError } = await supabase
+        .from('user_subscriptions')
+        .select('id, stripe_subscription_id, sanity_id')
+        .eq('stripe_subscription_id', data.subscriptionId)
+        .single();
+      
+      if (fetchError || !subData) {
+        return NextResponse.json(
+          { success: false, error: "Subscription not found" },
+          { status: 404 }
+        );
+      }
+      
+      userSubscriptionData = subData;
+      stripeSubscriptionId = data.subscriptionId;
     }
 
+    // If no Stripe subscription ID, update locally only
+    if (!stripeSubscriptionId) {
+      const { error: updateError } = await supabase
+        .from('user_subscriptions')
+        .update({
+          status: 'cancelled',
+          is_active: false,
+          cancellation_date: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userSubscriptionData.id);
+      
+      if (updateError) {
+        throw new Error(`Failed to update subscription: ${updateError.message}`);
+      }
+      
+      return NextResponse.json({
+        success: true,
+        message: "Subscription cancelled successfully (no Stripe subscription found)"
+      });
+    }
+
+    // Cancel subscription in Stripe
+    let subscription;
+    try {
+      subscription = await stripe.subscriptions.update(stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+    } catch (stripeError) {
+      console.error("Stripe error:", stripeError);
+      // If subscription doesn't exist in Stripe, proceed with local cancellation
+      if (stripeError instanceof Stripe.errors.StripeError && stripeError.code === 'resource_missing') {
+        console.log("Subscription not found in Stripe, proceeding with local cancellation");
+      } else {
+        throw new Error(`Stripe error: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}`);
+      }
+    }
+    
+    // Get end date for updating records
+    const cancelDate = subscription 
+      ? new Date(subscription.current_period_end * 1000).toISOString()
+      : new Date().toISOString();
+    
     // Update Supabase subscription status
     const { error: updateError } = await supabase
       .from('user_subscriptions')

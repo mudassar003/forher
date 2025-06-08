@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
  */
 export async function cancelSubscription(subscriptionId: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
+    console.log('Starting cancellation for subscription:', subscriptionId);
+    
     // First, fetch the user subscription to get the Stripe subscription ID
     const { data: userSubscription, error: fetchError } = await supabase
       .from('user_subscriptions')
@@ -16,8 +18,11 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
       .single();
 
     if (fetchError || !userSubscription) {
+      console.error('Subscription fetch error:', fetchError);
       throw new Error(fetchError?.message || 'Subscription not found');
     }
+
+    console.log('Found subscription:', userSubscription);
 
     // Check if subscription is already cancelled or in process of cancelling
     if (userSubscription.status === 'cancelled' || userSubscription.status === 'cancelling') {
@@ -27,42 +32,35 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
       };
     }
 
-    // If no Stripe subscription ID, update locally only
-    if (!userSubscription.stripe_subscription_id) {
-      // Update subscription status in Supabase
-      const { error: updateError } = await supabase
-        .from('user_subscriptions')
-        .update({
-          status: 'cancelled',
-          is_active: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', subscriptionId);
-
-      if (updateError) {
-        throw new Error(`Failed to update subscription status: ${updateError.message}`);
-      }
-
-      return {
-        success: true,
-        message: 'Subscription cancelled successfully (no Stripe subscription found)'
-      };
-    }
-
-    // Call our API to cancel the subscription with Stripe
+    // Call our API to cancel the subscription - pass the Supabase ID
     const response = await fetch('/api/stripe/subscriptions/cancel', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        subscriptionId: userSubscription.stripe_subscription_id,
+        subscriptionId: subscriptionId, // Pass the Supabase UUID
       }),
     });
 
-    const result = await response.json();
+    console.log('API response status:', response.status);
 
     if (!response.ok) {
+      let errorMessage = `Server returned ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        console.error('API error response:', errorData);
+      } catch (parseError) {
+        console.error('Failed to parse error response:', parseError);
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    console.log('Cancellation result:', result);
+
+    if (!result.success) {
       throw new Error(result.error || 'Failed to cancel subscription');
     }
 
@@ -71,7 +69,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
       message: result.message || 'Subscription cancellation initiated successfully'
     };
   } catch (error) {
-    console.error('Error cancelling subscription:', error);
+    console.error('Error in cancelSubscription service:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'

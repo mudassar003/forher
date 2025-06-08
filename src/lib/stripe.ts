@@ -6,10 +6,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY environment variable is not defined');
 }
 
-// Initialize Stripe with specific API version for consistency
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20', // Use a specific version
-});
+// Initialize Stripe - omitting apiVersion uses the latest version automatically
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Types
 export interface CreateCheckoutSessionParams {

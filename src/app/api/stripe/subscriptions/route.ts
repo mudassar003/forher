@@ -27,7 +27,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Interfaces matching your working version
+// Interfaces matching your Sanity schema
 interface SanitySubscriptionVariant {
   _key: string;
   title: string;
@@ -64,6 +64,34 @@ interface SanitySubscription {
   excludedCoupons?: Array<{ _id: string }>;
 }
 
+// Coupon interface matching Sanity couponType schema
+interface SanityCoupon {
+  _id: string;
+  code: string;
+  description?: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  applicationType: 'all' | 'specific' | 'variants';
+  subscriptions?: Array<{
+    _id: string;
+    title: string;
+  }>;
+  variantTargets?: Array<{
+    subscription: {
+      _id: string;
+      title: string;
+    };
+    variantKey?: string;
+    variantTitle?: string;
+  }>;
+  usageLimit?: number;
+  usageCount: number;
+  validFrom: string;
+  validUntil: string;
+  isActive: boolean;
+  minimumPurchaseAmount?: number;
+}
+
 interface SubscriptionRequest {
   subscriptionId: string;
   userId: string;
@@ -75,7 +103,7 @@ interface SubscriptionRequest {
 interface SubscriptionPurchaseResponse {
   success: boolean;
   sessionId?: string;
-  url?: string;
+  url?: string; // Changed from string | undefined to handle null properly
   error?: string;
   metadata?: {
     subscriptionId: string;
@@ -88,6 +116,14 @@ interface SubscriptionPurchaseResponse {
     discountedPrice?: number;
     discountAmount?: number;
   };
+}
+
+interface CouponValidationResult {
+  isValid: boolean;
+  error?: string;
+  coupon?: SanityCoupon;
+  discountedPrice?: number;
+  discountAmount?: number;
 }
 
 /**
@@ -570,10 +606,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
 
     console.log('🎉 Subscription purchase initiated successfully');
 
+    // Fix the type issue by ensuring url is properly handled
+    const checkoutUrl = session.url || undefined;
+    
     return NextResponse.json({
       success: true,
       sessionId: session.id,
-      url: session.url,
+      url: checkoutUrl, // Now properly typed as string | undefined
       metadata: responseMetadata
     });
 
@@ -604,29 +643,30 @@ async function validateAndApplyCoupon(
   subscription: SanitySubscription,
   variantKey?: string,
   currentPrice?: number
-): Promise<{
-  isValid: boolean;
-  error?: string;
-  coupon?: Coupon;
-  discountedPrice?: number;
-  discountAmount?: number;
-}> {
+): Promise<CouponValidationResult> {
   try {
     console.log('🎫 Validating coupon:', couponCode);
     
-    // Fetch coupon from Sanity (simplified validation)
-    const coupon = await sanityClient.fetch<Coupon>(
+    // Fetch coupon from Sanity matching the exact schema structure
+    const coupon = await sanityClient.fetch<SanityCoupon>(
       `*[_type == "coupon" && code == $code && isActive == true][0]{
         _id,
         code,
         description,
         discountType,
         discountValue,
-        "subscriptions": subscriptions[]->{ _id },
+        applicationType,
+        "subscriptions": subscriptions[]->{ _id, title },
+        variantTargets[]{
+          "subscription": subscription->{ _id, title },
+          variantKey,
+          variantTitle
+        },
         usageLimit,
         usageCount,
         validFrom,
         validUntil,
+        isActive,
         minimumPurchaseAmount
       }`,
       { code: couponCode.toUpperCase().trim() }
@@ -661,9 +701,36 @@ async function validateAndApplyCoupon(
     if (coupon.minimumPurchaseAmount && currentPrice && currentPrice < coupon.minimumPurchaseAmount) {
       return {
         isValid: false,
-        error: `Minimum purchase amount of $${coupon.minimumPurchaseAmount} required`,
+        error: `Minimum purchase amount of ${coupon.minimumPurchaseAmount} required`,
       };
     }
+
+    // Validate applicability based on coupon type
+    if (coupon.applicationType === 'specific' && coupon.subscriptions) {
+      const isApplicable = coupon.subscriptions.some(sub => sub._id === subscription._id);
+      if (!isApplicable) {
+        return {
+          isValid: false,
+          error: 'This coupon is not applicable to the selected subscription',
+        };
+      }
+    } else if (coupon.applicationType === 'variants' && coupon.variantTargets) {
+      const isApplicable = coupon.variantTargets.some(target => {
+        if (target.subscription._id !== subscription._id) return false;
+        // If no variantKey specified in coupon, it applies to base subscription
+        if (!target.variantKey && !variantKey) return true;
+        // If variantKey specified, it must match
+        return target.variantKey === variantKey;
+      });
+      
+      if (!isApplicable) {
+        return {
+          isValid: false,
+          error: 'This coupon is not applicable to the selected subscription variant',
+        };
+      }
+    }
+    // For 'all' type, no additional validation needed
 
     // Calculate discount
     if (!currentPrice) {

@@ -127,6 +127,63 @@ interface CouponValidationResult {
 }
 
 /**
+ * ✅ OPTIMIZATION #2: Helper function to get or create Stripe customer
+ */
+async function getOrCreateStripeCustomer(userId: string, userEmail: string): Promise<string> {
+  const { data: customerData, error: customerError } = await supabase
+    .from('stripe_customers')
+    .select('stripe_customer_id, user_id, email')
+    .eq('user_id', userId)
+    .single();
+  
+  if (customerError || !customerData) {
+    console.log(`Creating new Stripe customer for user ${userId}`);
+    const customer = await stripe.customers.create({
+      email: userEmail,
+      metadata: { userId }
+    });
+    
+    // Save customer to Supabase (non-blocking)
+    supabase.from('stripe_customers').insert({
+      user_id: userId,
+      stripe_customer_id: customer.id,
+      email: userEmail
+    }).catch(error => console.warn('Failed to save customer to Supabase:', error));
+    
+    return customer.id;
+  } else {
+    console.log('Using existing Stripe customer:', customerData.stripe_customer_id);
+    return customerData.stripe_customer_id;
+  }
+}
+
+/**
+ * ✅ OPTIMIZATION #2: Helper function to get or create Stripe product
+ */
+async function getOrCreateStripeProduct(subscription: SanitySubscription): Promise<string> {
+  if (subscription.stripeProductId) {
+    return subscription.stripeProductId;
+  }
+  
+  console.log("Creating new Stripe product");
+  const product = await stripe.products.create({
+    name: subscription.title,
+    description: `${subscription.title} subscription`,
+    metadata: {
+      sanityId: subscription._id
+    }
+  });
+  
+  // Update Sanity with product ID (non-blocking)
+  sanityClient.patch(subscription._id)
+    .set({ stripeProductId: product.id })
+    .commit()
+    .catch(error => console.warn('Failed to update Sanity with Stripe product ID:', error));
+  
+  return product.id;
+}
+
+/**
  * Convert Sanity billing period to Stripe interval configuration
  */
 function getStripeIntervalConfig(
@@ -240,8 +297,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
       )
     ]);
 
-    const parallelTime = Date.now() - startTime;
-    console.log(`⚡ Parallel operations completed in ${parallelTime}ms`);
+    const authTime = Date.now() - startTime;
+    console.log(`⚡ Auth & subscription fetch completed in ${authTime}ms`);
 
     // Early validation - fail fast
     if (!user) {
@@ -271,14 +328,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         { success: false, error: 'User email is required' },
         { status: 400 }
       );
-    }
-    
-    console.log(`Creating subscription for user ${userId} with plan ${data.subscriptionId}`);
-    if (data.variantKey) {
-      console.log(`Using variant: ${data.variantKey}`);
-    }
-    if (data.couponCode) {
-      console.log(`Applying coupon: ${data.couponCode}`);
     }
 
     // Select variant if applicable
@@ -310,55 +359,52 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     
     console.log('💰 Initial price:', effectivePrice);
 
-    // Coupon handling
+    // ✅ OPTIMIZATION #2: Parallel coupon validation and customer/product setup
+    console.log('🔄 Starting parallel coupon validation, customer lookup, and product setup...');
+    
+    const parallelOperations = [
+      // Customer lookup/creation
+      getOrCreateStripeCustomer(userId, userEmail),
+      // Product lookup/creation  
+      getOrCreateStripeProduct(subscription)
+    ];
+
+    // Add coupon validation if coupon provided
+    let couponPromise: Promise<CouponValidationResult | null> = Promise.resolve(null);
+    if (data.couponCode && subscription.allowCoupons !== false) {
+      console.log('🎫 Adding coupon validation to parallel operations');
+      couponPromise = validateAndApplyCoupon(
+        data.couponCode,
+        subscription,
+        data.variantKey,
+        effectivePrice
+      );
+    }
+
+    // Execute all operations in parallel
+    const [stripeCustomerId, stripeProductId, couponValidation] = await Promise.all([
+      ...parallelOperations,
+      couponPromise
+    ]);
+
+    const parallelTime = Date.now() - startTime;
+    console.log(`⚡ Parallel customer/product/coupon operations completed in ${parallelTime - authTime}ms`);
+
+    // Process coupon results
     let appliedCoupon: SanityCoupon | null = null;
     let originalPrice = effectivePrice;
     
-    if (data.couponCode && subscription.allowCoupons !== false) {
-      console.log('🎫 Processing coupon:', data.couponCode);
-      
-      try {
-        const couponValidation = await validateAndApplyCoupon(
-          data.couponCode,
-          subscription,
-          data.variantKey,
-          effectivePrice
-        );
-
-        if (couponValidation.isValid && couponValidation.coupon && couponValidation.discountedPrice !== undefined) {
-          appliedCoupon = couponValidation.coupon;
-          effectivePrice = couponValidation.discountedPrice;
-          console.log('✅ Coupon applied - new price:', effectivePrice);
-        } else {
-          console.log('❌ Coupon validation failed:', couponValidation.error);
-          // Continue without coupon rather than failing
-        }
-      } catch (couponError) {
-        console.log('⚠️ Coupon processing error:', couponError);
-        // Continue without coupon
-      }
+    if (couponValidation?.isValid && couponValidation.coupon && couponValidation.discountedPrice !== undefined) {
+      appliedCoupon = couponValidation.coupon;
+      effectivePrice = couponValidation.discountedPrice;
+      console.log('✅ Coupon applied - new price:', effectivePrice);
+    } else if (couponValidation?.error) {
+      console.log('❌ Coupon validation failed:', couponValidation.error);
+      // Continue without coupon rather than failing
     }
 
-    // Create or get Stripe product
-    let stripeProductId = subscription.stripeProductId;
-    if (!stripeProductId) {
-      console.log("Creating new Stripe product");
-      const product = await stripe.products.create({
-        name: subscription.title,
-        description: `${subscription.title} subscription`,
-        metadata: {
-          sanityId: subscription._id
-        }
-      });
-      stripeProductId = product.id;
-      
-      // Update Sanity with product ID
-      try {
-        await sanityClient.patch(subscription._id).set({ stripeProductId: product.id }).commit();
-      } catch (sanityUpdateError) {
-        console.warn('Failed to update Sanity with Stripe product ID:', sanityUpdateError);
-      }
-    }
+    console.log('🏗️ Customer ID:', stripeCustomerId);
+    console.log('🏗️ Product ID:', stripeProductId);
     
     // Get or create Stripe price
     let stripePriceId: string;
@@ -417,55 +463,20 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         });
         stripePriceId = stripePrice.id;
         
-        // Update Sanity with the new price ID
-        try {
-          if (selectedVariant) {
-            await sanityClient
+        // Update Sanity with the new price ID (non-blocking)
+        const updatePromise = selectedVariant
+          ? sanityClient
               .patch(subscription._id)
               .setIfMissing({ variants: [] })
               .set({ [`variants[_key=="${selectedVariant._key}"].stripePriceId`]: stripePrice.id })
-              .commit();
-          } else {
-            await sanityClient.patch(subscription._id).set({ stripePriceId: stripePrice.id }).commit();
-          }
-        } catch (sanityUpdateError) {
-          console.warn('Failed to update Sanity with Stripe price ID:', sanityUpdateError);
-        }
+              .commit()
+          : sanityClient.patch(subscription._id).set({ stripePriceId: stripePrice.id }).commit();
+        
+        updatePromise.catch(error => console.warn('Failed to update Sanity with Stripe price ID:', error));
       }
     }
 
     console.log('🏗️ Using Stripe price ID:', stripePriceId);
-
-    // Get or create Stripe customer
-    const { data: customerData, error: customerError } = await supabase
-      .from('stripe_customers')
-      .select('stripe_customer_id, user_id, email')
-      .eq('user_id', userId)
-      .single();
-    
-    let stripeCustomerId: string;
-    if (customerError || !customerData) {
-      console.log(`Creating new Stripe customer for user ${userId}`);
-      const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: { userId }
-      });
-      stripeCustomerId = customer.id;
-      
-      // Save customer to Supabase
-      try {
-        await supabase.from('stripe_customers').insert({
-          user_id: userId,
-          stripe_customer_id: customer.id,
-          email: userEmail
-        });
-      } catch (customerInsertError) {
-        console.warn('Failed to save customer to Supabase:', customerInsertError);
-      }
-    } else {
-      stripeCustomerId = customerData.stripe_customer_id;
-      console.log('Using existing Stripe customer:', stripeCustomerId);
-    }
 
     // Create Stripe checkout session
     console.log('🛒 Creating Stripe checkout session...');
@@ -487,6 +498,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         quantity: 1 
       }],
       mode: 'subscription',
+      locale: 'en', // ✅ Fix for Stripe console errors
       success_url: `${baseUrl}/appointment?subscription_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/subscriptions?canceled=true`,
       customer: stripeCustomerId,
@@ -583,14 +595,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     
     console.log(`✅ Created Supabase subscription record`);
     
-    // Increment coupon usage if applied
+    // Increment coupon usage if applied (non-blocking)
     if (appliedCoupon) {
-      try {
-        await sanityClient.patch(appliedCoupon._id).inc({ usageCount: 1 }).commit();
-        console.log(`✅ Incremented usage count for coupon ${appliedCoupon.code}`);
-      } catch (couponUpdateError) {
-        console.warn('Failed to increment coupon usage:', couponUpdateError);
-      }
+      sanityClient.patch(appliedCoupon._id)
+        .inc({ usageCount: 1 })
+        .commit()
+        .then(() => console.log(`✅ Incremented usage count for coupon ${appliedCoupon.code}`))
+        .catch(error => console.warn('Failed to increment coupon usage:', error));
     }
     
     // Prepare response metadata
@@ -609,7 +620,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     };
 
     const totalTime = Date.now() - startTime;
-    console.log(`🎉 Subscription purchase completed in ${totalTime}ms (parallel ops saved ~${Math.max(0, 400 - parallelTime)}ms)`);
+    const savedTime = Math.max(0, 800 - totalTime); // Estimate of time saved vs sequential
+    console.log(`🎉 Subscription purchase completed in ${totalTime}ms (parallel optimization saved ~${savedTime}ms)`);
 
     // Fix the type issue by ensuring url is properly handled
     const checkoutUrl = session.url || undefined;

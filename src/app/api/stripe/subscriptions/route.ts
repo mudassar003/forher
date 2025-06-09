@@ -130,36 +130,41 @@ interface CouponValidationResult {
  * ✅ OPTIMIZATION #2: Helper function to get or create Stripe customer
  */
 async function getOrCreateStripeCustomer(userId: string, userEmail: string): Promise<string> {
-  const { data: customerData, error: customerError } = await supabase
-    .from('stripe_customers')
-    .select('stripe_customer_id, user_id, email')
-    .eq('user_id', userId)
-    .single();
-  
-  if (customerError || !customerData) {
-    console.log(`Creating new Stripe customer for user ${userId}`);
-    const customer = await stripe.customers.create({
-      email: userEmail,
-      metadata: { userId }
-    });
+  try {
+    const { data: customerData, error: customerError } = await supabase
+      .from('stripe_customers')
+      .select('stripe_customer_id, user_id, email')
+      .eq('user_id', userId)
+      .single();
     
-    // Save customer to Supabase (non-blocking) - Fixed TypeScript issue
-    supabase.from('stripe_customers')
-      .insert({
-        user_id: userId,
-        stripe_customer_id: customer.id,
-        email: userEmail
-      })
-      .then(({ error }) => {
-        if (error) {
-          console.warn('Failed to save customer to Supabase:', error);
-        }
+    if (customerError || !customerData) {
+      console.log(`Creating new Stripe customer for user ${userId}`);
+      const customer = await stripe.customers.create({
+        email: userEmail,
+        metadata: { userId }
       });
-    
-    return customer.id;
-  } else {
-    console.log('Using existing Stripe customer:', customerData.stripe_customer_id);
-    return customerData.stripe_customer_id;
+      
+      // Save customer to Supabase (non-blocking) - Fixed TypeScript issue
+      supabase.from('stripe_customers')
+        .insert({
+          user_id: userId,
+          stripe_customer_id: customer.id,
+          email: userEmail
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.warn('Failed to save customer to Supabase:', error);
+          }
+        });
+      
+      return customer.id;
+    } else {
+      console.log('Using existing Stripe customer:', customerData.stripe_customer_id);
+      return customerData.stripe_customer_id;
+    }
+  } catch (error) {
+    console.error('Error in getOrCreateStripeCustomer:', error);
+    throw new Error('Failed to get or create Stripe customer');
   }
 }
 
@@ -167,31 +172,36 @@ async function getOrCreateStripeCustomer(userId: string, userEmail: string): Pro
  * ✅ OPTIMIZATION #2: Helper function to get or create Stripe product
  */
 async function getOrCreateStripeProduct(subscription: SanitySubscription): Promise<string> {
-  if (subscription.stripeProductId) {
-    return subscription.stripeProductId;
-  }
-  
-  console.log("Creating new Stripe product");
-  const product = await stripe.products.create({
-    name: subscription.title,
-    description: `${subscription.title} subscription`,
-    metadata: {
-      sanityId: subscription._id
+  try {
+    if (subscription.stripeProductId) {
+      return subscription.stripeProductId;
     }
-  });
-  
-  // Update Sanity with product ID (non-blocking) - Fixed TypeScript issue
-  sanityClient.patch(subscription._id)
-    .set({ stripeProductId: product.id })
-    .commit()
-    .then(() => {
-      console.log('✅ Updated Sanity with Stripe product ID');
-    })
-    .catch(error => {
-      console.warn('Failed to update Sanity with Stripe product ID:', error);
+    
+    console.log("Creating new Stripe product");
+    const product = await stripe.products.create({
+      name: subscription.title,
+      description: `${subscription.title} subscription`,
+      metadata: {
+        sanityId: subscription._id
+      }
     });
-  
-  return product.id;
+    
+    // Update Sanity with product ID (non-blocking) - Fixed TypeScript issue
+    sanityClient.patch(subscription._id)
+      .set({ stripeProductId: product.id })
+      .commit()
+      .then(() => {
+        console.log('✅ Updated Sanity with Stripe product ID');
+      })
+      .catch(error => {
+        console.warn('Failed to update Sanity with Stripe product ID:', error);
+      });
+    
+    return product.id;
+  } catch (error) {
+    console.error('Error in getOrCreateStripeProduct:', error);
+    throw new Error('Failed to get or create Stripe product');
+  }
 }
 
 /**
@@ -373,43 +383,36 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     // ✅ OPTIMIZATION #2: Parallel coupon validation and customer/product setup
     console.log('🔄 Starting parallel coupon validation, customer lookup, and product setup...');
     
-    const parallelOperations = [
+    const parallelOperations: [
+      Promise<string>, 
+      Promise<string>, 
+      Promise<CouponValidationResult | null>
+    ] = [
       // Customer lookup/creation
       getOrCreateStripeCustomer(userId, userEmail),
       // Product lookup/creation  
-      getOrCreateStripeProduct(subscription)
+      getOrCreateStripeProduct(subscription),
+      // Coupon validation if coupon provided, otherwise null
+      data.couponCode && subscription.allowCoupons !== false
+        ? validateAndApplyCoupon(data.couponCode, subscription, data.variantKey, effectivePrice)
+        : Promise.resolve(null)
     ];
 
-    // Add coupon validation if coupon provided
-    let couponPromise: Promise<CouponValidationResult | null> = Promise.resolve(null);
-    if (data.couponCode && subscription.allowCoupons !== false) {
-      console.log('🎫 Adding coupon validation to parallel operations');
-      couponPromise = validateAndApplyCoupon(
-        data.couponCode,
-        subscription,
-        data.variantKey,
-        effectivePrice
-      );
-    }
-
     // Execute all operations in parallel
-    const [stripeCustomerId, stripeProductId, couponValidation] = await Promise.all([
-      ...parallelOperations,
-      couponPromise
-    ]);
+    const [stripeCustomerId, stripeProductId, couponValidation] = await Promise.all(parallelOperations);
 
     const parallelTime = Date.now() - startTime;
     console.log(`⚡ Parallel customer/product/coupon operations completed in ${parallelTime - authTime}ms`);
 
-    // Process coupon results
+    // Process coupon results with proper type checking
     let appliedCoupon: SanityCoupon | null = null;
     let originalPrice = effectivePrice;
     
-    if (couponValidation?.isValid && couponValidation.coupon && couponValidation.discountedPrice !== undefined) {
+    if (couponValidation && couponValidation.isValid && couponValidation.coupon && couponValidation.discountedPrice !== undefined) {
       appliedCoupon = couponValidation.coupon;
       effectivePrice = couponValidation.discountedPrice;
       console.log('✅ Coupon applied - new price:', effectivePrice);
-    } else if (couponValidation?.error) {
+    } else if (couponValidation && couponValidation.error) {
       console.log('❌ Coupon validation failed:', couponValidation.error);
       // Continue without coupon rather than failing
     }

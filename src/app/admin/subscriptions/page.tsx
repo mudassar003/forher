@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import SubscriptionTable from "./components/SubscriptionTable";
 import AdminHeader from "../components/AdminHeader";
 import StatusUpdateModal from "./components/StatusUpdateModal";
+import AppointmentTimeModal from "./components/AppointmentTimeModal";
 
 interface Subscription {
   id: string;
@@ -18,6 +19,15 @@ interface Subscription {
   next_billing_date: string;
   billing_amount: number;
   billing_period: string;
+  appointment_accessed_at: string | null;
+  appointment_access_expired: boolean;
+  appointment_access_duration: number;
+}
+
+interface AppointmentTimeUpdate {
+  appointment_accessed_at: string | null;
+  appointment_access_expired: boolean;
+  appointment_access_duration: number;
 }
 
 export default function AdminSubscriptionsPage() {
@@ -25,7 +35,8 @@ export default function AdminSubscriptionsPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
+  const [isTimeModalOpen, setIsTimeModalOpen] = useState<boolean>(false);
   
   // Function to fetch subscriptions
   const fetchSubscriptions = async () => {
@@ -76,7 +87,7 @@ export default function AdminSubscriptionsPage() {
       
       // Refresh the subscriptions list
       await fetchSubscriptions();
-      setIsModalOpen(false);
+      setIsStatusModalOpen(false);
       setSelectedSubscription(null);
       
       return true;
@@ -85,11 +96,51 @@ export default function AdminSubscriptionsPage() {
       return false;
     }
   };
+
+  // Function to update appointment time
+  const updateAppointmentTime = async (
+    subscriptionId: string,
+    updates: AppointmentTimeUpdate
+  ) => {
+    try {
+      const response = await fetch("/api/admin/subscriptions/update-appointment-time", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscriptionId,
+          ...updates
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update appointment time");
+      }
+      
+      // Refresh the subscriptions list
+      await fetchSubscriptions();
+      setIsTimeModalOpen(false);
+      setSelectedSubscription(null);
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating appointment time:", error);
+      return false;
+    }
+  };
   
-  // Open modal to edit a subscription
+  // Open modal to edit subscription status
   const handleEditSubscription = (subscription: Subscription) => {
     setSelectedSubscription(subscription);
-    setIsModalOpen(true);
+    setIsStatusModalOpen(true);
+  };
+
+  // Open modal to edit appointment time
+  const handleEditAppointmentTime = (subscription: Subscription) => {
+    setSelectedSubscription(subscription);
+    setIsTimeModalOpen(true);
   };
   
   // Initial load
@@ -133,16 +184,28 @@ export default function AdminSubscriptionsPage() {
         subscriptions={subscriptions} 
         isLoading={isLoading} 
         onEdit={handleEditSubscription}
+        onEditAppointmentTime={handleEditAppointmentTime}
       />
       
-      {isModalOpen && selectedSubscription && (
+      {isStatusModalOpen && selectedSubscription && (
         <StatusUpdateModal
           subscription={selectedSubscription}
           onClose={() => {
-            setIsModalOpen(false);
+            setIsStatusModalOpen(false);
             setSelectedSubscription(null);
           }}
           onUpdate={updateSubscriptionStatus}
+        />
+      )}
+
+      {isTimeModalOpen && selectedSubscription && (
+        <AppointmentTimeModal
+          subscription={selectedSubscription}
+          onClose={() => {
+            setIsTimeModalOpen(false);
+            setSelectedSubscription(null);
+          }}
+          onUpdate={updateAppointmentTime}
         />
       )}
     </div>

@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const userId = searchParams.get('userId');
     const status = searchParams.get('status');
     
-    // Build query
+    // Build query - UPDATED to include appointment fields
     let query = supabaseAdmin
       .from('user_subscriptions')
       .select(`
@@ -34,6 +34,9 @@ export async function GET(req: Request) {
         is_active,
         stripe_subscription_id,
         stripe_customer_id,
+        appointment_accessed_at,
+        appointment_access_expired,
+        appointment_access_duration,
         created_at,
         updated_at
       `)
@@ -56,7 +59,7 @@ export async function GET(req: Request) {
       throw new Error(`Failed to fetch subscriptions: ${error.message}`);
     }
     
-    // Process the data to format for frontend
+    // Process the data to format for frontend - UPDATED with appointment fields
     const subscriptions = (data || []).map(sub => ({
       id: sub.id,
       user_id: sub.user_id,
@@ -73,6 +76,10 @@ export async function GET(req: Request) {
       next_billing_date: sub.next_billing_date || sub.end_date,
       billing_amount: sub.billing_amount,
       billing_period: sub.billing_period,
+      // Add appointment fields with defaults
+      appointment_accessed_at: sub.appointment_accessed_at || null,
+      appointment_access_expired: sub.appointment_access_expired || false,
+      appointment_access_duration: sub.appointment_access_duration || 600, // 10 minutes default
       created_at: sub.created_at,
       updated_at: sub.updated_at
     }));

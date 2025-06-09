@@ -93,7 +93,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
     console.log(`🔒 Checking appointment access for user: ${userId}`);
 
     // CORE BUSINESS LOGIC: Single query to get user's appointment access status
-    const { data: subscription, error: subError } = await supabaseAdmin
+    const { data: subscriptionData, error: subError } = await supabaseAdmin
       .from('user_subscriptions')
       .select(`
         id,
@@ -114,6 +114,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
+
+    // Initialize subscription variable that we can reassign
+    let subscription: SubscriptionData | null = subscriptionData;
 
     // If main query fails, try a more liberal approach
     if (subError || !subscription) {
@@ -152,14 +155,24 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
         }, { status: 403 });
       }
 
-      // Use the first result from liberal query
-      subscription = liberalSub[0];
+      // ✅ FIXED: Use proper assignment instead of const reassignment
+      subscription = liberalSub[0] as SubscriptionData;
       console.log(`✅ Using liberal query result: ${subscription.id}`);
     }
 
-    console.log(`✅ Found active subscription: ${subscription.id} for plan: ${subscription.plan_name}`);
+    // Ensure we have a subscription at this point
+    if (!subscription) {
+      return NextResponse.json({
+        success: false,
+        hasAccess: false,
+        isFirstTime: false,
+        timeRemaining: 0,
+        accessExpired: false,
+        error: 'No subscription found'
+      }, { status: 403 });
+    }
 
-    console.log(`✅ Found subscription: ${subscription.id} for plan: ${subscription.plan_name}`);
+    console.log(`✅ Found active subscription: ${subscription.id} for plan: ${subscription.plan_name}`);
 
     // Check if access has already been marked as expired
     if (subscription.appointment_access_expired) {
@@ -179,15 +192,18 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
     if (!subscription.appointment_accessed_at) {
       console.log(`🎯 First time access - recording access time for subscription: ${subscription.id}`);
       
-      const now = new Date().toISOString();
+      // Use timestamp without timezone to match schema
+      const now = new Date().toISOString().replace('Z', ''); // Remove Z for timestamp without time zone
+      const updatedAt = new Date().toISOString(); // Keep Z for timestamp with time zone
+      
       const { error: updateError } = await supabaseAdmin
         .from('user_subscriptions')
         .update({
           appointment_accessed_at: now,
-          updated_at: now
+          updated_at: updatedAt
         })
         .eq('id', subscription.id)
-        .eq('appointment_accessed_at', null); // Extra safety check
+        .is('appointment_accessed_at', null); // Correct way to check for null in Supabase
 
       if (updateError) {
         console.error(`❌ Failed to record access time: ${updateError.message}`);
@@ -197,11 +213,11 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
           isFirstTime: false,
           timeRemaining: 0,
           accessExpired: false,
-          error: 'Failed to record access time'
+          error: `Failed to record access time: ${updateError.message}`
         }, { status: 500 });
       }
 
-      const accessDuration = subscription.appointment_access_duration || 1200; // 20 minutes default
+      const accessDuration = subscription.appointment_access_duration || 600; // 10 minutes default from schema
       console.log(`✅ First access recorded. User has ${accessDuration} seconds (${accessDuration/60} minutes)`);
       
       return NextResponse.json({
@@ -218,7 +234,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
     // RETURNING ACCESS - Check if time has expired
     const accessedAt = new Date(subscription.appointment_accessed_at);
     const now = new Date();
-    const durationMs = (subscription.appointment_access_duration || 1200) * 1000; // Convert to milliseconds
+    const durationMs = (subscription.appointment_access_duration || 600) * 1000; // Convert to milliseconds, use 600 as default from schema
     const elapsedMs = now.getTime() - accessedAt.getTime();
     const remainingMs = durationMs - elapsedMs;
 
@@ -343,7 +359,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<AppointmentAcc
         success: true,
         hasAccess: true,
         isFirstTime: true,
-        timeRemaining: subscription.appointment_access_duration || 1200,
+        timeRemaining: subscription.appointment_access_duration || 600,
         accessExpired: false,
         subscriptionId: subscription.id
       });
@@ -352,7 +368,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<AppointmentAcc
     // Calculate remaining time
     const accessedAt = new Date(subscription.appointment_accessed_at);
     const now = new Date();
-    const durationMs = (subscription.appointment_access_duration || 1200) * 1000;
+    const durationMs = (subscription.appointment_access_duration || 600) * 1000;
     const elapsedMs = now.getTime() - accessedAt.getTime();
     const remainingMs = durationMs - elapsedMs;
 

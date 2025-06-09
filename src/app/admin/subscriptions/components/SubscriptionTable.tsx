@@ -15,18 +15,23 @@ interface Subscription {
   next_billing_date: string;
   billing_amount: number;
   billing_period: string;
+  appointment_accessed_at: string | null;
+  appointment_access_expired: boolean;
+  appointment_access_duration: number;
 }
 
 interface SubscriptionTableProps {
   subscriptions: Subscription[];
   isLoading: boolean;
   onEdit: (subscription: Subscription) => void;
+  onEditAppointmentTime: (subscription: Subscription) => void;
 }
 
 const SubscriptionTable: React.FC<SubscriptionTableProps> = ({ 
   subscriptions, 
   isLoading,
-  onEdit
+  onEdit,
+  onEditAppointmentTime
 }) => {
   if (isLoading) {
     return (
@@ -94,6 +99,47 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
     );
   };
 
+  // Function to render appointment access status
+  const renderAppointmentAccessStatus = (subscription: Subscription) => {
+    if (subscription.appointment_access_expired) {
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Expired
+        </span>
+      );
+    }
+    
+    if (!subscription.appointment_accessed_at) {
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Available
+        </span>
+      );
+    }
+    
+    // Calculate remaining time
+    const accessedAt = new Date(subscription.appointment_accessed_at);
+    const now = new Date();
+    const durationMs = subscription.appointment_access_duration * 1000;
+    const elapsedMs = now.getTime() - accessedAt.getTime();
+    const remainingMs = durationMs - elapsedMs;
+    
+    if (remainingMs > 0) {
+      const remainingMinutes = Math.ceil(remainingMs / (1000 * 60));
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          {remainingMinutes}m left
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          Should Expire
+        </span>
+      );
+    }
+  };
+
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -119,10 +165,7 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                 Amount
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Has Stripe ID
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Has Sanity ID
+                Appointment Access
               </th>
               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -156,22 +199,26 @@ const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                   <div className="text-sm text-gray-900">${subscription.billing_amount}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {subscription.stripe_subscription_id ? 'Yes' : 'No'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {subscription.sanity_id ? 'Yes' : 'No'}
+                  {renderAppointmentAccessStatus(subscription)}
+                  <div className="text-xs text-gray-500 mt-1">
+                    {subscription.appointment_access_duration / 60}min duration
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => onEdit(subscription)}
-                    className="text-pink-600 hover:text-pink-900"
-                  >
-                    Edit
-                  </button>
+                  <div className="flex space-x-2 justify-end">
+                    <button
+                      onClick={() => onEdit(subscription)}
+                      className="text-pink-600 hover:text-pink-900"
+                    >
+                      Edit Status
+                    </button>
+                    <button
+                      onClick={() => onEditAppointmentTime(subscription)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Edit Time
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

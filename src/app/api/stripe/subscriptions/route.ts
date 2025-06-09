@@ -143,12 +143,18 @@ async function getOrCreateStripeCustomer(userId: string, userEmail: string): Pro
       metadata: { userId }
     });
     
-    // Save customer to Supabase (non-blocking)
-    supabase.from('stripe_customers').insert({
-      user_id: userId,
-      stripe_customer_id: customer.id,
-      email: userEmail
-    }).catch(error => console.warn('Failed to save customer to Supabase:', error));
+    // Save customer to Supabase (non-blocking) - Fixed TypeScript issue
+    supabase.from('stripe_customers')
+      .insert({
+        user_id: userId,
+        stripe_customer_id: customer.id,
+        email: userEmail
+      })
+      .then(({ error }) => {
+        if (error) {
+          console.warn('Failed to save customer to Supabase:', error);
+        }
+      });
     
     return customer.id;
   } else {
@@ -174,11 +180,16 @@ async function getOrCreateStripeProduct(subscription: SanitySubscription): Promi
     }
   });
   
-  // Update Sanity with product ID (non-blocking)
+  // Update Sanity with product ID (non-blocking) - Fixed TypeScript issue
   sanityClient.patch(subscription._id)
     .set({ stripeProductId: product.id })
     .commit()
-    .catch(error => console.warn('Failed to update Sanity with Stripe product ID:', error));
+    .then(() => {
+      console.log('✅ Updated Sanity with Stripe product ID');
+    })
+    .catch(error => {
+      console.warn('Failed to update Sanity with Stripe product ID:', error);
+    });
   
   return product.id;
 }
@@ -463,7 +474,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         });
         stripePriceId = stripePrice.id;
         
-        // Update Sanity with the new price ID (non-blocking)
+        // Update Sanity with the new price ID (non-blocking) - Fixed TypeScript issue
         const updatePromise = selectedVariant
           ? sanityClient
               .patch(subscription._id)
@@ -472,7 +483,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
               .commit()
           : sanityClient.patch(subscription._id).set({ stripePriceId: stripePrice.id }).commit();
         
-        updatePromise.catch(error => console.warn('Failed to update Sanity with Stripe price ID:', error));
+        updatePromise
+          .then(() => {
+            console.log('✅ Updated Sanity with Stripe price ID');
+          })
+          .catch(error => {
+            console.warn('Failed to update Sanity with Stripe price ID:', error);
+          });
       }
     }
 
@@ -595,13 +612,17 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     
     console.log(`✅ Created Supabase subscription record`);
     
-    // Increment coupon usage if applied (non-blocking)
+    // Increment coupon usage if applied (non-blocking) - Fixed TypeScript issue
     if (appliedCoupon) {
       sanityClient.patch(appliedCoupon._id)
         .inc({ usageCount: 1 })
         .commit()
-        .then(() => console.log(`✅ Incremented usage count for coupon ${appliedCoupon.code}`))
-        .catch(error => console.warn('Failed to increment coupon usage:', error));
+        .then(() => {
+          console.log(`✅ Incremented usage count for coupon ${appliedCoupon.code}`);
+        })
+        .catch(error => {
+          console.warn('Failed to increment coupon usage:', error);
+        });
     }
     
     // Prepare response metadata

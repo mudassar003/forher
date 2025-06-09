@@ -42,9 +42,10 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
   const [appliedCouponCode, setAppliedCouponCode] = useState<string>('');
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [purchaseError, setPurchaseError] = useState<string>('');
 
   const { t, currentLanguage } = useTranslations();
-  const { purchaseSubscription, isLoading, error } = useSubscriptionPurchase();
+  const { purchaseSubscription, isLoading, error, clearError } = useSubscriptionPurchase();
   const { user, isAuthenticated, checkSession } = useAuthStore();
 
   // Find default variant or first variant when component mounts
@@ -72,17 +73,26 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     }
   }, [isAuthenticated, checkSession]);
 
+  // Clear purchase error when subscription purchase error changes
+  useEffect(() => {
+    if (error) {
+      setPurchaseError(error);
+    }
+  }, [error]);
+
   // Coupon handlers
   const handleCouponApplied = (code: string, newPrice: number, discount: number): void => {
     setAppliedCouponCode(code);
     setDiscountedPrice(newPrice);
     setDiscountAmount(discount);
+    setPurchaseError(''); // Clear any previous errors
   };
 
   const handleCouponRemoved = (): void => {
     setAppliedCouponCode('');
     setDiscountedPrice(null);
     setDiscountAmount(0);
+    setPurchaseError(''); // Clear any previous errors
   };
 
   // Handle variant selection
@@ -99,6 +109,10 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     if (appliedCouponCode) {
       handleCouponRemoved();
     }
+    
+    // Clear any previous errors
+    setPurchaseError('');
+    clearError();
   };
 
   // Custom translations
@@ -349,27 +363,39 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return percentage;
   };
 
-  // Handle the subscription purchase with coupon support
+  // Handle the subscription purchase with improved error handling
   const handleSubscribe = async (): Promise<void> => {
     if (isProcessing || isLoading) return;
     
+    // Clear previous errors
+    setPurchaseError('');
+    clearError();
+    
     // Store current path in sessionStorage
     const currentPath = window.location.pathname;
-    sessionStorage.setItem('subscriptionReturnPath', currentPath);
+    try {
+      sessionStorage.setItem('subscriptionReturnPath', currentPath);
+    } catch (storageError) {
+      // Session storage not available, continue without storing
+    }
     
     // If not authenticated, redirect to login with return URL
     if (!isAuthenticated) {
-      // Save intended subscription ID to purchase after login
-      sessionStorage.setItem('pendingSubscriptionId', subscription._id);
-      
-      // If a variant is selected, store that too
-      if (subscription.hasVariants && selectedVariant && selectedVariant._key && !selectedBase) {
-        sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
-      }
-      
-      // Store coupon code if applied
-      if (appliedCouponCode) {
-        sessionStorage.setItem('pendingCouponCode', appliedCouponCode);
+      try {
+        // Save intended subscription ID to purchase after login
+        sessionStorage.setItem('pendingSubscriptionId', subscription._id);
+        
+        // If a variant is selected, store that too
+        if (subscription.hasVariants && selectedVariant && selectedVariant._key && !selectedBase) {
+          sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
+        }
+        
+        // Store coupon code if applied
+        if (appliedCouponCode) {
+          sessionStorage.setItem('pendingCouponCode', appliedCouponCode);
+        }
+      } catch (storageError) {
+        // Session storage not available, continue without storing
       }
       
       const returnUrl = encodeURIComponent(currentPath);
@@ -381,7 +407,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     
     try {
       // Store appointment page as the return URL after successful purchase
-      sessionStorage.setItem('loginReturnUrl', '/appointment');
+      try {
+        sessionStorage.setItem('loginReturnUrl', '/appointment');
+      } catch (storageError) {
+        // Session storage not available, continue without storing
+      }
       
       // Include coupon code in the subscription purchase
       // Only pass variant key if a variant is selected (not base)
@@ -394,9 +424,12 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       if (result.success && result.url) {
         // Redirect to Stripe checkout
         window.location.href = result.url;
+      } else if (result.error) {
+        setPurchaseError(result.error);
       }
     } catch (err) {
-      console.error('Failed to initiate subscription purchase:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setPurchaseError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -723,10 +756,27 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                     {getSubscribeButtonText()}
                   </button>
                   
-                  {error && (
-                    <p className="mt-2 text-sm text-red-600 text-center">
-                      {error}
-                    </p>
+                  {/* Enhanced Error Display */}
+                  {(purchaseError || error) && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-red-700">
+                          {purchaseError || error}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setPurchaseError('');
+                          clearError();
+                        }}
+                        className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+                      >
+                        {currentLanguage === 'es' ? 'Cerrar' : 'Dismiss'}
+                      </button>
+                    </div>
                   )}
                 </div>
                 

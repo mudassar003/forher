@@ -97,11 +97,9 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
         const twoMinutes = 2 * 60 * 1000; // Reduced from 5 minutes to 2 minutes
         
         if (lastSync && now - lastSync < twoMinutes && get().isFetched && !forceRefresh && get().subscriptions.length > 0) {
-          console.log("Using cached subscription data");
           return;
         }
         
-        console.log("Fetching subscriptions for user:", userId);
         set({ loading: true, error: null });
         
         try {
@@ -115,8 +113,6 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           if (supabaseError) {
             throw new Error(supabaseError.message);
           }
-          
-          console.log("Subscription data fetched:", supabaseData);
           
           // Transform data to our Subscription format
           const subscriptionsData: Subscription[] = (supabaseData || []).map(sub => ({
@@ -137,7 +133,6 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           
           // Check for active subscriptions using the helper function
           const hasActive = subscriptionsData.some(isSubscriptionActive);
-          console.log("Has active subscription:", hasActive);
           
           // Update the store with the fetched data
           set({ 
@@ -162,11 +157,12 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           // Auto-sync if we detect issues, but don't wait for it to complete and don't trigger re-renders
           if (needsSync && !get().syncingSubscriptions) {
             // This runs in the background
-            get().syncSubscriptionStatuses(userId).catch(console.error);
+            get().syncSubscriptionStatuses(userId).catch(() => {
+              // Silently handle sync errors to avoid affecting UI
+            });
           }
           
         } catch (error) {
-          console.error('Error fetching subscriptions:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Unknown error fetching subscriptions',
             loading: false,
@@ -215,7 +211,6 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           
           return true;
         } catch (error) {
-          console.error('Error cancelling subscription:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Unknown error cancelling subscription',
             cancellingId: null
@@ -232,7 +227,6 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
         
         try {
           set({ syncingSubscriptions: true, error: null });
-          console.log("Syncing subscription statuses for user:", userId);
           
           // Call the status sync API
           const response = await fetch('/api/stripe/subscriptions/status', {
@@ -256,12 +250,10 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           }
           
           // Parse response if available
-          let result;
           try {
-            result = await response.json();
-            console.log("Sync response:", result);
+            await response.json();
           } catch (parseError) {
-            console.error("Error parsing subscription sync response:", parseError);
+            // Response parsing not critical for sync operation
           }
           
           // Refresh subscriptions after sync - with force refresh
@@ -273,7 +265,6 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           });
           return true;
         } catch (error) {
-          console.error('Error syncing subscription statuses:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Unknown error syncing statuses',
             syncingSubscriptions: false

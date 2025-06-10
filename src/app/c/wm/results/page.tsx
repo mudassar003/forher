@@ -1,4 +1,4 @@
-// src/app/c/wm/results/page.tsx - Complete mobile-optimized version without purchase button
+//src/app/c/wm/results/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -473,7 +473,7 @@ export default function ResultsPage({}: WeightLossResultsProps) {
             </div>
           </motion.div>
           
-          {/* Weight Loss Subscription Grid - Reduced top margin to prioritize featured plan */}
+          {/* Weight Loss Subscription Grid - UPDATED with centering logic */}
           <motion.div 
             className="mt-6 sm:mt-16 mb-6 sm:mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -484,9 +484,13 @@ export default function ResultsPage({}: WeightLossResultsProps) {
               Our Weight Loss Subscription Plans
             </h2>
             
-            {/* Fully responsive grid container */}
+            {/* Updated grid container with centering */}
             <div className="bg-[#f9f9f9] rounded-xl p-3 sm:p-8">
-              <WeightLossSubscriptionGrid />
+              <div className="flex justify-center">
+                <div className="w-full max-w-none">
+                  <WeightLossSubscriptionGrid className="flex justify-center" />
+                </div>
+              </div>
             </div>
           </motion.div>
           

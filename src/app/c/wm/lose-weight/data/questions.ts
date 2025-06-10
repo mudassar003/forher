@@ -29,32 +29,39 @@ export const weightLossQuestions: Question[] = [
     ]
   },
 
-  // Step 2: Height, Weight & BMI Calculation
+  // Step 2: Height, Weight & BMI Calculation - UPDATED
   {
     id: "current-weight",
     question: "What is your current weight?",
-    description: "Enter your weight in kilograms (kg) or pounds (lbs).",
+    description: "Enter your weight in pounds.",
     type: QuestionType.TextInput,
-    placeholder: "Enter weight (e.g., 70kg or 154lbs)",
-    inputType: "text",
+    placeholder: "Enter weight in pounds",
+    inputType: "number",
     validation: (value: string) => {
-      // Accept format like "70kg" or "154lbs" or just numbers
-      return /^\d+(\.\d+)?(kg|lbs)?$/i.test(value);
+      const numValue = parseFloat(value);
+      return !isNaN(numValue) && numValue > 0;
     },
-    errorMessage: "Please enter a valid weight (e.g., 70kg or 154lbs)"
+    errorMessage: "Please enter a valid weight in pounds"
   },
   {
     id: "height",
     question: "What is your height?",
-    description: "Enter your height in centimeters (cm) or feet and inches (e.g., 5'7\").",
-    type: QuestionType.TextInput,
-    placeholder: "Enter height (e.g., 170cm or 5'7\")",
-    inputType: "text",
+    description: "Enter your height in feet and inches.",
+    type: QuestionType.HeightInput,
+    placeholder: "Enter height",
+    inputType: "height",
     validation: (value: string) => {
-      // Accept format like "170cm" or "5'7\"" or just numbers
-      return /^\d+(\.?\d+)?(cm|m)?$|^\d+'(\d+\")?$/i.test(value);
+      try {
+        const heightData = JSON.parse(value);
+        const feet = parseInt(heightData.feet);
+        const inches = parseInt(heightData.inches);
+        
+        return feet >= 3 && feet <= 8 && inches >= 0 && inches <= 11;
+      } catch {
+        return false;
+      }
     },
-    errorMessage: "Please enter a valid height (e.g., 170cm or 5'7\")"
+    errorMessage: "Please enter a valid height"
   },
 
   // Step 3: Pregnancy & Breastfeeding
@@ -159,38 +166,37 @@ export const getProgressPercentage = (currentOffset: number): number => {
   return 25 + (questionIndex / totalQuestions * 70);
 };
 
-// Helper function to calculate BMI from height and weight inputs
+// Helper function to calculate BMI from height and weight inputs - UPDATED
 export const calculateBMI = (weight: string, height: string): number | null => {
   try {
-    // Parse weight
-    let weightInKg: number;
-    if (weight.toLowerCase().includes('lbs')) {
-      // Convert pounds to kg
-      weightInKg = parseFloat(weight) * 0.453592;
-    } else {
-      // Already in kg or just a number
-      weightInKg = parseFloat(weight);
+    // Parse weight in pounds (now just a number)
+    const weightInLbs = parseFloat(weight);
+    if (isNaN(weightInLbs) || weightInLbs <= 0) {
+      return null;
     }
-
-    // Parse height
-    let heightInMeters: number;
-    if (height.toLowerCase().includes('cm')) {
-      // Convert cm to meters
-      heightInMeters = parseFloat(height) / 100;
-    } else if (height.toLowerCase().includes('m')) {
-      // Already in meters
-      heightInMeters = parseFloat(height);
-    } else if (height.includes('\'')) {
-      // Format like 5'7" (feet and inches)
-      const parts = height.split('\'');
-      const feet = parseFloat(parts[0]);
-      const inches = parts[1] ? parseFloat(parts[1].replace('"', '')) : 0;
-      heightInMeters = (feet * 0.3048) + (inches * 0.0254);
-    } else {
-      // Assume cm if just a number
-      heightInMeters = parseFloat(height) / 100;
+    
+    // Parse height from JSON format {feet: "5", inches: "7"}
+    let heightData;
+    try {
+      heightData = JSON.parse(height);
+    } catch {
+      return null;
     }
-
+    
+    const feet = parseInt(heightData.feet);
+    const inches = parseInt(heightData.inches);
+    
+    if (isNaN(feet) || isNaN(inches) || feet < 0 || inches < 0 || inches > 11) {
+      return null;
+    }
+    
+    // Convert to total inches
+    const totalInches = (feet * 12) + inches;
+    
+    // Convert weight to kg and height to meters
+    const weightInKg = weightInLbs * 0.453592;
+    const heightInMeters = totalInches * 0.0254;
+    
     // Calculate BMI
     return weightInKg / (heightInMeters * heightInMeters);
   } catch (error) {

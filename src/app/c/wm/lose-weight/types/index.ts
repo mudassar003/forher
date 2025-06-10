@@ -15,11 +15,12 @@ export interface BaseQuestion {
   conditionalDisplay?: (formData: Record<string, any>) => boolean;
 }
 
-// Question types enum
+// Question types enum - JUST ADDED HeightInput
 export enum QuestionType {
   SingleSelect = "single-select",
   MultiSelect = "multi-select",
-  TextInput = "text-input"
+  TextInput = "text-input",
+  HeightInput = "height-input"
 }
 
 // Single select question
@@ -43,8 +44,17 @@ export interface TextInputQuestion extends BaseQuestion {
   errorMessage?: string;
 }
 
-// Union type of all question types
-export type Question = SingleSelectQuestion | MultiSelectQuestion | TextInputQuestion;
+// Height input question - JUST ADDED THIS
+export interface HeightInputQuestion extends BaseQuestion {
+  type: QuestionType.HeightInput;
+  placeholder: string;
+  inputType: string; // "height"
+  validation?: (value: string) => boolean;
+  errorMessage?: string;
+}
+
+// Union type of all question types - JUST ADDED HeightInputQuestion
+export type Question = SingleSelectQuestion | MultiSelectQuestion | TextInputQuestion | HeightInputQuestion;
 
 // Form response type
 export interface FormResponse {

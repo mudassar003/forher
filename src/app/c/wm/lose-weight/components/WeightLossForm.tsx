@@ -7,7 +7,7 @@ import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
 import { weightLossQuestions, getProgressPercentage, calculateBMI, checkEligibility } from "../data/questions";
-import { FormResponse } from "../types";
+import { FormResponse, QuestionType } from "../types";
 
 interface WeightLossFormProps {
   initialOffset?: number;
@@ -177,7 +177,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
     }
   };
   
-  // Check if continue button should be enabled
+  // Check if continue button should be enabled - FIXED to handle HeightInput
   const isContinueEnabled = (): boolean => {
     if (!currentQuestion) return false;
     
@@ -186,12 +186,22 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
     if (response === undefined) return false;
     
     switch (currentQuestion.type) {
-      case "single-select":
+      case QuestionType.SingleSelect:
         return typeof response === "string" && response !== "";
-      case "multi-select":
+      case QuestionType.MultiSelect:
         return Array.isArray(response) && response.length > 0;
-      case "text-input":
+      case QuestionType.TextInput:
         return typeof response === "string" && response.trim() !== "";
+      case QuestionType.HeightInput:  // ADDED this case
+        if (typeof response === "string" && response.trim() !== "") {
+          try {
+            const heightData = JSON.parse(response);
+            return heightData.feet && heightData.inches;
+          } catch {
+            return false;
+          }
+        }
+        return false;
       default:
         return false;
     }

@@ -1,4 +1,4 @@
-// src/app/c/wm/components/WeightLossSubscriptionGrid.tsx
+//src/app/c/wm/components/WeightLossSubscriptionGrid.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -188,6 +188,19 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
     return '/images/subscription-placeholder.jpg';
   };
 
+  // ADDED: Function to determine grid classes based on number of items
+  const getGridClasses = (itemCount: number): string => {
+    if (itemCount === 1) {
+      return "grid grid-cols-1 gap-4 sm:gap-6 justify-items-center max-w-sm mx-auto";
+    } else if (itemCount === 2) {
+      return "grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 justify-items-center max-w-4xl mx-auto";
+    } else if (itemCount === 3) {
+      return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 justify-items-center max-w-6xl mx-auto";
+    } else {
+      return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 justify-items-center";
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={`w-full flex justify-center items-center py-12 ${className}`}>
@@ -232,12 +245,12 @@ const WeightLossSubscriptionGrid: React.FC<WeightLossSubscriptionGridProps> = ({
 
   return (
     <div className={`w-full ${className}`}>
-      {/* Subscription grid - Updated with increased image height */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* UPDATED: Subscription grid with dynamic centering based on count */}
+      <div className={getGridClasses(weightLossSubscriptions.length)}>
         {weightLossSubscriptions.map((subscription) => (
           <div 
             key={subscription._id}
-            className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 hover:transform hover:-translate-y-1"
+            className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 hover:transform hover:-translate-y-1 w-full max-w-sm"
           >
             {/* Image - Increased height from h-48 sm:h-56 to h-64 sm:h-72 */}
             <div className="relative h-64 sm:h-72 w-full overflow-hidden">

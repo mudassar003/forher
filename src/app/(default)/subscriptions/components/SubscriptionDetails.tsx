@@ -377,7 +377,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     }
     
     // Check if this variant was previously marked as popular and change to lowest price
-    if (variant.isPopular && variant.billingPeriod !== 'three_month') {
+    if (variant.isPopular) {
       return (
         <span className="inline-block bg-green-600 text-white text-xs px-2 py-0.5 rounded-full mt-1">
           {translations.lowestPrice}

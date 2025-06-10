@@ -144,6 +144,60 @@ export const subscriptionType = defineType({
         },
       ],
     }),
+    // FAQ Items for subscription-specific FAQs
+    defineField({
+      name: 'faqItems',
+      title: 'FAQ Items',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'faqItem',
+          title: 'FAQ Item',
+          fields: [
+            {
+              name: 'question',
+              title: 'Question (English)',
+              type: 'text',
+              validation: (Rule) => Rule.required(),
+              description: 'The question for this FAQ item'
+            },
+            {
+              name: 'questionEs',
+              title: 'Question (Spanish)',
+              type: 'text',
+              description: 'Spanish translation of the question'
+            },
+            {
+              name: 'answer',
+              title: 'Answer (English)',
+              type: 'text',
+              validation: (Rule) => Rule.required(),
+              description: 'The answer for this FAQ item'
+            },
+            {
+              name: 'answerEs',
+              title: 'Answer (Spanish)',
+              type: 'text',
+              description: 'Spanish translation of the answer'
+            }
+          ],
+          preview: {
+            select: {
+              title: 'question',
+              subtitle: 'answer'
+            },
+            prepare({ title, subtitle }) {
+              return {
+                title: title || 'Untitled Question',
+                subtitle: subtitle ? `${subtitle.substring(0, 60)}...` : 'No answer provided'
+              };
+            }
+          }
+        }
+      ],
+      description: 'Frequently asked questions specific to this subscription plan',
+    }),
     defineField({
       name: 'features',
       title: 'Features (English)',

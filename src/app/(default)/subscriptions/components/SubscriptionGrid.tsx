@@ -41,6 +41,20 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
     return types[index % 3];
   };
 
+  // Get grid classes based on number of items to center them
+  const getGridClasses = (itemCount: number): string => {
+    if (itemCount === 1) {
+      return 'grid grid-cols-1 max-w-sm mx-auto';
+    } else if (itemCount === 2) {
+      return 'grid grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto gap-8';
+    } else if (itemCount === 3) {
+      return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto gap-8';
+    } else {
+      // For 4+ items, use responsive grid that centers content
+      return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto gap-8';
+    }
+  };
+
   // FALLBACK: If no categories were found, just show all subscriptions
   if (categories.length === 0 && allSubscriptions.length > 0) {
     return (
@@ -55,7 +69,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
           </span>
         </h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+        <div className={`${getGridClasses(allSubscriptions.length)} relative z-10`}>
           {allSubscriptions.map((subscription, index) => (
             <SubscriptionCard 
               key={subscription._id}
@@ -158,7 +172,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
             </span>
           </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+          <div className={`${getGridClasses(featuredSubscriptions.length)} relative z-10`}>
             {featuredSubscriptions.map((subscription, index) => (
               <SubscriptionCard 
                 key={subscription._id}
@@ -220,7 +234,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
               )}
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+            <div className={`${getGridClasses(categorySubscriptions.length)} relative z-10`}>
               {categorySubscriptions.map((subscription, index) => (
                 <SubscriptionCard 
                   key={subscription._id}
@@ -261,7 +275,7 @@ const SubscriptionGrid: React.FC<SubscriptionGridProps> = ({
             </span>
           </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+          <div className={`${getGridClasses(uncategorizedSubscriptions.length)} relative z-10`}>
             {uncategorizedSubscriptions.map((subscription, index) => (
               <SubscriptionCard 
                 key={subscription._id}

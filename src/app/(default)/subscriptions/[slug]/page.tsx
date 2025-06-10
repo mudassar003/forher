@@ -1,6 +1,4 @@
 // src/app/(default)/subscriptions/[slug]/page.tsx
-// Temporarily disable TypeScript checking for this file
-// @ts-nocheck
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import SubscriptionDetails from '../components/SubscriptionDetails';
@@ -9,8 +7,16 @@ import SubscriptionFAQ from '../components/SubscriptionFAQ';
 import { getSubscriptionBySlug, getAllSubscriptionSlugs, getPlainTextDescription, getRelatedSubscriptions } from '@/lib/subscription-helpers';
 import { urlFor } from '@/sanity/lib/image';
 
-export async function generateMetadata({ params }) {
-  const { slug } = params;
+interface SubscriptionPageParams {
+  slug: string;
+}
+
+interface SubscriptionPageProps {
+  params: Promise<SubscriptionPageParams>;
+}
+
+export async function generateMetadata({ params }: SubscriptionPageProps): Promise<Metadata> {
+  const { slug } = await params;
   
   // Fetch the subscription data for metadata
   const subscription = await getSubscriptionBySlug(slug);
@@ -34,7 +40,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export async function generateStaticParams() {
+export async function generateStaticParams(): Promise<SubscriptionPageParams[]> {
   const slugs = await getAllSubscriptionSlugs();
   
   return slugs.map((slug) => ({
@@ -42,8 +48,8 @@ export async function generateStaticParams() {
   }));
 }
 
-export default async function SubscriptionPage({ params }) {
-  const { slug } = params;
+export default async function SubscriptionPage({ params }: SubscriptionPageProps) {
+  const { slug } = await params;
   const subscription = await getSubscriptionBySlug(slug);
   
   // If subscription not found, show 404
@@ -58,11 +64,12 @@ export default async function SubscriptionPage({ params }) {
     <>
       <SubscriptionDetails subscription={subscription} />
       
-      {/* FAQ Section */}
+      {/* FAQ Section with dynamic content */}
       <div className="bg-gray-50 py-12">
         <SubscriptionFAQ
           title={`${subscription.title} FAQs`}
           titleEs={subscription.titleEs ? `Preguntas Frecuentes sobre ${subscription.titleEs}` : undefined}
+          faqItems={subscription.faqItems || []}
         />
       </div>
       

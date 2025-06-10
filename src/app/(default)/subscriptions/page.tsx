@@ -11,10 +11,10 @@ export const metadata: Metadata = {
   description: 'Choose a subscription plan that best fits your needs',
 };
 
-// Enhanced function to fetch subscriptions with variants
+// Enhanced function to fetch subscriptions with variants and FAQ items
 async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
   try {
-    // First fetch all subscriptions with translations AND VARIANTS
+    // First fetch all subscriptions with translations, variants, and FAQ items
     const subscriptions: Subscription[] = await client.fetch(
       groq`*[_type == "subscription" && isActive == true && isDeleted != true] {
         _id,
@@ -23,6 +23,13 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
         slug,
         description,
         descriptionEs,
+        faqItems[]{
+          _key,
+          question,
+          questionEs,
+          answer,
+          answerEs
+        },
         price,
         compareAtPrice,
         billingPeriod,
@@ -107,7 +114,8 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
     console.log('Fetched subscriptions:', {
       total: subscriptions.length,
       withVariants: subscriptions.filter(s => s.hasVariants).length,
-      featured: featuredSubscriptions.length
+      featured: featuredSubscriptions.length,
+      withFAQ: subscriptions.filter(s => s.faqItems && s.faqItems.length > 0).length
     });
     
     return {

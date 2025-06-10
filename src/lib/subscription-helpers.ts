@@ -17,6 +17,13 @@ export async function getSubscriptionBySlug(slug: string): Promise<Subscription 
         slug,
         description,
         descriptionEs,
+        faqItems[]{
+          _key,
+          question,
+          questionEs,
+          answer,
+          answerEs
+        },
         price,
         compareAtPrice,
         billingPeriod,

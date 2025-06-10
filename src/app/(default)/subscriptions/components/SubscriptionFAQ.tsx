@@ -4,24 +4,20 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useTranslations from '@/hooks/useTranslations';
-
-interface FAQItem {
-  question: string;
-  questionEs?: string;
-  answer: string;
-  answerEs?: string;
-}
+import { SubscriptionFAQItem } from '@/types/subscription-page';
 
 interface SubscriptionFAQProps {
   title?: string;
   titleEs?: string;
   className?: string;
+  faqItems?: SubscriptionFAQItem[];
 }
 
 const SubscriptionFAQ: React.FC<SubscriptionFAQProps> = ({
   title,
   titleEs,
   className = '',
+  faqItems = [],
 }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const { currentLanguage } = useTranslations();
@@ -31,8 +27,8 @@ const SubscriptionFAQ: React.FC<SubscriptionFAQProps> = ({
     setOpenIndex(prevIndex => prevIndex === index ? null : index);
   };
 
-  // FAQ items - these could be moved to a separate file if needed
-  const faqItems: FAQItem[] = [
+  // Default FAQ items - these will be used if no specific faqItems are provided
+  const defaultFaqItems: SubscriptionFAQItem[] = [
     {
       question: "How does the subscription billing work?",
       questionEs: "¿Cómo funciona la facturación de la suscripción?",
@@ -77,6 +73,9 @@ const SubscriptionFAQ: React.FC<SubscriptionFAQProps> = ({
     }
   ];
 
+  // Use provided FAQ items or fall back to default ones
+  const faqData = faqItems && faqItems.length > 0 ? faqItems : defaultFaqItems;
+
   // Get localized text
   const getLocalizedTitle = (): string => {
     if (currentLanguage === 'es' && titleEs) {
@@ -85,19 +84,24 @@ const SubscriptionFAQ: React.FC<SubscriptionFAQProps> = ({
     return title || (currentLanguage === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions');
   };
   
-  const getLocalizedQuestion = (item: FAQItem): string => {
+  const getLocalizedQuestion = (item: SubscriptionFAQItem): string => {
     if (currentLanguage === 'es' && item.questionEs) {
       return item.questionEs;
     }
     return item.question;
   };
   
-  const getLocalizedAnswer = (item: FAQItem): string => {
+  const getLocalizedAnswer = (item: SubscriptionFAQItem): string => {
     if (currentLanguage === 'es' && item.answerEs) {
       return item.answerEs;
     }
     return item.answer;
   };
+
+  // Don't render anything if no FAQ items
+  if (!faqData || faqData.length === 0) {
+    return null;
+  }
 
   return (
     <div className={`w-full max-w-4xl mx-auto px-4 py-8 md:py-12 ${className}`}>
@@ -115,9 +119,9 @@ const SubscriptionFAQ: React.FC<SubscriptionFAQProps> = ({
         
         {/* FAQ items */}
         <div className="space-y-4 relative z-10">
-          {faqItems.map((item, index) => (
+          {faqData.map((item, index) => (
             <motion.div 
-              key={index}
+              key={item._key || index}
               className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

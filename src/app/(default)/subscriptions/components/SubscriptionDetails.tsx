@@ -33,6 +33,7 @@ interface Translations {
   baseOption: string;
   standardPlan: string;
   imageDisclaimer: string;
+  lowestPrice: string;
 }
 
 const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription }) => {
@@ -131,7 +132,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     savePercent: currentLanguage === 'es' ? 'Ahorre' : 'Save',
     baseOption: currentLanguage === 'es' ? 'Opción Base' : 'Base Option',
     standardPlan: currentLanguage === 'es' ? 'Plan Estándar' : 'Standard Plan',
-    imageDisclaimer: currentLanguage === 'es' ? 'La imagen es ilustrativa. El producto enviado puede variar en apariencia.' : 'Product image for illustration. Actual product appearance may vary when shipped.'
+    imageDisclaimer: currentLanguage === 'es' ? 'La imagen es ilustrativa. El producto enviado puede variar en apariencia.' : 'Product image for illustration. Actual product appearance may vary when shipped.',
+    lowestPrice: currentLanguage === 'es' ? 'Precio Más Bajo' : 'Lowest Price'
   };
 
   // Get the content based on current language
@@ -363,6 +365,29 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     return percentage;
   };
 
+  // Get appropriate badge for variants
+  const getVariantBadge = (variant: SubscriptionVariant): React.ReactNode | null => {
+    // Check if this is the 3 month plan
+    if (variant.billingPeriod === 'three_month') {
+      return (
+        <span className="inline-block bg-[#e63946] text-white text-xs px-2 py-0.5 rounded-full mt-1">
+          {translations.mostPopular}
+        </span>
+      );
+    }
+    
+    // Check if this variant was previously marked as popular and change to lowest price
+    if (variant.isPopular && variant.billingPeriod !== 'three_month') {
+      return (
+        <span className="inline-block bg-green-600 text-white text-xs px-2 py-0.5 rounded-full mt-1">
+          {translations.lowestPrice}
+        </span>
+      );
+    }
+    
+    return null;
+  };
+
   // Handle the subscription purchase with improved error handling
   const handleSubscribe = async (): Promise<void> => {
     if (isProcessing || isLoading) return;
@@ -441,10 +466,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       return currentLanguage === 'es' ? 'Procesando...' : 'Processing...';
     }
     
-    if (isAuthenticated) {
-      return currentLanguage === 'es' ? 'Proceder al Pago' : 'Proceed to Checkout';
-    }
-    
+    // Always show "Buy Now" regardless of authentication status
     return currentLanguage === 'es' ? 'Comprar Ahora' : 'Buy Now';
   };
 
@@ -582,16 +604,6 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                   )
                 }
                 
-                {/* Explanation for longer-term plans */}
-                {((selectedBase || !subscription.hasVariants) && subscription.billingPeriod !== 'monthly' && subscription.billingPeriod !== 'other') ||
-                 (selectedVariant && !selectedBase && selectedVariant.billingPeriod !== 'monthly' && selectedVariant.billingPeriod !== 'other') && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    {currentLanguage === 'es' 
-                      ? 'Pago único por el período completo'
-                      : 'Single payment for the full period'}
-                  </p>
-                )}
-                
                 {/* Variant-specific information */}
                 {subscription.hasVariants && selectedVariant && !selectedBase && getLocalizedVariantDescription(selectedVariant) && (
                   <div className="mt-2 text-sm">
@@ -694,11 +706,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                                   {getTotalPriceDisplay(variant.price, variant.billingPeriod, variant.customBillingPeriodMonths)}
                                 </p>
                               </div>
-                              {variant.isPopular && (
-                                <span className="inline-block bg-[#e63946] text-white text-xs px-2 py-0.5 rounded-full mt-1">
-                                  {translations.mostPopular}
-                                </span>
-                              )}
+                              {getVariantBadge(variant)}
                               {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
                                 <div className="mt-1">
                                   <span className="text-xs text-gray-500 line-through">

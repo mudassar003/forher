@@ -24,6 +24,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token: tokenProp 
       setToken(tokenParam);
     }
   }, [token, searchParams]);
+  
   const router = useRouter();
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -167,131 +168,136 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token: tokenProp 
     );
   };
 
-  // Complete the ResetPasswordForm component
   // If token is invalid, show error message with link to request new password reset
   if (tokenValid === false) {
     return (
-      <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Reset Password</h2>
-        
-        <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">
-          <p className="font-medium">Invalid or expired reset link</p>
-          <p className="mt-1">Please request a new password reset link.</p>
-        </div>
-        
-        <div className="text-center">
-          <Link 
-            href="/forgot-password" 
-            className="inline-block bg-black text-white px-4 py-2 rounded-md font-medium hover:bg-gray-800 transition-colors"
-          >
-            Request New Link
-          </Link>
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
+          <h2 className="text-2xl font-semibold mb-6 text-center text-black">Reset Password</h2>
+          
+          <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">
+            <p className="font-medium">Invalid or expired reset link</p>
+            <p className="mt-1">Please request a new password reset link.</p>
+          </div>
+          
+          <div className="text-center">
+            <Link 
+              href="/forgot-password" 
+              className="inline-block bg-black text-white px-4 py-2 rounded-md font-medium hover:bg-gray-800 transition-colors"
+            >
+              Request New Link
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Set New Password</h2>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
+        <h2 className="text-2xl font-semibold mb-6 text-center text-black">Set New Password</h2>
 
-      {message && (
-        <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 text-sm">
-          {message}
-        </div>
-      )}
-      
-      {error && (
-        <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 text-sm">
-          {error}
-        </div>
-      )}
+        {message && (
+          <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 text-sm">
+            {message}
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 text-sm">
+            {error}
+          </div>
+        )}
 
-      <form onSubmit={handlePasswordReset} className="space-y-4">
-        <div>
-          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            New Password
-          </label>
-          <div className="relative">
+        <form onSubmit={handlePasswordReset} className="space-y-4">
+          <div>
+            <label htmlFor="newPassword" className="block text-sm font-medium text-black mb-1">
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                id="newPassword"
+                type={showPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none pr-10 text-black placeholder-gray-500"
+                placeholder="New Password"
+                required
+                disabled={loading || !tokenValid}
+                autoComplete="new-password"
+              />
+              <button 
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <PasswordStrengthIndicator />
+            <p className="text-xs text-black mt-1">
+              Password must be at least 8 characters with uppercase letters, numbers, and special characters.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-black mb-1">
+              Confirm New Password
+            </label>
             <input
-              id="newPassword"
+              id="confirmPassword"
               type={showPassword ? "text" : "password"}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none pr-10"
-              placeholder="New Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black placeholder-gray-500"
+              placeholder="Confirm New Password"
               required
               disabled={loading || !tokenValid}
               autoComplete="new-password"
             />
-            <button 
-              type="button"
-              onClick={togglePasswordVisibility}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              tabIndex={-1}
-            >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              )}
-            </button>
           </div>
-          <PasswordStrengthIndicator />
-          <p className="text-xs text-gray-500 mt-1">
-            Password must be at least 8 characters with uppercase letters, numbers, and special characters.
-          </p>
-        </div>
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            Confirm New Password
-          </label>
-          <input
-            id="confirmPassword"
-            type={showPassword ? "text" : "password"}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
-            placeholder="Confirm New Password"
-            required
+          <button
+            type="submit"
             disabled={loading || !tokenValid}
-            autoComplete="new-password"
-          />
-        </div>
+            className="w-full bg-black text-white p-3 rounded-md font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Updating..." : "Update Password"}
+          </button>
+        </form>
 
-        <button
-          type="submit"
-          disabled={loading || !tokenValid}
-          className="w-full bg-black text-white p-3 rounded-md font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Updating..." : "Update Password"}
-        </button>
-      </form>
-
-      <p className="text-center text-sm mt-6 text-gray-500">
-        <Link href="/login" className="text-blue-600 hover:underline">
-          Back to Login
-        </Link>
-      </p>
+        <p className="text-center text-sm mt-6 text-black">
+          <Link href="/login" className="text-blue-600 hover:underline">
+            Back to Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };
 
 // Loading fallback to display while the form component is loading
 const LoadingFallback = () => (
-  <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-    <div className="animate-pulse">
-      <div className="h-7 bg-gray-200 rounded w-3/4 mx-auto mb-6"></div>
-      <div className="h-24 bg-gray-200 rounded mb-4"></div>
-      <div className="h-12 bg-gray-200 rounded mb-4"></div>
-      <div className="h-12 bg-gray-200 rounded mb-4"></div>
-      <div className="h-12 bg-gray-200 rounded"></div>
+  <div className="flex min-h-screen items-center justify-center bg-gray-100">
+    <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
+      <div className="animate-pulse">
+        <div className="h-7 bg-gray-200 rounded w-3/4 mx-auto mb-6"></div>
+        <div className="h-24 bg-gray-200 rounded mb-4"></div>
+        <div className="h-12 bg-gray-200 rounded mb-4"></div>
+        <div className="h-12 bg-gray-200 rounded mb-4"></div>
+        <div className="h-12 bg-gray-200 rounded"></div>
+      </div>
     </div>
   </div>
 );

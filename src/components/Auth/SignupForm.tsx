@@ -250,7 +250,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
 
       <form onSubmit={handleEmailSignup} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-black mb-1">
             Email
           </label>
           <input
@@ -259,7 +259,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
-            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black placeholder-gray-500"
             required
             disabled={loading}
             autoComplete="email"
@@ -267,7 +267,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-black mb-1">
             Password
           </label>
           <div className="relative">
@@ -277,7 +277,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none pr-10"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none pr-10 text-black placeholder-gray-500"
               required
               disabled={loading}
               autoComplete="new-password"
@@ -301,13 +301,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
             </button>
           </div>
           <PasswordStrengthIndicator />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-black mt-1">
             Password must be at least 8 characters with uppercase letters, numbers, and special characters.
           </p>
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-black mb-1">
             Confirm Password
           </label>
           <input
@@ -316,7 +316,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm Password"
-            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black placeholder-gray-500"
             required
             disabled={loading}
             autoComplete="new-password"
@@ -347,13 +347,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
             className="mt-1 mr-2"
             disabled={loading}
           />
-          <label htmlFor="terms" className="text-sm text-gray-600">
+          <label htmlFor="terms" className="text-sm text-black">
             By creating an account, I agree to the{" "}
-            <Link href="/terms" className="text-blue-600 hover:underline">
+            <Link href="/terms-of-service" className="text-blue-600 hover:underline">
               Terms & Conditions
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-blue-600 hover:underline">
+            <Link href="/privacy-policy" className="text-blue-600 hover:underline">
               Privacy Policy
             </Link>.
           </label>
@@ -370,21 +370,21 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
 
       <div className="flex items-center my-6">
         <hr className="flex-grow border-gray-300" />
-        <span className="mx-2 text-gray-500">or</span>
+        <span className="mx-2 text-black">or</span>
         <hr className="flex-grow border-gray-300" />
       </div>
 
       <button
         onClick={handleGoogleSignup}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded-md font-semibold hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded-md font-semibold hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed text-black"
         type="button"
       >
         <FcGoogle className="text-xl" />
         {loading ? "Signing up..." : "Continue with Google"}
       </button>
 
-      <p className="text-center text-sm mt-6 text-gray-500">
+      <p className="text-center text-sm mt-6 text-black">
         Already have an account?{" "}
         <Link 
           href={`/login${returnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 

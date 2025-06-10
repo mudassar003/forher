@@ -82,7 +82,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ returnUrl = '' }) => {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Reset Password</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-center text-black">Reset Password</h2>
 
       {message && (
         <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 text-sm">
@@ -98,7 +98,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ returnUrl = '' }) => {
 
       <form onSubmit={handleReset} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-black mb-1">
             Email
           </label>
           <input
@@ -107,7 +107,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ returnUrl = '' }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black placeholder-gray-500"
             required
             disabled={loading}
             autoComplete="email"
@@ -138,7 +138,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ returnUrl = '' }) => {
         </button>
       </form>
 
-      <p className="text-center text-sm mt-6 text-gray-500">
+      <p className="text-center text-sm mt-6 text-black">
         Remembered your password?{" "}
         <Link 
           href={`/login${returnUrl ? `?returnUrl=${returnUrl}` : ''}`} 

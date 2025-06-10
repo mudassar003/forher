@@ -200,7 +200,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
 
       <form onSubmit={handleEmailLogin} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-black mb-1">
             Email
           </label>
           <input
@@ -209,7 +209,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
-            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none text-black placeholder-gray-500"
             required
             disabled={loading}
             autoComplete="email"
@@ -217,7 +217,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-black mb-1">
             Password
           </label>
           <div className="relative">
@@ -227,7 +227,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none pr-10"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none pr-10 text-black placeholder-gray-500"
               required
               disabled={loading}
               autoComplete="current-password"
@@ -255,7 +255,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
         <div className="text-right">
           <Link 
             href={`/forgot-password${effectiveReturnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 
-            className="text-sm text-purple-600 hover:underline"
+            className="text-sm text-blue-600 hover:underline"
           >
             Forgot your password?
           </Link>
@@ -272,21 +272,21 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
 
       <div className="flex items-center my-6">
         <hr className="flex-grow border-gray-300" />
-        <span className="mx-2 text-gray-500">or</span>
+        <span className="mx-2 text-black">or</span>
         <hr className="flex-grow border-gray-300" />
       </div>
 
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded-md font-semibold hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded-md font-semibold hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed text-black"
         type="button"
       >
         <FcGoogle className="text-xl" />
         {loading ? "Signing in..." : "Continue with Google"}
       </button>
 
-      <p className="text-center text-sm mt-6 text-gray-500">
+      <p className="text-center text-sm mt-6 text-black">
         First time here?{" "}
         <Link 
           href={`/signup${effectiveReturnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 

@@ -201,23 +201,8 @@ export async function GET(): Promise<NextResponse<PriceComparisonResponse>> {
     // Process each subscription
     for (const subscription of subscriptions) {
       try {
-        if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
-          // Process each variant
-          for (const variant of subscription.variants) {
-            let stripePrice: StripePrice | null = null;
-            let error: string | undefined;
-
-            if (variant.stripePriceId) {
-              stripePrice = await getStripePrice(variant.stripePriceId);
-              if (!stripePrice) {
-                error = 'Price not found in Stripe';
-              }
-            }
-
-            const row = createComparisonRow(subscription, variant, stripePrice, error);
-            rows.push(row);
-          }
-        } else {
+        // Always process base subscription first (FIXED: this was missing)
+        if (!subscription.hasVariants || !subscription.variants || subscription.variants.length === 0) {
           // Process base subscription (no variants)
           let stripePrice: StripePrice | null = null;
           let error: string | undefined;
@@ -231,6 +216,36 @@ export async function GET(): Promise<NextResponse<PriceComparisonResponse>> {
 
           const row = createComparisonRow(subscription, undefined, stripePrice, error);
           rows.push(row);
+        } else {
+          // Process base subscription even if variants exist
+          let baseStripePrice: StripePrice | null = null;
+          let baseError: string | undefined;
+
+          if (subscription.stripePriceId) {
+            baseStripePrice = await getStripePrice(subscription.stripePriceId);
+            if (!baseStripePrice) {
+              baseError = 'Base price not found in Stripe';
+            }
+          }
+
+          const baseRow = createComparisonRow(subscription, undefined, baseStripePrice, baseError);
+          rows.push(baseRow);
+
+          // Process each variant
+          for (const variant of subscription.variants) {
+            let variantStripePrice: StripePrice | null = null;
+            let variantError: string | undefined;
+
+            if (variant.stripePriceId) {
+              variantStripePrice = await getStripePrice(variant.stripePriceId);
+              if (!variantStripePrice) {
+                variantError = 'Variant price not found in Stripe';
+              }
+            }
+
+            const variantRow = createComparisonRow(subscription, variant, variantStripePrice, variantError);
+            rows.push(variantRow);
+          }
         }
       } catch (subscriptionError) {
         console.error(`Error processing subscription ${subscription._id}:`, subscriptionError);

@@ -1,6 +1,44 @@
 // src/services/subscriptionService.ts
 import { supabase } from '@/lib/supabase';
 
+// Broadcast Channel for cross-tab communication
+const BROADCAST_CHANNEL_NAME = 'subscription_status';
+
+/**
+ * Safely create broadcast channel with feature detection
+ */
+function createBroadcastChannel(): BroadcastChannel | null {
+  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    try {
+      return new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+    } catch (error) {
+      console.warn('Failed to create BroadcastChannel:', error);
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Broadcast subscription status change to other tabs
+ */
+function broadcastSubscriptionChange(action: 'cancelled' | 'reactivated' | 'status_changed'): void {
+  const channel = createBroadcastChannel();
+  if (channel) {
+    try {
+      channel.postMessage({
+        type: 'SUBSCRIPTION_STATUS_CHANGE',
+        action,
+        timestamp: Date.now()
+      });
+      channel.close(); // Clean up immediately
+      console.log(`📡 Broadcasted subscription ${action} to other tabs`);
+    } catch (error) {
+      console.warn('Failed to broadcast subscription change:', error);
+    }
+  }
+}
+
 /**
  * Cancel a subscription
  * @param subscriptionId The Supabase subscription ID to cancel
@@ -64,6 +102,9 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
       throw new Error(result.error || 'Failed to cancel subscription');
     }
 
+    // 🚀 NEW: Broadcast cancellation to other tabs
+    broadcastSubscriptionChange('cancelled');
+
     return {
       success: true,
       message: result.message || 'Subscription cancellation initiated successfully'
@@ -77,66 +118,8 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
   }
 }
 
-/**
- * Reactivate a cancelled subscription that hasn't yet expired
- * @param subscriptionId The Supabase subscription ID to reactivate
- * @returns Promise with success status and message
- */
-export async function reactivateSubscription(subscriptionId: string): Promise<{ success: boolean; message?: string; error?: string }> {
-  try {
-    // First, fetch the user subscription to get the Stripe subscription ID
-    const { data: userSubscription, error: fetchError } = await supabase
-      .from('user_subscriptions')
-      .select('stripe_subscription_id, status')
-      .eq('id', subscriptionId)
-      .single();
-
-    if (fetchError || !userSubscription) {
-      throw new Error(fetchError?.message || 'Subscription not found');
-    }
-
-    // Check if subscription can be reactivated
-    if (userSubscription.status !== 'cancelling') {
-      return {
-        success: false,
-        error: 'Only subscriptions in "cancelling" status can be reactivated'
-      };
-    }
-
-    // If no Stripe subscription ID, update locally only
-    if (!userSubscription.stripe_subscription_id) {
-      throw new Error('Cannot reactivate subscription without Stripe subscription ID');
-    }
-
-    // Call our API to reactivate the subscription with Stripe
-    const response = await fetch('/api/stripe/subscriptions/reactivate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        subscriptionId: userSubscription.stripe_subscription_id,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to reactivate subscription');
-    }
-
-    return {
-      success: true,
-      message: result.message || 'Subscription reactivated successfully'
-    };
-  } catch (error) {
-    console.error('Error reactivating subscription:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
-  }
-}
+// Note: reactivateSubscription function removed - feature not implemented yet
+// If you need reactivation in the future, you can add it back here
 
 /**
  * Get user subscription details with full information
@@ -218,6 +201,9 @@ export async function forceUpdateSubscriptionStatus(
     if (updateError) {
       throw new Error(`Failed to update subscription status: ${updateError.message}`);
     }
+
+    // 🚀 NEW: Broadcast status change to other tabs
+    broadcastSubscriptionChange('status_changed');
 
     return {
       success: true,

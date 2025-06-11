@@ -93,6 +93,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
     console.log(`🔒 Checking appointment access for user: ${userId}`);
 
     // CORE BUSINESS LOGIC: Single query to get user's appointment access status
+    // UPDATED: REMOVED 'cancelling' from valid statuses
     const { data: subscriptionData, error: subError } = await supabaseAdmin
       .from('user_subscriptions')
       .select(`
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
       .eq('user_id', userId)
       .eq('is_active', true)
       // REMOVED: .eq('has_appointment_access', true) - ALL active subscriptions get appointment access
-      .in('status', ['active', 'trialing', 'cancelling', 'past_due'])
+      .in('status', ['active', 'trialing', 'past_due']) // REMOVED 'cancelling'
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<AppointmentAc
       console.log(`⚠️ Main query failed, trying liberal query...`);
       
       // Liberal query - just get any subscription for this user that looks active
+      // UPDATED: REMOVED 'cancelling' from liberal query as well
       const { data: liberalSub, error: liberalError } = await supabaseAdmin
         .from('user_subscriptions')
         .select(`
@@ -317,6 +319,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<AppointmentAcc
     }
 
     // Get current subscription status without modifying
+    // UPDATED: REMOVED 'cancelling' from valid statuses
     const { data: subscription, error: subError } = await supabaseAdmin
       .from('user_subscriptions')
       .select(`
@@ -329,7 +332,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<AppointmentAcc
       `)
       .eq('user_id', userId)
       .eq('is_active', true)
-      .in('status', ['active', 'trialing', 'cancelling', 'past_due'])
+      .in('status', ['active', 'trialing', 'past_due']) // REMOVED 'cancelling'
       .single();
 
     if (subError || !subscription) {

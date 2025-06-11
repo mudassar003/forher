@@ -48,9 +48,27 @@ interface UserSubscriptionState {
 
 // Helper function to check if a subscription is active
 const isSubscriptionActive = (subscription: Subscription): boolean => {
-  const activeStatuses = ['active', 'trialing', 'past_due', 'cancelling'];
+  const activeStatuses = ['active', 'trialing', 'past_due'];
   return activeStatuses.includes(subscription.status.toLowerCase()) && subscription.is_active === true;
 };
+
+// 🚀 NEW: Broadcast subscription status change to other tabs
+function broadcastSubscriptionChange(): void {
+  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    try {
+      const channel = new BroadcastChannel('subscription_status');
+      channel.postMessage({
+        type: 'SUBSCRIPTION_STATUS_CHANGE',
+        action: 'status_changed',
+        timestamp: Date.now()
+      });
+      channel.close();
+      console.log('📡 Broadcasted subscription status change from store');
+    } catch (error) {
+      console.warn('Failed to broadcast subscription change from store:', error);
+    }
+  }
+}
 
 export const useSubscriptionStore = create<UserSubscriptionState>()(
   persist(
@@ -66,10 +84,17 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
       
       setSubscriptions: (subscriptions: Subscription[]) => {
         const hasActive = subscriptions.some(isSubscriptionActive);
+        const previousHasActive = get().hasActiveSubscription;
+        
         set({ 
           subscriptions,
           hasActiveSubscription: hasActive
         });
+
+        // 🚀 NEW: Broadcast if active status changed
+        if (hasActive !== previousHasActive) {
+          broadcastSubscriptionChange();
+        }
       },
       
       resetSubscriptionStore: () => {
@@ -133,6 +158,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           
           // Check for active subscriptions using the helper function
           const hasActive = subscriptionsData.some(isSubscriptionActive);
+          const previousHasActive = get().hasActiveSubscription;
           
           // Update the store with the fetched data
           set({ 
@@ -143,6 +169,11 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
             lastSyncTime: now,
             error: null
           });
+
+          // 🚀 NEW: Broadcast if active status changed
+          if (hasActive !== previousHasActive) {
+            broadcastSubscriptionChange();
+          }
           
           // Check for any issues that might need syncing
           const needsSync = subscriptionsData.some(sub => {
@@ -201,6 +232,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           });
           
           const hasActive = updatedSubscriptions.some(isSubscriptionActive);
+          const previousHasActive = get().hasActiveSubscription;
           
           set({ 
             subscriptions: updatedSubscriptions,
@@ -208,6 +240,11 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
             cancellingId: null,
             lastSyncTime: Date.now() // Update sync time since we made a change
           });
+
+          // 🚀 NEW: Broadcast if active status changed (cancellation usually changes this)
+          if (hasActive !== previousHasActive) {
+            broadcastSubscriptionChange();
+          }
           
           return true;
         } catch (error) {

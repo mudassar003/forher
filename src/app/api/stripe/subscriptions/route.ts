@@ -1,43 +1,28 @@
 // src/app/api/stripe/subscriptions/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+import { client as sanityClient } from "@/sanity/lib/client";
+import { groq } from "next-sanity";
 import { createClient } from "@supabase/supabase-js";
-import { client as sanityClient } from '@/sanity/lib/client';
-import { getAuthenticatedUser } from '@/utils/apiAuth';
-import { Subscription, SubscriptionVariant } from '@/types/subscription-page';
-import { Coupon } from '@/types/coupon';
 import { v4 as uuidv4 } from 'uuid';
+import { getAuthenticatedUser } from "@/utils/apiAuth";
 
-// Initialize Stripe with proper error handling
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY environment variable is not defined');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: undefined, // Use latest API version
 });
 
-// Initialize Supabase admin client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Supabase environment variables are not defined');
-}
-
+// Initialize Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Interfaces matching your Sanity schema
+// Types
 interface SanitySubscriptionVariant {
   _key: string;
   title: string;
   titleEs?: string;
-  description?: string;
-  descriptionEs?: string;
-  dosageAmount: number;
-  dosageUnit: string;
   price: number;
-  compareAtPrice?: number;
   billingPeriod: string;
   customBillingPeriodMonths?: number | null;
   stripePriceId?: string;
@@ -48,6 +33,7 @@ interface SanitySubscriptionVariant {
 interface SanitySubscription {
   _id: string;
   title: string;
+  titleEs?: string;
   price: number;
   billingPeriod: string;
   customBillingPeriodMonths?: number | null;
@@ -57,33 +43,21 @@ interface SanitySubscription {
   variants?: SanitySubscriptionVariant[];
   appointmentAccess?: boolean;
   appointmentDiscountPercentage?: number;
-  features?: Array<{
-    featureText: string;
-  }>;
+  features?: { featureText: string }[];
   allowCoupons?: boolean;
-  excludedCoupons?: Array<{ _id: string }>;
+  excludedCoupons?: { _id: string }[];
 }
 
-// Coupon interface matching Sanity couponType schema
 interface SanityCoupon {
   _id: string;
   code: string;
-  description?: string;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
-  applicationType: 'all' | 'specific' | 'variants';
-  subscriptions?: Array<{
-    _id: string;
-    title: string;
-  }>;
-  variantTargets?: Array<{
-    subscription: {
-      _id: string;
-      title: string;
-    };
+  applicableSubscriptions?: {
+    subscription: { _id: string };
     variantKey?: string;
     variantTitle?: string;
-  }>;
+  }[];
   usageLimit?: number;
   usageCount: number;
   validFrom: string;
@@ -92,7 +66,7 @@ interface SanityCoupon {
   minimumPurchaseAmount?: number;
 }
 
-interface SubscriptionRequest {
+interface SubscriptionPurchaseRequest {
   subscriptionId: string;
   userId: string;
   userEmail: string;
@@ -127,163 +101,67 @@ interface CouponValidationResult {
 }
 
 /**
- * ✅ OPTIMIZATION #2: Helper function to get or create Stripe customer
- */
-async function getOrCreateStripeCustomer(userId: string, userEmail: string): Promise<string> {
-  try {
-    const { data: customerData, error: customerError } = await supabase
-      .from('stripe_customers')
-      .select('stripe_customer_id, user_id, email')
-      .eq('user_id', userId)
-      .single();
-    
-    if (customerError || !customerData) {
-      console.log(`Creating new Stripe customer for user ${userId}`);
-      const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: { userId }
-      });
-      
-      // Save customer to Supabase (non-blocking) - Fixed TypeScript issue
-      supabase.from('stripe_customers')
-        .insert({
-          user_id: userId,
-          stripe_customer_id: customer.id,
-          email: userEmail
-        })
-        .then(({ error }) => {
-          if (error) {
-            console.warn('Failed to save customer to Supabase:', error);
-          }
-        });
-      
-      return customer.id;
-    } else {
-      console.log('Using existing Stripe customer:', customerData.stripe_customer_id);
-      return customerData.stripe_customer_id;
-    }
-  } catch (error) {
-    console.error('Error in getOrCreateStripeCustomer:', error);
-    throw new Error('Failed to get or create Stripe customer');
-  }
-}
-
-/**
- * ✅ OPTIMIZATION #2: Helper function to get or create Stripe product
- */
-async function getOrCreateStripeProduct(subscription: SanitySubscription): Promise<string> {
-  try {
-    if (subscription.stripeProductId) {
-      return subscription.stripeProductId;
-    }
-    
-    console.log("Creating new Stripe product");
-    const product = await stripe.products.create({
-      name: subscription.title,
-      description: `${subscription.title} subscription`,
-      metadata: {
-        sanityId: subscription._id
-      }
-    });
-    
-    // Update Sanity with product ID (non-blocking) - Fixed TypeScript issue
-    sanityClient.patch(subscription._id)
-      .set({ stripeProductId: product.id })
-      .commit()
-      .then(() => {
-        console.log('✅ Updated Sanity with Stripe product ID');
-      })
-      .catch(error => {
-        console.warn('Failed to update Sanity with Stripe product ID:', error);
-      });
-    
-    return product.id;
-  } catch (error) {
-    console.error('Error in getOrCreateStripeProduct:', error);
-    throw new Error('Failed to get or create Stripe product');
-  }
-}
-
-/**
  * Convert Sanity billing period to Stripe interval configuration
  */
-function getStripeIntervalConfig(
-  billingPeriod: string, 
-  customBillingPeriodMonths?: number | null
-): { interval: Stripe.PriceCreateParams.Recurring.Interval; intervalCount: number } {
-  let interval: Stripe.PriceCreateParams.Recurring.Interval = "month";
-  let intervalCount = 1;
-  
+function getStripeIntervalConfig(billingPeriod: string, customBillingPeriodMonths?: number | null): {
+  interval: 'month' | 'year';
+  interval_count: number;
+} {
   switch (billingPeriod) {
-    case "monthly":
-      interval = "month";
-      intervalCount = 1;
-      break;
-    case "three_month":
-      interval = "month";
-      intervalCount = 3;
-      break;
-    case "six_month":
-      interval = "month";
-      intervalCount = 6;
-      break;
-    case "annually":
-      interval = "year";
-      intervalCount = 1;
-      break;
-    case "other":
-      interval = "month";
-      intervalCount = customBillingPeriodMonths || 1;
-      
-      // Stripe limits: month (max 12), year (max 3)
-      if (intervalCount > 12) {
-        if (intervalCount % 12 === 0) {
-          interval = "year";
-          intervalCount = intervalCount / 12;
-        } else {
-          console.warn(`Billing period of ${intervalCount} months exceeds Stripe's limit. Capping at 12 months.`);
-          intervalCount = 12;
-        }
+    case 'monthly':
+      return { interval: 'month', interval_count: 1 };
+    case 'three_month':
+      return { interval: 'month', interval_count: 3 };
+    case 'six_month':
+      return { interval: 'month', interval_count: 6 };
+    case 'annually':
+      return { interval: 'year', interval_count: 1 };
+    case 'other':
+      const months = customBillingPeriodMonths || 1;
+      if (months <= 12) {
+        return { interval: 'month', interval_count: months };
+      } else if (months % 12 === 0) {
+        return { interval: 'year', interval_count: months / 12 };
+      } else {
+        console.warn(`Billing period of ${months} months exceeds Stripe's limit. Capping at 12 months.`);
+        return { interval: 'month', interval_count: 12 };
       }
-      break;
     default:
-      interval = "month";
-      intervalCount = 1;
+      return { interval: 'month', interval_count: 1 };
   }
-  
-  return { interval, intervalCount };
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionPurchaseResponse>> {
+  const startTime = Date.now();
+  
   try {
-    const startTime = Date.now();
-    console.log('🚀 Starting subscription purchase process');
+    console.log('🚀 Starting subscription purchase...');
     
-    const data: SubscriptionRequest = await req.json();
-    console.log('📝 Request data:', { 
+    const data: SubscriptionPurchaseRequest = await req.json();
+    console.log('📨 Purchase request data:', { 
       subscriptionId: data.subscriptionId, 
-      userId: data.userId,
-      variantKey: data.variantKey,
-      hasCoupon: !!data.couponCode 
+      variantKey: data.variantKey || 'undefined (base subscription)',
+      userEmail: data.userEmail,
+      couponCode: data.couponCode || 'none'
     });
-    
-    // Validate required fields early
-    if (!data.subscriptionId) {
-      console.log('❌ Missing subscription ID');
+
+    // Validate request data with improved error messages
+    if (!data.subscriptionId || typeof data.subscriptionId !== 'string') {
+      console.log('❌ Invalid subscription ID');
       return NextResponse.json(
-        { success: false, error: 'Missing subscription ID' },
+        { success: false, error: 'Valid subscription ID is required' },
         { status: 400 }
       );
     }
 
-    // ✅ OPTIMIZATION #1: Parallel authentication and subscription fetching
-    console.log('🔄 Starting parallel auth and subscription fetch...');
+    // Parallel auth and subscription fetch for better performance
     const [user, subscription] = await Promise.all([
       getAuthenticatedUser(),
       sanityClient.fetch<SanitySubscription>(
-        `*[_type == "subscription" && _id == $id && isActive == true && isDeleted != true][0]{
+        groq`*[_type == "subscription" && _id == $id][0] {
           _id,
           title,
+          titleEs,
           price,
           billingPeriod,
           customBillingPeriodMonths,
@@ -294,12 +172,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
             _key,
             title,
             titleEs,
-            description,
-            descriptionEs,
-            dosageAmount,
-            dosageUnit,
             price,
-            compareAtPrice,
             billingPeriod,
             customBillingPeriodMonths,
             stripePriceId,
@@ -351,10 +224,12 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
       );
     }
 
-    // Select variant if applicable
+    // 🔧 FIXED: Correct variant selection logic
     let selectedVariant: SanitySubscriptionVariant | null = null;
+    
     if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
       if (data.variantKey) {
+        // User explicitly selected a variant
         selectedVariant = subscription.variants.find(v => v._key === data.variantKey) || null;
         if (!selectedVariant) {
           console.log('❌ Selected variant not found');
@@ -365,10 +240,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         }
         console.log('✅ Variant found:', selectedVariant.title);
       } else {
-        // Use default or first variant if no specific variant selected
-        selectedVariant = subscription.variants.find(v => v.isDefault) || subscription.variants[0];
-        console.log('✅ Using default/first variant:', selectedVariant.title);
+        // 🔧 FIXED: User selected base subscription (variantKey is undefined)
+        // Do NOT fall back to default variant - respect the base subscription selection
+        selectedVariant = null;
+        console.log('✅ Using base subscription (no variant selected)');
       }
+    } else {
+      // Subscription has no variants, always use base
+      selectedVariant = null;
+      console.log('✅ Using base subscription (no variants available)');
     }
     
     // Calculate effective price and billing period
@@ -377,64 +257,106 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     const effectiveCustomMonths = selectedVariant 
       ? selectedVariant.customBillingPeriodMonths 
       : subscription.customBillingPeriodMonths;
-    
-    console.log('💰 Initial price:', effectivePrice);
 
-    // ✅ OPTIMIZATION #2: Parallel coupon validation and customer/product setup
-    console.log('🔄 Starting parallel coupon validation, customer lookup, and product setup...');
-    
-    const parallelOperations: [
-      Promise<string>, 
-      Promise<string>, 
-      Promise<CouponValidationResult | null>
-    ] = [
-      // Customer lookup/creation
-      getOrCreateStripeCustomer(userId, userEmail),
-      // Product lookup/creation  
-      getOrCreateStripeProduct(subscription),
-      // Coupon validation if coupon provided, otherwise null
-      data.couponCode && subscription.allowCoupons !== false
-        ? validateAndApplyCoupon(data.couponCode, subscription, data.variantKey, effectivePrice)
-        : Promise.resolve(null)
-    ];
+    console.log('💰 Pricing details:', {
+      isVariant: !!selectedVariant,
+      variantKey: selectedVariant?._key || 'none (base subscription)',
+      effectivePrice,
+      effectiveBillingPeriod,
+      effectiveCustomMonths
+    });
 
-    // Execute all operations in parallel
-    const [stripeCustomerId, stripeProductId, couponValidation] = await Promise.all(parallelOperations);
-
-    const parallelTime = Date.now() - startTime;
-    console.log(`⚡ Parallel customer/product/coupon operations completed in ${parallelTime - authTime}ms`);
-
-    // Process coupon results with proper type checking
-    let appliedCoupon: SanityCoupon | null = null;
     let originalPrice = effectivePrice;
-    
-    if (couponValidation && couponValidation.isValid && couponValidation.coupon && couponValidation.discountedPrice !== undefined) {
-      appliedCoupon = couponValidation.coupon;
-      effectivePrice = couponValidation.discountedPrice;
-      console.log('✅ Coupon applied - new price:', effectivePrice);
-    } else if (couponValidation && couponValidation.error) {
-      console.log('❌ Coupon validation failed:', couponValidation.error);
-      // Continue without coupon rather than failing
+    let appliedCoupon: SanityCoupon | null = null;
+
+    // Handle coupon validation if provided
+    if (data.couponCode && subscription.allowCoupons) {
+      console.log('🎫 Validating coupon:', data.couponCode);
+      const couponResult = await validateAndApplyCoupon(
+        data.couponCode, 
+        subscription, 
+        selectedVariant?._key, 
+        effectivePrice
+      );
+      
+      if (couponResult.isValid && couponResult.coupon && couponResult.discountedPrice) {
+        appliedCoupon = couponResult.coupon;
+        effectivePrice = couponResult.discountedPrice;
+        console.log(`✅ Coupon applied: ${appliedCoupon.code}, new price: $${effectivePrice}`);
+      } else {
+        console.log('❌ Coupon validation failed:', couponResult.error);
+        return NextResponse.json(
+          { success: false, error: couponResult.error || 'Invalid coupon code' },
+          { status: 400 }
+        );
+      }
     }
 
-    console.log('🏗️ Customer ID:', stripeCustomerId);
-    console.log('🏗️ Product ID:', stripeProductId);
+    // Get or create Stripe customer
+    console.log('👤 Getting or creating Stripe customer...');
+    let stripeCustomerId: string;
     
+    try {
+      const customers = await stripe.customers.list({
+        email: userEmail,
+        limit: 1,
+      });
+      
+      if (customers.data.length > 0) {
+        stripeCustomerId = customers.data[0].id;
+        console.log('✅ Found existing customer:', stripeCustomerId);
+      } else {
+        const customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: {
+            userId: userId,
+          },
+        });
+        stripeCustomerId = customer.id;
+        console.log('✅ Created new customer:', stripeCustomerId);
+      }
+    } catch (customerError) {
+      console.error('❌ Customer creation/retrieval failed:', customerError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to set up customer account' },
+        { status: 500 }
+      );
+    }
+
+    // Get or create Stripe product
+    let stripeProductId = subscription.stripeProductId;
+    if (!stripeProductId) {
+      console.log('🏭 Creating Stripe product...');
+      const product = await stripe.products.create({
+        name: subscription.title,
+        description: `${subscription.title} subscription`,
+        metadata: {
+          sanityId: subscription._id,
+        },
+      });
+      stripeProductId = product.id;
+      
+      // Update Sanity with product ID (non-blocking)
+      sanityClient.patch(subscription._id).set({ stripeProductId }).commit()
+        .then(() => console.log('✅ Updated Sanity with product ID'))
+        .catch(error => console.warn('Failed to update Sanity with product ID:', error));
+    }
+
     // Get or create Stripe price
     let stripePriceId: string;
     
     if (appliedCoupon) {
-      // Create new price with coupon discount (one-time use)
-      console.log("Creating new Stripe price with coupon discount");
-      const { interval, intervalCount } = getStripeIntervalConfig(effectiveBillingPeriod, effectiveCustomMonths);
+      // Create temporary price for discounted amount
+      console.log("Creating temporary discounted Stripe price");
+      const { interval, interval_count } = getStripeIntervalConfig(effectiveBillingPeriod, effectiveCustomMonths);
       
       const stripePrice = await stripe.prices.create({
         product: stripeProductId,
-        unit_amount: Math.round(effectivePrice * 100), // Convert to cents
+        unit_amount: Math.round(effectivePrice * 100),
         currency: 'usd',
         recurring: {
           interval,
-          interval_count: intervalCount,
+          interval_count,
         },
         metadata: {
           sanityId: subscription._id,
@@ -458,7 +380,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
       } else {
         // Create new price
         console.log("Creating new Stripe price");
-        const { interval, intervalCount } = getStripeIntervalConfig(effectiveBillingPeriod, effectiveCustomMonths);
+        const { interval, interval_count } = getStripeIntervalConfig(effectiveBillingPeriod, effectiveCustomMonths);
         
         const stripePrice = await stripe.prices.create({
           product: stripeProductId,
@@ -466,7 +388,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
           currency: 'usd',
           recurring: {
             interval,
-            interval_count: intervalCount,
+            interval_count,
           },
           metadata: {
             sanityId: subscription._id,
@@ -477,7 +399,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         });
         stripePriceId = stripePrice.id;
         
-        // Update Sanity with the new price ID (non-blocking) - Fixed TypeScript issue
+        // Update Sanity with the new price ID (non-blocking)
         const updatePromise = selectedVariant
           ? sanityClient
               .patch(subscription._id)
@@ -518,7 +440,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         quantity: 1 
       }],
       mode: 'subscription',
-      locale: 'en', // ✅ Fix for Stripe console errors
+      locale: 'en',
       success_url: `${baseUrl}/appointment?subscription_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/subscriptions?canceled=true`,
       customer: stripeCustomerId,
@@ -615,7 +537,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     
     console.log(`✅ Created Supabase subscription record`);
     
-    // Increment coupon usage if applied (non-blocking) - Fixed TypeScript issue
+    // Increment coupon usage if applied (non-blocking)
     if (appliedCoupon) {
       sanityClient.patch(appliedCoupon._id)
         .inc({ usageCount: 1 })
@@ -644,10 +566,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     };
 
     const totalTime = Date.now() - startTime;
-    const savedTime = Math.max(0, 800 - totalTime); // Estimate of time saved vs sequential
-    console.log(`🎉 Subscription purchase completed in ${totalTime}ms (parallel optimization saved ~${savedTime}ms)`);
+    console.log(`🎉 Subscription purchase completed in ${totalTime}ms`);
 
-    // Fix the type issue by ensuring url is properly handled
     const checkoutUrl = session.url || undefined;
     
     return NextResponse.json({
@@ -686,20 +606,15 @@ async function validateAndApplyCoupon(
   currentPrice?: number
 ): Promise<CouponValidationResult> {
   try {
-    console.log('🎫 Validating coupon:', couponCode);
-    
-    // Fetch coupon from Sanity matching the exact schema structure
+    // Fetch coupon from Sanity
     const coupon = await sanityClient.fetch<SanityCoupon>(
-      `*[_type == "coupon" && code == $code && isActive == true][0]{
+      groq`*[_type == "coupon" && code == $code && isActive == true][0] {
         _id,
         code,
-        description,
         discountType,
         discountValue,
-        applicationType,
-        "subscriptions": subscriptions[]->{ _id, title },
-        variantTargets[]{
-          "subscription": subscription->{ _id, title },
+        applicableSubscriptions[]{
+          subscription->{_id},
           variantKey,
           variantTitle
         },
@@ -710,102 +625,80 @@ async function validateAndApplyCoupon(
         isActive,
         minimumPurchaseAmount
       }`,
-      { code: couponCode.toUpperCase().trim() }
+      { code: couponCode }
     );
-    
+
     if (!coupon) {
-      return {
-        isValid: false,
-        error: 'Coupon not found',
-      };
+      return { isValid: false, error: 'Coupon not found or inactive' };
     }
 
-    // Basic validation
+    // Check if coupon is within valid date range
     const now = new Date();
     const validFrom = new Date(coupon.validFrom);
     const validUntil = new Date(coupon.validUntil);
-    
+
     if (now < validFrom || now > validUntil) {
-      return {
-        isValid: false,
-        error: 'Coupon is not valid at this time',
-      };
+      return { isValid: false, error: 'Coupon has expired or is not yet valid' };
     }
 
+    // Check usage limit
     if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
-      return {
-        isValid: false,
-        error: 'Coupon has reached its usage limit',
-      };
+      return { isValid: false, error: 'Coupon usage limit exceeded' };
     }
 
+    // Check minimum purchase amount
     if (coupon.minimumPurchaseAmount && currentPrice && currentPrice < coupon.minimumPurchaseAmount) {
-      return {
-        isValid: false,
-        error: `Minimum purchase amount of ${coupon.minimumPurchaseAmount} required`,
+      return { 
+        isValid: false, 
+        error: `Minimum purchase amount of $${coupon.minimumPurchaseAmount} required` 
       };
     }
 
-    // Validate applicability based on coupon type
-    if (coupon.applicationType === 'specific' && coupon.subscriptions) {
-      const isApplicable = coupon.subscriptions.some(sub => sub._id === subscription._id);
-      if (!isApplicable) {
-        return {
-          isValid: false,
-          error: 'This coupon is not applicable to the selected subscription',
-        };
-      }
-    } else if (coupon.applicationType === 'variants' && coupon.variantTargets) {
-      const isApplicable = coupon.variantTargets.some(target => {
-        if (target.subscription._id !== subscription._id) return false;
-        // If no variantKey specified in coupon, it applies to base subscription
-        if (!target.variantKey && !variantKey) return true;
-        // If variantKey specified, it must match
-        return target.variantKey === variantKey;
+    // Check if coupon applies to this subscription/variant
+    if (coupon.applicableSubscriptions && coupon.applicableSubscriptions.length > 0) {
+      const isApplicable = coupon.applicableSubscriptions.some(applicableItem => {
+        const subscriptionMatches = applicableItem.subscription._id === subscription._id;
+        const variantMatches = applicableItem.variantKey === variantKey || 
+                              (!applicableItem.variantKey && !variantKey);
+        return subscriptionMatches && variantMatches;
       });
-      
+
       if (!isApplicable) {
-        return {
-          isValid: false,
-          error: 'This coupon is not applicable to the selected subscription variant',
-        };
+        return { isValid: false, error: 'Coupon not applicable to this subscription' };
       }
     }
-    // For 'all' type, no additional validation needed
 
-    // Calculate discount
+    // Calculate discounted price
     if (!currentPrice) {
-      return {
-        isValid: false,
-        error: 'Cannot calculate discount',
-      };
+      return { isValid: false, error: 'Unable to calculate discount' };
     }
 
-    let discountedPrice = currentPrice;
-    let discountAmount = 0;
+    let discountedPrice: number;
+    let discountAmount: number;
 
     if (coupon.discountType === 'percentage') {
       discountAmount = (currentPrice * coupon.discountValue) / 100;
-      discountedPrice = Math.max(0, currentPrice - discountAmount);
-    } else if (coupon.discountType === 'fixed') {
+      discountedPrice = currentPrice - discountAmount;
+    } else {
       discountAmount = coupon.discountValue;
-      discountedPrice = Math.max(0, currentPrice - coupon.discountValue);
+      discountedPrice = currentPrice - discountAmount;
     }
 
-    console.log('✅ Coupon validated successfully');
+    // Ensure price doesn't go below zero
+    if (discountedPrice < 0) {
+      discountedPrice = 0;
+      discountAmount = currentPrice;
+    }
 
     return {
       isValid: true,
-      coupon: coupon,
-      discountedPrice: discountedPrice,
-      discountAmount: discountAmount,
+      coupon,
+      discountedPrice,
+      discountAmount
     };
 
   } catch (error) {
-    console.error('❌ Error validating coupon:', error);
-    return {
-      isValid: false,
-      error: 'Failed to validate coupon',
-    };
+    console.error('Error validating coupon:', error);
+    return { isValid: false, error: 'Error validating coupon' };
   }
 }

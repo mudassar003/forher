@@ -10,7 +10,7 @@ import type {
   PriceComparisonStatus
 } from '@/types/admin-price-sync';
 
-export default function PriceSyncPage(): JSX.Element {
+export default function PriceSyncPage(): React.ReactElement {
   const [rows, setRows] = useState<PriceComparisonRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -99,7 +99,7 @@ export default function PriceSyncPage(): JSX.Element {
   }, []);
 
   // Get styled status badge
-  const getStatusBadge = (status: PriceComparisonStatus): JSX.Element => {
+  const getStatusBadge = (status: PriceComparisonStatus): React.ReactElement => {
     const statusStyles: Record<PriceComparisonStatus, string> = {
       OK: 'bg-green-100 text-green-800 border-green-200',
       DIFFERENT: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -125,7 +125,7 @@ export default function PriceSyncPage(): JSX.Element {
   };
 
   // Get action button for each row
-  const getActionButton = (row: PriceComparisonRow): JSX.Element | null => {
+  const getActionButton = (row: PriceComparisonRow): React.ReactElement | null => {
     if (!row.needsAction || !row.actionType) {
       return null;
     }
@@ -309,7 +309,7 @@ export default function PriceSyncPage(): JSX.Element {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {row.stripePrice !== undefined ? `${row.stripePrice.toFixed(2)}` : '-'}
+                          {row.stripePrice !== undefined ? `$${row.stripePrice.toFixed(2)}` : '-'}
                         </div>
                         {row.stripePriceId && (
                           <div className="text-xs text-gray-400">

@@ -257,7 +257,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       case 'six_month':
         return `${formattedPrice} total for 6 months`;
       case 'annually':
-        return `${formattedPrice} total`;
+        return `${formattedPrice} total for 1 year`;
       case 'other':
         if (customBillingPeriodMonths && customBillingPeriodMonths > 1) {
           return `${formattedPrice} total for ${customBillingPeriodMonths} months`;
@@ -314,6 +314,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     const monthText = currentLanguage === 'es' ? '/month' : '/month';
     return `${getFormattedPrice(monthlyPrice)}${monthText}`;
   };
+
+  
 
   // Get total price display for variant selector
   const getTotalPriceDisplay = (

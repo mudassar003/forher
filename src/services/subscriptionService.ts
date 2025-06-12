@@ -40,18 +40,18 @@ function broadcastSubscriptionChange(action: 'cancelled' | 'reactivated' | 'stat
 }
 
 /**
- * Cancel a subscription
+ * Cancel a subscription immediately
  * @param subscriptionId The Supabase subscription ID to cancel
  * @returns Promise with success status and message
  */
 export async function cancelSubscription(subscriptionId: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    console.log('Starting cancellation for subscription:', subscriptionId);
+    console.log('Starting immediate cancellation for subscription:', subscriptionId);
     
     // First, fetch the user subscription to get the Stripe subscription ID
     const { data: userSubscription, error: fetchError } = await supabase
       .from('user_subscriptions')
-      .select('stripe_subscription_id, status')
+      .select('stripe_subscription_id, status, sanity_id')
       .eq('id', subscriptionId)
       .single();
 
@@ -62,15 +62,15 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
 
     console.log('Found subscription:', userSubscription);
 
-    // Check if subscription is already cancelled or in process of cancelling
-    if (userSubscription.status === 'cancelled' || userSubscription.status === 'cancelling') {
+    // Check if subscription is already cancelled
+    if (userSubscription.status === 'cancelled') {
       return {
         success: true,
-        message: 'Subscription is already cancelled or in the process of being cancelled'
+        message: 'Subscription is already cancelled'
       };
     }
 
-    // Call our API to cancel the subscription - pass the Supabase ID
+    // Call our API to cancel the subscription immediately - pass the Supabase ID
     const response = await fetch('/api/stripe/subscriptions/cancel', {
       method: 'POST',
       headers: {
@@ -78,6 +78,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
       },
       body: JSON.stringify({
         subscriptionId: subscriptionId, // Pass the Supabase UUID
+        immediate: true // Request immediate cancellation
       }),
     });
 
@@ -102,12 +103,29 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
       throw new Error(result.error || 'Failed to cancel subscription');
     }
 
-    // 🚀 NEW: Broadcast cancellation to other tabs
+    // Immediately update local state to show cancelled status
+    const now = new Date().toISOString();
+    const { error: localUpdateError } = await supabase
+      .from('user_subscriptions')
+      .update({
+        status: 'cancelled',
+        is_active: false,
+        cancellation_date: now,
+        end_date: now,
+        updated_at: now
+      })
+      .eq('id', subscriptionId);
+
+    if (localUpdateError) {
+      console.warn('Failed to update local status:', localUpdateError);
+    }
+
+    // 🚀 Broadcast cancellation to other tabs
     broadcastSubscriptionChange('cancelled');
 
     return {
       success: true,
-      message: result.message || 'Subscription cancellation initiated successfully'
+      message: result.message || 'Subscription cancelled immediately'
     };
   } catch (error) {
     console.error('Error in cancelSubscription service:', error);
@@ -117,9 +135,6 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
     };
   }
 }
-
-// Note: reactivateSubscription function removed - feature not implemented yet
-// If you need reactivation in the future, you can add it back here
 
 /**
  * Get user subscription details with full information
@@ -202,7 +217,7 @@ export async function forceUpdateSubscriptionStatus(
       throw new Error(`Failed to update subscription status: ${updateError.message}`);
     }
 
-    // 🚀 NEW: Broadcast status change to other tabs
+    // 🚀 Broadcast status change to other tabs
     broadcastSubscriptionChange('status_changed');
 
     return {

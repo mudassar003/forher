@@ -17,8 +17,10 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
       break;
     case "cancelled":
     case "canceled":
-    case "cancelling":  // Show "Cancelled" for cancelling status too
       bgColor = "bg-red-100 text-red-800";
+      break;
+    case "cancelling":
+      bgColor = "bg-orange-100 text-orange-800";
       break;
     case "pending":
       bgColor = "bg-blue-100 text-blue-800";
@@ -33,16 +35,16 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
       bgColor = "bg-gray-100 text-gray-800";
   }
   
-  // Display a friendly version of the status
+  // Display a clear status text
   const displayStatus = () => {
     switch (status.toLowerCase()) {
       case "cancelling":
-        return "Cancelled";  // Show "Cancelled" instead of "Cancelling"
-      case "past_due":
-        return "Past Due";
+        return "Cancelling"; // Show "Cancelling" for period-end cancellation
       case "cancelled":
       case "canceled":
-        return "Cancelled";
+        return "Cancelled"; // Show "Cancelled" for immediate cancellation
+      case "past_due":
+        return "Past Due";
       default:
         return status.charAt(0).toUpperCase() + status.slice(1);
     }

@@ -15,7 +15,8 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface CancelSubscriptionRequest {
-  subscriptionId: string; // The Stripe subscription ID
+  subscriptionId: string; // The Supabase subscription ID
+  immediate?: boolean; // Whether to cancel immediately or at period end
 }
 
 export async function POST(req: Request) {
@@ -30,7 +31,10 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log(`Cancelling subscription: ${data.subscriptionId}`);
+    // Set immediate cancellation as default
+    const isImmediateCancel = data.immediate !== false;
+    
+    console.log(`${isImmediateCancel ? 'Immediately cancelling' : 'Scheduling cancellation for'} subscription: ${data.subscriptionId}`);
     
     // First, try to find the subscription in our database using the subscriptionId
     // Check if it's a Supabase ID (UUID format) or Stripe ID
@@ -43,7 +47,7 @@ export async function POST(req: Request) {
       // It's a Supabase UUID, fetch by ID
       const { data: subData, error: fetchError } = await supabase
         .from('user_subscriptions')
-        .select('id, stripe_subscription_id, sanity_id')
+        .select('id, stripe_subscription_id, sanity_id, status')
         .eq('id', data.subscriptionId)
         .single();
       
@@ -60,7 +64,7 @@ export async function POST(req: Request) {
       // It's a Stripe ID, fetch by Stripe subscription ID
       const { data: subData, error: fetchError } = await supabase
         .from('user_subscriptions')
-        .select('id, stripe_subscription_id, sanity_id')
+        .select('id, stripe_subscription_id, sanity_id, status')
         .eq('stripe_subscription_id', data.subscriptionId)
         .single();
       
@@ -75,59 +79,68 @@ export async function POST(req: Request) {
       stripeSubscriptionId = data.subscriptionId;
     }
 
-    // If no Stripe subscription ID, update locally only
-    if (!stripeSubscriptionId) {
-      const { error: updateError } = await supabase
-        .from('user_subscriptions')
-        .update({
-          status: 'cancelled',
-          is_active: false,
-          cancellation_date: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userSubscriptionData.id);
-      
-      if (updateError) {
-        throw new Error(`Failed to update subscription: ${updateError.message}`);
-      }
-      
+    // Check if already cancelled
+    if (userSubscriptionData.status === 'cancelled') {
       return NextResponse.json({
         success: true,
-        message: "Subscription cancelled successfully (no Stripe subscription found)"
+        message: "Subscription is already cancelled"
       });
     }
 
     // Cancel subscription in Stripe
     let subscription;
-    try {
-      subscription = await stripe.subscriptions.update(stripeSubscriptionId, {
-        cancel_at_period_end: true,
-      });
-    } catch (stripeError) {
-      console.error("Stripe error:", stripeError);
-      // If subscription doesn't exist in Stripe, proceed with local cancellation
-      if (stripeError instanceof Stripe.errors.StripeError && stripeError.code === 'resource_missing') {
-        console.log("Subscription not found in Stripe, proceeding with local cancellation");
-      } else {
-        throw new Error(`Stripe error: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}`);
+    let targetStatus = 'cancelled';
+    let isActive = false;
+    let endDate = new Date().toISOString();
+
+    if (stripeSubscriptionId) {
+      try {
+        if (isImmediateCancel) {
+          // Cancel immediately - subscription ends now
+          subscription = await stripe.subscriptions.cancel(stripeSubscriptionId);
+          console.log('✅ Cancelled subscription immediately in Stripe');
+        } else {
+          // Cancel at period end - subscription remains active until period ends
+          subscription = await stripe.subscriptions.update(stripeSubscriptionId, {
+            cancel_at_period_end: true,
+          });
+          targetStatus = 'cancelling';
+          isActive = true; // Keep active until period ends
+          endDate = new Date(subscription.current_period_end * 1000).toISOString();
+          console.log('✅ Scheduled subscription cancellation in Stripe');
+        }
+      } catch (stripeError) {
+        console.error("Stripe error:", stripeError);
+        
+        // If subscription doesn't exist in Stripe, proceed with local cancellation
+        if (stripeError instanceof Stripe.errors.StripeError && stripeError.code === 'resource_missing') {
+          console.log("Subscription not found in Stripe, proceeding with local cancellation");
+          subscription = null;
+        } else {
+          throw new Error(`Stripe error: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}`);
+        }
       }
     }
     
-    // Get end date for updating records
-    const cancelDate = subscription 
-      ? new Date(subscription.current_period_end * 1000).toISOString()
-      : new Date().toISOString();
-    
     // Update Supabase subscription status
+    const now = new Date().toISOString();
+    const updateData: any = {
+      status: targetStatus,
+      is_active: isActive,
+      cancellation_date: now,
+      updated_at: now
+    };
+
+    // Set end_date only for immediate cancellation
+    if (isImmediateCancel) {
+      updateData.end_date = endDate;
+    } else if (subscription?.current_period_end) {
+      updateData.end_date = endDate;
+    }
+
     const { error: updateError } = await supabase
       .from('user_subscriptions')
-      .update({
-        status: 'cancelling',
-        is_active: true, // Keep active until the end of the period
-        cancellation_date: new Date().toISOString(),
-        end_date: cancelDate,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', userSubscriptionData.id);
     
     if (updateError) {
@@ -135,27 +148,37 @@ export async function POST(req: Request) {
       throw new Error(`Failed to update subscription: ${updateError.message}`);
     }
     
+    console.log(`✅ Updated Supabase subscription status to: ${targetStatus}`);
+    
     // If we have a Sanity ID, update Sanity too
     if (userSubscriptionData.sanity_id) {
       try {
         await sanityClient
           .patch(userSubscriptionData.sanity_id)
           .set({
-            status: 'cancelling',
-            isActive: true,
-            cancellationDate: new Date().toISOString(),
-            endDate: cancelDate
+            status: targetStatus,
+            isActive: isActive,
+            cancellationDate: now,
+            ...(isImmediateCancel && { endDate })
           })
           .commit();
+        
+        console.log(`✅ Updated Sanity subscription status to: ${targetStatus}`);
       } catch (error) {
         console.error("Error updating subscription in Sanity:", error);
         // Don't throw here, Supabase is our source of truth
       }
     }
     
+    const message = isImmediateCancel 
+      ? "Subscription has been cancelled immediately"
+      : "Subscription will be cancelled at the end of your billing period";
+    
     return NextResponse.json({
       success: true,
-      message: "Subscription cancelled successfully. You'll maintain access until the end of your billing period."
+      message,
+      status: targetStatus,
+      cancelled_immediately: isImmediateCancel
     });
     
   } catch (error) {

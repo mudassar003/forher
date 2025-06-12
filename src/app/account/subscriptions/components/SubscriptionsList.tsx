@@ -58,7 +58,7 @@ export const SubscriptionsList: React.FC = () => {
     const result = await cancelUserSubscription(subscriptionId);
     
     if (result) {
-      setSuccessMessage("Your subscription has been cancelled. You'll maintain access until the end of your billing period.");
+      setSuccessMessage("Your subscription has been cancelled immediately.");
       
       // Auto-hide success message after 5 seconds
       setTimeout(() => {
@@ -163,7 +163,7 @@ export const SubscriptionsList: React.FC = () => {
         </div>
       )}
 
-      {/* Custom StatusSyncButton component */}
+      {/* Sync Status Button */}
       <div className="mb-4">
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
           <div className="flex items-start">
@@ -191,9 +191,17 @@ export const SubscriptionsList: React.FC = () => {
         </div>
       </div>
 
+      {/* Subscriptions Container */}
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-semibold text-black">Your Subscriptions</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-black">Your Subscriptions</h2>
+            {subscriptions.length > 0 && (
+              <span className="text-sm text-gray-500">
+                {subscriptions.length} subscription{subscriptions.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="p-6">
@@ -208,14 +216,30 @@ export const SubscriptionsList: React.FC = () => {
           )}
           
           {!loading && subscriptions.length > 0 && (
-            <div className="space-y-4 min-w-[700px] overflow-x-auto">
-              {subscriptions.map((subscription) => (
-                <SubscriptionCard 
-                  key={subscription.id} 
-                  subscription={subscription} 
-                  onCancel={handleCancelSubscription}
-                />
-              ))}
+            <div className="relative">
+              {/* Scrollable container for subscriptions */}
+              <div 
+                className="space-y-4 max-h-96 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#D1D5DB #F3F4F6'
+                }}
+              >
+                {subscriptions.map((subscription) => (
+                  <SubscriptionCard 
+                    key={subscription.id} 
+                    subscription={subscription} 
+                    onCancel={handleCancelSubscription}
+                  />
+                ))}
+              </div>
+              
+              {/* Scroll indicator for many subscriptions */}
+              {subscriptions.length > 3 && (
+                <div className="absolute bottom-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm border">
+                  Scroll for more
+                </div>
+              )}
             </div>
           )}
         </div>

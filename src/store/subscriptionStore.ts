@@ -19,6 +19,8 @@ export interface Subscription {
   stripe_subscription_id?: string;
   sanity_id?: string;
   is_active: boolean;
+  end_date?: string;
+  cancellation_date?: string;
 }
 
 export interface SubscriptionProduct {
@@ -46,13 +48,22 @@ interface UserSubscriptionState {
   resetSubscriptionStore: () => void;
 }
 
-// Helper function to check if a subscription is active
+// Helper function to check if a subscription is currently active
 const isSubscriptionActive = (subscription: Subscription): boolean => {
-  const activeStatuses = ['active', 'trialing', 'past_due'];
-  return activeStatuses.includes(subscription.status.toLowerCase()) && subscription.is_active === true;
+  // A subscription is active if:
+  // 1. It has an active status AND is_active is true
+  // 2. OR it's in a grace period (past_due but still active)
+  // 3. OR it's trialing
+  const activeStatuses = ['active', 'trialing'];
+  const gracePeriodStatuses = ['past_due']; // These might still have access
+  
+  const isInActiveStatus = activeStatuses.includes(subscription.status.toLowerCase());
+  const isInGracePeriod = gracePeriodStatuses.includes(subscription.status.toLowerCase()) && subscription.is_active;
+  
+  return (isInActiveStatus || isInGracePeriod) && subscription.is_active === true;
 };
 
-// 🚀 NEW: Broadcast subscription status change to other tabs
+// 🚀 Broadcast subscription status change to other tabs
 function broadcastSubscriptionChange(): void {
   if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
     try {
@@ -91,7 +102,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           hasActiveSubscription: hasActive
         });
 
-        // 🚀 NEW: Broadcast if active status changed
+        // 🚀 Broadcast if active status changed
         if (hasActive !== previousHasActive) {
           broadcastSubscriptionChange();
         }
@@ -116,53 +127,90 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           return;
         }
         
-        // Check if we've synced recently (within 2 minutes) and no force refresh
+        // Check if we've synced recently (within 1 minute) and no force refresh
         const lastSync = get().lastSyncTime;
         const now = Date.now();
-        const twoMinutes = 2 * 60 * 1000; // Reduced from 5 minutes to 2 minutes
+        const oneMinute = 60 * 1000;
         
-        if (lastSync && now - lastSync < twoMinutes && get().isFetched && !forceRefresh && get().subscriptions.length > 0) {
+        if (lastSync && now - lastSync < oneMinute && get().isFetched && !forceRefresh && get().subscriptions.length > 0) {
           return;
         }
         
         set({ loading: true, error: null });
         
         try {
-          // Fetch from Supabase
+          // Fetch ALL subscriptions for the user (including cancelled ones)
+          // Only exclude soft-deleted records (is_deleted = true)
           const { data: supabaseData, error: supabaseError } = await supabase
             .from('user_subscriptions')
-            .select('*')
+            .select(`
+              id,
+              user_id,
+              user_email,
+              plan_name,
+              subscription_name,
+              billing_amount,
+              billing_period,
+              start_date,
+              end_date,
+              next_billing_date,
+              status,
+              is_active,
+              stripe_subscription_id,
+              sanity_id,
+              cancellation_date,
+              created_at,
+              updated_at,
+              has_appointment_access,
+              appointment_discount_percentage
+            `)
             .eq('user_id', userId)
-            .order('created_at', { ascending: false }); // Get most recent first
+            .or('is_deleted.is.null,is_deleted.eq.false') // Include records where is_deleted is null or false
+            .order('created_at', { ascending: false }); // Most recent first
           
           if (supabaseError) {
             throw new Error(supabaseError.message);
           }
+          
+          console.log(`📊 Fetched ${supabaseData?.length || 0} total subscriptions for user ${userId}`);
           
           // Transform data to our Subscription format
           const subscriptionsData: Subscription[] = (supabaseData || []).map(sub => ({
             id: sub.id,
             user_id: sub.user_id,
             plan_name: sub.plan_name || sub.subscription_name || 'Subscription',
-            status: sub.status || 'Unknown',
+            status: sub.status || 'unknown',
             is_active: sub.is_active === true, // Ensure boolean type
             billing_amount: sub.billing_amount || 0,
             billing_period: sub.billing_period || 'monthly',
             next_billing_date: sub.next_billing_date || sub.end_date || new Date().toISOString(),
             start_date: sub.start_date || new Date().toISOString(),
+            end_date: sub.end_date,
+            cancellation_date: sub.cancellation_date,
             totalUsers: 0, // Optional metadata
             products: [], // Could be populated from another query if needed
             stripe_subscription_id: sub.stripe_subscription_id,
             sanity_id: sub.sanity_id
           }));
           
+          // Debug logging
+          const statusCounts = subscriptionsData.reduce((acc, sub) => {
+            acc[sub.status] = (acc[sub.status] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+          
+          console.log('📊 Subscription status breakdown:', statusCounts);
+          
           // Check for active subscriptions using the helper function
-          const hasActive = subscriptionsData.some(isSubscriptionActive);
+          const activeSubscriptions = subscriptionsData.filter(isSubscriptionActive);
+          const hasActive = activeSubscriptions.length > 0;
           const previousHasActive = get().hasActiveSubscription;
           
-          // Update the store with the fetched data
+          console.log(`✅ Found ${activeSubscriptions.length} active subscriptions out of ${subscriptionsData.length} total`);
+          
+          // Update the store with ALL subscription data
           set({ 
-            subscriptions: subscriptionsData,
+            subscriptions: subscriptionsData, // Show ALL subscriptions (active, cancelled, pending, etc.)
             hasActiveSubscription: hasActive,
             loading: false,
             isFetched: true,
@@ -170,30 +218,13 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
             error: null
           });
 
-          // 🚀 NEW: Broadcast if active status changed
+          // 🚀 Broadcast if active status changed
           if (hasActive !== previousHasActive) {
             broadcastSubscriptionChange();
           }
           
-          // Check for any issues that might need syncing
-          const needsSync = subscriptionsData.some(sub => {
-            const isPending = sub.status.toLowerCase() === 'pending';
-            const hasStripeId = !!sub.stripe_subscription_id;
-            const isInconsistent = (sub.status.toLowerCase() === 'active' && !sub.is_active) || 
-                                  (sub.status.toLowerCase() !== 'active' && sub.is_active);
-            
-            return (isPending && hasStripeId) || isInconsistent;
-          });
-          
-          // Auto-sync if we detect issues, but don't wait for it to complete and don't trigger re-renders
-          if (needsSync && !get().syncingSubscriptions) {
-            // This runs in the background
-            get().syncSubscriptionStatuses(userId).catch(() => {
-              // Silently handle sync errors to avoid affecting UI
-            });
-          }
-          
         } catch (error) {
+          console.error('❌ Error fetching subscriptions:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Unknown error fetching subscriptions',
             loading: false,
@@ -212,20 +243,24 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
             throw new Error('Subscription not found');
           }
           
-          // Call the service to cancel
+          console.log(`🗑️ Cancelling subscription: ${subscriptionId} (${subscription.plan_name})`);
+          
+          // Call the service to cancel (immediate cancellation)
           const result = await cancelSubscription(subscriptionId);
           
           if (!result.success) {
             throw new Error(result.error || 'Failed to cancel subscription');
           }
           
-          // Update the subscription in our store
+          // Immediately update the subscription in our store to show as cancelled
           const updatedSubscriptions = get().subscriptions.map(sub => {
             if (sub.id === subscriptionId) {
               return {
                 ...sub,
-                status: 'cancelling',
-                is_active: true // Still active until period ends
+                status: 'cancelled',
+                is_active: false, // Immediately set to inactive
+                cancellation_date: new Date().toISOString(),
+                end_date: new Date().toISOString()
               };
             }
             return sub;
@@ -235,19 +270,22 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           const previousHasActive = get().hasActiveSubscription;
           
           set({ 
-            subscriptions: updatedSubscriptions,
+            subscriptions: updatedSubscriptions, // Keep the subscription in the list, just update its status
             hasActiveSubscription: hasActive,
             cancellingId: null,
             lastSyncTime: Date.now() // Update sync time since we made a change
           });
 
-          // 🚀 NEW: Broadcast if active status changed (cancellation usually changes this)
+          // 🚀 Broadcast the change
           if (hasActive !== previousHasActive) {
             broadcastSubscriptionChange();
           }
           
+          console.log(`✅ Subscription ${subscriptionId} cancelled and updated in store`);
+          
           return true;
         } catch (error) {
+          console.error('❌ Error cancelling subscription:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Unknown error cancelling subscription',
             cancellingId: null
@@ -264,6 +302,8 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
         
         try {
           set({ syncingSubscriptions: true, error: null });
+          
+          console.log('🔄 Syncing subscription statuses with Stripe...');
           
           // Call the status sync API
           const response = await fetch('/api/stripe/subscriptions/status', {
@@ -288,9 +328,11 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           
           // Parse response if available
           try {
-            await response.json();
+            const result = await response.json();
+            console.log('✅ Sync completed:', result);
           } catch (parseError) {
             // Response parsing not critical for sync operation
+            console.log('✅ Sync completed (response not parseable)');
           }
           
           // Refresh subscriptions after sync - with force refresh
@@ -302,6 +344,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           });
           return true;
         } catch (error) {
+          console.error('❌ Error syncing subscription statuses:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Unknown error syncing statuses',
             syncingSubscriptions: false

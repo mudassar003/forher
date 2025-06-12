@@ -89,7 +89,7 @@ export default function AccountPage() {
             <div className="relative">
               {/* Scrollable container with custom scrollbar styling */}
               <div 
-                className="overflow-x-auto overflow-y-auto max-h-96 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                className="overflow-x-auto overflow-y-auto max-h-80 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
                 style={{
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#D1D5DB #F3F4F6'
@@ -98,82 +98,89 @@ export default function AccountPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Plan
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Price
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Renewal Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {subscriptions.map((subscription) => (
-                      <tr key={subscription.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">
-                            {subscription.plan_name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {formatBillingPeriod(subscription.billing_period)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span 
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            ${subscription.is_active && subscription.status.toLowerCase() === 'active'
-                                ? 'bg-green-100 text-green-800' 
-                                : subscription.status.toLowerCase() === 'cancelled'
-                                ? 'bg-red-100 text-red-800'
-                                : subscription.status.toLowerCase() === 'cancelling'
-                                ? 'bg-orange-100 text-orange-800'
-                                : subscription.status.toLowerCase() === 'pending'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}
-                          >
-                            {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          ${subscription.billing_amount}/{formatBillingPeriod(subscription.billing_period).toLowerCase()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {subscription.next_billing_date 
-                            ? new Date(subscription.next_billing_date).toLocaleDateString()
-                            : subscription.status.toLowerCase() === 'cancelled' 
-                              ? 'Cancelled'
-                              : 'N/A'
-                          }
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link
-                            href="/account/subscriptions"
-                            className="text-indigo-600 hover:text-indigo-900 transition-colors"
-                          >
-                            Manage
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                    {/* Sort subscriptions: active first, then by creation date */}
+                    {subscriptions
+                      .sort((a, b) => {
+                        // First, prioritize active subscriptions
+                        const aIsActive = a.is_active && ['active', 'trialing', 'past_due'].includes(a.status.toLowerCase());
+                        const bIsActive = b.is_active && ['active', 'trialing', 'past_due'].includes(b.status.toLowerCase());
+                        
+                        if (aIsActive && !bIsActive) return -1;
+                        if (!aIsActive && bIsActive) return 1;
+                        
+                        // Then sort by creation date (newest first)
+                        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+                      })
+                      .map((subscription) => (
+                        <tr key={subscription.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            <div className="font-medium text-gray-900 text-sm">
+                              {subscription.plan_name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {formatBillingPeriod(subscription.billing_period)}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            <span 
+                              className={`px-2 inline-flex text-xs leading-4 font-semibold rounded-full 
+                              ${subscription.is_active && subscription.status.toLowerCase() === 'active'
+                                  ? 'bg-green-100 text-green-800' 
+                                  : subscription.status.toLowerCase() === 'cancelled'
+                                  ? 'bg-red-100 text-red-800'
+                                  : subscription.status.toLowerCase() === 'cancelling'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : subscription.status.toLowerCase() === 'pending'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}
+                            >
+                              {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+                            ${subscription.billing_amount}/{formatBillingPeriod(subscription.billing_period).toLowerCase()}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+                            {subscription.next_billing_date 
+                              ? new Date(subscription.next_billing_date).toLocaleDateString()
+                              : subscription.status.toLowerCase() === 'cancelled' 
+                                ? 'Cancelled'
+                                : 'N/A'
+                            }
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-medium">
+                            <Link
+                              href="/account/subscriptions"
+                              className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                            >
+                              Manage
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    }
                   </tbody>
                 </table>
               </div>
-              
-              {/* Scroll indicators */}
-              {subscriptions.length > 4 && (
-                <div className="absolute bottom-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow">
-                  Scroll for more
-                </div>
-              )}
             </div>
           ) : (
             <div className="text-center py-12 bg-gray-50">

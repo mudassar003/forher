@@ -234,12 +234,7 @@ export const SubscriptionsList: React.FC = () => {
                 ))}
               </div>
               
-              {/* Scroll indicator for many subscriptions */}
-              {subscriptions.length > 3 && (
-                <div className="absolute bottom-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm border">
-                  Scroll for more
-                </div>
-              )}
+
             </div>
           )}
         </div>

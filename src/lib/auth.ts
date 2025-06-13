@@ -48,8 +48,13 @@ export const signInWithGoogle = async (returnUrl?: string): Promise<AuthResponse
  * Sign up with Email & Password
  * @param email User's email address
  * @param password User's password
+ * @param recaptchaToken Optional reCAPTCHA token for verification
  */
-export const signUpWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
+export const signUpWithEmail = async (
+  email: string, 
+  password: string,
+  recaptchaToken?: string
+): Promise<AuthResponse> => {
   try {
     // Validate email format
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -59,6 +64,35 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
     // Validate password (basic check - more comprehensive check in store)
     if (!password || password.length < 8) {
       return { data: null, error: "Password must be at least 8 characters" };
+    }
+
+    // If reCAPTCHA is enabled, verify the token on the server
+    if (recaptchaToken && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+      try {
+        const verifyResponse = await fetch('/api/auth/verify-recaptcha', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: recaptchaToken,
+            action: 'signup'
+          }),
+          credentials: 'include'
+        });
+
+        if (!verifyResponse.ok) {
+          return { data: null, error: "Security verification failed. Please try again." };
+        }
+
+        const verifyResult = await verifyResponse.json();
+        if (!verifyResult.success) {
+          return { data: null, error: "Security verification failed. Please try again." };
+        }
+      } catch (recaptchaError) {
+        console.error("reCAPTCHA verification error:", recaptchaError);
+        return { data: null, error: "Security verification failed. Please try again." };
+      }
     }
 
     // Sign up the user with cookie-based sessions
@@ -94,8 +128,13 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
  * Sign in with Email & Password
  * @param email User's email address
  * @param password User's password
+ * @param recaptchaToken Optional reCAPTCHA token for verification
  */
-export const signInWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
+export const signInWithEmail = async (
+  email: string, 
+  password: string,
+  recaptchaToken?: string
+): Promise<AuthResponse> => {
   try {
     // Implement attempt tracking for rate limiting (could use session storage)
     const attemptKey = `login_attempts_${email.toLowerCase()}`;
@@ -121,6 +160,35 @@ export const signInWithEmail = async (email: string, password: string): Promise<
     // Validate email format
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return { data: null, error: "Invalid email address" };
+    }
+
+    // If reCAPTCHA is enabled, verify the token on the server
+    if (recaptchaToken && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+      try {
+        const verifyResponse = await fetch('/api/auth/verify-recaptcha', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: recaptchaToken,
+            action: 'login'
+          }),
+          credentials: 'include'
+        });
+
+        if (!verifyResponse.ok) {
+          return { data: null, error: "Security verification failed. Please try again." };
+        }
+
+        const verifyResult = await verifyResponse.json();
+        if (!verifyResult.success) {
+          return { data: null, error: "Security verification failed. Please try again." };
+        }
+      } catch (recaptchaError) {
+        console.error("reCAPTCHA verification error:", recaptchaError);
+        return { data: null, error: "Security verification failed. Please try again." };
+      }
     }
 
     // Sign in the user - using the auth-helpers client ensures cookies are used

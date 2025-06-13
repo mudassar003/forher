@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
 import { useAuthStore } from "@/store/authStore"; 
 import { signUpWithEmail, signInWithGoogle } from "@/lib/auth";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
@@ -38,6 +39,10 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/' }) => {
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isHoneypotFilled, setIsHoneypotFilled] = useState<boolean>(false);
+
+  // Initialize reCAPTCHA
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+  const { executeRecaptcha } = useRecaptcha({ siteKey: recaptchaSiteKey });
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -129,7 +134,18 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/' }) => {
     setLoading(true);
     
     try {
-      const { error: authError, session } = await signUpWithEmail(email, password);
+      // Execute reCAPTCHA if enabled
+      let recaptchaToken: string | null = null;
+      if (recaptchaSiteKey) {
+        recaptchaToken = await executeRecaptcha('signup');
+        if (!recaptchaToken) {
+          setError("Security verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { error: authError, session } = await signUpWithEmail(email, password, recaptchaToken || undefined);
       
       if (authError) {
         setError(authError);

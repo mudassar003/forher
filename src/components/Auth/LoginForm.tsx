@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useAuthFormStore } from "@/store/authFormStore";
 import { useAuthStore } from "@/store/authStore"; 
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
@@ -37,6 +38,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/' }) => {
   // Parse return URL from query parameters
   const parsedReturnUrl = searchParams ? searchParams.get('returnUrl') : null;
   const effectiveReturnUrl = parsedReturnUrl || returnUrl;
+
+  // Initialize reCAPTCHA
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+  const { executeRecaptcha } = useRecaptcha({ siteKey: recaptchaSiteKey });
 
   // Store return URL in sessionStorage
   useEffect(() => {
@@ -107,7 +112,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/' }) => {
     setLoading(true);
     
     try {
-      const { error: authError, session } = await signInWithEmail(email, password);
+      // Execute reCAPTCHA if enabled
+      let recaptchaToken: string | null = null;
+      if (recaptchaSiteKey) {
+        recaptchaToken = await executeRecaptcha('login');
+        if (!recaptchaToken) {
+          setError("Security verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { error: authError, session } = await signInWithEmail(email, password, recaptchaToken || undefined);
       
       if (authError) {
         setError(authError);

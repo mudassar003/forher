@@ -20,7 +20,7 @@ const SignupFormLoading = () => (
 // Component that uses useSearchParams
 const SignupWithParams = () => {
   const searchParams = useSearchParams();
-  const returnUrl = searchParams.get('returnUrl') || '/dashboard'; // Default to dashboard
+  const returnUrl = searchParams.get('returnUrl') || '/'; // Default to homepage
 
   // Store the returnUrl in sessionStorage for use after OAuth redirects
   useEffect(() => {

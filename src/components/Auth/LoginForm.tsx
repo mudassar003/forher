@@ -13,7 +13,7 @@ interface LoginFormProps {
   returnUrl?: string;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/' }) => {
   const {
     email,
     password,
@@ -254,7 +254,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
 
         <div className="text-right">
           <Link 
-            href={`/forgot-password${effectiveReturnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 
+            href={`/forgot-password${effectiveReturnUrl !== '/' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 
             className="text-sm text-blue-600 hover:underline"
           >
             Forgot your password?
@@ -289,7 +289,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/dashboard' }) => {
       <p className="text-center text-sm mt-6 text-black">
         First time here?{" "}
         <Link 
-          href={`/signup${effectiveReturnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 
+          href={`/signup${effectiveReturnUrl !== '/' ? `?returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : ''}`} 
           className="text-blue-600 hover:underline"
         >
           Create an account

@@ -13,7 +13,7 @@ interface SignupFormProps {
   returnUrl?: string;
 }
 
-const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => {
+const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/' }) => {
   const {
     email,
     password,
@@ -387,7 +387,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/dashboard' }) => 
       <p className="text-center text-sm mt-6 text-black">
         Already have an account?{" "}
         <Link 
-          href={`/login${returnUrl !== '/dashboard' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 
+          href={`/login${returnUrl !== '/' ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} 
           className="text-blue-600 hover:underline"
         >
           Log in

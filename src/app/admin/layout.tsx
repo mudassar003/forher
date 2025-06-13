@@ -14,42 +14,32 @@ export default function AdminLayout({
   const { user, isAuthenticated, loading } = useAuthStore();
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [checkingAccess, setCheckingAccess] = useState<boolean>(true);
-  const [debugInfo, setDebugInfo] = useState<string>("");
 
   useEffect(() => {
-    // Debug information
-    console.log("Auth state:", { isAuthenticated, loading, user });
-    console.log("Admin emails env var:", process.env.NEXT_PUBLIC_ADMIN_EMAILS);
-    
     // Don't check while still loading auth state
     if (loading) {
-      setDebugInfo("Still loading auth state...");
       return;
     }
     
     // Check if user has admin access
     const checkAdminAccess = () => {
       if (!isAuthenticated) {
-        setDebugInfo("User not authenticated");
         setCheckingAccess(false);
         return;
       }
       
       // Get admin emails from environment variable
       const adminEmailsVar = process.env.NEXT_PUBLIC_ADMIN_EMAILS || '';
-      setDebugInfo(`Admin emails: ${adminEmailsVar}`);
-      
       const adminEmails = adminEmailsVar.split(',').map(email => email.trim());
       
       // Check if current user's email is in the admin list
       const userEmail = user?.email || '';
       const isAdmin = adminEmails.includes(userEmail);
       
-      setDebugInfo(prev => `${prev}\nUser email: ${userEmail}, Is admin: ${isAdmin}`);
       setHasAccess(isAdmin);
       setCheckingAccess(false);
       
-      // Only redirect if not admin - but add a flag to prevent loops
+      // Redirect if not admin
       if (!isAdmin && !window.localStorage.getItem('adminRedirectAttempted')) {
         window.localStorage.setItem('adminRedirectAttempted', 'true');
         router.push('/unauthorized');
@@ -64,45 +54,33 @@ export default function AdminLayout({
     };
   }, [user, isAuthenticated, loading, router]);
 
-  // Show loading state with debug info
+  // Show loading state
   if (loading || checkingAccess) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500 mb-4"></div>
-        <div className="text-gray-600 text-sm max-w-md p-4 bg-white rounded-md shadow-sm whitespace-pre-line">
-          {debugInfo || "Checking admin access..."}
+        <div className="text-gray-600 text-sm">
+          Loading...
         </div>
       </div>
     );
   }
 
-  // If not authenticated or no access, show helpful message
+  // If not authenticated or no access, show clean access restriction
   if (!isAuthenticated || !hasAccess) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md p-6 bg-white rounded-lg shadow-md">
-          <h1 className="text-xl font-bold text-red-600 mb-2">Access Restricted</h1>
-          <p className="text-gray-700 mb-4">
-            {!isAuthenticated 
-              ? "You need to be logged in to access this area." 
-              : "You don't have permission to access this area."}
+        <div className="max-w-md p-6 bg-white rounded-lg shadow-md text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Access Restricted</h1>
+          <p className="text-gray-600 mb-6">
+            You need to be logged in to access this area.
           </p>
-          <div className="flex justify-end">
-            <button
-              onClick={() => router.push(!isAuthenticated ? '/login' : '/')}
-              className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700"
-            >
-              {!isAuthenticated ? "Log In" : "Go to Home"}
-            </button>
-          </div>
-          
-          {/* Debug info in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-6 p-3 bg-gray-100 rounded-md text-xs whitespace-pre-line text-gray-700">
-              <strong>Debug Info:</strong><br/>
-              {debugInfo}
-            </div>
-          )}
+          <button
+            onClick={() => router.push(!isAuthenticated ? '/login' : '/')}
+            className="px-6 py-3 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors"
+          >
+            {!isAuthenticated ? "Log In" : "Go to Home"}
+          </button>
         </div>
       </div>
     );

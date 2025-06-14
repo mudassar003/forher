@@ -1,7 +1,7 @@
 //src/app/c/wm/lose-weight/data/questions.ts
-import { Question, QuestionType } from "../types";
+import { Question, QuestionType, ContactInfoData } from "../types";
 
-// Define all questions for the weight loss form - REDUCED SET
+// Define all questions for the weight loss form - ADDED contact-info step
 export const weightLossQuestions: Question[] = [
   // Step 1: Basic Demographics
   {
@@ -136,23 +136,106 @@ export const weightLossQuestions: Question[] = [
       { id: "didnt-work", label: "Yes, but they didn't work" },
       { id: "worked-temporarily", label: "Yes, and they worked for a while" }
     ]
+  },
+
+  // Step 6: Contact Information - NEW STEP
+  {
+    id: "contact-info",
+    question: "Let's get your contact information",
+    description: "Please provide your details to receive your personalized weight loss plan and recommendations.",
+    type: QuestionType.ContactInfo,
+    fields: {
+      name: true,
+      email: true,
+      phone: true
+    }
+  }
+];
+
+// Input sanitization and validation utilities
+export const sanitizeInput = {
+  name: (value: string): string => {
+    // Remove HTML tags, scripts, and special characters, keep only letters, spaces, hyphens, apostrophes
+    return value
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/[^\p{L}\s\-'\.]/gu, '') // Keep only letters, spaces, hyphens, apostrophes, dots (Unicode-aware)
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim()
+      .slice(0, 50); // Limit length
+  },
+  
+  email: (value: string): string => {
+    // Basic email sanitization - remove whitespace and convert to lowercase
+    return value
+      .trim()
+      .toLowerCase()
+      .slice(0, 254); // RFC 5321 limit
+  },
+  
+  phone: (value: string): string => {
+    // Remove all non-digit characters except + and spaces for initial cleaning
+    let cleaned = value.replace(/[^\d]/g, '');
+    
+    // If it starts with 1, remove it (US country code)
+    if (cleaned.startsWith('1') && cleaned.length === 11) {
+      cleaned = cleaned.slice(1);
+    }
+    
+    // Format as US phone number (XXX) XXX-XXXX
+    if (cleaned.length >= 10) {
+      const areaCode = cleaned.slice(0, 3);
+      const exchange = cleaned.slice(3, 6);
+      const number = cleaned.slice(6, 10);
+      return `(${areaCode}) ${exchange}-${number}`;
+    } else if (cleaned.length >= 6) {
+      const areaCode = cleaned.slice(0, 3);
+      const exchange = cleaned.slice(3, 6);
+      const number = cleaned.slice(6);
+      return `(${areaCode}) ${exchange}-${number}`;
+    } else if (cleaned.length >= 3) {
+      const areaCode = cleaned.slice(0, 3);
+      const exchange = cleaned.slice(3);
+      return `(${areaCode}) ${exchange}`;
+    } else if (cleaned.length > 0) {
+      return `(${cleaned}`;
+    }
+    
+    return cleaned;
+  }
+};
+
+export const validateContactInfo = (data: ContactInfoData): { isValid: boolean; errors: Record<string, string> } => {
+  const errors: Record<string, string> = {};
+  
+  // Name validation
+  if (!data.name || data.name.trim().length < 2) {
+    errors.name = "Name must be at least 2 characters long";
+  } else if (data.name.length > 50) {
+    errors.name = "Name must be less than 50 characters";
+  } else if (!/^[\p{L}\s\-'\.]+$/u.test(data.name)) {
+    errors.name = "Name can only contain letters, spaces, hyphens, apostrophes, and dots";
   }
   
-  // REMOVED:
-  // - previous-medications (weight loss medications before)
-  // - sleep-hours (Sleep & Stress section)
-  // - stress-levels (Sleep & Stress section)
-  // - activity-level (Activity Level & Metabolism)
-  // - metabolism (Activity Level & Metabolism)
-  // - recent-weight-gain (Activity Level & Metabolism)
-  // - eating-habits (Eating Habits & Cravings)
-  // - cravings (Eating Habits & Cravings)
-  // - eat-out (Eating Habits & Cravings)
-  // - alcohol (Eating Habits & Cravings)
-  // - doctor-consultation (Medical Eligibility Confirmation)
-  // - prescription-preference (Product Preference)
-  // - medication-type (Product Preference)
-];
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!data.email || !emailRegex.test(data.email)) {
+    errors.email = "Please enter a valid email address";
+  } else if (data.email.length > 254) {
+    errors.email = "Email address is too long";
+  }
+  
+  // Phone validation  
+  const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
+  const digitsOnly = data.phone.replace(/[^\d]/g, '');
+  if (!data.phone || !phoneRegex.test(data.phone) || digitsOnly.length !== 10) {
+    errors.phone = "Please enter a valid 10-digit US phone number";
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+};
 
 // Calculate progress percentage based on current question index
 export const getProgressPercentage = (currentOffset: number): number => {

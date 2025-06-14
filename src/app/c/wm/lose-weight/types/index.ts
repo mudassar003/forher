@@ -15,12 +15,13 @@ export interface BaseQuestion {
   conditionalDisplay?: (formData: Record<string, any>) => boolean;
 }
 
-// Question types enum - JUST ADDED HeightInput
+// Question types enum - ADDED ContactInfo
 export enum QuestionType {
   SingleSelect = "single-select",
   MultiSelect = "multi-select",
   TextInput = "text-input",
-  HeightInput = "height-input"
+  HeightInput = "height-input",
+  ContactInfo = "contact-info"
 }
 
 // Single select question
@@ -44,7 +45,7 @@ export interface TextInputQuestion extends BaseQuestion {
   errorMessage?: string;
 }
 
-// Height input question - JUST ADDED THIS
+// Height input question
 export interface HeightInputQuestion extends BaseQuestion {
   type: QuestionType.HeightInput;
   placeholder: string;
@@ -53,12 +54,29 @@ export interface HeightInputQuestion extends BaseQuestion {
   errorMessage?: string;
 }
 
-// Union type of all question types - JUST ADDED HeightInputQuestion
-export type Question = SingleSelectQuestion | MultiSelectQuestion | TextInputQuestion | HeightInputQuestion;
+// Contact info question - NEW
+export interface ContactInfoQuestion extends BaseQuestion {
+  type: QuestionType.ContactInfo;
+  fields: {
+    name: boolean;
+    email: boolean;
+    phone: boolean;
+  };
+}
 
-// Form response type
+// Union type of all question types - ADDED ContactInfoQuestion
+export type Question = SingleSelectQuestion | MultiSelectQuestion | TextInputQuestion | HeightInputQuestion | ContactInfoQuestion;
+
+// Contact info data interface - NEW
+export interface ContactInfoData {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+// Form response type - UPDATED to include ContactInfoData
 export interface FormResponse {
-  [questionId: string]: string | string[] | number;
+  [questionId: string]: string | string[] | number | ContactInfoData;
 }
 
 // Form data state

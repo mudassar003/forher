@@ -6,8 +6,11 @@ import {
   SingleSelectQuestion, 
   MultiSelectQuestion,
   TextInputQuestion,
-  HeightInputQuestion  // JUST ADDED THIS IMPORT
+  HeightInputQuestion,
+  ContactInfoQuestion,
+  ContactInfoData
 } from "../../types";
+import { sanitizeInput, validateContactInfo } from "../../data/questions";
 
 // Single Select Question Component
 export const SingleSelect: React.FC<{
@@ -138,7 +141,7 @@ export const TextInput: React.FC<{
   );
 };
 
-// JUST ADDED THIS HEIGHT INPUT COMPONENT
+// Height Input Component
 export const HeightInput: React.FC<{
   question: HeightInputQuestion;
   value: string | undefined;
@@ -244,7 +247,148 @@ export const HeightInput: React.FC<{
   );
 };
 
-// Question Renderer Component - JUST ADDED HeightInput CASE
+// NEW: Contact Info Component
+export const ContactInfo: React.FC<{
+  question: ContactInfoQuestion;
+  value: ContactInfoData | undefined;
+  onChange: (value: ContactInfoData) => void;
+}> = ({ question, value, onChange }) => {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isValidated, setIsValidated] = useState<boolean>(false);
+  
+  // Initialize default values
+  const contactData: ContactInfoData = {
+    name: value?.name || "",
+    email: value?.email || "",
+    phone: value?.phone || ""
+  };
+  
+  const handleFieldChange = (field: keyof ContactInfoData, rawValue: string) => {
+    // Sanitize input based on field type
+    let sanitizedValue: string;
+    switch (field) {
+      case 'name':
+        sanitizedValue = sanitizeInput.name(rawValue);
+        break;
+      case 'email':
+        sanitizedValue = sanitizeInput.email(rawValue);
+        break;
+      case 'phone':
+        sanitizedValue = sanitizeInput.phone(rawValue);
+        break;
+      default:
+        sanitizedValue = rawValue;
+    }
+    
+    const updatedData = {
+      ...contactData,
+      [field]: sanitizedValue
+    };
+    
+    // Clear field-specific error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+    
+    onChange(updatedData);
+  };
+  
+  const handleBlur = () => {
+    // Validate on blur
+    const validation = validateContactInfo(contactData);
+    setErrors(validation.errors);
+    setIsValidated(true);
+  };
+  
+  return (
+    <div className="space-y-6 mb-12">
+      {/* Name Field */}
+      {question.fields.name && (
+        <div>
+          <label className="block text-sm font-medium text-black mb-2">
+            Full Name *
+          </label>
+          <input
+            type="text"
+            value={contactData.name}
+            onChange={(e) => handleFieldChange('name', e.target.value)}
+            onBlur={handleBlur}
+            placeholder="Enter your full name"
+            maxLength={50}
+            className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
+              errors.name ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+            } focus:outline-none`}
+            required
+          />
+          {errors.name && (
+            <p className="mt-1 text-red-500 text-sm">{errors.name}</p>
+          )}
+        </div>
+      )}
+      
+      {/* Email Field */}
+      {question.fields.email && (
+        <div>
+          <label className="block text-sm font-medium text-black mb-2">
+            Email Address *
+          </label>
+          <input
+            type="email"
+            value={contactData.email}
+            onChange={(e) => handleFieldChange('email', e.target.value)}
+            onBlur={handleBlur}
+            placeholder="Enter your email address"
+            maxLength={254}
+            className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
+              errors.email ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+            } focus:outline-none`}
+            required
+          />
+          {errors.email && (
+            <p className="mt-1 text-red-500 text-sm">{errors.email}</p>
+          )}
+        </div>
+      )}
+      
+      {/* Phone Field */}
+      {question.fields.phone && (
+        <div>
+          <label className="block text-sm font-medium text-black mb-2">
+            Phone Number *
+          </label>
+          <input
+            type="tel"
+            value={contactData.phone}
+            onChange={(e) => handleFieldChange('phone', e.target.value)}
+            onBlur={handleBlur}
+            placeholder="(555) 123-4567"
+            maxLength={14}
+            className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
+              errors.phone ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+            } focus:outline-none`}
+            required
+          />
+          {errors.phone && (
+            <p className="mt-1 text-red-500 text-sm">{errors.phone}</p>
+          )}
+        </div>
+      )}
+      
+      {/* Privacy Notice */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <p className="text-sm text-gray-700">
+          <span className="font-medium">Privacy Notice:</span> Your information is secure and will only be used to provide your personalized weight loss recommendations. We never share your data with third parties.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Question Renderer Component - ADDED ContactInfo case
 export const QuestionRenderer: React.FC<{
   question: Question;
   value: any;
@@ -269,10 +413,16 @@ export const QuestionRenderer: React.FC<{
         value={value as string} 
         onChange={onChange} 
       />;
-    case QuestionType.HeightInput:  // JUST ADDED THIS CASE
+    case QuestionType.HeightInput:
       return <HeightInput 
         question={question as HeightInputQuestion} 
         value={value as string} 
+        onChange={onChange} 
+      />;
+    case QuestionType.ContactInfo:
+      return <ContactInfo 
+        question={question as ContactInfoQuestion} 
+        value={value as ContactInfoData} 
         onChange={onChange} 
       />;
     default:

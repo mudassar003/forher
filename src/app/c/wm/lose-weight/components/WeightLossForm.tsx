@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
 import ProgressBar from "@/app/c/wm/components/ProgressBar";
 import { QuestionRenderer } from "./QuestionTypes";
-import { weightLossQuestions, getProgressPercentage, calculateBMI, checkEligibility } from "../data/questions";
-import { FormResponse, QuestionType } from "../types";
+import { weightLossQuestions, getProgressPercentage, calculateBMI, checkEligibility, validateContactInfo } from "../data/questions";
+import { FormResponse, QuestionType, ContactInfoData } from "../types";
 
 interface WeightLossFormProps {
   initialOffset?: number;
@@ -177,7 +177,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
     }
   };
   
-  // Check if continue button should be enabled - FIXED to handle HeightInput
+  // Check if continue button should be enabled - UPDATED to handle ContactInfo
   const isContinueEnabled = (): boolean => {
     if (!currentQuestion) return false;
     
@@ -192,7 +192,7 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
         return Array.isArray(response) && response.length > 0;
       case QuestionType.TextInput:
         return typeof response === "string" && response.trim() !== "";
-      case QuestionType.HeightInput:  // ADDED this case
+      case QuestionType.HeightInput:
         if (typeof response === "string" && response.trim() !== "") {
           try {
             const heightData = JSON.parse(response);
@@ -200,6 +200,14 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
           } catch {
             return false;
           }
+        }
+        return false;
+      case QuestionType.ContactInfo:
+        // NEW: Validate contact info
+        if (response && typeof response === "object") {
+          const contactData = response as ContactInfoData;
+          const validation = validateContactInfo(contactData);
+          return validation.isValid;
         }
         return false;
       default:

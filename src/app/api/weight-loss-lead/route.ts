@@ -4,36 +4,33 @@ import { salesforceService } from '@/lib/salesforce';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // Parse request body
     const { formData, contactInfo } = await request.json();
 
     if (!formData) {
       return NextResponse.json(
-        { success: false, error: 'Form data is required' },
+        { success: false, error: 'Invalid request' },
         { status: 400 }
       );
     }
 
-    // Transform and create lead
     const leadData = salesforceService.transformFormDataToLead(formData, contactInfo);
     const result = await salesforceService.createWeightLossLead(leadData);
 
     if (result.success) {
       return NextResponse.json({
         success: true,
-        message: 'Lead created successfully'
+        message: 'Request processed successfully'
       });
     } else {
       return NextResponse.json({
         success: false,
-        error: result.error
+        error: 'Processing failed'
       }, { status: 400 });
     }
 
   } catch (error) {
-    console.error('API Error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Service unavailable' },
       { status: 500 }
     );
   }

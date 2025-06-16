@@ -247,7 +247,7 @@ export const HeightInput: React.FC<{
   );
 };
 
-// NEW: Contact Info Component
+// FIXED: Contact Info Component - Removed aggressive sanitization
 export const ContactInfo: React.FC<{
   question: ContactInfoQuestion;
   value: ContactInfoData | undefined;
@@ -264,25 +264,29 @@ export const ContactInfo: React.FC<{
   };
   
   const handleFieldChange = (field: keyof ContactInfoData, rawValue: string) => {
-    // Sanitize input based on field type
-    let sanitizedValue: string;
+    let processedValue: string;
+    
+    // Only apply sanitization on blur or specific cases, not on every keystroke
     switch (field) {
       case 'name':
-        sanitizedValue = sanitizeInput.name(rawValue);
+        // For name, just use the raw value directly to preserve spaces
+        processedValue = rawValue;
         break;
       case 'email':
-        sanitizedValue = sanitizeInput.email(rawValue);
+        // For email, just trim and lowercase
+        processedValue = rawValue.trim().toLowerCase();
         break;
       case 'phone':
-        sanitizedValue = sanitizeInput.phone(rawValue);
+        // Only format phone numbers
+        processedValue = sanitizeInput.phone(rawValue);
         break;
       default:
-        sanitizedValue = rawValue;
+        processedValue = rawValue;
     }
     
     const updatedData = {
       ...contactData,
-      [field]: sanitizedValue
+      [field]: processedValue
     };
     
     // Clear field-specific error when user starts typing
@@ -297,7 +301,19 @@ export const ContactInfo: React.FC<{
     onChange(updatedData);
   };
   
-  const handleBlur = () => {
+  const handleBlur = (field: keyof ContactInfoData) => {
+    // Only sanitize on blur to preserve user experience while typing
+    if (field === 'name') {
+      const sanitizedName = sanitizeInput.name(contactData.name);
+      if (sanitizedName !== contactData.name) {
+        const updatedData = {
+          ...contactData,
+          name: sanitizedName
+        };
+        onChange(updatedData);
+      }
+    }
+    
     // Validate on blur
     const validation = validateContactInfo(contactData);
     setErrors(validation.errors);
@@ -316,7 +332,7 @@ export const ContactInfo: React.FC<{
             type="text"
             value={contactData.name}
             onChange={(e) => handleFieldChange('name', e.target.value)}
-            onBlur={handleBlur}
+            onBlur={() => handleBlur('name')}
             placeholder="Enter your full name"
             maxLength={50}
             className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
@@ -340,7 +356,7 @@ export const ContactInfo: React.FC<{
             type="email"
             value={contactData.email}
             onChange={(e) => handleFieldChange('email', e.target.value)}
-            onBlur={handleBlur}
+            onBlur={() => handleBlur('email')}
             placeholder="Enter your email address"
             maxLength={254}
             className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
@@ -364,7 +380,7 @@ export const ContactInfo: React.FC<{
             type="tel"
             value={contactData.phone}
             onChange={(e) => handleFieldChange('phone', e.target.value)}
-            onBlur={handleBlur}
+            onBlur={() => handleBlur('phone')}
             placeholder="(555) 123-4567"
             maxLength={14}
             className={`w-full p-4 text-lg rounded-lg border-2 text-black ${

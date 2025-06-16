@@ -1,8 +1,8 @@
 // src/lib/salesforce.ts
 interface WeightLossLeadData {
-  Name: string; // Standard Name field for list view
+  Name: string;
   Full_Name__c?: string;
-  Email__c?: string; // Email field - make sure this matches your Salesforce field name
+  Email__c?: string;
   Phone__c?: string;
   Age_Group__c?: string;
   Is_Female__c?: string;
@@ -35,9 +35,6 @@ class SalesforceService {
     }
   }
 
-  /**
-   * Login to Salesforce using SOAP API (simple username/password)
-   */
   private async login(): Promise<{ sessionId: string; serverUrl: string }> {
     const soapBody = `<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:enterprise.soap.sforce.com">
@@ -60,17 +57,16 @@ class SalesforceService {
     });
 
     if (!response.ok) {
-      throw new Error(`SOAP login failed: ${response.status}`);
+      throw new Error('Authentication failed');
     }
 
     const responseText = await response.text();
     
-    // Extract session ID and server URL from SOAP response
     const sessionIdMatch = responseText.match(/<sessionId>([^<]+)<\/sessionId>/);
     const serverUrlMatch = responseText.match(/<serverUrl>([^<]+)<\/serverUrl>/);
     
     if (!sessionIdMatch || !serverUrlMatch) {
-      throw new Error('Failed to extract session info from SOAP response');
+      throw new Error('Authentication failed');
     }
 
     return {
@@ -79,18 +75,11 @@ class SalesforceService {
     };
   }
 
-  /**
-   * Create Weight Loss Lead using REST API
-   */
   async createWeightLossLead(leadData: WeightLossLeadData): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
-      // Login to get session
       const { sessionId, serverUrl } = await this.login();
       
-      // Extract base URL from server URL
       const baseUrl = serverUrl.replace(/\/services\/Soap\/c\/[\d.]+.*/, '');
-      
-      // Create lead using REST API
       const createUrl = `${baseUrl}/services/data/v58.0/sobjects/Weight_Loss_Lead__c`;
       
       const response = await fetch(createUrl, {
@@ -103,8 +92,10 @@ class SalesforceService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to create lead: ${JSON.stringify(errorData)}`);
+        return {
+          success: false,
+          error: 'Failed to create lead'
+        };
       }
 
       const result = await response.json();
@@ -114,21 +105,16 @@ class SalesforceService {
       };
 
     } catch (error) {
-      console.error('Error creating Salesforce lead:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Service unavailable'
       };
     }
   }
 
-  /**
-   * Transform form data to Salesforce lead
-   */
   transformFormDataToLead(formData: Record<string, any>, contactInfo?: any): WeightLossLeadData {
     const fullName = contactInfo?.name || 'Unknown User';
     
-    // Parse height
     let heightFeet: number | undefined;
     let heightInches: number | undefined;
     if (formData.height) {
@@ -138,12 +124,11 @@ class SalesforceService {
           : formData.height;
         heightFeet = heightData.feet ? parseInt(heightData.feet) : undefined;
         heightInches = heightData.inches !== undefined ? parseInt(heightData.inches) : undefined;
-      } catch (error) {
-        console.warn('Error parsing height:', error);
+      } catch {
+        // Invalid height data
       }
     }
 
-    // Calculate BMI
     let bmi: number | undefined;
     if (formData['current-weight'] && heightFeet && heightInches !== undefined) {
       const weightInLbs = parseFloat(formData['current-weight']);
@@ -153,7 +138,6 @@ class SalesforceService {
       bmi = Math.round((weightInKg / (heightInMeters * heightInMeters)) * 100) / 100;
     }
 
-    // Transform medical conditions
     let medicalConditions: string | undefined;
     if (Array.isArray(formData['medical-conditions'])) {
       const conditions = formData['medical-conditions'].filter((c: string) => c !== 'none');
@@ -161,9 +145,9 @@ class SalesforceService {
     }
 
     return {
-      Name: `Weight Loss Lead - ${fullName}`, // Standard Name field for list view
+      Name: `Weight Loss Lead - ${fullName}`,
       Full_Name__c: fullName,
-      Email__c: contactInfo?.email, // ✅ ADD THIS LINE - Map email from contact info
+      Email__c: contactInfo?.email,
       Phone__c: contactInfo?.phone,
       Age_Group__c: formData['age-group'] === '55-plus' ? '55+' : formData['age-group'],
       Is_Female__c: formData.gender === 'yes' ? 'Yes' : formData.gender === 'no' ? 'No' : undefined,

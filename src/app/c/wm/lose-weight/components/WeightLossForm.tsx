@@ -13,6 +13,31 @@ interface WeightLossFormProps {
   initialOffset?: number;
 }
 
+// Function to submit data to Salesforce (non-blocking)
+const submitToSalesforce = async (formData: FormResponse, contactInfo?: ContactInfoData): Promise<void> => {
+  try {
+    const response = await fetch('/api/weight-loss-lead', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        formData,
+        contactInfo
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to submit to Salesforce:', response.status, response.statusText);
+    } else {
+      console.log('Successfully submitted to Salesforce');
+    }
+  } catch (error) {
+    console.warn('Error submitting to Salesforce:', error);
+    // Don't throw error - this is a background operation
+  }
+};
+
 export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProps) {
   const router = useRouter();
   const pathname = "/c/wm/lose-weight";
@@ -162,6 +187,12 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
       
       // Set transitioning state
       setIsTransitioning(true);
+      
+      // Submit to Salesforce in the background (non-blocking)
+      const contactInfo = responses['contact-info'] as ContactInfoData | undefined;
+      submitToSalesforce(responses, contactInfo).catch(error => {
+        console.warn('Background Salesforce submission failed:', error);
+      });
       
       // Navigate directly to results page
       router.push("/c/wm/results");

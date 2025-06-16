@@ -2,7 +2,7 @@
 interface WeightLossLeadData {
   Name: string; // Standard Name field for list view
   Full_Name__c?: string;
-  Email__c?: string; // Optional email field
+  Email__c?: string; // Email field - make sure this matches your Salesforce field name
   Phone__c?: string;
   Age_Group__c?: string;
   Is_Female__c?: string;
@@ -163,6 +163,7 @@ class SalesforceService {
     return {
       Name: `Weight Loss Lead - ${fullName}`, // Standard Name field for list view
       Full_Name__c: fullName,
+      Email__c: contactInfo?.email, // ✅ ADD THIS LINE - Map email from contact info
       Phone__c: contactInfo?.phone,
       Age_Group__c: formData['age-group'] === '55-plus' ? '55+' : formData['age-group'],
       Is_Female__c: formData.gender === 'yes' ? 'Yes' : formData.gender === 'no' ? 'No' : undefined,

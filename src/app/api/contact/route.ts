@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { z } from 'zod';
+import { verifyRecaptcha } from '@/utils/recaptchaUtils';
 
 // Initialize Resend only if API key exists
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -13,6 +14,7 @@ const contactFormSchema = z.object({
   subject: z.string().min(1, 'Subject is required').max(200, 'Subject is too long'),
   message: z.string().min(10, 'Message must be at least 10 characters').max(2000, 'Message is too long'),
   honeypot: z.string().optional(), // For spam protection
+  recaptchaToken: z.string().optional(), // reCAPTCHA token
 });
 
 type ContactFormData = z.infer<typeof contactFormSchema>;
@@ -147,6 +149,15 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
           color: #fc4e87 !important;
           text-decoration: none;
         }
+        .security-badge {
+          background: #e8f5e8;
+          color: #2d5a2d !important;
+          padding: 8px 12px;
+          border-radius: 4px;
+          font-size: 12px;
+          display: inline-block;
+          margin-top: 10px;
+        }
         p, div, span {
           color: #1a1a1a !important;
         }
@@ -199,6 +210,7 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
             <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject)}" class="reply-button">
               Reply to Customer
             </a>
+            ${data.recaptchaToken ? '<div class="security-badge">🛡️ Verified by reCAPTCHA</div>' : ''}
           </div>
         </div>
         
@@ -291,6 +303,33 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Verify reCAPTCHA if token is provided
+    if (data.recaptchaToken && process.env.RECAPTCHA_SECRET_KEY) {
+      try {
+        const recaptchaResult = await verifyRecaptcha(
+          data.recaptchaToken,
+          process.env.RECAPTCHA_SECRET_KEY,
+          'contact'
+        );
+
+        if (!recaptchaResult.success) {
+          return NextResponse.json(
+            { success: false, error: 'Security verification failed. Please try again.' },
+            { status: 400 }
+          );
+        }
+
+        // Log successful reCAPTCHA verification for monitoring
+        console.log(`Contact form reCAPTCHA verified with score: ${recaptchaResult.score}`);
+      } catch (recaptchaError) {
+        console.error('reCAPTCHA verification error:', recaptchaError);
+        return NextResponse.json(
+          { success: false, error: 'Security verification failed. Please try again.' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Email configuration - simplified for single email setup
     const toEmail = 'cole@lilyswomenshealth.com'; // Admin email
     const fromEmail = 'onboarding@resend.dev'; // Use Resend's default domain
@@ -302,10 +341,11 @@ export async function POST(request: NextRequest) {
       replyTo: data.email, // Allow direct reply to customer
       subject: `🔔 Contact Form: ${data.subject}`,
       html: generateAdminEmailTemplate(data),
-      text: `New contact form submission from ${data.name} (${data.email})\n\nSubject: ${data.subject}\n\nMessage:\n${data.message}\n\nReceived: ${new Date().toLocaleString()}\n\nReply to: ${data.email}`,
+      text: `New contact form submission from ${data.name} (${data.email})\n\nSubject: ${data.subject}\n\nMessage:\n${data.message}\n\nReceived: ${new Date().toLocaleString()}\n\nReply to: ${data.email}${data.recaptchaToken ? '\n\n🛡️ Verified by reCAPTCHA' : ''}`,
     });
 
     if (adminEmailResult.error) {
+      console.error('Failed to send admin email:', adminEmailResult.error);
       return NextResponse.json(
         { success: false, error: 'Failed to send message. Please try again later.' },
         { status: 500 }
@@ -320,6 +360,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('Contact form error:', error);
     // Generic error response without exposing internal details
     return NextResponse.json(
       { success: false, error: 'An unexpected error occurred. Please try again later.' },

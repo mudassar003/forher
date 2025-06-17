@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from '@/hooks/useTranslations';
+import { useRecaptcha } from '@/hooks/useRecaptcha';
 
 // Types for form data
 interface ContactFormData {
@@ -31,6 +32,10 @@ interface ApiResponse {
 
 export default function ContactForm() {
   const { t } = useTranslations();
+
+  // Initialize reCAPTCHA
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+  const { executeRecaptcha } = useRecaptcha({ siteKey: recaptchaSiteKey });
 
   // Form state
   const [formData, setFormData] = useState<ContactFormData>({
@@ -158,12 +163,30 @@ export default function ContactForm() {
     setIsSubmitting(true);
 
     try {
+      // Execute reCAPTCHA if enabled
+      let recaptchaToken: string | null = null;
+      if (recaptchaSiteKey) {
+        recaptchaToken = await executeRecaptcha('contact');
+        if (!recaptchaToken) {
+          setSubmitStatus('error');
+          setErrorMessage('Security verification failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Prepare form data with reCAPTCHA token
+      const submitData = {
+        ...formData,
+        recaptchaToken: recaptchaToken || undefined
+      };
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       const result: ApiResponse = await response.json();
@@ -394,6 +417,21 @@ export default function ContactForm() {
             </p>
           )}
         </div>
+
+        {/* reCAPTCHA Notice */}
+        {recaptchaSiteKey && (
+          <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-md">
+            This site is protected by reCAPTCHA and the Google{' '}
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+              Privacy Policy
+            </a>{' '}
+            and{' '}
+            <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+              Terms of Service
+            </a>{' '}
+            apply.
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="pt-2">

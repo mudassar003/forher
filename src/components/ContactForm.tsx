@@ -203,7 +203,6 @@ export default function ContactForm() {
       }
 
     } catch (error) {
-      console.error('Contact form submission error:', error);
       setSubmitStatus('error');
       setErrorMessage('Network error. Please check your connection and try again.');
     } finally {

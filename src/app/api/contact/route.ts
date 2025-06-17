@@ -177,8 +177,8 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
     <body>
       <div class="container">
         <div class="header">
-          <h1 style="margin: 0; font-size: 24px; color: white !important;">📧 New Contact Form Submission</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.9; color: white !important;">Lily's Women's Health Website</p>
+          <h1 style="margin: 0; font-size: 24px; color: black !important;">📧 New Contact Form Submission</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9; color: black !important;">Lily's Women's Health Website</p>
         </div>
         
         <div class="content">

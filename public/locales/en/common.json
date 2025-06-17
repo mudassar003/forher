@@ -1,4 +1,3 @@
-
 {
   "header": {
     "home": "Home",
@@ -56,6 +55,80 @@
     "alreadyHaveAccount": "Already have an account?",
     "dontHaveAccount": "Don't have an account?"
   },
+  "contact": {
+    "meta": {
+      "title": "Contact Us | Lily's Women's Health",
+      "description": "Get in touch with our team for inquiries, support, or to schedule an appointment. We're here to help with all your women's health needs.",
+      "keywords": "contact, support, womens health, lily's, appointment, inquiry"
+    },
+    "header": {
+      "title": "Get in Touch",
+      "subtitle": "Have questions or need support? We're here to help. Send us a message or give us a call."
+    },
+    "info": {
+      "title": "Contact Information",
+      "email": {
+        "label": "Email",
+        "description": "We usually respond within 24 hours"
+      },
+      "phone": {
+        "label": "Phone",
+        "description": "Available during business hours"
+      },
+      "hours": {
+        "label": "Hours",
+        "schedule": "Every day: 8AM - 9PM CST",
+        "availability": "7 days a week, 365 days a year"
+      }
+    },
+    "form": {
+      "title": "Send Us a Message",
+      "honeypot": "Please leave this blank",
+      "fields": {
+        "name": {
+          "label": "Your Name *",
+          "placeholder": "Jane Doe"
+        },
+        "email": {
+          "label": "Email Address *",
+          "placeholder": "jane@example.com"
+        },
+        "subject": {
+          "label": "Subject *",
+          "placeholder": "How can we help you?"
+        },
+        "message": {
+          "label": "Message *",
+          "placeholder": "Tell us more about your inquiry...",
+          "charCount": "{{count}}/2000 characters"
+        }
+      },
+      "buttons": {
+        "submit": "Send Message",
+        "submitting": "Sending Message..."
+      },
+      "errors": {
+        "nameRequired": "Name is required",
+        "nameTooLong": "Name is too long",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email address",
+        "subjectRequired": "Subject is required",
+        "subjectTooLong": "Subject is too long",
+        "messageRequired": "Message is required",
+        "messageTooShort": "Message must be at least 10 characters",
+        "messageTooLong": "Message is too long"
+      },
+      "messages": {
+        "success": "Thank you for your message! We'll get back to you within 24 hours.",
+        "error": "Something went wrong. Please try again.",
+        "networkError": "Network error. Please check your connection and try again.",
+        "rateLimited": "Too many requests. Please wait a few minutes before trying again."
+      },
+      "footer": {
+        "responseTime": "We typically respond within 24 hours. For urgent matters, please call us at"
+      }
+    }
+  },
   "subscriptions": {
     "title": "Subscription Plans",
     "subtitle": "Choose a subscription plan that best fits your needs and enjoy exclusive benefits",
@@ -88,8 +161,6 @@
     "cancelAnytime": "30-day guarantee • Cancel anytime",
     "viewMoreDetails": "View More Details"
   },
-  
-
   "rotatingHeadline": {
     "noMoreWaiting": "No More Waiting.",
     "be": "Be",
@@ -138,8 +209,6 @@
     "makeAppointment": "Make an Appointment",
     "takeAssessment": "Take Assessment Survey"
   },
-
-
   "howItWorks": {
     "title": "How Lily's Works",
     "subtitle": "Get personalized healthcare from the comfort of your home in just a few simple steps.",
@@ -172,8 +241,6 @@
       }
     }
   },
-
-
   "ticker": {
     "whyLilys": "Why Lily's",
     "items": {
@@ -187,8 +254,6 @@
       "freeDiscreetShipping": "Free & discreet shipping on all prescriptions"
     }
   },
-
-
   "rotatingSection": {
     "title": "Start Your Weight Loss Journey",
     "titleHighlight": "The Right Way",
@@ -217,8 +282,6 @@
       }
     }
   },
-
-
   "faqAccordion": {
     "title": "Frequently Asked Questions",
     "questions": {
@@ -236,8 +299,6 @@
       }
     }
   },
-
-
   "languageSwitcher": {
     "changeLanguage": "Change language",
     "languages": {

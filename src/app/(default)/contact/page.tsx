@@ -1,27 +1,37 @@
 // src/app/(default)/contact/page.tsx
+'use client';
+
 import { Metadata } from 'next';
 import ContactForm from '@/components/ContactForm';
 import PageHeader from '@/components/PageHeader';
-
-// Define metadata for SEO
-export const metadata: Metadata = {
-  title: 'Contact Us | Lily\'s Women\'s Health',
-  description: 'Get in touch with our team for inquiries, support, or to schedule an appointment. We\'re here to help with all your women\'s health needs.',
-  keywords: 'contact, support, womens health, lily\'s, appointment, inquiry',
-  openGraph: {
-    title: 'Contact Us | Lily\'s Women\'s Health',
-    description: 'Get in touch with our team for inquiries, support, or to schedule an appointment.',
-    type: 'website',
-  },
-};
+import { useTranslations } from '@/hooks/useTranslations';
+import { useEffect } from 'react';
 
 export default function ContactPage() {
+  const { t } = useTranslations();
+
+  // Update page title dynamically for SEO
+  useEffect(() => {
+    document.title = t('contact.meta.title');
+    
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', t('contact.meta.description'));
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = t('contact.meta.description');
+      document.head.appendChild(meta);
+    }
+  }, [t]);
+
   return (
-    <div className="bg-white">
+    <div className="bg-white text-black">
       {/* Page Header */}
       <PageHeader 
-        title="Get in Touch"
-        subtitle="Have questions or need support? We're here to help. Send us a message or give us a call."
+        title={t('contact.header.title')}
+        subtitle={t('contact.header.subtitle')}
       />
 
       {/* Main content */}
@@ -36,7 +46,9 @@ export default function ContactPage() {
             {/* Contact Information */}
             <div className="lg:col-span-2">
               <div className="bg-pink-50 p-8 rounded-lg shadow-sm border border-pink-100 sticky top-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Contact Information</h2>
+                <h2 className="text-2xl font-semibold text-black mb-6">
+                  {t('contact.info.title')}
+                </h2>
                 
                 <div className="space-y-6">
                   {/* Email */}
@@ -47,14 +59,18 @@ export default function ContactPage() {
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <h3 className="text-lg font-medium text-gray-900">Email</h3>
+                      <h3 className="text-lg font-medium text-black">
+                        {t('contact.info.email.label')}
+                      </h3>
                       <a 
                         href="mailto:cole@lilyswomenshealth.com"
                         className="mt-1 text-[#fc4e87] hover:text-pink-600 transition-colors"
                       >
                         cole@lilyswomenshealth.com
                       </a>
-                      <p className="mt-1 text-sm text-gray-500">We usually respond within 24 hours</p>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {t('contact.info.email.description')}
+                      </p>
                     </div>
                   </div>
 
@@ -66,14 +82,18 @@ export default function ContactPage() {
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <h3 className="text-lg font-medium text-gray-900">Phone</h3>
+                      <h3 className="text-lg font-medium text-black">
+                        {t('contact.info.phone.label')}
+                      </h3>
                       <a 
                         href="tel:682-386-7827"
                         className="mt-1 text-[#fc4e87] hover:text-pink-600 transition-colors"
                       >
                         682-386-7827
                       </a>
-                      <p className="mt-1 text-sm text-gray-500">Available during business hours</p>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {t('contact.info.phone.description')}
+                      </p>
                     </div>
                   </div>
 
@@ -85,13 +105,17 @@ export default function ContactPage() {
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <h3 className="text-lg font-medium text-gray-900">Hours</h3>
-                      <p className="mt-1 text-gray-600">Every day: 8AM - 9PM CST</p>
-                      <p className="mt-0.5 text-gray-600">7 days a week, 365 days a year</p>
+                      <h3 className="text-lg font-medium text-black">
+                        {t('contact.info.hours.label')}
+                      </h3>
+                      <p className="mt-1 text-gray-700">
+                        {t('contact.info.hours.schedule')}
+                      </p>
+                      <p className="mt-0.5 text-gray-700">
+                        {t('contact.info.hours.availability')}
+                      </p>
                     </div>
                   </div>
-
-
                 </div>
               </div>
             </div>

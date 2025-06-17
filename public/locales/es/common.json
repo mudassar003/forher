@@ -1,4 +1,3 @@
-
 {
   "header": {
     "home": "Inicio",
@@ -56,15 +55,89 @@
     "alreadyHaveAccount": "¿Ya tiene una cuenta?",
     "dontHaveAccount": "¿No tiene una cuenta?"
   },
+  "contact": {
+    "meta": {
+      "title": "Contáctanos | Lily's Salud Femenina",
+      "description": "Ponte en contacto con nuestro equipo para consultas, soporte o para programar una cita. Estamos aquí para ayudar con todas tus necesidades de salud femenina.",
+      "keywords": "contacto, soporte, salud femenina, lily's, cita, consulta"
+    },
+    "header": {
+      "title": "Ponte en Contacto",
+      "subtitle": "¿Tienes preguntas o necesitas soporte? Estamos aquí para ayudar. Envíanos un mensaje o llámanos."
+    },
+    "info": {
+      "title": "Información de Contacto",
+      "email": {
+        "label": "Correo Electrónico",
+        "description": "Normalmente respondemos dentro de 24 horas"
+      },
+      "phone": {
+        "label": "Teléfono",
+        "description": "Disponible durante el horario comercial"
+      },
+      "hours": {
+        "label": "Horarios",
+        "schedule": "Todos los días: 8AM - 9PM CST",
+        "availability": "7 días a la semana, 365 días al año"
+      }
+    },
+    "form": {
+      "title": "Envíanos un Mensaje",
+      "honeypot": "Por favor deja esto en blanco",
+      "fields": {
+        "name": {
+          "label": "Tu Nombre *",
+          "placeholder": "María García"
+        },
+        "email": {
+          "label": "Dirección de Correo Electrónico *",
+          "placeholder": "maria@ejemplo.com"
+        },
+        "subject": {
+          "label": "Asunto *",
+          "placeholder": "¿Cómo podemos ayudarte?"
+        },
+        "message": {
+          "label": "Mensaje *",
+          "placeholder": "Cuéntanos más sobre tu consulta...",
+          "charCount": "{{count}}/2000 caracteres"
+        }
+      },
+      "buttons": {
+        "submit": "Enviar Mensaje",
+        "submitting": "Enviando Mensaje..."
+      },
+      "errors": {
+        "nameRequired": "El nombre es requerido",
+        "nameTooLong": "El nombre es muy largo",
+        "emailRequired": "El correo electrónico es requerido",
+        "emailInvalid": "Por favor ingresa una dirección de correo válida",
+        "subjectRequired": "El asunto es requerido",
+        "subjectTooLong": "El asunto es muy largo",
+        "messageRequired": "El mensaje es requerido",
+        "messageTooShort": "El mensaje debe tener al menos 10 caracteres",
+        "messageTooLong": "El mensaje es muy largo"
+      },
+      "messages": {
+        "success": "¡Gracias por tu mensaje! Te responderemos dentro de 24 horas.",
+        "error": "Algo salió mal. Por favor inténtalo de nuevo.",
+        "networkError": "Error de red. Por favor verifica tu conexión e inténtalo de nuevo.",
+        "rateLimited": "Demasiadas solicitudes. Por favor espera unos minutos antes de intentar de nuevo."
+      },
+      "footer": {
+        "responseTime": "Típicamente respondemos dentro de 24 horas. Para asuntos urgentes, por favor llámanos al"
+      }
+    }
+  },
   "subscriptions": {
     "title": "Planes de Suscripción",
-    "subtitle": "Elija un plan de suscripción que se adapte mejor a sus necesidades y disfrute de beneficios exclusivos",
+    "subtitle": "Elije un plan de suscripción que se adapte mejor a tus necesidades y disfruta de beneficios exclusivos",
     "featuredPlans": "Planes Destacados",
     "featuredPlan": "Plan Destacado",
     "otherPlans": "Otros Planes",
     "ourPlans": "Nuestros Planes de Suscripción",
     "noPlans": "No hay planes de suscripción disponibles",
-    "checkBackLater": "Por favor, vuelva más tarde para ver nuevas opciones de suscripción",
+    "checkBackLater": "Por favor, vuelve más tarde para ver nuevas opciones de suscripción",
     "loadingPlans": "Cargando planes de suscripción...",
     "somethingWrong": "Algo salió mal",
     "tryAgain": "Intentar de nuevo",
@@ -88,7 +161,6 @@
     "cancelAnytime": "Garantía de 30 días • Cancele en cualquier momento",
     "viewMoreDetails": "Ver Más Detalles"
   },
-
   "rotatingHeadline": {
     "noMoreWaiting": "No Más Esperas.",
     "be": "Sé",
@@ -137,16 +209,14 @@
     "makeAppointment": "Programar una Cita",
     "takeAssessment": "Realizar Evaluación"
   },
-
-
   "howItWorks": {
     "title": "Cómo Funciona Lily's",
-    "subtitle": "Obtenga atención médica personalizada desde la comodidad de su hogar en unos sencillos pasos.",
+    "subtitle": "Obtén atención médica personalizada desde la comodidad de tu hogar en unos sencillos pasos.",
     "step": "Paso",
     "previous": "Anterior",
     "next": "Siguiente",
     "bookAppointment": "Programar una Cita",
-    "ctaDescription": "Experimente atención médica personalizada diseñada para sus necesidades únicas con Lily's.",
+    "ctaDescription": "Experimenta atención médica personalizada diseñada para tus necesidades únicas con Lily's.",
     "ariaLabels": {
       "viewStep": "Ver paso {{step}}",
       "previousStep": "Ir al paso anterior",
@@ -155,7 +225,7 @@
     "steps": {
       "assessment": {
         "title": "Evaluación Rápida en Línea",
-        "description": "Complete un cuestionario de salud integral en solo 5 minutos."
+        "description": "Completa un cuestionario de salud integral en solo 5 minutos."
       },
       "exam": {
         "title": "Examen de Buena Fe",
@@ -171,8 +241,6 @@
       }
     }
   },
-
- 
   "ticker": {
     "whyLilys": "Por qué Lily's",
     "items": {
@@ -186,8 +254,6 @@
       "freeDiscreetShipping": "Envío gratuito y discreto en todas las recetas"
     }
   },
-
-
   "rotatingSection": {
     "title": "Comienza Tu Viaje de Pérdida de Peso",
     "titleHighlight": "De la Manera Correcta",
@@ -216,8 +282,6 @@
       }
     }
   },
-
- 
   "faqAccordion": {
     "title": "Preguntas Frecuentes",
     "questions": {
@@ -235,8 +299,6 @@
       }
     }
   },
-
-
   "languageSwitcher": {
     "changeLanguage": "Cambiar idioma",
     "languages": {

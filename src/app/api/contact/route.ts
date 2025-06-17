@@ -69,7 +69,7 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           line-height: 1.6;
-          color: #333;
+          color: #1a1a1a !important;
           max-width: 600px;
           margin: 0 auto;
           padding: 20px;
@@ -83,19 +83,20 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
         }
         .header {
           background: linear-gradient(135deg, #fc4e87, #f093fb);
-          color: white;
+          color: white !important;
           padding: 30px 20px;
           text-align: center;
         }
         .content {
           padding: 30px;
+          background: white;
         }
         .field {
           margin-bottom: 20px;
         }
         .label {
           font-weight: 600;
-          color: #fc4e87;
+          color: #fc4e87 !important;
           margin-bottom: 5px;
           display: block;
           font-size: 14px;
@@ -108,6 +109,7 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
           border-radius: 4px;
           border-left: 4px solid #fc4e87;
           font-size: 16px;
+          color: #1a1a1a !important;
         }
         .message-content {
           background: #f8f9fa;
@@ -117,36 +119,55 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
           white-space: pre-wrap;
           font-family: inherit;
           line-height: 1.6;
+          color: #1a1a1a !important;
         }
         .footer {
           background: #f8f9fa;
           padding: 20px;
           text-align: center;
           font-size: 14px;
-          color: #6c757d;
+          color: #4a5568 !important;
           border-top: 1px solid #e9ecef;
         }
         .timestamp {
           font-size: 12px;
-          color: #8e9aaf;
+          color: #718096 !important;
         }
         .reply-button {
           display: inline-block;
           background: #fc4e87;
-          color: white;
+          color: white !important;
           padding: 12px 24px;
           text-decoration: none;
           border-radius: 6px;
           font-weight: 600;
           margin: 20px 0 10px 0;
         }
+        .email-link {
+          color: #fc4e87 !important;
+          text-decoration: none;
+        }
+        p, div, span {
+          color: #1a1a1a !important;
+        }
+        @media (prefers-color-scheme: dark) {
+          body, .content, .container {
+            background: white !important;
+          }
+          .value, .message-content, .footer {
+            background: #f8f9fa !important;
+          }
+          p, div, span, .value, .message-content {
+            color: #1a1a1a !important;
+          }
+        }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1 style="margin: 0; font-size: 24px;">📧 New Contact Form Submission</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.9;">Lily's Women's Health Website</p>
+          <h1 style="margin: 0; font-size: 24px; color: white !important;">📧 New Contact Form Submission</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9; color: white !important;">Lily's Women's Health Website</p>
         </div>
         
         <div class="content">
@@ -158,7 +179,7 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
           <div class="field">
             <span class="label">Email Address:</span>
             <div class="value">
-              <a href="mailto:${data.email}" style="color: #fc4e87; text-decoration: none;">
+              <a href="mailto:${data.email}" class="email-link">
                 ${data.email}
               </a>
             </div>
@@ -193,7 +214,7 @@ function generateAdminEmailTemplate(data: ContactFormData): string {
               timeZoneName: 'short'
             })}
           </p>
-          <p style="margin: 10px 0 0 0;">
+          <p style="margin: 10px 0 0 0; color: #4a5568 !important;">
             💡 <strong>Tip:</strong> Reply directly to this email or click the button above to respond to ${data.name}
           </p>
         </div>

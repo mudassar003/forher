@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslations } from '@/hooks/useTranslations';
 
 // Types for form data
 interface ContactFormData {
@@ -29,6 +30,8 @@ interface ApiResponse {
 }
 
 export default function ContactForm() {
+  const { t } = useTranslations();
+
   // Form state
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
@@ -100,32 +103,32 @@ export default function ContactForm() {
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('contact.form.errors.nameRequired');
     } else if (formData.name.trim().length > 100) {
-      newErrors.name = 'Name is too long';
+      newErrors.name = t('contact.form.errors.nameTooLong');
     }
 
     // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('contact.form.errors.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('contact.form.errors.emailInvalid');
     }
 
     // Subject validation
     if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
+      newErrors.subject = t('contact.form.errors.subjectRequired');
     } else if (formData.subject.trim().length > 200) {
-      newErrors.subject = 'Subject is too long';
+      newErrors.subject = t('contact.form.errors.subjectTooLong');
     }
 
     // Message validation
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
+      newErrors.message = t('contact.form.errors.messageRequired');
     } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters';
+      newErrors.message = t('contact.form.errors.messageTooShort');
     } else if (formData.message.trim().length > 2000) {
-      newErrors.message = 'Message is too long';
+      newErrors.message = t('contact.form.errors.messageTooLong');
     }
 
     setErrors(newErrors);
@@ -168,7 +171,7 @@ export default function ContactForm() {
       if (response.ok && result.success) {
         // Success
         setSubmitStatus('success');
-        setSuccessMessage(result.message || 'Thank you for your message! We\'ll get back to you within 24 hours.');
+        setSuccessMessage(t('contact.form.messages.success'));
         
         // Reset form
         setFormData({
@@ -187,7 +190,7 @@ export default function ContactForm() {
         setSubmitStatus('error');
         
         if (response.status === 429) {
-          setErrorMessage('Too many requests. Please wait a few minutes before trying again.');
+          setErrorMessage(t('contact.form.messages.rateLimited'));
         } else if (result.details) {
           // Validation errors from server
           const serverErrors: ContactFormErrors = {};
@@ -198,21 +201,23 @@ export default function ContactForm() {
           });
           setErrors(serverErrors);
         } else {
-          setErrorMessage(result.error || 'Something went wrong. Please try again.');
+          setErrorMessage(result.error || t('contact.form.messages.error'));
         }
       }
 
     } catch (error) {
       setSubmitStatus('error');
-      setErrorMessage('Network error. Please check your connection and try again.');
+      setErrorMessage(t('contact.form.messages.networkError'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send Us a Message</h2>
+    <div className="bg-white text-black p-8 rounded-lg shadow-sm border border-gray-200">
+      <h2 className="text-2xl font-semibold text-black mb-6">
+        {t('contact.form.title')}
+      </h2>
       
       {/* Success Message */}
       {submitStatus === 'success' && successMessage && (
@@ -241,7 +246,7 @@ export default function ContactForm() {
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Hidden honeypot field for spam protection */}
         <div className="hidden" aria-hidden="true">
-          <label htmlFor="website">Please leave this blank</label>
+          <label htmlFor="website">{t('contact.form.honeypot')}</label>
           <input
             type="text"
             id="website"
@@ -255,8 +260,8 @@ export default function ContactForm() {
 
         {/* Name Field */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Your Name *
+          <label htmlFor="name" className="block text-sm font-medium text-black mb-2">
+            {t('contact.form.fields.name.label')}
           </label>
           <input
             ref={nameInputRef}
@@ -267,12 +272,12 @@ export default function ContactForm() {
             onChange={handleInputChange}
             required
             disabled={isSubmitting}
-            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors ${
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors text-black placeholder-gray-500 ${
               errors.name 
                 ? 'border-red-300 bg-red-50' 
                 : 'border-gray-300 hover:border-gray-400'
             } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-            placeholder="Jane Doe"
+            placeholder={t('contact.form.fields.name.placeholder')}
             maxLength={100}
             aria-describedby={errors.name ? 'name-error' : undefined}
             aria-invalid={errors.name ? 'true' : 'false'}
@@ -289,8 +294,8 @@ export default function ContactForm() {
 
         {/* Email Field */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address *
+          <label htmlFor="email" className="block text-sm font-medium text-black mb-2">
+            {t('contact.form.fields.email.label')}
           </label>
           <input
             type="email"
@@ -300,12 +305,12 @@ export default function ContactForm() {
             onChange={handleInputChange}
             required
             disabled={isSubmitting}
-            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors ${
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors text-black placeholder-gray-500 ${
               errors.email 
                 ? 'border-red-300 bg-red-50' 
                 : 'border-gray-300 hover:border-gray-400'
             } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-            placeholder="jane@example.com"
+            placeholder={t('contact.form.fields.email.placeholder')}
             autoComplete="email"
             aria-describedby={errors.email ? 'email-error' : undefined}
             aria-invalid={errors.email ? 'true' : 'false'}
@@ -322,8 +327,8 @@ export default function ContactForm() {
 
         {/* Subject Field */}
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-            Subject *
+          <label htmlFor="subject" className="block text-sm font-medium text-black mb-2">
+            {t('contact.form.fields.subject.label')}
           </label>
           <input
             type="text"
@@ -333,12 +338,12 @@ export default function ContactForm() {
             onChange={handleInputChange}
             required
             disabled={isSubmitting}
-            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors ${
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors text-black placeholder-gray-500 ${
               errors.subject 
                 ? 'border-red-300 bg-red-50' 
                 : 'border-gray-300 hover:border-gray-400'
             } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-            placeholder="How can we help you?"
+            placeholder={t('contact.form.fields.subject.placeholder')}
             maxLength={200}
             aria-describedby={errors.subject ? 'subject-error' : undefined}
             aria-invalid={errors.subject ? 'true' : 'false'}
@@ -355,8 +360,8 @@ export default function ContactForm() {
 
         {/* Message Field */}
         <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-            Message *
+          <label htmlFor="message" className="block text-sm font-medium text-black mb-2">
+            {t('contact.form.fields.message.label')}
           </label>
           <textarea
             id="message"
@@ -366,12 +371,12 @@ export default function ContactForm() {
             required
             disabled={isSubmitting}
             rows={5}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors resize-vertical ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none transition-colors resize-vertical text-black placeholder-gray-500 ${
               errors.message 
                 ? 'border-red-300 bg-red-50' 
                 : 'border-gray-300 hover:border-gray-400'
             } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-            placeholder="Tell us more about your inquiry..."
+            placeholder={t('contact.form.fields.message.placeholder')}
             maxLength={2000}
             aria-describedby={errors.message ? 'message-error' : 'message-help'}
             aria-invalid={errors.message ? 'true' : 'false'}
@@ -384,8 +389,8 @@ export default function ContactForm() {
               {errors.message}
             </p>
           ) : (
-            <p id="message-help" className="mt-1.5 text-sm text-gray-500">
-              {formData.message.length}/2000 characters
+            <p id="message-help" className="mt-1.5 text-sm text-gray-600">
+              {t('contact.form.fields.message.charCount', { count: formData.message.length })}
             </p>
           )}
         </div>
@@ -407,17 +412,18 @@ export default function ContactForm() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Sending Message...
+                {t('contact.form.buttons.submitting')}
               </span>
             ) : (
-              'Send Message'
+              t('contact.form.buttons.submit')
             )}
           </button>
         </div>
 
         {/* Form Footer */}
-        <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
-          <p>We typically respond within 24 hours. For urgent matters, please call us at{' '}
+        <div className="text-center text-sm text-gray-600 pt-4 border-t border-gray-200">
+          <p>
+            {t('contact.form.footer.responseTime')}{' '}
             <a href="tel:682-386-7827" className="text-[#fc4e87] hover:underline font-medium">
               682-386-7827
             </a>

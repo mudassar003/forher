@@ -67,8 +67,8 @@ export default async function SubscriptionPage({ params }: SubscriptionPageProps
       {/* FAQ Section with dynamic content */}
       <div className="bg-gray-50 py-12">
         <SubscriptionFAQ
-          title={`${subscription.title} FAQs`}
-          titleEs={subscription.titleEs ? `Preguntas Frecuentes sobre ${subscription.titleEs}` : undefined}
+          subscriptionTitle={subscription.title}
+          subscriptionTitleEs={subscription.titleEs}
           faqItems={subscription.faqItems || []}
         />
       </div>

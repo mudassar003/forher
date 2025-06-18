@@ -284,6 +284,7 @@
   },
   "faqAccordion": {
     "title": "Frequently Asked Questions",
+    "faqs": "FAQs",
     "questions": {
       "whatIsLilys": {
         "question": "What is Lily's?",

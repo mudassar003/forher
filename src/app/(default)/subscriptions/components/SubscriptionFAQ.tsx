@@ -7,6 +7,8 @@ import useTranslations from '@/hooks/useTranslations';
 import { SubscriptionFAQItem } from '@/types/subscription-page';
 
 interface SubscriptionFAQProps {
+  subscriptionTitle?: string;
+  subscriptionTitleEs?: string;
   title?: string;
   titleEs?: string;
   className?: string;
@@ -14,6 +16,8 @@ interface SubscriptionFAQProps {
 }
 
 const SubscriptionFAQ: React.FC<SubscriptionFAQProps> = ({
+  subscriptionTitle,
+  subscriptionTitleEs,
   title,
   titleEs,
   className = '',
@@ -76,12 +80,33 @@ const SubscriptionFAQ: React.FC<SubscriptionFAQProps> = ({
   // Use provided FAQ items or fall back to default ones
   const faqData = faqItems && faqItems.length > 0 ? faqItems : defaultFaqItems;
 
-  // Get localized text
+  // Get localized text with dynamic title generation
   const getLocalizedTitle = (): string => {
+    // NEW: Dynamic title generation using subscription titles
+    if (subscriptionTitle) {
+      // Generate FAQ title with translated FAQ word
+      if (currentLanguage === 'es') {
+        // If Spanish title exists, use it with Spanish FAQ text
+        if (subscriptionTitleEs) {
+          return `Preguntas Frecuentes sobre ${subscriptionTitleEs}`;
+        }
+        // If no Spanish title, just use "Preguntas Frecuentes" without the English title
+        return 'Preguntas Frecuentes';
+      }
+      // English version always includes the subscription title
+      return `${subscriptionTitle} FAQs`;
+    }
+    
+    // Fallback to static titles if provided (backward compatibility)
     if (currentLanguage === 'es' && titleEs) {
       return titleEs;
     }
-    return title || (currentLanguage === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions');
+    if (title) {
+      return title;
+    }
+    
+    // Default fallback
+    return currentLanguage === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions';
   };
   
   const getLocalizedQuestion = (item: SubscriptionFAQItem): string => {

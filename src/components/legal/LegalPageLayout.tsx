@@ -1,38 +1,19 @@
 // src/components/legal/LegalPageLayout.tsx
 import React, { ReactNode } from 'react';
-import Link from 'next/link';
 
 interface LegalPageLayoutProps {
   title: string;
   lastUpdated: string;
   children: ReactNode;
   subtitle?: string;
-  relatedLinks?: Array<{
-    href: string;
-    label: string;
-  }>;
 }
 
 const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({
   title,
   lastUpdated,
   children,
-  subtitle,
-  relatedLinks = []
+  subtitle
 }) => {
-  // Default related links if none provided
-  const defaultLinks = [
-    { href: '/privacy-policy', label: 'Privacy Policy' },
-    { href: '/terms-of-service', label: 'Terms of Service' },
-    { href: '/cookie-policy', label: 'Cookie Policy' },
-    { href: '/ccpa-notice', label: 'CCPA Notice' },
-  ];
-
-  // Filter out the current page from related links
-  const links = relatedLinks.length > 0 
-    ? relatedLinks 
-    : defaultLinks.filter(link => !link.href.includes(title.toLowerCase().replace(/\s+/g, '-')));
-
   return (
     <main className="bg-white">
       {/* Enhanced header section with brand styling */}
@@ -71,20 +52,6 @@ const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({
           </p>
           
           {children}
-          
-          {/* Related Policies Section */}
-          <div className="mt-12 pt-6 border-t border-gray-200">
-            <h3 className="text-lg font-medium mb-4">Related Policies</h3>
-            <ul className="space-y-2">
-              {links.map((link, index) => (
-                <li key={index}>
-                  <Link href={link.href} className="text-blue-600 hover:underline">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
       </div>
     </main>

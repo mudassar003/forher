@@ -34,6 +34,19 @@ interface Translations {
   standardPlan: string;
   imageDisclaimer: string;
   lowestPrice: string;
+  // Add new translations for the missing strings
+  totalPerMonth: string;
+  totalFor3Months: string;
+  totalFor6Months: string;
+  totalFor1Year: string;
+  total: string;
+  month: string;
+  monthPlan: string;
+  originalPrice: string;
+  discountedPrice: string;
+  processing: string;
+  buyNow: string;
+  dismiss: string;
 }
 
 const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription }) => {
@@ -116,7 +129,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     clearError();
   };
 
-  // Custom translations
+  // Custom translations - EXPANDED WITH NEW TRANSLATIONS
   const translations: Translations = {
     home: currentLanguage === 'es' ? 'Inicio' : 'Home',
     subscriptions: currentLanguage === 'es' ? 'Suscripciones' : 'Subscriptions',
@@ -133,7 +146,20 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     baseOption: currentLanguage === 'es' ? 'Opción Base' : 'Base Option',
     standardPlan: currentLanguage === 'es' ? 'Plan Estándar' : 'Standard Plan',
     imageDisclaimer: currentLanguage === 'es' ? 'La imagen es ilustrativa. El producto enviado puede variar en apariencia.' : 'Product image for illustration. Actual product appearance may vary when shipped.',
-    lowestPrice: currentLanguage === 'es' ? 'Precio Más Bajo' : 'Lowest Price'
+    lowestPrice: currentLanguage === 'es' ? 'Precio Más Bajo' : 'Lowest Price',
+    // NEW TRANSLATIONS FOR THE MISSING STRINGS
+    totalPerMonth: currentLanguage === 'es' ? 'total por mes' : 'total per month',
+    totalFor3Months: currentLanguage === 'es' ? 'total por 3 meses' : 'total for 3 months',
+    totalFor6Months: currentLanguage === 'es' ? 'total por 6 meses' : 'total for 6 months',
+    totalFor1Year: currentLanguage === 'es' ? 'total por 1 año' : 'total for 1 year',
+    total: currentLanguage === 'es' ? 'total' : 'total',
+    month: currentLanguage === 'es' ? '/mes' : '/month',
+    monthPlan: currentLanguage === 'es' ? 'Plan de 1 mes' : '1 Month Plan',
+    originalPrice: currentLanguage === 'es' ? 'Precio original: ' : 'Original price: ',
+    discountedPrice: currentLanguage === 'es' ? 'Precio con descuento: ' : 'Discounted price: ',
+    processing: currentLanguage === 'es' ? 'Procesando...' : 'Processing...',
+    buyNow: currentLanguage === 'es' ? 'Comprar Ahora' : 'Buy Now',
+    dismiss: currentLanguage === 'es' ? 'Cerrar' : 'Dismiss'
   };
 
   // Get the content based on current language
@@ -214,11 +240,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       maximumFractionDigits: 0,
     }).format(monthlyPrice);
 
-    const monthText = currentLanguage === 'es' ? '/mes' : '/month';
-    return `${formattedPrice}${monthText}`;
+    // USE TRANSLATED MONTH TEXT
+    return `${formattedPrice}${translations.month}`;
   };
 
-  // Get total price text for small font below monthly price
+  // Get total price text for small font below monthly price - UPDATED WITH TRANSLATIONS
   const getTotalPriceText = (): string => {
     let price: number;
     let billingPeriod: string;
@@ -248,24 +274,28 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
       maximumFractionDigits: 0,
     }).format(price);
 
-    // Get billing period display for total price
+    // USE TRANSLATED BILLING PERIOD DISPLAY
     switch (billingPeriod) {
       case 'monthly':
-        return `${formattedPrice} total per month`;
+        return `${formattedPrice} ${translations.totalPerMonth}`;
       case 'three_month':
-        return `${formattedPrice} total for 3 months`;
+        return `${formattedPrice} ${translations.totalFor3Months}`;
       case 'six_month':
-        return `${formattedPrice} total for 6 months`;
+        return `${formattedPrice} ${translations.totalFor6Months}`;
       case 'annually':
-        return `${formattedPrice} total for 1 year`;
+        return `${formattedPrice} ${translations.totalFor1Year}`;
       case 'other':
         if (customBillingPeriodMonths && customBillingPeriodMonths > 1) {
-          return `${formattedPrice} total for ${customBillingPeriodMonths} months`;
+          // For custom periods, use a more generic approach
+          const monthsText = currentLanguage === 'es' 
+            ? `total por ${customBillingPeriodMonths} meses`
+            : `total for ${customBillingPeriodMonths} months`;
+          return `${formattedPrice} ${monthsText}`;
         } else {
-          return `${formattedPrice} total per month`;
+          return `${formattedPrice} ${translations.totalPerMonth}`;
         }
       default:
-        return `${formattedPrice} total`;
+        return `${formattedPrice} ${translations.total}`;
     }
   };
 
@@ -279,7 +309,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     }).format(price);
   };
 
-  // Get monthly price display for variant selector
+  // Get monthly price display for variant selector - UPDATED WITH TRANSLATIONS
   const getMonthlyPriceDisplay = (
     price: number,
     billingPeriod: string,
@@ -311,13 +341,11 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
         monthlyPrice = price;
     }
 
-    const monthText = currentLanguage === 'es' ? '/month' : '/month';
-    return `${getFormattedPrice(monthlyPrice)}${monthText}`;
+    // USE TRANSLATED MONTH TEXT
+    return `${getFormattedPrice(monthlyPrice)}${translations.month}`;
   };
 
-  
-
-  // Get total price display for variant selector
+  // Get total price display for variant selector - UPDATED WITH TRANSLATIONS
   const getTotalPriceDisplay = (
     price: number,
     billingPeriod: string,
@@ -325,21 +353,8 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
   ): string => {
     const formattedPrice = getFormattedPrice(price);
     
-    // Format based on billing period - show total only
-    switch (billingPeriod) {
-      case 'monthly':
-        return `${formattedPrice} total`;
-      case 'three_month':
-        return `${formattedPrice} total`;
-      case 'six_month':
-        return `${formattedPrice} total`;
-      case 'annually':
-        return `${formattedPrice} total`;
-      case 'other':
-        return `${formattedPrice} total`;
-      default:
-        return `${formattedPrice} total`;
-    }
+    // USE TRANSLATED TOTAL TEXT
+    return `${formattedPrice} ${translations.total}`;
   };
 
   // Get localized variant title
@@ -462,14 +477,14 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
     }
   };
 
-  // Get subscription button text based on state
+  // Get subscription button text based on state - UPDATED WITH TRANSLATIONS
   const getSubscribeButtonText = (): string => {
     if (isProcessing || isLoading) {
-      return currentLanguage === 'es' ? 'Procesando...' : 'Processing...';
+      return translations.processing;
     }
     
     // Always show "Buy Now" regardless of authentication status
-    return currentLanguage === 'es' ? 'Comprar Ahora' : 'Buy Now';
+    return translations.buyNow;
   };
 
   // Check if something is selected (base or variant)
@@ -643,7 +658,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                       {translations.selectVariant}
                     </h3>
                     <div className="space-y-3">
-                      {/* Base Subscription Option */}
+                      {/* Base Subscription Option - UPDATED WITH TRANSLATION */}
                       <div 
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-[#e63946] 
                           ${selectedBase 
@@ -654,7 +669,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                         <div className="flex justify-between">
                           <div>
                             <h4 className="font-medium text-gray-900">
-                              {currentLanguage === 'es' ? 'Plan de 1 mes' : '1 Month Plan'}
+                              {translations.monthPlan}
                             </h4>
                           </div>
                           <div className="text-right">
@@ -737,15 +752,15 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                     onCouponRemoved={handleCouponRemoved}
                   />
                   
-                  {/* Show original price if coupon is applied */}
+                  {/* Show original price if coupon is applied - UPDATED WITH TRANSLATIONS */}
                   {discountedPrice !== null && (
                     <div className="mt-4 text-center">
                       <p className="text-sm text-gray-500 line-through">
-                        {currentLanguage === 'es' ? 'Precio original: ' : 'Original price: '}
+                        {translations.originalPrice}
                         ${getCurrentPrice()}
                       </p>
                       <p className="text-lg font-bold text-green-600">
-                        {currentLanguage === 'es' ? 'Precio con descuento: ' : 'Discounted price: '}
+                        {translations.discountedPrice}
                         ${discountedPrice}
                       </p>
                     </div>
@@ -766,7 +781,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                     {getSubscribeButtonText()}
                   </button>
                   
-                  {/* Enhanced Error Display */}
+                  {/* Enhanced Error Display - UPDATED WITH TRANSLATIONS */}
                   {(purchaseError || error) && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                       <div className="flex items-center">
@@ -784,7 +799,7 @@ const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = ({ subscription 
                         }}
                         className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
                       >
-                        {currentLanguage === 'es' ? 'Cerrar' : 'Dismiss'}
+                        {translations.dismiss}
                       </button>
                     </div>
                   )}

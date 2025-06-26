@@ -8,7 +8,8 @@ import {
   TextInputQuestion,
   HeightInputQuestion,
   ContactInfoQuestion,
-  ContactInfoData
+  ContactInfoData,
+  US_STATES
 } from "../../types";
 import { sanitizeInput, validateContactInfo } from "../../data/questions";
 
@@ -247,7 +248,7 @@ export const HeightInput: React.FC<{
   );
 };
 
-// FIXED: Contact Info Component - Removed aggressive sanitization
+// Updated Contact Info Component with new fields
 export const ContactInfo: React.FC<{
   question: ContactInfoQuestion;
   value: ContactInfoData | undefined;
@@ -258,18 +259,22 @@ export const ContactInfo: React.FC<{
   
   // Initialize default values
   const contactData: ContactInfoData = {
-    name: value?.name || "",
+    firstName: value?.firstName || "",
+    lastName: value?.lastName || "",
     email: value?.email || "",
-    phone: value?.phone || ""
+    phone: value?.phone || "",
+    state: value?.state || "",
+    dateOfBirth: value?.dateOfBirth || ""
   };
   
   const handleFieldChange = (field: keyof ContactInfoData, rawValue: string) => {
     let processedValue: string;
     
-    // Only apply sanitization on blur or specific cases, not on every keystroke
+    // Apply appropriate sanitization based on field type
     switch (field) {
-      case 'name':
-        // For name, just use the raw value directly to preserve spaces
+      case 'firstName':
+      case 'lastName':
+        // For names, preserve spaces during typing
         processedValue = rawValue;
         break;
       case 'email':
@@ -277,8 +282,16 @@ export const ContactInfo: React.FC<{
         processedValue = rawValue.trim().toLowerCase();
         break;
       case 'phone':
-        // Only format phone numbers
+        // Format phone numbers
         processedValue = sanitizeInput.phone(rawValue);
+        break;
+      case 'dateOfBirth':
+        // For date input, use the raw value as browser handles formatting
+        processedValue = rawValue;
+        break;
+      case 'state':
+        // State should be selected from dropdown, keep as is
+        processedValue = rawValue;
         break;
       default:
         processedValue = rawValue;
@@ -302,13 +315,13 @@ export const ContactInfo: React.FC<{
   };
   
   const handleBlur = (field: keyof ContactInfoData) => {
-    // Only sanitize on blur to preserve user experience while typing
-    if (field === 'name') {
-      const sanitizedName = sanitizeInput.name(contactData.name);
-      if (sanitizedName !== contactData.name) {
+    // Sanitize names on blur
+    if (field === 'firstName' || field === 'lastName') {
+      const sanitizedValue = sanitizeInput.name(contactData[field]);
+      if (sanitizedValue !== contactData[field]) {
         const updatedData = {
           ...contactData,
-          name: sanitizedName
+          [field]: sanitizedValue
         };
         onChange(updatedData);
       }
@@ -322,29 +335,56 @@ export const ContactInfo: React.FC<{
   
   return (
     <div className="space-y-6 mb-12">
-      {/* Name Field */}
-      {question.fields.name && (
-        <div>
-          <label className="block text-sm font-medium text-black mb-2">
-            Full Name *
-          </label>
-          <input
-            type="text"
-            value={contactData.name}
-            onChange={(e) => handleFieldChange('name', e.target.value)}
-            onBlur={() => handleBlur('name')}
-            placeholder="Enter your full name"
-            maxLength={50}
-            className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
-              errors.name ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
-            } focus:outline-none`}
-            required
-          />
-          {errors.name && (
-            <p className="mt-1 text-red-500 text-sm">{errors.name}</p>
-          )}
-        </div>
-      )}
+      {/* First and Last Name Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* First Name Field */}
+        {question.fields.firstName && (
+          <div>
+            <label className="block text-sm font-medium text-black mb-2">
+              First Name *
+            </label>
+            <input
+              type="text"
+              value={contactData.firstName}
+              onChange={(e) => handleFieldChange('firstName', e.target.value)}
+              onBlur={() => handleBlur('firstName')}
+              placeholder="Enter your first name"
+              maxLength={50}
+              className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
+                errors.firstName ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+              } focus:outline-none`}
+              required
+            />
+            {errors.firstName && (
+              <p className="mt-1 text-red-500 text-sm">{errors.firstName}</p>
+            )}
+          </div>
+        )}
+        
+        {/* Last Name Field */}
+        {question.fields.lastName && (
+          <div>
+            <label className="block text-sm font-medium text-black mb-2">
+              Last Name *
+            </label>
+            <input
+              type="text"
+              value={contactData.lastName}
+              onChange={(e) => handleFieldChange('lastName', e.target.value)}
+              onBlur={() => handleBlur('lastName')}
+              placeholder="Enter your last name"
+              maxLength={50}
+              className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
+                errors.lastName ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+              } focus:outline-none`}
+              required
+            />
+            {errors.lastName && (
+              <p className="mt-1 text-red-500 text-sm">{errors.lastName}</p>
+            )}
+          </div>
+        )}
+      </div>
       
       {/* Email Field */}
       {question.fields.email && (
@@ -370,27 +410,85 @@ export const ContactInfo: React.FC<{
         </div>
       )}
       
-      {/* Phone Field */}
-      {question.fields.phone && (
+      {/* Phone and State Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Phone Field */}
+        {question.fields.phone && (
+          <div>
+            <label className="block text-sm font-medium text-black mb-2">
+              Phone Number *
+            </label>
+            <input
+              type="tel"
+              value={contactData.phone}
+              onChange={(e) => handleFieldChange('phone', e.target.value)}
+              onBlur={() => handleBlur('phone')}
+              placeholder="(555) 123-4567"
+              maxLength={14}
+              className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
+                errors.phone ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+              } focus:outline-none`}
+              required
+            />
+            {errors.phone && (
+              <p className="mt-1 text-red-500 text-sm">{errors.phone}</p>
+            )}
+          </div>
+        )}
+        
+        {/* State Field */}
+        {question.fields.state && (
+          <div>
+            <label className="block text-sm font-medium text-black mb-2">
+              State *
+            </label>
+            <select
+              value={contactData.state}
+              onChange={(e) => handleFieldChange('state', e.target.value)}
+              onBlur={() => handleBlur('state')}
+              className={`w-full p-4 text-lg rounded-lg border-2 text-black bg-white ${
+                errors.state ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+              } focus:outline-none`}
+              required
+            >
+              <option value="">Select your state</option>
+              {US_STATES.map((state) => (
+                <option key={state.abbreviation} value={state.abbreviation}>
+                  {state.name}
+                </option>
+              ))}
+            </select>
+            {errors.state && (
+              <p className="mt-1 text-red-500 text-sm">{errors.state}</p>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Date of Birth Field */}
+      {question.fields.dateOfBirth && (
         <div>
           <label className="block text-sm font-medium text-black mb-2">
-            Phone Number *
+            Date of Birth *
           </label>
           <input
-            type="tel"
-            value={contactData.phone}
-            onChange={(e) => handleFieldChange('phone', e.target.value)}
-            onBlur={() => handleBlur('phone')}
-            placeholder="(555) 123-4567"
-            maxLength={14}
+            type="date"
+            value={contactData.dateOfBirth}
+            onChange={(e) => handleFieldChange('dateOfBirth', e.target.value)}
+            onBlur={() => handleBlur('dateOfBirth')}
+            max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+            min={new Date(new Date().setFullYear(new Date().getFullYear() - 100)).toISOString().split('T')[0]}
             className={`w-full p-4 text-lg rounded-lg border-2 text-black ${
-              errors.phone ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
+              errors.dateOfBirth ? "border-red-500" : "border-gray-300 focus:border-[#fe92b5]"
             } focus:outline-none`}
             required
           />
-          {errors.phone && (
-            <p className="mt-1 text-red-500 text-sm">{errors.phone}</p>
+          {errors.dateOfBirth && (
+            <p className="mt-1 text-red-500 text-sm">{errors.dateOfBirth}</p>
           )}
+          <p className="mt-1 text-gray-600 text-sm">
+            You must be at least 18 years old to use our services
+          </p>
         </div>
       )}
       
@@ -404,7 +502,7 @@ export const ContactInfo: React.FC<{
   );
 };
 
-// Question Renderer Component - ADDED ContactInfo case
+// Question Renderer Component
 export const QuestionRenderer: React.FC<{
   question: Question;
   value: any;

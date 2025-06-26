@@ -132,9 +132,12 @@ export const weightLossQuestions: Question[] = [
     description: "Please provide your details to receive your personalized weight loss plan and recommendations.",
     type: QuestionType.ContactInfo,
     fields: {
-      name: true,
+      firstName: true,
+      lastName: true,
       email: true,
-      phone: true
+      phone: true,
+      state: true,
+      dateOfBirth: true
     }
   }
 ];
@@ -182,20 +185,37 @@ export const sanitizeInput = {
     }
     
     return cleaned;
+  },
+
+  date: (value: string): string => {
+    // For date inputs, we don't need to format as the browser handles it
+    // Just validate it's a proper date format
+    return value;
   }
 };
 
 export const validateContactInfo = (data: ContactInfoData): { isValid: boolean; errors: Record<string, string> } => {
   const errors: Record<string, string> = {};
   
-  if (!data.name || data.name.trim().length < 2) {
-    errors.name = "Name must be at least 2 characters long";
-  } else if (data.name.length > 50) {
-    errors.name = "Name must be less than 50 characters";
-  } else if (/[<>\"'&]/.test(data.name)) {
-    errors.name = "Name contains invalid characters";
+  // First Name validation
+  if (!data.firstName || data.firstName.trim().length < 2) {
+    errors.firstName = "First name must be at least 2 characters long";
+  } else if (data.firstName.length > 50) {
+    errors.firstName = "First name must be less than 50 characters";
+  } else if (/[<>\"'&]/.test(data.firstName)) {
+    errors.firstName = "First name contains invalid characters";
   }
   
+  // Last Name validation
+  if (!data.lastName || data.lastName.trim().length < 2) {
+    errors.lastName = "Last name must be at least 2 characters long";
+  } else if (data.lastName.length > 50) {
+    errors.lastName = "Last name must be less than 50 characters";
+  } else if (/[<>\"'&]/.test(data.lastName)) {
+    errors.lastName = "Last name contains invalid characters";
+  }
+  
+  // Email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!data.email || !emailRegex.test(data.email)) {
     errors.email = "Please enter a valid email address";
@@ -203,10 +223,37 @@ export const validateContactInfo = (data: ContactInfoData): { isValid: boolean; 
     errors.email = "Email address is too long";
   }
   
+  // Phone validation
   const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
   const digitsOnly = data.phone.replace(/[^\d]/g, '');
   if (!data.phone || !phoneRegex.test(data.phone) || digitsOnly.length !== 10) {
     errors.phone = "Please enter a valid 10-digit US phone number";
+  }
+  
+  // State validation
+  if (!data.state || data.state.trim() === '') {
+    errors.state = "Please select a state";
+  }
+  
+  // Date of Birth validation
+  if (!data.dateOfBirth || data.dateOfBirth.trim() === '') {
+    errors.dateOfBirth = "Please enter your date of birth";
+  } else {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(data.dateOfBirth)) {
+      errors.dateOfBirth = "Please enter date in YYYY-MM-DD format";
+    } else {
+      const date = new Date(data.dateOfBirth);
+      const today = new Date();
+      const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+      const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+      
+      if (isNaN(date.getTime())) {
+        errors.dateOfBirth = "Please enter a valid date";
+      } else if (date < minDate || date > maxDate) {
+        errors.dateOfBirth = "You must be between 18 and 100 years old";
+      }
+    }
   }
   
   return {

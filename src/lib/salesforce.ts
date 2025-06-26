@@ -1,9 +1,12 @@
 // src/lib/salesforce.ts
 interface WeightLossLeadData {
   Name: string;
-  Full_Name__c?: string;
+  First_Name__c?: string;
+  Last_Name__c?: string;
   Email__c?: string;
   Phone__c?: string;
+  State__c?: string;
+  DOB__c?: string;
   Age_Group__c?: string;
   Is_Female__c?: string;
   Current_Weight__c?: number;
@@ -113,8 +116,22 @@ class SalesforceService {
   }
 
   transformFormDataToLead(formData: Record<string, any>, contactInfo?: any): WeightLossLeadData {
-    const fullName = contactInfo?.name || 'Unknown User';
+    // Extract name components
+    const firstName = contactInfo?.firstName || 'Unknown';
+    const lastName = contactInfo?.lastName || 'User';
+    const fullName = `${firstName} ${lastName}`.trim();
     
+    // Extract and validate date of birth
+    let dateOfBirth: string | undefined;
+    if (contactInfo?.dateOfBirth) {
+      // Ensure date is in YYYY-MM-DD format for Salesforce
+      const dobMatch = contactInfo.dateOfBirth.match(/^\d{4}-\d{2}-\d{2}$/);
+      if (dobMatch) {
+        dateOfBirth = contactInfo.dateOfBirth;
+      }
+    }
+    
+    // Extract height data
     let heightFeet: number | undefined;
     let heightInches: number | undefined;
     if (formData.height) {
@@ -129,6 +146,7 @@ class SalesforceService {
       }
     }
 
+    // Calculate BMI
     let bmi: number | undefined;
     if (formData['current-weight'] && heightFeet && heightInches !== undefined) {
       const weightInLbs = parseFloat(formData['current-weight']);
@@ -138,6 +156,7 @@ class SalesforceService {
       bmi = Math.round((weightInKg / (heightInMeters * heightInMeters)) * 100) / 100;
     }
 
+    // Process medical conditions
     let medicalConditions: string | undefined;
     if (Array.isArray(formData['medical-conditions'])) {
       const conditions = formData['medical-conditions'].filter((c: string) => c !== 'none');
@@ -146,9 +165,12 @@ class SalesforceService {
 
     return {
       Name: `Weight Loss Lead - ${fullName}`,
-      Full_Name__c: fullName,
+      First_Name__c: firstName,
+      Last_Name__c: lastName,
       Email__c: contactInfo?.email,
       Phone__c: contactInfo?.phone,
+      State__c: contactInfo?.state,
+      DOB__c: dateOfBirth,
       Age_Group__c: formData['age-group'] === '55-plus' ? '55+' : formData['age-group'],
       Is_Female__c: formData.gender === 'yes' ? 'Yes' : formData.gender === 'no' ? 'No' : undefined,
       Current_Weight__c: formData['current-weight'] ? parseFloat(formData['current-weight']) : undefined,

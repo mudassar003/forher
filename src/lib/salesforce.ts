@@ -23,6 +23,60 @@ interface WeightLossLeadData {
   Lead_Source__c: string;
 }
 
+// State mapping from abbreviation to full name
+const STATE_MAPPING: Record<string, string> = {
+  'AL': 'Alabama',
+  'AK': 'Alaska',
+  'AZ': 'Arizona',
+  'AR': 'Arkansas',
+  'CA': 'California',
+  'CO': 'Colorado',
+  'CT': 'Connecticut',
+  'DE': 'Delaware',
+  'FL': 'Florida',
+  'GA': 'Georgia',
+  'HI': 'Hawaii',
+  'ID': 'Idaho',
+  'IL': 'Illinois',
+  'IN': 'Indiana',
+  'IA': 'Iowa',
+  'KS': 'Kansas',
+  'KY': 'Kentucky',
+  'LA': 'Louisiana',
+  'ME': 'Maine',
+  'MD': 'Maryland',
+  'MA': 'Massachusetts',
+  'MI': 'Michigan',
+  'MN': 'Minnesota',
+  'MS': 'Mississippi',
+  'MO': 'Missouri',
+  'MT': 'Montana',
+  'NE': 'Nebraska',
+  'NV': 'Nevada',
+  'NH': 'New Hampshire',
+  'NJ': 'New Jersey',
+  'NM': 'New Mexico',
+  'NY': 'New York',
+  'NC': 'North Carolina',
+  'ND': 'North Dakota',
+  'OH': 'Ohio',
+  'OK': 'Oklahoma',
+  'OR': 'Oregon',
+  'PA': 'Pennsylvania',
+  'RI': 'Rhode Island',
+  'SC': 'South Carolina',
+  'SD': 'South Dakota',
+  'TN': 'Tennessee',
+  'TX': 'Texas',
+  'UT': 'Utah',
+  'VT': 'Vermont',
+  'VA': 'Virginia',
+  'WA': 'Washington',
+  'WV': 'West Virginia',
+  'WI': 'Wisconsin',
+  'WY': 'Wyoming'
+};
+
 class SalesforceService {
   private username: string;
   private password: string;
@@ -76,6 +130,26 @@ class SalesforceService {
       sessionId: sessionIdMatch[1],
       serverUrl: serverUrlMatch[1]
     };
+  }
+
+  /**
+   * Convert state abbreviation to full state name
+   * @param stateCode - State abbreviation (e.g., "NY", "CA")
+   * @returns Full state name (e.g., "New York", "California") or the original value if not found
+   */
+  private getFullStateName(stateCode: string): string {
+    if (!stateCode) return '';
+    
+    // If it's already a full state name (more than 2 characters), return as is
+    if (stateCode.length > 2) {
+      return stateCode;
+    }
+    
+    // Convert to uppercase to ensure proper matching
+    const upperStateCode = stateCode.toUpperCase();
+    
+    // Return the full state name or the original code if not found
+    return STATE_MAPPING[upperStateCode] || stateCode;
   }
 
   async createWeightLossLead(leadData: WeightLossLeadData): Promise<{ success: boolean; id?: string; error?: string }> {
@@ -163,13 +237,16 @@ class SalesforceService {
       medicalConditions = conditions.length > 0 ? conditions.join(', ') : undefined;
     }
 
+    // Convert state abbreviation to full state name
+    const fullStateName = contactInfo?.state ? this.getFullStateName(contactInfo.state) : undefined;
+
     return {
       Name: `Weight Loss Lead - ${fullName}`,
       First_Name__c: firstName,
       Last_Name__c: lastName,
       Email__c: contactInfo?.email,
       Phone__c: contactInfo?.phone,
-      State__c: contactInfo?.state,
+      State__c: fullStateName, // Now sends full state name instead of abbreviation
       DOB__c: dateOfBirth,
       Age_Group__c: formData['age-group'] === '55-plus' ? '55+' : formData['age-group'],
       Is_Female__c: formData.gender === 'yes' ? 'Yes' : formData.gender === 'no' ? 'No' : undefined,

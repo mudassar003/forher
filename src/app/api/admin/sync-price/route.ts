@@ -272,7 +272,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
   } catch (error) {
     console.error('Error syncing price:', error);
     
-    // Handle specific Stripe errors
+    // Handle specific Stripe errors r
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
         {

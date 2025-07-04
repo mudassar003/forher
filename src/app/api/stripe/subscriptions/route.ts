@@ -496,7 +496,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     const sanityResponse = await sanityClient.create(userSubscription);
     console.log(`✅ Created Sanity user subscription: ${sanityResponse._id}`);
     
-    // Create Supabase record - REMOVED appointment access related fields
+    // Create Supabase record - Clean subscription data only
     console.log('💾 Creating Supabase user subscription record...');
     const supabaseSubscription = {
       id: uuidv4(),
@@ -514,7 +514,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
       start_date: startDate,
       status: 'pending',
       is_active: false,
-      has_appointment_access: subscription.appointmentAccess || false,
       ...(selectedVariant && {
         variant_key: selectedVariant._key,
       }),

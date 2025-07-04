@@ -53,30 +53,47 @@ const isSubscriptionActive = (subscription: Subscription): boolean => {
   // A subscription is active if:
   // 1. It has an active status AND is_active is true
   // 2. OR it's in a grace period (past_due but still active)
-  // 3. OR it's trialing
-  const activeStatuses = ['active', 'trialing'];
-  const gracePeriodStatuses = ['past_due']; // These might still have access
-  
-  const isInActiveStatus = activeStatuses.includes(subscription.status.toLowerCase());
-  const isInGracePeriod = gracePeriodStatuses.includes(subscription.status.toLowerCase()) && subscription.is_active;
-  
-  return (isInActiveStatus || isInGracePeriod) && subscription.is_active === true;
+  // 3. OR it's trialing and is_active is true
+  return (
+    subscription.is_active === true &&
+    ['active', 'trialing', 'past_due'].includes(subscription.status?.toLowerCase() || '')
+  );
 };
 
-// 🚀 Broadcast subscription status change to other tabs
-function broadcastSubscriptionChange(): void {
+// Broadcast Channel for cross-tab communication
+const BROADCAST_CHANNEL_NAME = 'subscription_status';
+
+/**
+ * Safely create broadcast channel with feature detection
+ */
+function createBroadcastChannel(): BroadcastChannel | null {
   if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
     try {
-      const channel = new BroadcastChannel('subscription_status');
+      return new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+    } catch (error) {
+      console.warn('Failed to create BroadcastChannel:', error);
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Broadcast subscription status change to other tabs
+ */
+function broadcastSubscriptionChange(action?: string): void {
+  const channel = createBroadcastChannel();
+  if (channel) {
+    try {
       channel.postMessage({
         type: 'SUBSCRIPTION_STATUS_CHANGE',
-        action: 'status_changed',
+        action: action || 'updated',
         timestamp: Date.now()
       });
-      channel.close();
-      console.log('📡 Broadcasted subscription status change from store');
+      channel.close(); // Clean up immediately
+      console.log(`📡 Broadcasted subscription change to other tabs`);
     } catch (error) {
-      console.warn('Failed to broadcast subscription change from store:', error);
+      console.warn('Failed to broadcast subscription change:', error);
     }
   }
 }
@@ -93,54 +110,28 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
       isFetched: false,
       lastSyncTime: null,
       
-      setSubscriptions: (subscriptions: Subscription[]) => {
-        const hasActive = subscriptions.some(isSubscriptionActive);
-        const previousHasActive = get().hasActiveSubscription;
-        
-        set({ 
-          subscriptions,
-          hasActiveSubscription: hasActive
-        });
-
-        // 🚀 Broadcast if active status changed
-        if (hasActive !== previousHasActive) {
-          broadcastSubscriptionChange();
-        }
-      },
-      
-      resetSubscriptionStore: () => {
-        set({
-          subscriptions: [],
-          hasActiveSubscription: false,
-          loading: false,
-          error: null,
-          cancellingId: null,
-          syncingSubscriptions: false,
-          isFetched: false,
-          lastSyncTime: null
-        });
-      },
-      
       fetchUserSubscriptions: async (userId: string, forceRefresh: boolean = false) => {
-        // Skip if we're already loading 
-        if (get().loading) {
+        // Prevent duplicate calls unless forcing refresh
+        if (get().loading && !forceRefresh) {
+          console.log('🔄 Fetch already in progress, skipping...');
           return;
         }
         
-        // Check if we've synced recently (within 1 minute) and no force refresh
-        const lastSync = get().lastSyncTime;
+        // If we have recent data and not forcing refresh, skip
         const now = Date.now();
-        const oneMinute = 60 * 1000;
+        const lastSync = get().lastSyncTime;
+        const hasRecentData = lastSync && (now - lastSync) < 30000; // 30 seconds
         
-        if (lastSync && now - lastSync < oneMinute && get().isFetched && !forceRefresh && get().subscriptions.length > 0) {
+        if (get().isFetched && hasRecentData && !forceRefresh) {
+          console.log('📦 Using cached subscription data');
           return;
         }
-        
-        set({ loading: true, error: null });
         
         try {
-          // Fetch ALL subscriptions for the user (including cancelled ones)
-          // Only exclude soft-deleted records (is_deleted = true)
+          set({ loading: true, error: null });
+          console.log(`🔄 Fetching subscriptions for user: ${userId}${forceRefresh ? ' (forced refresh)' : ''}`);
+          
+          // Fetch from Supabase - removed appointment-related columns
           const { data: supabaseData, error: supabaseError } = await supabase
             .from('user_subscriptions')
             .select(`
@@ -160,12 +151,9 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
               sanity_id,
               cancellation_date,
               created_at,
-              updated_at,
-              has_appointment_access,
-              appointment_discount_percentage
+              updated_at
             `)
             .eq('user_id', userId)
-            .or('is_deleted.is.null,is_deleted.eq.false') // Include records where is_deleted is null or false
             .order('created_at', { ascending: false }); // Most recent first
           
           if (supabaseError) {
@@ -351,6 +339,28 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
           });
           return false;
         }
+      },
+      
+      setSubscriptions: (subscriptions: Subscription[]) => {
+        const hasActive = subscriptions.some(isSubscriptionActive);
+        set({ 
+          subscriptions, 
+          hasActiveSubscription: hasActive,
+          lastSyncTime: Date.now()
+        });
+      },
+      
+      resetSubscriptionStore: () => {
+        set({
+          subscriptions: [],
+          hasActiveSubscription: false,
+          loading: false,
+          error: null,
+          cancellingId: null,
+          syncingSubscriptions: false,
+          isFetched: false,
+          lastSyncTime: null
+        });
       }
     }),
     {

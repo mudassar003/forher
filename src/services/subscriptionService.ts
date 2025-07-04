@@ -143,7 +143,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
  */
 export async function getUserSubscriptions(userId: string): Promise<{ success: boolean; subscriptions?: any[]; error?: string }> {
   try {
-    // Fetch from Supabase
+    // Fetch from Supabase - removed appointment-related columns
     const { data, error } = await supabase
       .from('user_subscriptions')
       .select(`
@@ -161,10 +161,6 @@ export async function getUserSubscriptions(userId: string): Promise<{ success: b
         is_active,
         stripe_subscription_id,
         sanity_id,
-        has_appointment_access,
-        appointment_discount_percentage,
-        appointments_included,
-        appointments_used,
         created_at,
         updated_at
       `)

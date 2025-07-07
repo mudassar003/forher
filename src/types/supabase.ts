@@ -361,6 +361,41 @@ export interface Database {
           requires_subscription?: boolean | null
         }
       }
+      user_data: {
+        Row: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          state: string
+          dob: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          state: string
+          dob: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          first_name?: string
+          last_name?: string
+          email?: string
+          phone?: string
+          state?: string
+          dob?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       active_subscriptions_with_appointment_access: {

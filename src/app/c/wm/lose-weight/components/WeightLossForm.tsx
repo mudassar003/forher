@@ -35,6 +35,64 @@ const submitToSalesforce = async (formData: FormResponse, contactInfo?: ContactI
   }
 };
 
+// NEW: Background user data submission function
+const submitUserDataInBackground = async (contactInfo: ContactInfoData): Promise<void> => {
+  try {
+    // Convert state abbreviation to full state name
+    const stateAbbreviationToName: Record<string, string> = {
+      'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+      'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+      'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+      'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+      'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
+      'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
+      'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+      'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+      'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
+      'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
+    };
+
+    // Convert state abbreviation to full name
+    const fullStateName = stateAbbreviationToName[contactInfo.state] || contactInfo.state;
+
+    console.log('🔄 Submitting user data:', {
+      firstName: contactInfo.firstName,
+      lastName: contactInfo.lastName,
+      email: contactInfo.email,
+      phone: contactInfo.phone,
+      state: contactInfo.state,
+      fullStateName: fullStateName,
+      dateOfBirth: contactInfo.dateOfBirth
+    });
+
+    const response = await fetch('/api/user-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        firstName: contactInfo.firstName,
+        lastName: contactInfo.lastName,
+        email: contactInfo.email,
+        phone: contactInfo.phone,
+        state: fullStateName, // Use full state name instead of abbreviation
+        dateOfBirth: contactInfo.dateOfBirth
+      }),
+      credentials: 'include'
+    });
+
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('✅ User data saved successfully');
+    } else {
+      console.warn('⚠️ Failed to save user data:', result.error);
+    }
+  } catch (error) {
+    console.error('❌ Error saving user data:', error);
+  }
+};
+
 export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProps) {
   const router = useRouter();
   const pathname = "/c/wm/lose-weight";
@@ -154,6 +212,13 @@ export default function WeightLossForm({ initialOffset = 1 }: WeightLossFormProp
       setIsTransitioning(true);
       
       const contactInfo = responses['contact-info'] as ContactInfoData | undefined;
+      
+      // NEW: Submit user data in background (fire and forget)
+      if (contactInfo) {
+        submitUserDataInBackground(contactInfo);
+      }
+      
+      // Original Salesforce submission (existing functionality)
       submitToSalesforce(responses, contactInfo).catch(() => {
         // Handle error silently
       });

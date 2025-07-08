@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import QualiphyWidget from '@/components/QualiphyWidget';
+import AppointmentForm from '@/components/AppointmentForm';
 import QualiphyWidgetAuthWrapper from '@/components/QualiphyWidgetAuthWrapper';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
@@ -119,7 +119,7 @@ const AppointmentContent: React.FC = () => {
                 <div className="p-1 bg-gradient-to-r from-[#e63946] to-[#ff4d6d]"></div>
                 <div className="p-6">
                   <h2 className="text-xl font-semibold text-[#e63946] mb-4">Start Your Consultation</h2>
-                  <QualiphyWidget className="mb-6" />
+                  <AppointmentForm />
                 </div>
               </div>
             </div>

@@ -11,6 +11,7 @@ interface FormData {
   email: string;
   phoneNumber: string;
   dob: string;
+  state: string;
   examId: number;
 }
 
@@ -21,6 +22,7 @@ interface UserData {
   email: string;
   phone: string;
   dob: string;
+  state: string;
   submission_count: number;
 }
 
@@ -33,6 +35,19 @@ interface AppointmentResponse {
   examId?: number;
   patientExamId?: number;
 }
+
+const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+  'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+  'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+  'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
+  'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
+  'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
+  'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
+  'West Virginia', 'Wisconsin', 'Wyoming'
+];
 
 const EXAM_OPTIONS = [
   { id: 918, title: 'GLP-1 (No Labwork Required) Weight Loss Initial Consult' },
@@ -55,6 +70,7 @@ const AppointmentForm: React.FC = () => {
     email: '',
     phoneNumber: '',
     dob: '',
+    state: '',
     examId: 918 // Default exam
   });
   
@@ -63,6 +79,74 @@ const AppointmentForm: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Client-side validation
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // First name validation
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.firstName.trim())) {
+      newErrors.firstName = 'First name contains invalid characters';
+    }
+
+    // Last name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.lastName.trim())) {
+      newErrors.lastName = 'Last name contains invalid characters';
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    // Phone validation
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^\+1[0-9]{10}$/.test(formData.phoneNumber.trim())) {
+      newErrors.phoneNumber = 'Phone must be in format +1XXXXXXXXXX';
+    }
+
+    // Date of birth validation
+    if (!formData.dob) {
+      newErrors.dob = 'Date of birth is required';
+    } else {
+      const dateObj = new Date(formData.dob);
+      const now = new Date();
+      const age = now.getFullYear() - dateObj.getFullYear();
+      const monthDiff = now.getMonth() - dateObj.getMonth();
+      const dayDiff = now.getDate() - dateObj.getDate();
+      
+      let actualAge = age;
+      if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+        actualAge--;
+      }
+      
+      if (actualAge < 18 || actualAge > 120) {
+        newErrors.dob = 'Age must be between 18 and 120 years';
+      }
+    }
+
+    // State validation
+    if (!formData.state) {
+      newErrors.state = 'State is required';
+    } else if (!US_STATES.includes(formData.state)) {
+      newErrors.state = 'Please select a valid US state';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Load existing user data on component mount
   useEffect(() => {
@@ -93,7 +177,8 @@ const AppointmentForm: React.FC = () => {
             lastName: userData.last_name || '',
             email: userData.email || user.email || '',
             phoneNumber: userData.phone || '',
-            dob: userData.dob || ''
+            dob: userData.dob || '',
+            state: userData.state || ''
           }));
 
           // Check if user has already submitted
@@ -119,6 +204,11 @@ const AppointmentForm: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
     
     // Format phone number
     if (name === 'phoneNumber') {
@@ -148,6 +238,15 @@ const AppointmentForm: React.FC = () => {
       setMessage({
         type: 'error',
         text: 'You have already submitted a consultation request. Only one submission is allowed per account.'
+      });
+      return;
+    }
+
+    // Validate form
+    if (!validateForm()) {
+      setMessage({
+        type: 'error',
+        text: 'Please correct the errors below and try again.'
       });
       return;
     }
@@ -281,9 +380,12 @@ const AppointmentForm: React.FC = () => {
               value={formData.firstName}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                errors.firstName ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter your first name"
             />
+            {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
           </div>
 
           <div>
@@ -297,9 +399,12 @@ const AppointmentForm: React.FC = () => {
               value={formData.lastName}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                errors.lastName ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter your last name"
             />
+            {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
           </div>
         </div>
 
@@ -314,26 +419,58 @@ const AppointmentForm: React.FC = () => {
             value={formData.email}
             onChange={handleInputChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+              errors.email ? 'border-red-300' : 'border-gray-300'
+            }`}
             placeholder="Enter your email address"
           />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
 
-        <div>
-          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-            Phone Number *
-          </label>
-          <input
-            type="tel"
-            id="phoneNumber"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleInputChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            placeholder="+1XXXXXXXXXX"
-          />
-          <p className="text-xs text-gray-500 mt-1">Format: +1XXXXXXXXXX</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number *
+            </label>
+            <input
+              type="tel"
+              id="phoneNumber"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+              required
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                errors.phoneNumber ? 'border-red-300' : 'border-gray-300'
+              }`}
+              placeholder="+1XXXXXXXXXX"
+            />
+            {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
+            <p className="text-xs text-gray-500 mt-1">Format: +1XXXXXXXXXX</p>
+          </div>
+
+          <div>
+            <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+              State *
+            </label>
+            <select
+              id="state"
+              name="state"
+              value={formData.state}
+              onChange={handleInputChange}
+              required
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                errors.state ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Select your state</option>
+              {US_STATES.map(state => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+            {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
+          </div>
         </div>
 
         <div>
@@ -347,8 +484,11 @@ const AppointmentForm: React.FC = () => {
             value={formData.dob}
             onChange={handleInputChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+              errors.dob ? 'border-red-300' : 'border-gray-300'
+            }`}
           />
+          {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob}</p>}
         </div>
 
         <div>

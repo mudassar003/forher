@@ -24,24 +24,11 @@ const STATE_TO_ABBREVIATION: Record<string, string> = {
 
 interface QualiphyApiResponse {
   http_code: number;
-  status: string;
+  status?: string;
   meeting_url?: string;
   meeting_uuid?: string;
   patient_exams?: any[];
   error_message?: string;
-}
-
-interface UserData {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  state: string;
-  dob: string;
-  submission_count: number;
-  created_at: string;
-  updated_at: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -186,8 +173,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle success response
-    if (qualiphyData.status === 'success' && qualiphyData.meeting_url) {
+    // FIXED: Check for success based on actual response structure
+    // Qualiphy returns http_code: 200 and meeting_url when successful
+    const isSuccess = qualiphyData.http_code === 200 && qualiphyData.meeting_url;
+    
+    if (isSuccess) {
       console.log('Qualiphy appointment created successfully');
       
       // Save or update user data in the database
@@ -256,7 +246,7 @@ export async function POST(request: NextRequest) {
       });
       
     } else {
-      // Error cases according to Qualiphy documentation
+      // Error cases
       let errorMessage = 'Failed to schedule appointment';
       
       if (qualiphyData.error_message) {

@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { supabase } from '@/lib/supabase';
 
 interface FormData {
   firstName: string;
@@ -34,6 +33,12 @@ interface AppointmentResponse {
   meetingUrl?: string;
   examId?: number;
   patientExamId?: number;
+}
+
+interface UserDataApiResponse {
+  success: boolean;
+  data?: UserData;
+  error?: string;
 }
 
 const US_STATES = [
@@ -109,7 +114,7 @@ const AppointmentForm: React.FC = () => {
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
     } else if (!/^\+1[0-9]{10}$/.test(formData.phoneNumber.trim())) {
-      newErrors.phoneNumber = 'Phone must be in format +1XXXXXXXXXX';
+      newErrors.phoneNumber = 'Phone number must be exactly 10 digits';
     }
 
     if (!formData.dob) {
@@ -149,33 +154,58 @@ const AppointmentForm: React.FC = () => {
       }
 
       try {
-        const { data: userData, error } = await supabase
-          .from('user_data')
-          .select('*')
-          .eq('email', user.email)
-          .single();
+        console.log('Fetching user data for:', user.email);
+        
+        // Use our new API endpoint instead of direct Supabase call
+        const response = await fetch('/api/user-data/fetch', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error loading user data:', error);
+        if (!response.ok) {
+          console.error('Failed to fetch user data:', response.status, response.statusText);
+          // Set default email and continue
+          setFormData(prev => ({
+            ...prev,
+            email: user.email || ''
+          }));
           setIsDataLoading(false);
           return;
         }
 
-        if (userData) {
+        const result: UserDataApiResponse = await response.json();
+        
+        if (!result.success) {
+          console.error('API error:', result.error);
+          // Set default email and continue
           setFormData(prev => ({
             ...prev,
-            firstName: userData.first_name || '',
-            lastName: userData.last_name || '',
-            email: userData.email || user.email || '',
-            phoneNumber: userData.phone || '',
-            dob: userData.dob || '',
-            state: userData.state || ''
+            email: user.email || ''
+          }));
+          setIsDataLoading(false);
+          return;
+        }
+
+        if (result.data) {
+          console.log('User data found, populating form');
+          setFormData(prev => ({
+            ...prev,
+            firstName: result.data!.first_name || '',
+            lastName: result.data!.last_name || '',
+            email: result.data!.email || user.email || '',
+            phoneNumber: result.data!.phone || '',
+            dob: result.data!.dob || '',
+            state: result.data!.state || ''
           }));
 
-          if (userData.submission_count && userData.submission_count >= 1) {
+          if (result.data.submission_count && result.data.submission_count >= 1) {
             setHasSubmitted(true);
           }
         } else {
+          console.log('No user data found, using default email');
           setFormData(prev => ({
             ...prev,
             email: user.email || ''
@@ -183,6 +213,11 @@ const AppointmentForm: React.FC = () => {
         }
       } catch (error) {
         console.error('Error loading user data:', error);
+        // Set default email and continue
+        setFormData(prev => ({
+          ...prev,
+          email: user.email || ''
+        }));
       } finally {
         setIsDataLoading(false);
       }
@@ -199,15 +234,16 @@ const AppointmentForm: React.FC = () => {
     }
     
     if (name === 'phoneNumber') {
+      // Only allow digits for phone number input
       const digitsOnly = value.replace(/[^\d]/g, '');
       
-      if (digitsOnly.length === 10) {
-        setFormData(prev => ({ ...prev, [name]: `+1${digitsOnly}` }));
-        return;
-      } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-        setFormData(prev => ({ ...prev, [name]: `+${digitsOnly}` }));
-        return;
+      // Limit to 10 digits for US phone numbers
+      if (digitsOnly.length <= 10) {
+        // Update internal state with +1 prefix for API
+        const formattedPhone = digitsOnly.length === 10 ? `+1${digitsOnly}` : `+1${digitsOnly}`;
+        setFormData(prev => ({ ...prev, [name]: formattedPhone }));
       }
+      return;
     }
     
     setFormData(prev => ({ 
@@ -240,6 +276,8 @@ const AppointmentForm: React.FC = () => {
     setMeetingUrl(null);
 
     try {
+      console.log('Submitting appointment form...');
+      
       const response = await fetch('/api/qualiphy', {
         method: 'POST',
         headers: {
@@ -255,9 +293,11 @@ const AppointmentForm: React.FC = () => {
         throw new Error(result.error || 'Failed to schedule appointment');
       }
 
+      console.log('Appointment scheduled successfully');
+      
       setMessage({
         type: 'success',
-        text: result.message || 'Appointment scheduled successfully!'
+        text: 'Consultation request received. Check your email and spam folder if instructions not received.'
       });
       
       if (result.meetingUrl) {
@@ -267,6 +307,7 @@ const AppointmentForm: React.FC = () => {
       setHasSubmitted(true);
 
     } catch (error: unknown) {
+      console.error('Error submitting appointment:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       setMessage({
         type: 'error',
@@ -402,7 +443,8 @@ const AppointmentForm: React.FC = () => {
             value={formData.email}
             onChange={handleInputChange}
             required
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+            readOnly
+            className={`w-full px-3 py-2 border rounded-md bg-gray-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
               errors.email ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Enter your email address"
@@ -415,20 +457,24 @@ const AppointmentForm: React.FC = () => {
             <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
               Phone Number *
             </label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleInputChange}
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                errors.phoneNumber ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="+1XXXXXXXXXX"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-2 text-gray-500">+1</span>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                value={formData.phoneNumber.replace('+1', '')}
+                onChange={handleInputChange}
+                required
+                maxLength={10}
+                className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                  errors.phoneNumber ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="1234567890"
+              />
+            </div>
             {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
-            <p className="text-xs text-gray-500 mt-1">Format: +1XXXXXXXXXX</p>
+            <p className="text-xs text-gray-500 mt-1">Enter 10 digits (US phone number)</p>
           </div>
 
           <div>

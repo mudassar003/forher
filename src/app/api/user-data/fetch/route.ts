@@ -35,9 +35,8 @@ interface UserDataResponse {
 
 export async function GET(request: NextRequest): Promise<NextResponse<UserDataResponse>> {
   try {
-    // FIXED: Await cookies() for Next.js 15 compatibility
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    // FIXED: Proper cookies handling for Next.js 15 and Vercel deployment
+    const supabase = createRouteHandlerClient({ cookies });
     
     // Get current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

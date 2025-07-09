@@ -1,7 +1,7 @@
 // src/app/api/qualiphy/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getCurrentUser } from '@/lib/auth';
+import { getAuthenticatedUser } from '@/utils/apiAuth';
 
 // Initialize Supabase admin client for server operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -31,17 +31,33 @@ interface QualiphyApiResponse {
   error_message?: string;
 }
 
+interface UserData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  state: string;
+  dob: string;
+  submission_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Get current authenticated user
-    const { user, error: authError } = await getCurrentUser();
+    // Get current authenticated user using the same method as other API routes
+    const user = await getAuthenticatedUser();
     
-    if (authError || !user) {
+    if (!user) {
+      console.log('Authentication failed - no user found');
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
+
+    console.log('Authenticated user:', user.id, user.email);
 
     // Parse request body
     const body = await request.json();
@@ -57,6 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Validate user email matches authenticated user
     if (email !== user.email) {
+      console.log('Email mismatch:', email, 'vs', user.email);
       return NextResponse.json(
         { success: false, error: 'Email must match authenticated user' },
         { status: 403 }
@@ -66,18 +83,21 @@ export async function POST(request: NextRequest) {
     // Check if user has already submitted a consultation request
     const { data: existingUserData, error: checkError } = await supabaseAdmin
       .from('user_data')
-      .select('submission_count')
+      .select('id, submission_count, first_name, last_name, phone, state, dob')
       .eq('email', email)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Database check error:', checkError);
       return NextResponse.json(
         { success: false, error: 'Database error occurred' },
         { status: 500 }
       );
     }
 
+    // Check submission count - if user exists and has already submitted
     if (existingUserData && existingUserData.submission_count >= 1) {
+      console.log('User has already submitted. Submission count:', existingUserData.submission_count);
       return NextResponse.json(
         { 
           success: false, 
@@ -96,9 +116,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate Qualiphy API key is configured
+    if (!process.env.QUALIPHY_API_KEY) {
+      console.error('QUALIPHY_API_KEY not configured');
+      return NextResponse.json(
+        { success: false, error: 'Scheduling service not configured' },
+        { status: 500 }
+      );
+    }
+
     // Prepare Qualiphy API payload with state and tele_state fields
     const qualiphyPayload = {
-      api_key: process.env.QUALIPHY_API_KEY!,
+      api_key: process.env.QUALIPHY_API_KEY,
       exams: [examId],
       first_name: firstName,
       last_name: lastName,
@@ -108,6 +137,11 @@ export async function POST(request: NextRequest) {
       state: stateAbbreviation, // Capital abbreviation (e.g., "CA")
       tele_state: stateAbbreviation // Capital abbreviation (e.g., "CA")
     };
+
+    console.log('Calling Qualiphy API with payload (API key hidden):', {
+      ...qualiphyPayload,
+      api_key: '[HIDDEN]'
+    });
 
     // Call Qualiphy API with corrected URL
     const qualiphyResponse = await fetch('https://api.qualiphy.me/api/exam_invite/', {
@@ -120,6 +154,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(qualiphyPayload)
     });
 
+    console.log('Qualiphy API response status:', qualiphyResponse.status);
+
     // Check content type before parsing
     const contentType = qualiphyResponse.headers.get('content-type');
     
@@ -128,8 +164,11 @@ export async function POST(request: NextRequest) {
     if (contentType && contentType.includes('application/json')) {
       try {
         qualiphyData = await qualiphyResponse.json();
+        console.log('Qualiphy API response data:', qualiphyData);
       } catch (parseError) {
+        console.error('Failed to parse Qualiphy response:', parseError);
         const responseText = await qualiphyResponse.text();
+        console.error('Raw response:', responseText);
         
         return NextResponse.json(
           { success: false, error: 'Invalid response from scheduling service' },
@@ -137,6 +176,10 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
+      console.error('Invalid content type from Qualiphy:', contentType);
+      const responseText = await qualiphyResponse.text();
+      console.error('Raw response:', responseText);
+      
       return NextResponse.json(
         { success: false, error: 'Invalid response format from scheduling service' },
         { status: 502 }
@@ -145,13 +188,15 @@ export async function POST(request: NextRequest) {
 
     // Handle success response
     if (qualiphyData.status === 'success' && qualiphyData.meeting_url) {
+      console.log('Qualiphy appointment created successfully');
       
       // Save or update user data in the database
       const now = new Date().toISOString();
       
       if (existingUserData) {
-        // Update existing record
-        const { error: updateError } = await supabaseAdmin
+        console.log('Updating existing user data with submission count...');
+        // Update existing record and increment submission count
+        const { data: updatedData, error: updateError } = await supabaseAdmin
           .from('user_data')
           .update({
             first_name: firstName,
@@ -159,17 +204,24 @@ export async function POST(request: NextRequest) {
             phone: phoneNumber,
             state: state,
             dob: dob,
-            submission_count: 1,
+            submission_count: (existingUserData.submission_count || 0) + 1,
             updated_at: now
           })
-          .eq('email', email);
+          .eq('email', email)
+          .select('id, submission_count')
+          .single();
 
         if (updateError) {
+          console.error('Failed to update user data:', updateError);
+          console.error('Update error details:', JSON.stringify(updateError, null, 2));
           // Don't fail the request if DB update fails, as the appointment was created
+        } else {
+          console.log('Updated user data successfully. New submission count:', updatedData?.submission_count);
         }
       } else {
-        // Insert new record
-        const { error: insertError } = await supabaseAdmin
+        console.log('Inserting new user data...');
+        // Insert new record with submission_count = 1
+        const { data: insertData, error: insertError } = await supabaseAdmin
           .from('user_data')
           .insert({
             first_name: firstName,
@@ -181,14 +233,20 @@ export async function POST(request: NextRequest) {
             submission_count: 1,
             created_at: now,
             updated_at: now
-          });
+          })
+          .select('id, submission_count')
+          .single();
 
         if (insertError) {
+          console.error('Failed to insert user data:', insertError);
+          console.error('Insert error details:', JSON.stringify(insertError, null, 2));
           // Don't fail the request if DB insert fails, as the appointment was created
+        } else {
+          console.log('Inserted user data successfully with ID:', insertData?.id, 'Submission count:', insertData?.submission_count);
         }
       }
 
-      // Return success response with updated field names
+      // Return success response
       return NextResponse.json({
         success: true,
         message: 'Appointment scheduled successfully',
@@ -212,6 +270,8 @@ export async function POST(request: NextRequest) {
         errorMessage = 'Scheduling service is temporarily unavailable';
       }
       
+      console.error('Qualiphy API error:', errorMessage, qualiphyData);
+      
       return NextResponse.json(
         { success: false, error: errorMessage },
         { status: qualiphyData.http_code || 500 }
@@ -219,6 +279,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: unknown) {
+    console.error('Unexpected error in Qualiphy API:', error);
     return NextResponse.json(
       { 
         success: false, 

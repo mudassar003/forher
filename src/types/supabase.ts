@@ -370,6 +370,7 @@ export interface Database {
           phone: string
           state: string
           dob: string
+          submission_count: number | null // Added submission_count field
           created_at: string
           updated_at: string
         }
@@ -381,6 +382,7 @@ export interface Database {
           phone: string
           state: string
           dob: string
+          submission_count?: number | null // Added submission_count field
           created_at?: string
           updated_at?: string
         }
@@ -392,6 +394,7 @@ export interface Database {
           phone?: string
           state?: string
           dob?: string
+          submission_count?: number | null // Added submission_count field
           created_at?: string
           updated_at?: string
         }

@@ -71,7 +71,7 @@ const AppointmentForm: React.FC = () => {
     phoneNumber: '',
     dob: '',
     state: '',
-    examId: 918 // Default exam
+    examId: 918
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -81,11 +81,9 @@ const AppointmentForm: React.FC = () => {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Client-side validation
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // First name validation
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
     } else if (formData.firstName.trim().length < 2) {
@@ -94,7 +92,6 @@ const AppointmentForm: React.FC = () => {
       newErrors.firstName = 'First name contains invalid characters';
     }
 
-    // Last name validation
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
     } else if (formData.lastName.trim().length < 2) {
@@ -103,21 +100,18 @@ const AppointmentForm: React.FC = () => {
       newErrors.lastName = 'Last name contains invalid characters';
     }
 
-    // Email validation
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = 'Invalid email address';
     }
 
-    // Phone validation
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
     } else if (!/^\+1[0-9]{10}$/.test(formData.phoneNumber.trim())) {
       newErrors.phoneNumber = 'Phone must be in format +1XXXXXXXXXX';
     }
 
-    // Date of birth validation
     if (!formData.dob) {
       newErrors.dob = 'Date of birth is required';
     } else {
@@ -137,7 +131,6 @@ const AppointmentForm: React.FC = () => {
       }
     }
 
-    // State validation
     if (!formData.state) {
       newErrors.state = 'State is required';
     } else if (!US_STATES.includes(formData.state)) {
@@ -148,7 +141,6 @@ const AppointmentForm: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Load existing user data on component mount
   useEffect(() => {
     const loadUserData = async () => {
       if (!user?.email) {
@@ -170,7 +162,6 @@ const AppointmentForm: React.FC = () => {
         }
 
         if (userData) {
-          // Pre-fill form with existing data
           setFormData(prev => ({
             ...prev,
             firstName: userData.first_name || '',
@@ -181,12 +172,10 @@ const AppointmentForm: React.FC = () => {
             state: userData.state || ''
           }));
 
-          // Check if user has already submitted
-          if (userData.submission_count >= 1) {
+          if (userData.submission_count && userData.submission_count >= 1) {
             setHasSubmitted(true);
           }
         } else {
-          // New user, set email from auth
           setFormData(prev => ({
             ...prev,
             email: user.email || ''
@@ -205,17 +194,13 @@ const AppointmentForm: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
     
-    // Format phone number
     if (name === 'phoneNumber') {
-      // Remove all non-digits
       const digitsOnly = value.replace(/[^\d]/g, '');
       
-      // Format as +1XXXXXXXXXX
       if (digitsOnly.length === 10) {
         setFormData(prev => ({ ...prev, [name]: `+1${digitsOnly}` }));
         return;
@@ -242,7 +227,6 @@ const AppointmentForm: React.FC = () => {
       return;
     }
 
-    // Validate form
     if (!validateForm()) {
       setMessage({
         type: 'error',
@@ -271,7 +255,6 @@ const AppointmentForm: React.FC = () => {
         throw new Error(result.error || 'Failed to schedule appointment');
       }
 
-      // Success
       setMessage({
         type: 'success',
         text: result.message || 'Appointment scheduled successfully!'

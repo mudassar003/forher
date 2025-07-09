@@ -55,15 +55,15 @@ const submitUserDataInBackground = async (contactInfo: ContactInfoData): Promise
     // Convert state abbreviation to full name
     const fullStateName = stateAbbreviationToName[contactInfo.state] || contactInfo.state;
 
-    console.log('🔄 Submitting user data:', {
-      firstName: contactInfo.firstName,
-      lastName: contactInfo.lastName,
-      email: contactInfo.email,
-      phone: contactInfo.phone,
-      state: contactInfo.state,
-      fullStateName: fullStateName,
-      dateOfBirth: contactInfo.dateOfBirth
-    });
+    // console.log('🔄 Submitting user data:', {
+    //   firstName: contactInfo.firstName,
+    //   lastName: contactInfo.lastName,
+    //   email: contactInfo.email,
+    //   phone: contactInfo.phone,
+    //   state: contactInfo.state,
+    //   fullStateName: fullStateName,
+    //   dateOfBirth: contactInfo.dateOfBirth
+    // });
 
     const response = await fetch('/api/user-data', {
       method: 'POST',
@@ -84,12 +84,12 @@ const submitUserDataInBackground = async (contactInfo: ContactInfoData): Promise
     const result = await response.json();
     
     if (result.success) {
-      console.log('✅ User data saved successfully');
+      console.log('success');
     } else {
-      console.warn('⚠️ Failed to save user data:', result.error);
+      console.warn('Failed', result.error);
     }
   } catch (error) {
-    console.error('❌ Error saving user data:', error);
+    console.error('Error', error);
   }
 };
 

@@ -1,92 +1,70 @@
-//src/app/c/wm/submit/page.tsx
+// src/app/c/wm/submit/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWMFormStore } from "@/store/wmFormStore";
-import ProgressBar from "@/app/c/wm/components/ProgressBar";
-import { weightLossQuestions, calculateBMI, checkEligibility } from "../lose-weight/data/questions";
-import { 
-  FormResponse, 
-  QuestionType, 
-  SingleSelectQuestion, 
-  MultiSelectQuestion 
-} from "../lose-weight/types";
+import ProgressBar from "../components/ProgressBar";
+import { weightLossQuestions } from "../lose-weight/data/questions";
 
-export default function SubmitStep() {
+export default function SubmitPage() {
   const router = useRouter();
-  const { markStepCompleted } = useWMFormStore();
-  const [responses, setResponses] = useState<FormResponse>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [ineligibilityReason, setIneligibilityReason] = useState<string | null>(null);
-  const [bmi, setBmi] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  // Load responses from sessionStorage on component mount
+  const {
+    responses,
+    ineligibilityReason,
+    markStepCompleted
+  } = useWMFormStore();
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        // Check if there's an ineligibility reason stored
-        const storedIneligibilityReason = sessionStorage.getItem("ineligibilityReason");
-        if (storedIneligibilityReason) {
-          setIneligibilityReason(storedIneligibilityReason);
-        }
-        
-        // Load responses
-        const storedResponses = sessionStorage.getItem("weightLossResponses");
-        if (storedResponses) {
-          const parsedResponses = JSON.parse(storedResponses);
-          setResponses(parsedResponses);
-          
-          // Calculate BMI if height and weight are available
-          if (parsedResponses['current-weight'] && parsedResponses['height']) {
-            const calculatedBmi = calculateBMI(
-              parsedResponses['current-weight'] as string,
-              parsedResponses['height'] as string
-            );
-            setBmi(calculatedBmi);
-          }
-          
-          // Check eligibility based on all responses
-          const eligibility = checkEligibility(parsedResponses);
-          if (!eligibility.eligible && !storedIneligibilityReason) {
-            setIneligibilityReason(eligibility.reason);
-          }
-        } else {
-          console.log("No responses found in sessionStorage");
-        }
-      } catch (error) {
-        console.error("Error loading stored responses:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    // Simulate loading time for smooth transition
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Gets the label for a given option ID for a specific question
-  const getOptionLabel = (questionId: string, optionId: string | string[]): string => {
-    const question = weightLossQuestions.find(q => q.id === questionId);
-    if (!question) return "Not specified";
-
-    // Check if the question type has options (single-select or multi-select)
-    if (question.type === QuestionType.TextInput) {
-      return typeof optionId === 'string' ? optionId : optionId.join(', ');
+  // Format response values for display
+  const formatResponseValue = (questionId: string, value: any): string => {
+    if (value === null || value === undefined) return "Not provided";
+    
+    if (Array.isArray(value)) {
+      return value.join(", ");
     }
-
-    // Now TypeScript knows this question has options
-    const questionWithOptions = question as SingleSelectQuestion | MultiSelectQuestion;
-
-    // For multi-select questions
-    if (Array.isArray(optionId)) {
-      return optionId.map(id => {
-        const option = questionWithOptions.options.find(opt => opt.id === id);
-        return option ? option.label : id;
+    
+    if (typeof value === "object") {
+      if (questionId === "contact-info") {
+        const contactInfo = value as any;
+        return `${contactInfo.firstName} ${contactInfo.lastName} (${contactInfo.email})`;
+      }
+      if (questionId === "height") {
+        return `${value.feet}'${value.inches}"`;
+      }
+      return JSON.stringify(value);
+    }
+    
+    // Find the question to get options for formatting
+    const question = weightLossQuestions.find(q => q.id === questionId);
+    if (!question || !('options' in question)) {
+      return String(value);
+    }
+    
+    const questionWithOptions = question as any;
+    
+    // Handle multi-select options
+    if (Array.isArray(value)) {
+      return value.map(optionId => {
+        const option = questionWithOptions.options.find((opt: any) => opt.id === optionId);
+        return option ? option.label : optionId;
       }).join(", ");
     }
 
     // For single-select questions
-    const option = questionWithOptions.options.find(opt => opt.id === optionId);
-    return option ? option.label : optionId;
+    const option = questionWithOptions.options.find((opt: any) => opt.id === value);
+    return option ? option.label : value;
   };
 
   // Group questions by their sections for better organization
@@ -148,7 +126,7 @@ export default function SubmitStep() {
       // Navigate to results page
       router.push("/c/wm/results");
     } catch (error) {
-      console.error("Error submitting form:", error);
+      // Handle error silently in production
       setIsProcessing(false);
     }
   };
@@ -172,92 +150,47 @@ export default function SubmitStep() {
       </h2>
       
       <p className="text-xl font-medium text-black mt-3 mb-8">
-        You've made it to the final step. Please review your responses before submitting.
+        You've made it to the final step. Review your answers below and click submit to see your results.
       </p>
 
-      {/* Display BMI information if available */}
-      {bmi !== null && (
-        <div className={`w-full max-w-2xl p-5 mb-6 rounded-lg ${
-          bmi < 18.5 ? 'bg-amber-100' : 
-          bmi < 25 ? 'bg-green-100' : 
-          bmi < 30 ? 'bg-yellow-100' : 
-          'bg-orange-100'
-        }`}>
-          <h3 className="text-lg font-semibold text-black">Your BMI: {bmi.toFixed(1)}</h3>
-          <p className="mt-1 text-black">
-            Category: <strong>
-              {bmi < 18.5 ? 'Underweight' : 
-               bmi < 25 ? 'Normal weight' : 
-               bmi < 30 ? 'Overweight' : 
-               'Obese'}
-            </strong>
-          </p>
-        </div>
-      )}
-
-      {/* Display ineligibility warning if applicable */}
-      {ineligibilityReason && (
-        <div className="w-full max-w-2xl bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
-          <p className="font-medium text-red-700">Eligibility Notice:</p>
-          <p className="text-red-600">{ineligibilityReason}</p>
-          <p className="text-sm mt-2 text-black">
-            Based on your responses, our products may not be suitable for you. We can still
-            provide general recommendations when you submit.
-          </p>
-        </div>
-      )}
-
-      {/* Summary of selections grouped by section */}
-      <div className="mt-4 w-full max-w-2xl mb-24">
-        {Object.keys(responses).length === 0 ? (
-          <p className="text-black italic">No responses found. You may need to complete the questionnaire.</p>
-        ) : (
-          <div className="space-y-6">
-            {Object.entries(getGroupedQuestions()).map(([section, questions]) => (
-              <div key={section} className="border rounded-lg overflow-hidden">
-                <h3 className="bg-gray-100 px-4 py-2 font-semibold text-black">{section}</h3>
-                <ul className="divide-y">
-                  {questions.map((question) => {
-                    const response = responses[question.id];
-                    if (response === undefined) return null;
-
-                    return (
-                      <li key={question.id} className="p-4">
-                        <p className="font-medium text-black">{question.question}</p>
-                        <p className="mt-1 text-black">
-                          {Array.isArray(response) 
-                            ? getOptionLabel(question.id, response)
-                            : getOptionLabel(question.id, response as string)}
-                        </p>
-                      </li>
-                    );
-                  })}
-                </ul>
+      {/* Review Section */}
+      <div className="w-full max-w-4xl mx-auto bg-gray-50 rounded-lg p-6 mb-8 max-h-96 overflow-y-auto">
+        <h3 className="text-xl font-semibold text-black mb-4">Your Responses:</h3>
+        
+        {Object.entries(getGroupedQuestions()).map(([section, questions]) => (
+          <div key={section} className="mb-6">
+            <h4 className="text-lg font-semibold text-[#fe92b5] mb-3 border-b border-gray-300 pb-1">
+              {section}
+            </h4>
+            
+            {questions.map((question) => (
+              <div key={question.id} className="mb-3 pl-4">
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  {question.question}
+                </div>
+                <div className="text-sm text-gray-600 bg-white rounded px-3 py-2 border">
+                  {formatResponseValue(question.id, responses[question.id])}
+                </div>
               </div>
             ))}
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Fixed Button at Bottom */}
-      <div className="fixed bottom-6 w-full flex justify-center z-10">
+      {/* Submit Button */}
+      <div className="flex justify-center">
         <button
           onClick={handleSubmit}
-          disabled={isProcessing || Object.keys(responses).length === 0}
-          className={`text-lg font-medium px-6 py-3 rounded-full w-[90%] max-w-2xl ${
-            isProcessing || Object.keys(responses).length === 0 
-              ? "bg-gray-400 text-white cursor-not-allowed" 
-              : "bg-black text-white hover:bg-gray-900"
+          disabled={isProcessing}
+          className={`px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-200 ${
+            !isProcessing
+              ? "bg-[#fe92b5] text-white hover:bg-[#e681a4] transform hover:scale-105"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
-          {isProcessing ? "Processing..." : "Submit & Get Recommendations"}
+          {isProcessing ? "Processing..." : "Submit & View Results"}
         </button>
       </div>
-
-      {/* White gradient fade effect at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white to-transparent pointer-events-none" style={{ 
-        backgroundImage: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%)' 
-      }}></div>
     </div>
   );
 }

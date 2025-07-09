@@ -121,7 +121,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<UserDataR
       .or(`email.eq.${validatedData.email},phone.eq.${validatedData.phone}`);
 
     if (duplicateCheckError) {
-      console.error('Database error during duplicate check:', duplicateCheckError);
       return NextResponse.json(
         {
           success: false,
@@ -173,8 +172,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<UserDataR
       .single();
 
     if (insertError) {
-      console.error('Database insertion error:', insertError);
-      
       // Handle specific database errors
       if (insertError.code === '23505') { // Unique constraint violation
         return NextResponse.json(
@@ -223,8 +220,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<UserDataR
     );
 
   } catch (error) {
-    console.error('Unexpected error in user-data API:', error);
-    
     return NextResponse.json(
       {
         success: false,

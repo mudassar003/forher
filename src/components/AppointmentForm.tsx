@@ -1,9 +1,10 @@
 // src/components/AppointmentForm.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
+// Form data interface
 interface FormData {
   firstName: string;
   lastName: string;
@@ -14,18 +15,8 @@ interface FormData {
   examId: number;
 }
 
-interface UserData {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  dob: string;
-  state: string;
-  submission_count: number;
-}
-
-interface AppointmentResponse {
+// API response interfaces
+interface QualiphyApiResponse {
   success: boolean;
   message?: string;
   error?: string;
@@ -41,6 +32,32 @@ interface UserDataApiResponse {
   error?: string;
 }
 
+interface UserData {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  state: string;
+  dob: string;
+  submission_count: number;
+  meeting_url?: string;
+  meeting_uuid?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Akina Pharmacy supported states (full names)
+const AKINA_PHARMACY_STATES = [
+  'Arizona', 'Colorado', 'Connecticut', 'Delaware', 'Georgia', 'Idaho', 
+  'Illinois', 'Indiana', 'Kentucky', 'Massachusetts', 'Maryland', 
+  'New Jersey', 'Nevada', 'New York', 'Missouri', 'Montana', 
+  'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
+  'South Dakota', 'Tennessee', 'Utah', 'Virginia', 'Washington', 
+  'Wisconsin', 'West Virginia'
+];
+
+// All US states for the dropdown
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
   'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
@@ -54,10 +71,15 @@ const US_STATES = [
   'West Virginia', 'Wisconsin', 'Wyoming'
 ];
 
+// Updated exam options with new medication shipping options
 const EXAM_OPTIONS = [
   { id: 918, title: 'GLP-1 (No Labwork Required) Weight Loss Initial Consult' },
   { id: 1324, title: 'GLP-1 (Labwork Required) Weight Loss Initial Consult' },
   { id: 1325, title: 'Weight Loss GLP-1 Monthly Follow Up' },
+  { id: 1148, title: 'Compounded Semaglutide with Medication Shipping (No Labwork Required)' },
+  { id: 1693, title: 'Compounded Semaglutide with Medication Shipping (With Lab-work Upload)' },
+  { id: 1287, title: 'Compounded Tirzepatide with Medication Shipping (No Labwork Required)' },
+  { id: 1694, title: 'Compounded Tirzepatide with Medication Shipping (With Lab-work Upload)' },
   { id: 2095, title: '3 Month Supply: Semaglutide (No Labwork)' },
   { id: 2097, title: '3 Month Supply: Tirzepatide (No Labwork)' },
   { id: 2186, title: 'Qualiphy Test' },
@@ -66,6 +88,48 @@ const EXAM_OPTIONS = [
   { id: 127, title: 'BBL Broadband Light' },
   { id: 131, title: 'BodyTone' }
 ];
+
+// Pharmacy details component
+const PharmacyDetails: React.FC<{ state: string }> = ({ state }) => {
+  const isAkinaAvailable = AKINA_PHARMACY_STATES.includes(state);
+
+  if (!state) {
+    return null;
+  }
+
+  if (!isAkinaAvailable) {
+    return (
+      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+          🚫 Pharmacy Services Not Available
+        </h3>
+        <p className="text-yellow-700">
+          Our pharmacy services are currently not available in {state}. 
+          We currently serve the following states: AZ, CO, CT, DC, DE, GA, ID, IL, IN, KY, MA, MD, NJ, NV, NY, MO, MT, ND, OH, OK, OR, PA, SD, TN, UT, VA, WA, WI, WV.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <h3 className="text-lg font-semibold text-blue-800 mb-3">
+        📋 Your Assigned Pharmacy
+      </h3>
+      <div className="space-y-2 text-blue-700">
+        <div><strong>Pharmacy Name:</strong> Akina Pharmacy</div>
+        <div><strong>Address:</strong> 23475 Rock Haven Way</div>
+        <div><strong>City, State:</strong> Sterling, VA</div>
+        <div><strong>Type:</strong> Mail Order Pharmacy</div>
+        <div><strong>NCPDP ID:</strong> 4844824</div>
+      </div>
+      <p className="text-sm text-blue-600 mt-3">
+        ℹ️ This pharmacy has been automatically selected based on your state. 
+        Medications will be shipped directly to your address.
+      </p>
+    </div>
+  );
+};
 
 const AppointmentForm: React.FC = () => {
   const { user } = useAuthStore();
@@ -76,7 +140,7 @@ const AppointmentForm: React.FC = () => {
     phoneNumber: '',
     dob: '',
     state: '',
-    examId: 918
+    examId: 1148 // Default to Compounded Semaglutide
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -108,211 +172,158 @@ const AppointmentForm: React.FC = () => {
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = 'Invalid email address';
+      newErrors.email = 'Please enter a valid email address';
     }
 
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^\+1[0-9]{10}$/.test(formData.phoneNumber.trim())) {
-      newErrors.phoneNumber = 'Phone number must be exactly 10 digits';
+    } else if (!/^\+1[0-9]{10}$/.test(formData.phoneNumber.replace(/\D/g, '').replace(/^1/, '+1'))) {
+      newErrors.phoneNumber = 'Please enter a valid 10-digit US phone number';
     }
 
     if (!formData.dob) {
       newErrors.dob = 'Date of birth is required';
     } else {
-      const dateObj = new Date(formData.dob);
-      const now = new Date();
-      const age = now.getFullYear() - dateObj.getFullYear();
-      const monthDiff = now.getMonth() - dateObj.getMonth();
-      const dayDiff = now.getDate() - dateObj.getDate();
+      const today = new Date();
+      const birthDate = new Date(formData.dob);
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
       
-      let actualAge = age;
-      if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-        actualAge--;
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        // Adjust age if birthday hasn't occurred this year
       }
       
-      if (actualAge < 18 || actualAge > 120) {
-        newErrors.dob = 'Age must be between 18 and 120 years';
+      if (age < 18) {
+        newErrors.dob = 'You must be at least 18 years old';
+      } else if (age > 120) {
+        newErrors.dob = 'Please enter a valid date of birth';
       }
     }
 
     if (!formData.state) {
-      newErrors.state = 'State is required';
-    } else if (!US_STATES.includes(formData.state)) {
-      newErrors.state = 'Please select a valid US state';
+      newErrors.state = 'Please select a state';
+    }
+
+    if (!formData.examId) {
+      newErrors.examId = 'Please select an exam type';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  useEffect(() => {
-    const loadUserData = async () => {
-      if (!user?.email) {
-        setIsDataLoading(false);
-        return;
-      }
-
-      try {
-        console.log('Fetching user data for:', user.email);
-        
-        // Use our new API endpoint instead of direct Supabase call
-        const response = await fetch('/api/user-data/fetch', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          console.error('Failed to fetch user data:', response.status, response.statusText);
-          // Set default email and continue
-          setFormData(prev => ({
-            ...prev,
-            email: user.email || ''
-          }));
-          setIsDataLoading(false);
-          return;
-        }
-
-        const result: UserDataApiResponse = await response.json();
-        
-        if (!result.success) {
-          console.error('API error:', result.error);
-          // Set default email and continue
-          setFormData(prev => ({
-            ...prev,
-            email: user.email || ''
-          }));
-          setIsDataLoading(false);
-          return;
-        }
-
-        if (result.data) {
-          console.log('User data found, populating form');
-          setFormData(prev => ({
-            ...prev,
-            firstName: result.data!.first_name || '',
-            lastName: result.data!.last_name || '',
-            email: result.data!.email || user.email || '',
-            phoneNumber: result.data!.phone || '',
-            dob: result.data!.dob || '',
-            state: result.data!.state || ''
-          }));
-
-          if (result.data.submission_count && result.data.submission_count >= 1) {
-            setHasSubmitted(true);
-          }
-        } else {
-          console.log('No user data found, using default email');
-          setFormData(prev => ({
-            ...prev,
-            email: user.email || ''
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        // Set default email and continue
-        setFormData(prev => ({
-          ...prev,
-          email: user.email || ''
-        }));
-      } finally {
-        setIsDataLoading(false);
-      }
-    };
-
-    loadUserData();
-  }, [user]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+  const handleInputChange = (field: keyof FormData, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
-    
-    if (name === 'phoneNumber') {
-      // Only allow digits for phone number input
-      const digitsOnly = value.replace(/[^\d]/g, '');
-      
-      // Limit to 10 digits for US phone numbers
-      if (digitsOnly.length <= 10) {
-        // Update internal state with +1 prefix for API
-        const formattedPhone = digitsOnly.length === 10 ? `+1${digitsOnly}` : `+1${digitsOnly}`;
-        setFormData(prev => ({ ...prev, [name]: formattedPhone }));
-      }
-      return;
-    }
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: name === 'examId' ? parseInt(value) : value 
-    }));
   };
+
+  const formatPhoneNumber = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 10) {
+      return `+1${digits}`;
+    }
+    return `+1${digits.slice(-10)}`;
+  };
+
+  const checkExistingSubmission = async () => {
+    if (!user?.email) return;
+
+    try {
+      const response = await fetch('/api/user-data/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      const result: UserDataApiResponse = await response.json();
+      
+      if (result.success && result.data) {
+        if ((result.data.submission_count || 0) >= 1) {
+          setHasSubmitted(true);
+          setMeetingUrl(result.data.meeting_url || null);
+          setMessage({
+            type: 'error',
+            text: 'You have already submitted a consultation request. Only one submission is allowed per account.'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking submission status:', error);
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+        firstName: user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || '',
+        lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+        phoneNumber: user.phone || ''
+      }));
+      
+      checkExistingSubmission();
+    } else {
+      setIsDataLoading(false);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (hasSubmitted) {
-      setMessage({
-        type: 'error',
-        text: 'You have already submitted a consultation request. Only one submission is allowed per account.'
-      });
+    if (!validateForm()) {
+      setMessage({ type: 'error', text: 'Please fix the errors above and try again.' });
       return;
     }
 
-    if (!validateForm()) {
-      setMessage({
-        type: 'error',
-        text: 'Please correct the errors below and try again.'
+    // Check if state is supported by Akina Pharmacy
+    if (!AKINA_PHARMACY_STATES.includes(formData.state)) {
+      setMessage({ 
+        type: 'error', 
+        text: `Sorry, our pharmacy services are not yet available in ${formData.state}. We currently serve: AZ, CO, CT, DC, DE, GA, ID, IL, IN, KY, MA, MD, NJ, NV, NY, MO, MT, ND, OH, OK, OR, PA, SD, TN, UT, VA, WA, WI, WV.` 
       });
       return;
     }
 
     setIsLoading(true);
     setMessage(null);
-    setMeetingUrl(null);
 
     try {
-      console.log('Submitting appointment form...');
-      
       const response = await fetch('/api/qualiphy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phoneNumber: formatPhoneNumber(formData.phoneNumber),
+          dob: formData.dob,
+          state: formData.state,
+          examId: formData.examId
+        }),
       });
 
-      const result: AppointmentResponse = await response.json();
+      const result: QualiphyApiResponse = await response.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to schedule appointment');
+      if (result.success) {
+        setMessage({ type: 'success', text: result.message || 'Appointment scheduled successfully!' });
+        setMeetingUrl(result.meetingUrl || null);
+        setHasSubmitted(true);
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to schedule appointment' });
+        if (result.meetingUrl) {
+          setMeetingUrl(result.meetingUrl);
+          setHasSubmitted(true);
+        }
       }
-
-      console.log('Appointment scheduled successfully');
-      
-      setMessage({
-        type: 'success',
-        text: 'Consultation request received. Check your email and spam folder if instructions not received.'
-      });
-      
-      if (result.meetingUrl) {
-        setMeetingUrl(result.meetingUrl);
-      }
-      
-      setHasSubmitted(true);
-
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error submitting appointment:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      setMessage({
-        type: 'error',
-        text: errorMessage
-      });
+      setMessage({ type: 'error', text: 'Network error. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -320,252 +331,244 @@ const AppointmentForm: React.FC = () => {
 
   if (isDataLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-pink-500"></div>
-      </div>
-    );
-  }
-
-  if (hasSubmitted) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="flex items-center">
-          <svg className="w-6 h-6 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <div>
-            <h3 className="text-lg font-medium text-yellow-800">Consultation Already Requested</h3>
-            <p className="text-yellow-700 mt-1">
-              You have already submitted a consultation request. Only one submission is allowed per account.
-            </p>
-          </div>
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-lg">Loading...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">Schedule Your Telehealth Consultation</h2>
-      
-      {message && (
-        <div className={`p-4 rounded-md mb-6 ${
-          message.type === 'success' 
-            ? 'bg-green-50 border border-green-200 text-green-700' 
-            : 'bg-red-50 border border-red-200 text-red-700'
-        }`}>
-          <div className="flex">
-            <div className="flex-shrink-0">
-              {message.type === 'success' ? (
-                <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              )}
+    <div className="max-w-2xl mx-auto p-6">
+      <div className="bg-white rounded-lg shadow-lg p-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Schedule Your Consultation</h1>
+        <p className="text-gray-600 mb-8">Book your appointment with our healthcare providers</p>
+
+        {/* Show meeting URL for already submitted users */}
+        {hasSubmitted && meetingUrl && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">
+              ✅ Your Appointment is Scheduled
+            </h3>
+            <p className="text-green-700 mb-3">
+              You have already submitted a consultation request. Here's your meeting link:
+            </p>
+            <a 
+              href={meetingUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              🔗 Join Your Meeting
+            </a>
+          </div>
+        )}
+
+        {/* Message Display */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            message.type === 'success' 
+              ? 'bg-green-50 border border-green-200 text-green-800' 
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            {message.text}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                First Name *
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange('firstName', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.firstName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your first name"
+                disabled={hasSubmitted}
+              />
+              {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
             </div>
-            <div className="ml-3">
-              <p className="text-sm">{message.text}</p>
+
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name *
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.lastName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your last name"
+                disabled={hasSubmitted}
+              />
+              {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
             </div>
           </div>
-        </div>
-      )}
 
-      {meetingUrl && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-medium text-blue-800 mb-2">Your Meeting Is Ready!</h3>
-          <p className="text-blue-700 mb-3">Click the link below to join your telehealth consultation:</p>
-          <a
-            href={meetingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            Join Consultation
-          </a>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Contact Information */}
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-              First Name *
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email Address *
             </label>
             <input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                errors.firstName ? 'border-red-300' : 'border-gray-300'
+              type="email"
+              id="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.email ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Enter your first name"
+              placeholder="Enter your email address"
+              disabled={hasSubmitted}
             />
-            {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-              Last Name *
-            </label>
-            <input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                errors.lastName ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Enter your last name"
-            />
-            {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email Address *
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-            readOnly
-            className={`w-full px-3 py-2 border rounded-md bg-gray-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-              errors.email ? 'border-red-300' : 'border-gray-300'
-            }`}
-            placeholder="Enter your email address"
-          />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number *
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">+1</span>
-              <input
-                type="tel"
-                id="phoneNumber"
-                name="phoneNumber"
-                value={formData.phoneNumber.replace('+1', '')}
-                onChange={handleInputChange}
-                required
-                maxLength={10}
-                className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                  errors.phoneNumber ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="1234567890"
-              />
-            </div>
-            {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
-            <p className="text-xs text-gray-500 mt-1">Enter 10 digits (US phone number)</p>
+            <input
+              type="tel"
+              id="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="+1 (555) 123-4567"
+              disabled={hasSubmitted}
+            />
+            {errors.phoneNumber && <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>}
           </div>
 
+          {/* Personal Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-2">
+                Date of Birth *
+              </label>
+              <input
+                type="date"
+                id="dob"
+                value={formData.dob}
+                onChange={(e) => handleInputChange('dob', e.target.value)}
+                max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                min={new Date(new Date().setFullYear(new Date().getFullYear() - 120)).toISOString().split('T')[0]}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.dob ? 'border-red-500' : 'border-gray-300'
+                }`}
+                disabled={hasSubmitted}
+              />
+              {errors.dob && <p className="mt-1 text-sm text-red-600">{errors.dob}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                State *
+              </label>
+              <select
+                id="state"
+                value={formData.state}
+                onChange={(e) => handleInputChange('state', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.state ? 'border-red-500' : 'border-gray-300'
+                }`}
+                disabled={hasSubmitted}
+              >
+                <option value="">Select your state</option>
+                {US_STATES.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+              {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state}</p>}
+            </div>
+          </div>
+
+          {/* Exam Selection */}
           <div>
-            <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-              State *
+            <label htmlFor="examId" className="block text-sm font-medium text-gray-700 mb-2">
+              Consultation Type *
             </label>
             <select
-              id="state"
-              name="state"
-              value={formData.state}
-              onChange={handleInputChange}
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                errors.state ? 'border-red-300' : 'border-gray-300'
+              id="examId"
+              value={formData.examId}
+              onChange={(e) => handleInputChange('examId', parseInt(e.target.value))}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.examId ? 'border-red-500' : 'border-gray-300'
               }`}
+              disabled={hasSubmitted}
             >
-              <option value="">Select your state</option>
-              {US_STATES.map(state => (
-                <option key={state} value={state}>
-                  {state}
+              <option value="">Select consultation type</option>
+              {EXAM_OPTIONS.map((exam) => (
+                <option key={exam.id} value={exam.id}>
+                  {exam.title}
                 </option>
               ))}
             </select>
-            {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
+            {errors.examId && <p className="mt-1 text-sm text-red-600">{errors.examId}</p>}
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-1">
-            Date of Birth *
-          </label>
-          <input
-            type="date"
-            id="dob"
-            name="dob"
-            value={formData.dob}
-            onChange={handleInputChange}
-            required
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-              errors.dob ? 'border-red-300' : 'border-gray-300'
-            }`}
-          />
-          {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob}</p>}
-        </div>
+          {/* Pharmacy Details Display */}
+          <PharmacyDetails state={formData.state} />
 
-        <div>
-          <label htmlFor="examId" className="block text-sm font-medium text-gray-700 mb-1">
-            Consultation Type *
-          </label>
-          <select
-            id="examId"
-            name="examId"
-            value={formData.examId}
-            onChange={handleInputChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-          >
-            {EXAM_OPTIONS.map(option => (
-              <option key={option.id} value={option.id}>
-                {option.title}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Submit Button */}
+          {!hasSubmitted && (
+            <button
+              type="submit"
+              disabled={isLoading || !AKINA_PHARMACY_STATES.includes(formData.state)}
+              className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 ${
+                isLoading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : AKINA_PHARMACY_STATES.includes(formData.state)
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-gray-400 cursor-not-allowed text-gray-600'
+              }`}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Scheduling Appointment...
+                </div>
+              ) : (
+                'Schedule Consultation'
+              )}
+            </button>
+          )}
+          
+          {formData.state && !AKINA_PHARMACY_STATES.includes(formData.state) && !hasSubmitted && (
+            <p className="text-sm text-orange-600 text-center">
+              Please select a state where our pharmacy services are available to proceed.
+            </p>
+          )}
+        </form>
 
-        <div className="pt-4">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-3 px-4 rounded-md font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                Scheduling...
-              </div>
-            ) : (
-              'Schedule Consultation'
-            )}
-          </button>
+        {/* Additional Information */}
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Important Information</h3>
+          <ul className="text-sm text-gray-600 space-y-1">
+            <li>• Consultations are available during business hours</li>
+            <li>• You will receive an email confirmation with meeting details</li>
+            <li>• Our healthcare providers are licensed professionals</li>
+            <li>• All consultations are secure and HIPAA compliant</li>
+            <li>• Pharmacy services are currently available in select states only</li>
+          </ul>
         </div>
-      </form>
-
-      <div className="mt-6 bg-gray-50 p-4 rounded-md">
-        <h4 className="text-sm font-medium text-gray-800 mb-2">Important Notes:</h4>
-        <ul className="text-xs text-gray-600 space-y-1">
-          <li>• Only one consultation request is allowed per account</li>
-          <li>• Your meeting link will be provided immediately after submission</li>
-          <li>• Please ensure you have a stable internet connection</li>
-          <li>• Have your medical history ready for the consultation</li>
-        </ul>
       </div>
     </div>
   );

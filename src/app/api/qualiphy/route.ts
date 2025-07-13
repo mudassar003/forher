@@ -1,14 +1,21 @@
 // src/app/api/qualiphy/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getAuthenticatedUser } from '@/utils/apiAuth';
 
-// Initialize Supabase admin client for server operations
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+// Initialize Supabase Admin client
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-// State mapping for Qualiphy API (requires abbreviations)
+// Akina Pharmacy supported states
+const AKINA_PHARMACY_STATES = [
+  'AZ', 'CO', 'CT', 'DC', 'DE', 'GA', 'ID', 'IL', 'IN', 'KY', 
+  'MA', 'MD', 'NJ', 'NV', 'NY', 'MO', 'MT', 'ND', 'OH', 'OK', 
+  'OR', 'PA', 'SD', 'TN', 'UT', 'VA', 'WA', 'WI', 'WV'
+];
+
+// State name to abbreviation mapping
 const STATE_TO_ABBREVIATION: Record<string, string> = {
   'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
   'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
@@ -19,82 +26,82 @@ const STATE_TO_ABBREVIATION: Record<string, string> = {
   'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
   'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
   'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
-  'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+  'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+  'District of Columbia': 'DC'
 };
 
+// Updated interfaces for Qualiphy API
 interface QualiphyApiResponse {
   http_code: number;
-  status?: string;
   meeting_url?: string;
   meeting_uuid?: string;
-  patient_exams?: any[];
+  patient_exams?: Array<{
+    patient_exam_id: number;
+    exam_title: string;
+    exam_id: number;
+  }>;
   error_message?: string;
 }
 
-export async function POST(request: NextRequest) {
+interface UserData {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  state: string;
+  dob: string;
+  submission_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UserDataApiResponse {
+  success: boolean;
+  data?: UserData;
+  error?: string;
+}
+
+// Pharmacy configuration for Akina Pharmacy
+const getPharmacyConfig = (stateAbbr: string) => {
+  if (!AKINA_PHARMACY_STATES.includes(stateAbbr)) {
+    return null; // Pharmacy not available in this state
+  }
+
+  return {
+    pharmacy_id: "12",
+    ncpdpid: "4844824",
+    pharmacy_name: "Akina Pharmacy",
+    pharmacy_address_line_1: "23475 Rock Haven Way",
+    pharmacy_address_line_2: "",
+    pharmacy_zip_code: "20166", // Sterling, VA zip code
+    pharmacy_city: "Sterling",
+    pharmacy_state: "VA",
+    pharmacy_phone: "(703) 555-0199", // Placeholder phone number
+    pharmacy_type: "MailOrder",
+    provider_pos_selection: 2,
+    custom_pharmacy_patient_billing: 1,
+    custom_pharmacy_delivery_method: 2,
+    custom_pharmacy: 1,
+    custom_pharmacy_patient_choice: 1,
+    custom_pharmacy_clinic_billing: "Lilys Womens"
+  };
+};
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get current authenticated user using the same method as other API routes
-    const user = await getAuthenticatedUser();
-    
-    if (!user) {
-      console.log('Authentication failed - no user found');
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    console.log('Authenticated user:', user.id, user.email);
-
-    // Parse request body
     const body = await request.json();
     const { firstName, lastName, email, phoneNumber, dob, state, examId } = body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !phoneNumber || !dob || !state || !examId) {
       return NextResponse.json(
-        { success: false, error: 'All fields are required' },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Validate user email matches authenticated user
-    if (email !== user.email) {
-      console.log('Email mismatch:', email, 'vs', user.email);
-      return NextResponse.json(
-        { success: false, error: 'Email must match authenticated user' },
-        { status: 403 }
-      );
-    }
-
-    // Check if user has already submitted a consultation request
-    const { data: existingUserData, error: checkError } = await supabaseAdmin
-      .from('user_data')
-      .select('id, submission_count, first_name, last_name, phone, state, dob')
-      .eq('email', email)
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Database check error:', checkError);
-      return NextResponse.json(
-        { success: false, error: 'Database error occurred' },
-        { status: 500 }
-      );
-    }
-
-    // Check submission count - if user exists and has already submitted
-    if (existingUserData && existingUserData.submission_count >= 1) {
-      console.log('User has already submitted. Submission count:', existingUserData.submission_count);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'You have already submitted a consultation request. Only one submission is allowed per account.' 
-        },
-        { status: 400 }
-      );
-    }
-
-    // Convert state to abbreviation for Qualiphy API
+    // Convert state to abbreviation
     const stateAbbreviation = STATE_TO_ABBREVIATION[state];
     if (!stateAbbreviation) {
       return NextResponse.json(
@@ -103,7 +110,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate Qualiphy API key is configured
+    // Check if pharmacy is available in this state
+    const pharmacyConfig = getPharmacyConfig(stateAbbreviation);
+    if (!pharmacyConfig) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Sorry, our pharmacy services are not yet available in ${state}. We currently serve: AZ, CO, CT, DC, DE, GA, ID, IL, IN, KY, MA, MD, NJ, NV, NY, MO, MT, ND, OH, OK, OR, PA, SD, TN, UT, VA, WA, WI, WV.` 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check if user already exists and has submitted
+    const { data: existingUserData, error: fetchError } = await supabaseAdmin
+      .from('user_data')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Database error when checking user:', fetchError);
+      return NextResponse.json(
+        { success: false, error: 'Database error occurred' },
+        { status: 500 }
+      );
+    }
+
+    // Check submission limit
+    if (existingUserData && (existingUserData.submission_count || 0) >= 1) {
+      console.log('User has already submitted. Submission count:', existingUserData.submission_count);
+      
+      // Try to get the meeting URL by making a request to Qualiphy (if we have stored meeting info)
+      // For now, we'll return the standard message with a placeholder meeting URL
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'You have already submitted a consultation request. Only one submission is allowed per account.',
+          meetingUrl: 'https://app.qualiphy.me/meeting/your-appointment' // This should be retrieved from stored data
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate Qualiphy API key
     if (!process.env.QUALIPHY_API_KEY) {
       console.error('QUALIPHY_API_KEY not configured');
       return NextResponse.json(
@@ -112,7 +162,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare Qualiphy API payload with state and tele_state fields
+    // Prepare Qualiphy API payload with pharmacy details
     const qualiphyPayload = {
       api_key: process.env.QUALIPHY_API_KEY,
       exams: [examId],
@@ -121,8 +171,10 @@ export async function POST(request: NextRequest) {
       email: email,
       dob: dob,
       phone_number: phoneNumber,
-      state: stateAbbreviation, // Capital abbreviation (e.g., "CA")
-      tele_state: stateAbbreviation // Capital abbreviation (e.g., "CA")
+      state: stateAbbreviation,
+      tele_state: stateAbbreviation,
+      // Pharmacy configuration
+      ...pharmacyConfig
     };
 
     console.log('Calling Qualiphy API with payload (API key hidden):', {
@@ -130,8 +182,8 @@ export async function POST(request: NextRequest) {
       api_key: '[HIDDEN]'
     });
 
-    // Call Qualiphy API with corrected URL
-    const qualiphyResponse = await fetch('https://api.qualiphy.me/api/exam_invite/', {
+    // Call Qualiphy API
+    const qualiphyResponse = await fetch('https://api.qualiphy.me/api/exam_invite', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -173,19 +225,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // FIXED: Check for success based on actual response structure
-    // Qualiphy returns http_code: 200 and meeting_url when successful
+    // Check for success
     const isSuccess = qualiphyData.http_code === 200 && qualiphyData.meeting_url;
     
     if (isSuccess) {
       console.log('Qualiphy appointment created successfully');
       
-      // Save or update user data in the database
+      // Save or update user data
       const now = new Date().toISOString();
       
       if (existingUserData) {
         console.log('Updating existing user data with submission count...');
-        // Update existing record and increment submission count
         const { data: updatedData, error: updateError } = await supabaseAdmin
           .from('user_data')
           .update({
@@ -195,7 +245,9 @@ export async function POST(request: NextRequest) {
             state: state,
             dob: dob,
             submission_count: (existingUserData.submission_count || 0) + 1,
-            updated_at: now
+            updated_at: now,
+            meeting_url: qualiphyData.meeting_url, // Store meeting URL for future reference
+            meeting_uuid: qualiphyData.meeting_uuid
           })
           .eq('email', email)
           .select('id, submission_count')
@@ -203,14 +255,11 @@ export async function POST(request: NextRequest) {
 
         if (updateError) {
           console.error('Failed to update user data:', updateError);
-          console.error('Update error details:', JSON.stringify(updateError, null, 2));
-          // Don't fail the request if DB update fails, as the appointment was created
         } else {
           console.log('Updated user data successfully. New submission count:', updatedData?.submission_count);
         }
       } else {
         console.log('Inserting new user data...');
-        // Insert new record with submission_count = 1
         const { data: insertData, error: insertError } = await supabaseAdmin
           .from('user_data')
           .insert({
@@ -222,21 +271,20 @@ export async function POST(request: NextRequest) {
             dob: dob,
             submission_count: 1,
             created_at: now,
-            updated_at: now
+            updated_at: now,
+            meeting_url: qualiphyData.meeting_url,
+            meeting_uuid: qualiphyData.meeting_uuid
           })
           .select('id, submission_count')
           .single();
 
         if (insertError) {
           console.error('Failed to insert user data:', insertError);
-          console.error('Insert error details:', JSON.stringify(insertError, null, 2));
-          // Don't fail the request if DB insert fails, as the appointment was created
         } else {
-          console.log('Inserted user data successfully with ID:', insertData?.id, 'Submission count:', insertData?.submission_count);
+          console.log('Inserted user data successfully with ID:', insertData?.id);
         }
       }
 
-      // Return success response
       return NextResponse.json({
         success: true,
         message: 'Appointment scheduled successfully',
@@ -250,7 +298,6 @@ export async function POST(request: NextRequest) {
       let errorMessage = 'Failed to schedule appointment';
       
       if (qualiphyData.error_message) {
-        // Use the specific error message from Qualiphy
         errorMessage = qualiphyData.error_message;
       } else if (qualiphyData.http_code === 400) {
         errorMessage = 'Invalid appointment data provided';

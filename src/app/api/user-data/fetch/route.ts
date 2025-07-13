@@ -29,6 +29,8 @@ interface UserDataResponse {
     state: string;
     dob: string;
     submission_count: number;
+    meeting_url?: string;
+    meeting_uuid?: string;
   };
   error?: string;
 }
@@ -53,10 +55,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserDataRe
 
     console.log('Fetching user data for:', user.email);
 
-    // Fetch user data using service role to bypass RLS
+    // FIXED: Include meeting_url and meeting_uuid in the select query
     const { data: userData, error: fetchError } = await supabaseAdmin
       .from('user_data')
-      .select('id, first_name, last_name, email, phone, state, dob, submission_count')
+      .select('id, first_name, last_name, email, phone, state, dob, submission_count, meeting_url, meeting_uuid')
       .eq('email', user.email)
       .single();
 
@@ -80,9 +82,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserDataRe
       );
     }
 
-    console.log('User data found for:', user.email);
+    console.log('User data found for:', user.email, 'Submission count:', userData.submission_count, 'Meeting URL:', userData.meeting_url ? 'Available' : 'Not available');
 
-    // Return user data
+    // FIXED: Return user data including meeting details
     return NextResponse.json(
       { 
         success: true, 
@@ -94,7 +96,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserDataRe
           phone: userData.phone,
           state: userData.state,
           dob: userData.dob,
-          submission_count: userData.submission_count || 0
+          submission_count: userData.submission_count || 0,
+          meeting_url: userData.meeting_url || undefined,
+          meeting_uuid: userData.meeting_uuid || undefined
         }
       },
       { headers: securityHeaders }

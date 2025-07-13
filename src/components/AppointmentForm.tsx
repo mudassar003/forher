@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AppointmentFormSuccess from './AppointmentFormSuccess';
 
-// Form data interface
 interface FormData {
   firstName: string;
   lastName: string;
@@ -13,23 +13,6 @@ interface FormData {
   dob: string;
   state: string;
   examId: number;
-}
-
-// API response interfaces
-interface QualiphyApiResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-  details?: string[];
-  meetingUrl?: string;
-  examId?: number;
-  patientExamId?: number;
-}
-
-interface UserDataApiResponse {
-  success: boolean;
-  data?: UserData;
-  error?: string;
 }
 
 interface UserData {
@@ -47,9 +30,19 @@ interface UserData {
   updated_at: string;
 }
 
-// Akina Pharmacy supported states (full names)
-const AKINA_PHARMACY_STATES = [
-  'Arizona', 'Colorado', 'Connecticut', 'Delaware', 'Georgia', 'Idaho', 
+interface AppointmentResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  details?: string[];
+  meetingUrl?: string;
+  examId?: number;
+  patientExamId?: number;
+}
+
+// Only Akina Pharmacy supported states
+const US_STATES = [
+  'Arizona', 'Colorado', 'Connecticut', 'Delaware', 'Georgia', 'Idaho',
   'Illinois', 'Indiana', 'Kentucky', 'Massachusetts', 'Maryland', 
   'New Jersey', 'Nevada', 'New York', 'Missouri', 'Montana', 
   'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
@@ -57,79 +50,13 @@ const AKINA_PHARMACY_STATES = [
   'Wisconsin', 'West Virginia'
 ];
 
-// All US states for the dropdown
-const US_STATES = [
-  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-  'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-  'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-  'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-  'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-  'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-  'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-  'West Virginia', 'Wisconsin', 'Wyoming'
-];
-
-// Updated exam options with new medication shipping options
+// Only 4 exams total (2 existing + 2 new)
 const EXAM_OPTIONS = [
   { id: 918, title: 'GLP-1 (No Labwork Required) Weight Loss Initial Consult' },
   { id: 1324, title: 'GLP-1 (Labwork Required) Weight Loss Initial Consult' },
-  { id: 1325, title: 'Weight Loss GLP-1 Monthly Follow Up' },
   { id: 1148, title: 'Compounded Semaglutide with Medication Shipping (No Labwork Required)' },
-  { id: 1693, title: 'Compounded Semaglutide with Medication Shipping (With Lab-work Upload)' },
-  { id: 1287, title: 'Compounded Tirzepatide with Medication Shipping (No Labwork Required)' },
-  { id: 1694, title: 'Compounded Tirzepatide with Medication Shipping (With Lab-work Upload)' },
-  { id: 2095, title: '3 Month Supply: Semaglutide (No Labwork)' },
-  { id: 2097, title: '3 Month Supply: Tirzepatide (No Labwork)' },
-  { id: 2186, title: 'Qualiphy Test' },
-  { id: 2490, title: 'AOD-9604 / MOTS-C With Medication Shipping' },
-  { id: 452, title: 'Ablative Laser' },
-  { id: 127, title: 'BBL Broadband Light' },
-  { id: 131, title: 'BodyTone' }
+  { id: 1693, title: 'Compounded Semaglutide with Medication Shipping (With Lab-work Upload)' }
 ];
-
-// Pharmacy details component
-const PharmacyDetails: React.FC<{ state: string }> = ({ state }) => {
-  const isAkinaAvailable = AKINA_PHARMACY_STATES.includes(state);
-
-  if (!state) {
-    return null;
-  }
-
-  if (!isAkinaAvailable) {
-    return (
-      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-          🚫 Pharmacy Services Not Available
-        </h3>
-        <p className="text-yellow-700">
-          Our pharmacy services are currently not available in {state}. 
-          We currently serve the following states: AZ, CO, CT, DC, DE, GA, ID, IL, IN, KY, MA, MD, NJ, NV, NY, MO, MT, ND, OH, OK, OR, PA, SD, TN, UT, VA, WA, WI, WV.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-      <h3 className="text-lg font-semibold text-blue-800 mb-3">
-        📋 Your Assigned Pharmacy
-      </h3>
-      <div className="space-y-2 text-blue-700">
-        <div><strong>Pharmacy Name:</strong> Akina Pharmacy</div>
-        <div><strong>Address:</strong> 23475 Rock Haven Way</div>
-        <div><strong>City, State:</strong> Sterling, VA</div>
-        <div><strong>Type:</strong> Mail Order Pharmacy</div>
-        <div><strong>NCPDP ID:</strong> 4844824</div>
-      </div>
-      <p className="text-sm text-blue-600 mt-3">
-        ℹ️ This pharmacy has been automatically selected based on your state. 
-        Medications will be shipped directly to your address.
-      </p>
-    </div>
-  );
-};
 
 const AppointmentForm: React.FC = () => {
   const { user } = useAuthStore();
@@ -140,7 +67,7 @@ const AppointmentForm: React.FC = () => {
     phoneNumber: '',
     dob: '',
     state: '',
-    examId: 1148 // Default to Compounded Semaglutide
+    examId: 918
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -149,6 +76,18 @@ const AppointmentForm: React.FC = () => {
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Format phone number for better UX
+  const formatPhoneNumber = (value: string): string => {
+    const digits = value.replace(/[^\d]/g, '');
+    if (digits.length <= 3) {
+      return digits;
+    } else if (digits.length <= 6) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    } else {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -169,15 +108,11 @@ const AppointmentForm: React.FC = () => {
       newErrors.lastName = 'Last name contains invalid characters';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
+    // Phone validation with formatted input
+    const digitsOnly = formData.phoneNumber.replace(/[^\d]/g, '');
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^\+1[0-9]{10}$/.test(formData.phoneNumber.replace(/\D/g, '').replace(/^1/, '+1'))) {
+    } else if (digitsOnly.length !== 10) {
       newErrors.phoneNumber = 'Please enter a valid 10-digit US phone number';
     }
 
@@ -190,7 +125,7 @@ const AppointmentForm: React.FC = () => {
       const monthDiff = today.getMonth() - birthDate.getMonth();
       
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        // Adjust age if birthday hasn't occurred this year
+        // Age adjustment handled by date comparison above
       }
       
       if (age < 18) {
@@ -212,80 +147,100 @@ const AppointmentForm: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    
+    // Better phone number handling
+    if (name === 'phoneNumber') {
+      const formatted = formatPhoneNumber(value);
+      setFormData(prev => ({ ...prev, [name]: formatted }));
+      return;
+    }
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: name === 'examId' ? parseInt(value) : value 
+    }));
   };
 
-  const formatPhoneNumber = (value: string): string => {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 10) {
-      return `+1${digits}`;
-    }
-    return `+1${digits.slice(-10)}`;
-  };
-
-  const checkExistingSubmission = async () => {
-    if (!user?.email) return;
-
-    try {
-      const response = await fetch('/api/user-data/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email }),
-      });
-
-      const result: UserDataApiResponse = await response.json();
-      
-      if (result.success && result.data) {
-        if ((result.data.submission_count || 0) >= 1) {
-          setHasSubmitted(true);
-          setMeetingUrl(result.data.meeting_url || null);
-          setMessage({
-            type: 'error',
-            text: 'You have already submitted a consultation request. Only one submission is allowed per account.'
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error checking submission status:', error);
-    } finally {
-      setIsDataLoading(false);
-    }
-  };
-
+  // Load user data and check submission status
   useEffect(() => {
-    if (user?.email) {
-      setFormData(prev => ({
-        ...prev,
-        email: user.email || '',
-        firstName: user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || '',
-        lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-        phoneNumber: user.phone || ''
-      }));
-      
-      checkExistingSubmission();
-    } else {
-      setIsDataLoading(false);
-    }
+    const loadUserData = async () => {
+      if (!user?.email) {
+        setIsDataLoading(false);
+        return;
+      }
+
+      try {
+        console.log('Checking user data for:', user.email);
+
+        // Use the existing API endpoint to fetch user data
+        const response = await fetch('/api/user-data/fetch', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          console.error('Failed to fetch user data:', response.status);
+          setFormData(prev => ({ ...prev, email: user.email || '' }));
+          setIsDataLoading(false);
+          return;
+        }
+
+        const result = await response.json();
+        console.log('User data result:', result);
+        
+        if (result.success && result.data) {
+          // Auto-fill all existing data
+          setFormData(prev => ({
+            ...prev,
+            firstName: result.data.first_name || '',
+            lastName: result.data.last_name || '',
+            email: user.email || '', // Always use user account email
+            phoneNumber: result.data.phone ? formatPhoneNumber(result.data.phone.replace('+1', '')) : '',
+            dob: result.data.dob || '',
+            state: result.data.state || ''
+          }));
+
+          // Check submission count properly
+          console.log('Submission count:', result.data.submission_count);
+          if (result.data.submission_count && result.data.submission_count >= 1) {
+            console.log('User has already submitted, hiding form');
+            setHasSubmitted(true);
+            if (result.data.meeting_url) {
+              setMeetingUrl(result.data.meeting_url);
+              console.log('Meeting URL found:', result.data.meeting_url);
+            }
+          }
+        } else {
+          // No existing data, just set email
+          setFormData(prev => ({ ...prev, email: user.email || '' }));
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        setFormData(prev => ({ ...prev, email: user.email || '' }));
+      } finally {
+        setIsDataLoading(false);
+      }
+    };
+
+    loadUserData();
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
-      setMessage({ type: 'error', text: 'Please fix the errors above and try again.' });
-      return;
-    }
-
-    // Check if state is supported by Akina Pharmacy
-    if (!AKINA_PHARMACY_STATES.includes(formData.state)) {
-      setMessage({ 
-        type: 'error', 
-        text: `Sorry, our pharmacy services are not yet available in ${formData.state}. We currently serve: AZ, CO, CT, DC, DE, GA, ID, IL, IN, KY, MA, MD, NJ, NV, NY, MO, MT, ND, OH, OK, OR, PA, SD, TN, UT, VA, WA, WI, WV.` 
+      setMessage({
+        type: 'error',
+        text: 'Please correct the errors below and try again.'
       });
       return;
     }
@@ -294,28 +249,46 @@ const AppointmentForm: React.FC = () => {
     setMessage(null);
 
     try {
+      // Convert formatted phone to API format
+      const digitsOnly = formData.phoneNumber.replace(/[^\d]/g, '');
+      const apiFormData = {
+        ...formData,
+        phoneNumber: `+1${digitsOnly}`
+      };
+
       const response = await fetch('/api/qualiphy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          email: formData.email.trim().toLowerCase(),
-          phoneNumber: formatPhoneNumber(formData.phoneNumber),
-          dob: formData.dob,
-          state: formData.state,
-          examId: formData.examId
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiFormData),
+        credentials: 'include'
       });
 
-      const result: QualiphyApiResponse = await response.json();
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format from server');
+      }
+
+      const result: AppointmentResponse = await response.json();
 
       if (result.success) {
-        setMessage({ type: 'success', text: result.message || 'Appointment scheduled successfully!' });
-        setMeetingUrl(result.meetingUrl || null);
+        setMessage({
+          type: 'success',
+          text: result.message || 'Consultation scheduled successfully!'
+        });
+        
+        if (result.meetingUrl) {
+          setMeetingUrl(result.meetingUrl);
+        }
+        
         setHasSubmitted(true);
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to schedule appointment' });
+        setMessage({
+          type: 'error',
+          text: result.error || 'Failed to schedule appointment'
+        });
+        
         if (result.meetingUrl) {
           setMeetingUrl(result.meetingUrl);
           setHasSubmitted(true);
@@ -323,251 +296,271 @@ const AppointmentForm: React.FC = () => {
       }
     } catch (error) {
       console.error('Error submitting appointment:', error);
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      setMessage({
+        type: 'error',
+        text: 'Network error. Please try again later.'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Loading state
   if (isDataLoading) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-lg">Loading...</span>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full mx-auto p-8 bg-white rounded-xl shadow-lg">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+            <span className="ml-3 text-lg text-gray-700">Loading...</span>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Show success component if user already submitted
+  if (hasSubmitted) {
+    return <AppointmentFormSuccess meetingUrl={meetingUrl || undefined} />;
+  }
+
+  // Main form component
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Schedule Your Consultation</h1>
-        <p className="text-gray-600 mb-8">Book your appointment with our healthcare providers</p>
-
-        {/* Show meeting URL for already submitted users */}
-        {hasSubmitted && meetingUrl && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">
-              ✅ Your Appointment is Scheduled
-            </h3>
-            <p className="text-green-700 mb-3">
-              You have already submitted a consultation request. Here's your meeting link:
-            </p>
-            <a 
-              href={meetingUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              🔗 Join Your Meeting
-            </a>
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Schedule Your Consultation</h1>
+            <p className="text-gray-600">Book your appointment with our healthcare providers</p>
           </div>
-        )}
 
-        {/* Message Display */}
-        {message && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' 
-              ? 'bg-green-50 border border-green-200 text-green-800' 
-              : 'bg-red-50 border border-red-200 text-red-800'
-          }`}>
-            {message.text}
-          </div>
-        )}
+          {/* Message display */}
+          {message && (
+            <div className={`mb-6 p-4 rounded-lg ${
+              message.type === 'success' 
+                ? 'bg-green-50 border border-green-200 text-green-800' 
+                : 'bg-red-50 border border-red-200 text-red-800'
+            }`}>
+              {message.text}
+            </div>
+          )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Personal Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                First Name *
-              </label>
-              <input
-                type="text"
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.firstName ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter your first name"
-                disabled={hasSubmitted}
-              />
-              {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
+          {/* Pharmacy Information */}
+          {formData.state && (
+            <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+                🏥 Your Assigned Pharmacy
+              </h3>
+              <div className="text-blue-700 space-y-1">
+                <p><strong>Akina Pharmacy</strong> (Mail Order)</p>
+                <p>📍 23475 Rock Haven Way, Sterling, VA</p>
+                <p>📦 Medications shipped directly to you</p>
+              </div>
+              <p className="text-sm text-blue-600 mt-3">
+                This pharmacy is automatically assigned based on your state.
+              </p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Personal Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  required
+                  className={`w-full px-4 py-3 border rounded-lg text-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors ${
+                    errors.firstName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your first name"
+                />
+                {errors.firstName && <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  required
+                  className={`w-full px-4 py-3 border rounded-lg text-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors ${
+                    errors.lastName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your last name"
+                />
+                {errors.lastName && <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>}
+              </div>
             </div>
 
+            {/* Email field - non-editable */}
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name *
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Address *
               </label>
               <input
-                type="text"
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.lastName ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter your last name"
-                disabled={hasSubmitted}
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                readOnly
+                disabled
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg text-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                placeholder="Email from your account"
               />
-              {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+              <p className="text-sm text-gray-500 mt-1">Email is automatically filled from your account and cannot be changed</p>
             </div>
-          </div>
 
-          {/* Contact Information */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter your email address"
-              disabled={hasSubmitted}
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-          </div>
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Phone number field */}
+              <div>
+                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  required
+                  className={`w-full px-4 py-3 border rounded-lg text-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors ${
+                    errors.phoneNumber ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="(555) 123-4567"
+                  maxLength={14}
+                />
+                {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
+                <p className="text-sm text-gray-500 mt-1">Enter your 10-digit US phone number</p>
+              </div>
 
-          <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="+1 (555) 123-4567"
-              disabled={hasSubmitted}
-            />
-            {errors.phoneNumber && <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>}
-          </div>
+              <div>
+                <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-2">
+                  State *
+                </label>
+                <select
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                  className={`w-full px-4 py-3 border rounded-lg text-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors ${
+                    errors.state ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select your state</option>
+                  {US_STATES.map(state => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+                {errors.state && <p className="text-red-600 text-sm mt-1">{errors.state}</p>}
+                <p className="text-sm text-gray-500 mt-1">Services available in select states only</p>
+              </div>
+            </div>
 
-          {/* Personal Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Date of Birth */}
             <div>
-              <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="dob" className="block text-sm font-semibold text-gray-700 mb-2">
                 Date of Birth *
               </label>
               <input
                 type="date"
                 id="dob"
+                name="dob"
                 value={formData.dob}
-                onChange={(e) => handleInputChange('dob', e.target.value)}
+                onChange={handleInputChange}
+                required
                 max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
                 min={new Date(new Date().setFullYear(new Date().getFullYear() - 120)).toISOString().split('T')[0]}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.dob ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-lg text-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors ${
+                  errors.dob ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
-                disabled={hasSubmitted}
               />
-              {errors.dob && <p className="mt-1 text-sm text-red-600">{errors.dob}</p>}
+              {errors.dob && <p className="text-red-600 text-sm mt-1">{errors.dob}</p>}
+              <p className="text-sm text-gray-500 mt-1">You must be at least 18 years old</p>
             </div>
 
+            {/* Consultation Type */}
             <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                State *
+              <label htmlFor="examId" className="block text-sm font-semibold text-gray-700 mb-2">
+                Consultation Type *
               </label>
               <select
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.state ? 'border-red-500' : 'border-gray-300'
-                }`}
-                disabled={hasSubmitted}
+                id="examId"
+                name="examId"
+                value={formData.examId}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
               >
-                <option value="">Select your state</option>
-                {US_STATES.map((state) => (
-                  <option key={state} value={state}>
-                    {state}
+                {EXAM_OPTIONS.map(option => (
+                  <option key={option.id} value={option.id}>
+                    {option.title}
                   </option>
                 ))}
               </select>
-              {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state}</p>}
+              {errors.examId && <p className="text-red-600 text-sm mt-1">{errors.examId}</p>}
             </div>
+
+            {/* Submit Button */}
+            <div className="pt-6">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-pink-600 to-rose-600 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:from-pink-700 hover:to-rose-700 focus:outline-none focus:ring-4 focus:ring-pink-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
+                    Scheduling Your Consultation...
+                  </div>
+                ) : (
+                  'Schedule Consultation'
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Important Information */}
+          <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">Important Information</h4>
+            <ul className="text-sm text-gray-600 space-y-2">
+              <li className="flex items-start">
+                <span className="text-pink-500 mr-2">•</span>
+                Only one consultation request is allowed per account
+              </li>
+              <li className="flex items-start">
+                <span className="text-pink-500 mr-2">•</span>
+                Your meeting link will be provided immediately after submission
+              </li>
+              <li className="flex items-start">
+                <span className="text-pink-500 mr-2">•</span>
+                Services available in select states only
+              </li>
+              <li className="flex items-start">
+                <span className="text-pink-500 mr-2">•</span>
+                Medications shipped via Akina Pharmacy
+              </li>
+              <li className="flex items-start">
+                <span className="text-pink-500 mr-2">•</span>
+                All consultations are secure and HIPAA compliant
+              </li>
+            </ul>
           </div>
-
-          {/* Exam Selection */}
-          <div>
-            <label htmlFor="examId" className="block text-sm font-medium text-gray-700 mb-2">
-              Consultation Type *
-            </label>
-            <select
-              id="examId"
-              value={formData.examId}
-              onChange={(e) => handleInputChange('examId', parseInt(e.target.value))}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.examId ? 'border-red-500' : 'border-gray-300'
-              }`}
-              disabled={hasSubmitted}
-            >
-              <option value="">Select consultation type</option>
-              {EXAM_OPTIONS.map((exam) => (
-                <option key={exam.id} value={exam.id}>
-                  {exam.title}
-                </option>
-              ))}
-            </select>
-            {errors.examId && <p className="mt-1 text-sm text-red-600">{errors.examId}</p>}
-          </div>
-
-          {/* Pharmacy Details Display */}
-          <PharmacyDetails state={formData.state} />
-
-          {/* Submit Button */}
-          {!hasSubmitted && (
-            <button
-              type="submit"
-              disabled={isLoading || !AKINA_PHARMACY_STATES.includes(formData.state)}
-              className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 ${
-                isLoading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : AKINA_PHARMACY_STATES.includes(formData.state)
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-                    : 'bg-gray-400 cursor-not-allowed text-gray-600'
-              }`}
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                  Scheduling Appointment...
-                </div>
-              ) : (
-                'Schedule Consultation'
-              )}
-            </button>
-          )}
-          
-          {formData.state && !AKINA_PHARMACY_STATES.includes(formData.state) && !hasSubmitted && (
-            <p className="text-sm text-orange-600 text-center">
-              Please select a state where our pharmacy services are available to proceed.
-            </p>
-          )}
-        </form>
-
-        {/* Additional Information */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Important Information</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Consultations are available during business hours</li>
-            <li>• You will receive an email confirmation with meeting details</li>
-            <li>• Our healthcare providers are licensed professionals</li>
-            <li>• All consultations are secure and HIPAA compliant</li>
-            <li>• Pharmacy services are currently available in select states only</li>
-          </ul>
         </div>
       </div>
     </div>

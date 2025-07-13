@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Akina Pharmacy supported states
+// Akina Pharmacy supported states (abbreviations)
 const AKINA_PHARMACY_STATES = [
   'AZ', 'CO', 'CT', 'DC', 'DE', 'GA', 'ID', 'IL', 'IN', 'KY', 
   'MA', 'MD', 'NJ', 'NV', 'NY', 'MO', 'MT', 'ND', 'OH', 'OK', 
@@ -30,7 +30,6 @@ const STATE_TO_ABBREVIATION: Record<string, string> = {
   'District of Columbia': 'DC'
 };
 
-// Updated interfaces for Qualiphy API
 interface QualiphyApiResponse {
   http_code: number;
   meeting_url?: string;
@@ -52,20 +51,16 @@ interface UserData {
   state: string;
   dob: string;
   submission_count: number;
+  meeting_url?: string;
+  meeting_uuid?: string;
   created_at: string;
   updated_at: string;
-}
-
-interface UserDataApiResponse {
-  success: boolean;
-  data?: UserData;
-  error?: string;
 }
 
 // Pharmacy configuration for Akina Pharmacy
 const getPharmacyConfig = (stateAbbr: string) => {
   if (!AKINA_PHARMACY_STATES.includes(stateAbbr)) {
-    return null; // Pharmacy not available in this state
+    return null;
   }
 
   return {
@@ -74,10 +69,10 @@ const getPharmacyConfig = (stateAbbr: string) => {
     pharmacy_name: "Akina Pharmacy",
     pharmacy_address_line_1: "23475 Rock Haven Way",
     pharmacy_address_line_2: "",
-    pharmacy_zip_code: "20166", // Sterling, VA zip code
+    pharmacy_zip_code: "20166",
     pharmacy_city: "Sterling",
     pharmacy_state: "VA",
-    pharmacy_phone: "(703) 555-0199", // Placeholder phone number
+    pharmacy_phone: "(703) 555-0199",
     pharmacy_type: "MailOrder",
     provider_pos_selection: 2,
     custom_pharmacy_patient_billing: 1,
@@ -126,7 +121,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { data: existingUserData, error: fetchError } = await supabaseAdmin
       .from('user_data')
       .select('*')
-      .eq('email', email)
+      .eq('email', email.toLowerCase().trim())
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -141,13 +136,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (existingUserData && (existingUserData.submission_count || 0) >= 1) {
       console.log('User has already submitted. Submission count:', existingUserData.submission_count);
       
-      // Try to get the meeting URL by making a request to Qualiphy (if we have stored meeting info)
-      // For now, we'll return the standard message with a placeholder meeting URL
       return NextResponse.json(
         { 
           success: false, 
           error: 'You have already submitted a consultation request. Only one submission is allowed per account.',
-          meetingUrl: 'https://app.qualiphy.me/meeting/your-appointment' // This should be retrieved from stored data
+          meetingUrl: existingUserData.meeting_url || 'https://app.qualiphy.me/meeting/your-appointment'
         },
         { status: 400 }
       );
@@ -195,30 +188,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log('Qualiphy API response status:', qualiphyResponse.status);
 
-    // Check content type before parsing
-    const contentType = qualiphyResponse.headers.get('content-type');
-    
+    // FIXED: Better error handling for non-JSON responses
     let qualiphyData: QualiphyApiResponse;
     
-    if (contentType && contentType.includes('application/json')) {
-      try {
-        qualiphyData = await qualiphyResponse.json();
+    try {
+      const responseText = await qualiphyResponse.text();
+      
+      // Check if response looks like JSON
+      if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+        qualiphyData = JSON.parse(responseText);
         console.log('Qualiphy API response data:', qualiphyData);
-      } catch (parseError) {
-        console.error('Failed to parse Qualiphy response:', parseError);
-        const responseText = await qualiphyResponse.text();
-        console.error('Raw response:', responseText);
-        
+      } else {
+        console.error('Non-JSON response from Qualiphy:', responseText);
         return NextResponse.json(
           { success: false, error: 'Invalid response from scheduling service' },
           { status: 502 }
         );
       }
-    } else {
-      console.error('Invalid content type from Qualiphy:', contentType);
-      const responseText = await qualiphyResponse.text();
-      console.error('Raw response:', responseText);
-      
+    } catch (parseError) {
+      console.error('Failed to parse Qualiphy response:', parseError);
       return NextResponse.json(
         { success: false, error: 'Invalid response format from scheduling service' },
         { status: 502 }
@@ -246,7 +234,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             dob: dob,
             submission_count: (existingUserData.submission_count || 0) + 1,
             updated_at: now,
-            meeting_url: qualiphyData.meeting_url, // Store meeting URL for future reference
+            meeting_url: qualiphyData.meeting_url,
             meeting_uuid: qualiphyData.meeting_uuid
           })
           .eq('email', email)

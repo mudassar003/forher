@@ -1,4 +1,6 @@
 // src/app/(default)/subscriptions/components/SubscriptionCard.tsx
+// Updated with enterprise-level pricing logic
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,6 +12,7 @@ import Modal from '@/components/Modal';
 import PortableText from '@/components/PortableText';
 import { urlFor } from '@/sanity/lib/image';
 import { SanityImageSource } from '@sanity/image-url/lib/types/types';
+import { globalPricing, PricingUtils } from '@/utils/pricing';
 
 interface SubscriptionCardProps {
   id: string;
@@ -86,70 +89,130 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     return features;
   };
 
-  // Get the price and billing details to use (default variant or base subscription)
-  const getPriceDetails = (): { price: number; billingPeriod: string; customBillingPeriodMonths?: number | null } => {
-    // If has variants, look for default variant first
+  // Enterprise-level pricing logic
+  const getBestPricingDisplay = (): {
+    mainPrice: string;
+    subtitle: string;
+    savingsText?: string;
+    originalPrice?: string;
+  } => {
+    // If has variants, get the best pricing from all options
     if (hasVariants && variants && variants.length > 0) {
-      const defaultVariant = variants.find(variant => variant.isDefault);
-      if (defaultVariant) {
-        return {
-          price: defaultVariant.price,
-          billingPeriod: defaultVariant.billingPeriod,
-          customBillingPeriodMonths: defaultVariant.customBillingPeriodMonths
-        };
-      }
-    }
-    
-    // Fall back to base subscription price
-    return {
-      price,
-      billingPeriod,
-      customBillingPeriodMonths
-    };
-  };
+      // Include base subscription in comparison
+      const allOptions = [
+        {
+          price,
+          billingPeriod,
+          customBillingPeriodMonths,
+          title: 'Base Plan'
+        },
+        ...variants.map(v => ({
+          price: v.price,
+          billingPeriod: v.billingPeriod,
+          customBillingPeriodMonths: v.customBillingPeriodMonths,
+          title: v.title
+        }))
+      ];
 
-  // Format price - show monthly equivalent
-  const getFormattedPrice = (): string => {
-    const priceDetails = getPriceDetails();
-    const subscriptionPrice = priceDetails.price;
-    const period = priceDetails.billingPeriod;
-    const customMonths = priceDetails.customBillingPeriodMonths;
-
-    // Calculate monthly equivalent
-    let monthlyPrice: number;
-    switch (period) {
-      case 'monthly':
-        monthlyPrice = subscriptionPrice;
-        break;
-      case 'three_month':
-        monthlyPrice = subscriptionPrice / 3;
-        break;
-      case 'six_month':
-        monthlyPrice = subscriptionPrice / 6;
-        break;
-      case 'annually':
-        monthlyPrice = subscriptionPrice / 12;
-        break;
-      case 'other':
-        if (customMonths && customMonths > 1) {
-          monthlyPrice = subscriptionPrice / customMonths;
-        } else {
-          monthlyPrice = subscriptionPrice;
+      const bestPricing = globalPricing.getBestPricing(allOptions);
+      
+      const monthText = currentLanguage === 'es' ? '/mes' : '/month';
+      const mainPrice = `${bestPricing.formattedMonthlyPrice}${monthText}`;
+      
+      // Determine subtitle based on best variant
+      let subtitle = '';
+      const bestVariant = bestPricing.bestVariant;
+      
+      if (bestVariant.billingPeriod === 'monthly') {
+        subtitle = currentLanguage === 'es' ? 'Plan mensual' : 'Monthly plan';
+      } else {
+        const formattedOriginal = globalPricing.formatter.formatPrice(bestVariant.price);
+        
+        switch (bestVariant.billingPeriod) {
+          case 'three_month':
+            subtitle = currentLanguage === 'es' 
+              ? `${formattedOriginal} cada 3 meses` 
+              : `${formattedOriginal} every 3 months`;
+            break;
+          case 'six_month':
+            subtitle = currentLanguage === 'es' 
+              ? `${formattedOriginal} cada 6 meses` 
+              : `${formattedOriginal} every 6 months`;
+            break;
+          case 'annually':
+            subtitle = currentLanguage === 'es' 
+              ? `${formattedOriginal} por año` 
+              : `${formattedOriginal} per year`;
+            break;
+          case 'other':
+            const months = bestVariant.customBillingPeriodMonths || 1;
+            subtitle = currentLanguage === 'es' 
+              ? `${formattedOriginal} cada ${months} mes${months > 1 ? 'es' : ''}`
+              : `${formattedOriginal} every ${months} month${months > 1 ? 's' : ''}`;
+            break;
         }
-        break;
-      default:
-        monthlyPrice = subscriptionPrice;
+      }
+
+      // Add savings text if applicable
+      let savingsText: string | undefined;
+      if (bestPricing.savingsPercentage && bestPricing.savingsPercentage > 0) {
+        savingsText = currentLanguage === 'es' 
+          ? `Ahorra ${bestPricing.savingsPercentage}%`
+          : `Save ${bestPricing.savingsPercentage}%`;
+      }
+
+      return {
+        mainPrice,
+        subtitle,
+        savingsText
+      };
+    } else {
+      // Single pricing option
+      const monthlyPrice = globalPricing.calculateMonthlyPrice(
+        price, 
+        billingPeriod, 
+        customBillingPeriodMonths
+      );
+      
+      const formattedMonthly = globalPricing.formatter.formatPrice(monthlyPrice);
+      const monthText = currentLanguage === 'es' ? '/mes' : '/month';
+      const mainPrice = `${formattedMonthly}${monthText}`;
+      
+      const formattedTotal = globalPricing.formatter.formatPrice(price);
+      let subtitle = '';
+      
+      switch (billingPeriod) {
+        case 'monthly':
+          subtitle = currentLanguage === 'es' ? 'Plan mensual' : 'Monthly plan';
+          break;
+        case 'three_month':
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} cada 3 meses` 
+            : `${formattedTotal} every 3 months`;
+          break;
+        case 'six_month':
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} cada 6 meses` 
+            : `${formattedTotal} every 6 months`;
+          break;
+        case 'annually':
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} por año` 
+            : `${formattedTotal} per year`;
+          break;
+        case 'other':
+          const months = customBillingPeriodMonths || 1;
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} cada ${months} mes${months > 1 ? 'es' : ''}`
+            : `${formattedTotal} every ${months} month${months > 1 ? 's' : ''}`;
+          break;
+      }
+
+      return {
+        mainPrice,
+        subtitle
+      };
     }
-
-    const formattedPrice = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(monthlyPrice);
-
-    const monthText = currentLanguage === 'es' ? '/mes' : '/month';
-    return `${formattedPrice}${monthText}`;
   };
 
   // Check if description exists and has content
@@ -194,6 +257,8 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     return 'border-[#e63946]';
   };
 
+  const pricingDisplay = getBestPricingDisplay();
+
   return (
     <>
       <div 
@@ -213,15 +278,27 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               style={{ objectPosition: 'center' }}
             />
             
-            {/* No Featured Badge - removed for consistency */}
+            {/* Savings Badge */}
+            {pricingDisplay.savingsText && (
+              <div className="absolute top-4 right-4">
+                <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {pricingDisplay.savingsText}
+                </span>
+              </div>
+            )}
           </div>
           
           {/* Title and Price Below Image */}
           <div className={`p-4 border-b ${getBorderColor()}`}>
-            <h3 className="text-xl font-bold text-gray-800">{getLocalizedTitle()}</h3>
-            <div className="mt-1">
-              <span className="text-lg font-medium text-[#e63946]">
-                {getFormattedPrice()}
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{getLocalizedTitle()}</h3>
+            
+            {/* Main pricing display */}
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-[#e63946]">
+                {pricingDisplay.mainPrice}
+              </span>
+              <span className="text-sm text-gray-600">
+                {pricingDisplay.subtitle}
               </span>
             </div>
           </div>
@@ -231,7 +308,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         <div className="p-5">
           {/* Features */}
           <div className="space-y-3 mb-6">
-            {getLocalizedFeatures().filter(feature => feature && feature.featureText).map((feature, index) => (
+            {getLocalizedFeatures().filter(feature => feature && feature.featureText).slice(0, 4).map((feature, index) => (
               <div key={index} className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#e63946] flex items-center justify-center text-white text-xs">
                   ✓
@@ -239,10 +316,20 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                 <div className="text-gray-700 text-sm">{feature.featureText}</div>
               </div>
             ))}
+            
+            {/* Show more features indicator */}
+            {getLocalizedFeatures().length > 4 && (
+              <div className="text-xs text-gray-500 italic">
+                {currentLanguage === 'es' 
+                  ? `+${getLocalizedFeatures().length - 4} características más`
+                  : `+${getLocalizedFeatures().length - 4} more features`
+                }
+              </div>
+            )}
           </div>
           
           <div className="space-y-3">
-            {/* View Details Link - Only Button */}
+            {/* View Details Link */}
             {slug && slug.current && (
               <Link 
                 href={`/subscriptions/${slug.current}`}
@@ -267,8 +354,16 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             {/* Price information */}
             <div className="mb-4 pb-4 border-b border-gray-200">
               <p className="font-bold text-xl text-[#e63946]">
-                {getFormattedPrice()}
+                {pricingDisplay.mainPrice}
               </p>
+              <p className="text-sm text-gray-600">
+                {pricingDisplay.subtitle}
+              </p>
+              {pricingDisplay.savingsText && (
+                <p className="text-sm text-green-600 font-medium">
+                  {pricingDisplay.savingsText}
+                </p>
+              )}
             </div>
             
             {/* Description content */}

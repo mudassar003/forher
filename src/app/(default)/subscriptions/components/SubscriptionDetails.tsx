@@ -309,9 +309,6 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
             selectedBase={selectedBase}
             pricing={pricing}
             translations={translations}
-            currentLanguage={currentLanguage}
-            getLocalizedTitle={getLocalizedTitle}
-            getDiscountPercentage={getDiscountPercentage}
             discountedPrice={discountedPrice}
           />
 

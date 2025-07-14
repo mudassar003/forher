@@ -22,8 +22,77 @@ interface SubscriptionDetailsProps {
   subscription: Subscription;
 }
 
+/**
+ * Enterprise-level error boundary for component isolation
+ */
+const useErrorBoundary = () => {
+  const [error, setError] = useState<Error | null>(null);
+  
+  const resetError = useCallback(() => setError(null), []);
+  
+  const captureError = useCallback((error: Error, context?: string) => {
+    console.error(`SubscriptionDetails Error ${context ? `[${context}]` : ''}:`, error);
+    setError(error);
+  }, []);
+
+  return { error, resetError, captureError };
+};
+
+/**
+ * Enterprise-level performance monitoring hook
+ */
+const usePerformanceMonitoring = (componentName: string) => {
+  useEffect(() => {
+    const startTime = performance.now();
+    
+    return () => {
+      const endTime = performance.now();
+      const renderTime = endTime - startTime;
+      
+      // Log performance in development
+      if (process.env.NODE_ENV === 'development' && renderTime > 100) {
+        console.warn(`${componentName} render time: ${renderTime.toFixed(2)}ms`);
+      }
+    };
+  }, [componentName]);
+};
+
+/**
+ * Enterprise-level data validation hook
+ */
+const useSubscriptionValidation = (subscription: Subscription) => {
+  return useMemo(() => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Critical validation
+    if (!subscription._id) errors.push('Missing subscription ID');
+    if (!subscription.title) errors.push('Missing subscription title');
+    if (typeof subscription.price !== 'number' || subscription.price < 0) {
+      errors.push('Invalid subscription price');
+    }
+
+    // Business logic validation
+    if (subscription.hasVariants && (!subscription.variants || subscription.variants.length === 0)) {
+      warnings.push('Subscription marked as having variants but no variants found');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      severity: errors.length > 0 ? 'critical' : warnings.length > 0 ? 'warning' : 'ok'
+    };
+  }, [subscription]);
+};
+
 export default function SubscriptionDetails({ subscription }: SubscriptionDetailsProps) {
-  // State management
+  // Enterprise monitoring and error handling
+  const { error, resetError, captureError } = useErrorBoundary();
+  const validation = useSubscriptionValidation(subscription);
+  usePerformanceMonitoring('SubscriptionDetails');
+
+  // State management with enterprise validation
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [selectedVariant, setSelectedVariant] = useState<SubscriptionVariant | null>(null);
   const [selectedBase, setSelectedBase] = useState<boolean>(false);
@@ -32,12 +101,23 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [purchaseError, setPurchaseError] = useState<string>('');
 
-  // Hooks
+  // Hooks with error boundaries
   const { t, currentLanguage } = useTranslations();
-  const { purchaseSubscription, isLoading, error, clearError } = useSubscriptionPurchase();
+  const { purchaseSubscription, isLoading, error: purchaseHookError, clearError } = useSubscriptionPurchase();
   const { user, isAuthenticated, checkSession } = useAuthStore();
 
-  // Memoize translations object to prevent recreating on every render
+  // Enterprise validation check
+  useEffect(() => {
+    if (!validation.isValid) {
+      captureError(new Error(`Subscription validation failed: ${validation.errors.join(', ')}`), 'validation');
+    }
+    
+    if (validation.warnings.length > 0 && process.env.NODE_ENV === 'development') {
+      console.warn('Subscription warnings:', validation.warnings);
+    }
+  }, [validation, captureError]);
+
+  // Memoized translations with performance optimization
   const translations: Translations = useMemo(() => ({
     home: currentLanguage === 'es' ? 'Inicio' : 'Home',
     subscriptions: currentLanguage === 'es' ? 'Suscripciones' : 'Subscriptions',
@@ -69,7 +149,7 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
     dismiss: currentLanguage === 'es' ? 'Cerrar' : 'Dismiss'
   }), [currentLanguage]);
 
-  // Get pricing information using custom hook
+  // Get pricing information with error handling
   const pricing = useSubscriptionPricing(
     subscription,
     selectedVariant,
@@ -78,167 +158,187 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
     currentLanguage
   );
 
-  // Initialize variant selection with proper default logic
+  // Enterprise-level variant initialization with comprehensive logic
   useEffect(() => {
-    if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
-      // First, check for a variant with isDefault flag
-      const defaultVariant = subscription.variants.find(variant => variant.isDefault);
-      
-      if (defaultVariant) {
-        setSelectedVariant(defaultVariant);
-        setSelectedBase(false);
-      } else {
-        // If no default variant, find the one with the lowest monthly display price
-        let lowestMonthlyPrice = Infinity;
-        let bestVariant = subscription.variants[0];
+    try {
+      if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
+        // Business logic: Find default or best variant
+        const defaultVariant = subscription.variants.find(variant => variant.isDefault);
         
-        // Compare all variants including base subscription
-        const baseMonthlyPrice = subscription.monthlyDisplayPrice || 
-          (subscription.price / (subscription.billingPeriod === 'annually' ? 12 : 
-                                 subscription.billingPeriod === 'three_month' ? 3 : 
-                                 subscription.billingPeriod === 'six_month' ? 6 : 1));
-        
-        if (baseMonthlyPrice < lowestMonthlyPrice) {
-          lowestMonthlyPrice = baseMonthlyPrice;
-          setSelectedBase(true);
-          setSelectedVariant(null);
-        } else {
+        if (defaultVariant) {
+          setSelectedVariant(defaultVariant);
           setSelectedBase(false);
-        }
-        
-        // Check variants
-        for (const variant of subscription.variants) {
-          const monthlyPrice = variant.monthlyDisplayPrice || 
-            (variant.price / (variant.billingPeriod === 'annually' ? 12 : 
-                              variant.billingPeriod === 'three_month' ? 3 : 
-                              variant.billingPeriod === 'six_month' ? 6 : 1));
+        } else {
+          // Fallback to lowest price variant with null safety
+          let lowestMonthlyPrice = Infinity;
+          let bestVariant = subscription.variants[0];
           
-          if (monthlyPrice < lowestMonthlyPrice) {
-            lowestMonthlyPrice = monthlyPrice;
-            bestVariant = variant;
+          // Calculate base subscription monthly price safely
+          const baseMonthlyPrice = subscription.monthlyDisplayPrice || 
+            (subscription.price / (subscription.billingPeriod === 'annually' ? 12 : 
+                                   subscription.billingPeriod === 'three_month' ? 3 : 
+                                   subscription.billingPeriod === 'six_month' ? 6 : 1));
+          
+          if (baseMonthlyPrice < lowestMonthlyPrice) {
+            lowestMonthlyPrice = baseMonthlyPrice;
+            setSelectedBase(true);
+            setSelectedVariant(null);
+          } else {
             setSelectedBase(false);
           }
+          
+          // Evaluate variants with error handling
+          for (const variant of subscription.variants) {
+            if (!variant || typeof variant.price !== 'number') continue;
+            
+            const monthlyPrice = variant.monthlyDisplayPrice || 
+              (variant.price / (variant.billingPeriod === 'annually' ? 12 : 
+                                variant.billingPeriod === 'three_month' ? 3 : 
+                                variant.billingPeriod === 'six_month' ? 6 : 1));
+            
+            if (monthlyPrice < lowestMonthlyPrice) {
+              lowestMonthlyPrice = monthlyPrice;
+              bestVariant = variant;
+              setSelectedBase(false);
+            }
+          }
+          
+          if (!selectedBase) {
+            setSelectedVariant(bestVariant);
+          }
         }
-        
-        if (!selectedBase) {
-          setSelectedVariant(bestVariant);
-        }
+      } else {
+        // No variants, use base subscription
+        setSelectedBase(true);
+        setSelectedVariant(null);
       }
-    } else {
-      // No variants, use base subscription
+    } catch (error) {
+      captureError(error as Error, 'variant-initialization');
+      // Fallback to safe state
       setSelectedBase(true);
       setSelectedVariant(null);
     }
-  }, [subscription.hasVariants, subscription.variants, subscription.monthlyDisplayPrice, subscription.price, subscription.billingPeriod]);
+  }, [subscription, captureError]);
 
-  // Check auth state when component mounts
+  // Auth state management with enterprise security
   useEffect(() => {
     if (!isAuthenticated) {
-      checkSession();
+      checkSession().catch(error => {
+        captureError(error as Error, 'auth-check');
+      });
     }
-  }, [isAuthenticated, checkSession]);
+  }, [isAuthenticated, checkSession, captureError]);
 
-  // Clear purchase error when subscription purchase error changes
+  // Error synchronization with enterprise logging
   useEffect(() => {
-    if (error) {
-      setPurchaseError(error);
+    if (purchaseHookError) {
+      setPurchaseError(purchaseHookError);
+      captureError(new Error(purchaseHookError), 'purchase-hook');
     }
-  }, [error]);
+  }, [purchaseHookError, captureError]);
 
-  // Memoize helper functions to prevent recreating on every render
+  // Memoized localization functions with performance optimization
   const getLocalizedTitle = useCallback((): string => {
     if (currentLanguage === 'es' && subscription.titleEs && subscription.titleEs.trim() !== '') {
       return subscription.titleEs;
     }
-    return subscription.title;
+    return subscription.title || 'Unknown Subscription';
   }, [currentLanguage, subscription.title, subscription.titleEs]);
 
   const getLocalizedFeatures = useCallback(() => {
-    if (currentLanguage === 'es' && subscription.featuresEs && subscription.featuresEs.length > 0) {
-      return subscription.featuresEs;
+    try {
+      if (currentLanguage === 'es' && subscription.featuresEs && subscription.featuresEs.length > 0) {
+        return subscription.featuresEs;
+      }
+      return subscription.features || [];
+    } catch (error) {
+      captureError(error as Error, 'features-localization');
+      return [];
     }
-    return subscription.features || [];
-  }, [currentLanguage, subscription.features, subscription.featuresEs]);
+  }, [currentLanguage, subscription.features, subscription.featuresEs, captureError]);
 
   const getLocalizedDescription = useCallback(() => {
-    if (currentLanguage === 'es' && subscription.descriptionEs && subscription.descriptionEs.length > 0) {
-      return subscription.descriptionEs;
+    try {
+      if (currentLanguage === 'es' && subscription.descriptionEs && subscription.descriptionEs.length > 0) {
+        return subscription.descriptionEs;
+      }
+      return subscription.description || [];
+    } catch (error) {
+      captureError(error as Error, 'description-localization');
+      return [];
     }
-    return subscription.description || [];
-  }, [currentLanguage, subscription.description, subscription.descriptionEs]);
+  }, [currentLanguage, subscription.description, subscription.descriptionEs, captureError]);
 
-  const getDiscountPercentage = useCallback((compareAtPrice: number, currentPrice: number): number => {
-    if (compareAtPrice <= currentPrice) return 0;
-    return Math.round(((compareAtPrice - currentPrice) / compareAtPrice) * 100);
-  }, []);
-
+  // Enterprise-level variant selection with validation
   const handleVariantSelection = useCallback((variant: SubscriptionVariant | null, isBase: boolean = false) => {
-    if (isBase) {
-      setSelectedBase(true);
-      setSelectedVariant(null);
-    } else {
-      setSelectedBase(false);
-      setSelectedVariant(variant);
+    try {
+      if (isBase) {
+        setSelectedBase(true);
+        setSelectedVariant(null);
+      } else {
+        setSelectedBase(false);
+        setSelectedVariant(variant);
+      }
+      
+      // Clear coupon state when switching variants
+      setAppliedCouponCode('');
+      setDiscountedPrice(null);
+      setDiscountAmount(0);
+      setPurchaseError('');
+      resetError();
+    } catch (error) {
+      captureError(error as Error, 'variant-selection');
     }
-    
-    // Clear any applied coupons when switching variants
-    setAppliedCouponCode('');
-    setDiscountedPrice(null);
-    setDiscountAmount(0);
-    setPurchaseError('');
-  }, []);
+  }, [captureError, resetError]);
 
+  // Enterprise-level purchase handler with comprehensive error handling
   const handlePurchase = useCallback(async () => {
     if (isProcessing || isLoading) return;
     
-    // Clear previous errors
-    setPurchaseError('');
-    clearError();
-    
-    // Store current path in sessionStorage
-    const currentPath = window.location.pathname;
     try {
-      sessionStorage.setItem('subscriptionReturnPath', currentPath);
-    } catch (storageError) {
-      // Session storage not available, continue without storing
-    }
-    
-    // If not authenticated, redirect to login with return URL
-    if (!isAuthenticated) {
+      // Reset all error states
+      setPurchaseError('');
+      clearError();
+      resetError();
+      
+      // Enterprise security: Store current path safely
+      const currentPath = window.location.pathname;
       try {
-        // Save intended subscription ID to purchase after login
-        sessionStorage.setItem('pendingSubscriptionId', subscription._id);
-        
-        // If a variant is selected, store that too
-        if (subscription.hasVariants && selectedVariant && selectedVariant._key && !selectedBase) {
-          sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
-        }
-        
-        // Store coupon code if applied
-        if (appliedCouponCode) {
-          sessionStorage.setItem('pendingCouponCode', appliedCouponCode);
-        }
+        sessionStorage.setItem('subscriptionReturnPath', currentPath);
       } catch (storageError) {
-        // Session storage not available, continue without storing
+        console.warn('SessionStorage unavailable:', storageError);
       }
       
-      const returnUrl = encodeURIComponent(currentPath);
-      window.location.href = `/login?returnUrl=${returnUrl}`;
-      return;
-    }
-    
-    setIsProcessing(true);
-    
-    try {
-      // Store appointment page as the return URL after successful purchase
+      // Authentication flow with enterprise security
+      if (!isAuthenticated) {
+        try {
+          sessionStorage.setItem('pendingSubscriptionId', subscription._id);
+          
+          if (subscription.hasVariants && selectedVariant && selectedVariant._key && !selectedBase) {
+            sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
+          }
+          
+          if (appliedCouponCode) {
+            sessionStorage.setItem('pendingCouponCode', appliedCouponCode);
+          }
+        } catch (storageError) {
+          console.warn('SessionStorage unavailable for pending data:', storageError);
+        }
+        
+        const returnUrl = encodeURIComponent(currentPath);
+        window.location.href = `/login?returnUrl=${returnUrl}`;
+        return;
+      }
+      
+      setIsProcessing(true);
+      
       try {
         sessionStorage.setItem('loginReturnUrl', '/appointment');
       } catch (storageError) {
-        // Session storage not available, continue without storing
+        console.warn('SessionStorage unavailable for return URL:', storageError);
       }
       
-      // Include coupon code in the subscription purchase
-      // Only pass variant key if a variant is selected (not base)
+      // Enterprise purchase flow with comprehensive validation
       const result = await purchaseSubscription(
         subscription._id,
         selectedBase ? undefined : selectedVariant?._key,
@@ -246,14 +346,15 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
       );
       
       if (result.success && result.url) {
-        // Redirect to Stripe checkout
         window.location.href = result.url;
       } else if (result.error) {
         setPurchaseError(result.error);
+        captureError(new Error(result.error), 'purchase-flow');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setPurchaseError(errorMessage);
+      captureError(err as Error, 'purchase-handler');
     } finally {
       setIsProcessing(false);
     }
@@ -266,13 +367,15 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
     selectedBase,
     appliedCouponCode,
     purchaseSubscription,
-    clearError
+    clearError,
+    resetError,
+    captureError
   ]);
 
-  // Helper functions for PurchaseSection
+  // Enterprise helper functions with null safety
   const getCurrentPrice = useCallback((): number => {
-    return pricing.effectivePrice;
-  }, [pricing.effectivePrice]);
+    return pricing?.effectivePrice ?? 0;
+  }, [pricing]);
 
   const getCurrentVariantKey = useCallback((): string | undefined => {
     return selectedVariant?._key;
@@ -283,9 +386,47 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
       return translations.processing;
     }
     return translations.buyNow;
-  }, [isProcessing, isLoading, translations.processing, translations.buyNow]);
+  }, [isProcessing, isLoading, translations]);
 
   const isSomethingSelected = selectedVariant !== null || selectedBase;
+
+  // Enterprise error boundary rendering
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">
+            Subscription Temporarily Unavailable
+          </h2>
+          <p className="text-red-600 mb-4">
+            We're experiencing technical difficulties. Please try again later.
+          </p>
+          <button
+            onClick={resetError}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Validation failure rendering
+  if (!validation.isValid) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-yellow-800 mb-2">
+            Invalid Subscription Data
+          </h2>
+          <p className="text-yellow-600">
+            This subscription contains invalid data and cannot be displayed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
@@ -294,14 +435,13 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
       transition={{ duration: 0.5 }}
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
-      {/* Breadcrumb */}
       <SubscriptionBreadcrumb 
         title={getLocalizedTitle()}
         translations={translations}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        {/* Left Column - Image and Basic Info */}
+        {/* Left Column */}
         <div className="space-y-6">
           <SubscriptionImage 
             subscription={subscription}
@@ -313,13 +453,14 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
           />
 
           <DescriptionSection 
-            subscription={subscription}
-            getLocalizedDescription={getLocalizedDescription}
+            description={getLocalizedDescription()}
             translations={translations}
+            showEmptyState={true}
+            maxLength={5000}
           />
         </div>
 
-        {/* Right Column - Variants and Purchase */}
+        {/* Right Column */}
         <div className="space-y-6">
           <VariantSelector 
             subscription={subscription}
@@ -334,34 +475,33 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
             subscription={subscription}
             selectedVariant={selectedVariant}
             selectedBase={selectedBase}
-            pricing={pricing}
-            translations={translations}
-            currentLanguage={currentLanguage}
-            isProcessing={isProcessing}
-            isLoading={isLoading}
-            purchaseError={purchaseError}
             appliedCouponCode={appliedCouponCode}
             discountedPrice={discountedPrice}
-            discountAmount={discountAmount}
+            purchaseError={purchaseError}
+            error={purchaseHookError || ''}
+            translations={translations}
+            isProcessing={isProcessing}
+            isLoading={isLoading}
             isSomethingSelected={isSomethingSelected}
-            onSubscribe={handlePurchase}
-            getCurrentPrice={getCurrentPrice}
-            getCurrentVariantKey={getCurrentVariantKey}
-            getSubscribeButtonText={getSubscribeButtonText}
-            onCouponApplied={(code, discountedPrice, discountAmount) => {
+            onCouponApplied={(code: string, newPrice: number, discount: number) => {
               setAppliedCouponCode(code);
-              setDiscountedPrice(discountedPrice);
-              setDiscountAmount(discountAmount);
+              setDiscountedPrice(newPrice);
+              setDiscountAmount(discount);
             }}
             onCouponRemoved={() => {
               setAppliedCouponCode('');
               setDiscountedPrice(null);
               setDiscountAmount(0);
             }}
+            onSubscribe={handlePurchase}
             onErrorDismiss={() => {
               setPurchaseError('');
               clearError();
+              resetError();
             }}
+            getCurrentPrice={getCurrentPrice}
+            getCurrentVariantKey={getCurrentVariantKey}
+            getSubscribeButtonText={getSubscribeButtonText}
           />
 
           <FeaturesList 

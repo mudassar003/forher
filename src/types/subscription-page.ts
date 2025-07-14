@@ -70,6 +70,7 @@ export interface SubscriptionVariant {
   dosageAmount: number;
   dosageUnit: string;
   price: number;
+  monthlyDisplayPrice?: number | null; // NEW: Monthly display price field
   compareAtPrice?: number;
   billingPeriod: BillingPeriod;
   customBillingPeriodMonths?: number | null;
@@ -92,6 +93,7 @@ export interface Subscription {
   faqItems?: SubscriptionFAQItem[];
   // Base price (used when no variants)
   price: number;
+  monthlyDisplayPrice?: number | null; // NEW: Monthly display price field for base subscription
   compareAtPrice?: number;
   billingPeriod: BillingPeriod;
   customBillingPeriodMonths?: number | null;
@@ -124,18 +126,57 @@ export interface SubscriptionsData {
   error?: string;
 }
 
-// Purchase request interface
-export interface SubscriptionPurchaseRequest {
+// Interface for subscription purchase data
+export interface SubscriptionPurchaseData {
   subscriptionId: string;
-  userId: string;
-  userEmail: string;
-  variantKey?: string;
+  variant?: SubscriptionVariant | null;
+  isBase?: boolean;
+  price: number;
+  couponCode?: string;
+  discountAmount?: number;
 }
 
-// Purchase response interface
-export interface SubscriptionPurchaseResponse {
-  success: boolean;
-  sessionId?: string;
-  url?: string;
+// Interface for coupon validation
+export interface CouponValidation {
+  isValid: boolean;
+  discountAmount?: number;
+  discountPercentage?: number;
+  discountedPrice?: number;
   error?: string;
 }
+
+// Interface for subscription pricing calculations
+export interface PricingCalculation {
+  originalPrice: number;
+  effectivePrice: number;
+  monthlyPrice: number;
+  discountAmount?: number;
+  discountPercentage?: number;
+  billingPeriod: BillingPeriod;
+  customMonths?: number | null;
+  formattedOriginalPrice: string;
+  formattedEffectivePrice: string;
+  formattedMonthlyPrice: string;
+}
+
+// Interface for subscription card display props
+export interface SubscriptionCardDisplayProps {
+  subscription: Subscription;
+  showFullPrice?: boolean;
+  showMonthlyEquivalent?: boolean;
+  highlightBestValue?: boolean;
+  locale?: string;
+}
+
+// Interface for variant selector props
+export interface VariantSelectorProps {
+  subscription: Subscription;
+  selectedVariant: SubscriptionVariant | null;
+  selectedBase: boolean;
+  onVariantSelection: (variant: SubscriptionVariant | null, isBase?: boolean) => void;
+  showPricing?: boolean;
+  locale?: string;
+}
+
+// Export default subscription interface
+export default Subscription;

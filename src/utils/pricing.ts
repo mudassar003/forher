@@ -1,5 +1,5 @@
 // src/utils/pricing.ts
-// Enterprise-level pricing utilities with decimal support
+// Enterprise-level pricing utilities with monthly display price support
 
 export interface PriceFormatOptions {
   currency?: string;
@@ -48,7 +48,11 @@ export class PriceFormatter {
    * For advertising: always show .99 prices
    * For calculations: maintain precision
    */
-  formatPrice(price: number, options?: PriceFormatOptions): string {
+  formatPrice(price: number | null | undefined, options?: PriceFormatOptions): string {
+    if (price === null || price === undefined || isNaN(price)) {
+      return '$0';
+    }
+
     const opts = { ...this.defaultOptions, ...options };
     
     // Check if price has meaningful decimals
@@ -79,7 +83,7 @@ export class PriceFormatter {
    * Format price with period display
    */
   formatPriceWithPeriod(
-    price: number, 
+    price: number | null | undefined, 
     billingPeriod: string, 
     customMonths?: number | null,
     locale: string = 'en'
@@ -123,7 +127,7 @@ export class PriceFormatter {
  * Enterprise pricing calculator with advanced features
  */
 export class PricingCalculator {
-  private formatter: PriceFormatter;
+  public formatter: PriceFormatter;
 
   constructor(options?: PriceFormatOptions) {
     this.formatter = new PriceFormatter(options);
@@ -131,12 +135,24 @@ export class PricingCalculator {
 
   /**
    * Calculate monthly equivalent price
+   * Returns the monthly display price if available, otherwise calculates it
    */
   calculateMonthlyPrice(
-    totalPrice: number, 
+    totalPrice: number | null | undefined, 
     billingPeriod: string, 
-    customMonths?: number | null
+    customMonths?: number | null,
+    monthlyDisplayPrice?: number | null
   ): number {
+    // If monthlyDisplayPrice is provided, use it
+    if (monthlyDisplayPrice !== null && monthlyDisplayPrice !== undefined && !isNaN(monthlyDisplayPrice)) {
+      return monthlyDisplayPrice;
+    }
+
+    // Otherwise calculate from total price
+    if (totalPrice === null || totalPrice === undefined || isNaN(totalPrice)) {
+      return 0;
+    }
+
     const config = BILLING_PERIODS[billingPeriod];
     const months = billingPeriod === 'other' ? (customMonths || 1) : config?.months || 1;
     
@@ -151,7 +167,9 @@ export class PricingCalculator {
     price: number;
     billingPeriod: string;
     customBillingPeriodMonths?: number | null;
+    monthlyDisplayPrice?: number | null;
     title: string;
+    isDefault?: boolean;
   }>): {
     lowestMonthlyPrice: number;
     bestVariant: any;
@@ -163,18 +181,32 @@ export class PricingCalculator {
     let bestVariant = null;
     let originalPrice = 0;
 
-    // Find the variant with the lowest monthly price
-    for (const variant of variants) {
-      const monthlyPrice = this.calculateMonthlyPrice(
-        variant.price, 
-        variant.billingPeriod, 
-        variant.customBillingPeriodMonths
+    // First check for default variant
+    const defaultVariant = variants.find(v => v.isDefault);
+    if (defaultVariant) {
+      bestVariant = defaultVariant;
+      lowestMonthlyPrice = this.calculateMonthlyPrice(
+        defaultVariant.price, 
+        defaultVariant.billingPeriod, 
+        defaultVariant.customBillingPeriodMonths,
+        defaultVariant.monthlyDisplayPrice
       );
+      originalPrice = defaultVariant.price;
+    } else {
+      // Find the variant with the lowest monthly price
+      for (const variant of variants) {
+        const monthlyPrice = this.calculateMonthlyPrice(
+          variant.price, 
+          variant.billingPeriod, 
+          variant.customBillingPeriodMonths,
+          variant.monthlyDisplayPrice
+        );
 
-      if (monthlyPrice < lowestMonthlyPrice) {
-        lowestMonthlyPrice = monthlyPrice;
-        bestVariant = variant;
-        originalPrice = variant.price;
+        if (monthlyPrice < lowestMonthlyPrice) {
+          lowestMonthlyPrice = monthlyPrice;
+          bestVariant = variant;
+          originalPrice = variant.price;
+        }
       }
     }
 
@@ -183,7 +215,12 @@ export class PricingCalculator {
     if (variants.length > 1) {
       const monthlyVariant = variants.find(v => v.billingPeriod === 'monthly');
       if (monthlyVariant && bestVariant && bestVariant.billingPeriod !== 'monthly') {
-        const monthlyPrice = monthlyVariant.price;
+        const monthlyPrice = this.calculateMonthlyPrice(
+          monthlyVariant.price, 
+          monthlyVariant.billingPeriod, 
+          monthlyVariant.customBillingPeriodMonths,
+          monthlyVariant.monthlyDisplayPrice
+        );
         const savings = monthlyPrice - lowestMonthlyPrice;
         savingsPercentage = Math.round((savings / monthlyPrice) * 100);
       }
@@ -199,19 +236,33 @@ export class PricingCalculator {
   }
 
   /**
+   * Calculate discount percentage
+   */
+  calculateDiscountPercentage(originalPrice: number, discountedPrice: number): number {
+    if (originalPrice <= discountedPrice) return 0;
+    return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+  }
+
+  /**
    * Format pricing for subscription cards
    */
   formatCardPricing(
     price: number,
     billingPeriod: string,
     customMonths?: number | null,
+    monthlyDisplayPrice?: number | null,
     showMonthlyEquivalent: boolean = true
   ): {
     mainPrice: string;
     subtitle: string;
     monthlyEquivalent?: string;
   } {
-    const monthlyPrice = this.calculateMonthlyPrice(price, billingPeriod, customMonths);
+    const monthlyPrice = this.calculateMonthlyPrice(
+      price, 
+      billingPeriod, 
+      customMonths,
+      monthlyDisplayPrice
+    );
     const mainPrice = this.formatter.formatPrice(monthlyPrice);
     
     let subtitle = '';
@@ -234,152 +285,83 @@ export class PricingCalculator {
         const months = customMonths || 1;
         subtitle = `${formattedTotal} every ${months} month${months > 1 ? 's' : ''}`;
         break;
+      default:
+        subtitle = `${formattedTotal} total`;
     }
 
-    const result = {
-      mainPrice,
-      subtitle
-    };
-
-    if (showMonthlyEquivalent && billingPeriod !== 'monthly') {
-      (result as any).monthlyEquivalent = `${mainPrice}/month`;
-    }
-
-    return result;
-  }
-
-  /**
-   * Calculate discount percentage
-   */
-  calculateDiscountPercentage(originalPrice: number, discountedPrice: number): number {
-    if (originalPrice <= discountedPrice) return 0;
-    return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
-  }
-
-  /**
-   * Apply coupon discount
-   */
-  applyCouponDiscount(
-    price: number,
-    discountType: 'percentage' | 'fixed',
-    discountValue: number
-  ): {
-    discountedPrice: number;
-    discountAmount: number;
-    savingsPercentage: number;
-  } {
-    let discountAmount: number;
-    
-    if (discountType === 'percentage') {
-      discountAmount = (price * discountValue) / 100;
-    } else {
-      discountAmount = discountValue;
-    }
-    
-    const discountedPrice = Math.max(0, price - discountAmount);
-    const actualDiscount = price - discountedPrice;
-    const savingsPercentage = price > 0 ? Math.round((actualDiscount / price) * 100) : 0;
-    
     return {
-      discountedPrice,
-      discountAmount: actualDiscount,
-      savingsPercentage
+      mainPrice,
+      subtitle,
+      monthlyEquivalent: showMonthlyEquivalent ? `${mainPrice}/month` : undefined
     };
   }
 }
 
 /**
  * Global pricing instance for consistent formatting across the app
- * Configure this based on your business requirements
  */
 export const globalPricing = new PricingCalculator({
+  showDecimals: true,
+  forceDecimals: false,
   currency: 'USD',
-  locale: 'en-US',
-  showDecimals: true, // Set to true for advertising prices
-  forceDecimals: false // Set to true to always show .00
+  locale: 'en-US'
 });
 
 /**
- * Utility functions for common pricing operations
+ * Utility functions for pricing operations
  */
-export const PricingUtils = {
+export class PricingUtils {
   /**
-   * Sort variants by monthly price (ascending)
+   * Sort variants by monthly price (lowest first)
    */
-  sortVariantsByMonthlyPrice(variants: Array<{
-    price: number;
-    billingPeriod: string;
-    customBillingPeriodMonths?: number | null;
-  }>): typeof variants {
+  static sortVariantsByMonthlyPrice(
+    variants: Array<{
+      price: number;
+      billingPeriod: string;
+      customBillingPeriodMonths?: number | null;
+      monthlyDisplayPrice?: number | null;
+    }>
+  ): typeof variants {
     return variants.sort((a, b) => {
       const monthlyA = globalPricing.calculateMonthlyPrice(
         a.price, 
         a.billingPeriod, 
-        a.customBillingPeriodMonths
+        a.customBillingPeriodMonths,
+        a.monthlyDisplayPrice
       );
       const monthlyB = globalPricing.calculateMonthlyPrice(
         b.price, 
         b.billingPeriod, 
-        b.customBillingPeriodMonths
+        b.customBillingPeriodMonths,
+        b.monthlyDisplayPrice
       );
+      
       return monthlyA - monthlyB;
     });
-  },
+  }
 
   /**
-   * Get the most economical variant (best monthly price)
+   * Find the best value variant (lowest monthly price)
    */
-  getMostEconomicalVariant(variants: Array<{
-    price: number;
-    billingPeriod: string;
-    customBillingPeriodMonths?: number | null;
-  }>): typeof variants[0] | null {
+  static findBestValueVariant(
+    variants: Array<{
+      price: number;
+      billingPeriod: string;
+      customBillingPeriodMonths?: number | null;
+      monthlyDisplayPrice?: number | null;
+      isDefault?: boolean;
+    }>
+  ): typeof variants[0] | null {
     if (variants.length === 0) return null;
-    
+
+    // First check for default variant
+    const defaultVariant = variants.find(v => v.isDefault);
+    if (defaultVariant) return defaultVariant;
+
+    // Otherwise find lowest monthly price
     const sorted = this.sortVariantsByMonthlyPrice(variants);
     return sorted[0];
-  },
-
-  /**
-   * Check if a price is considered "premium" (for UI styling)
-   */
-  isPremiumPrice(monthlyPrice: number): boolean {
-    return monthlyPrice >= 100; // Adjust threshold as needed
-  },
-
-  /**
-   * Format price range for multiple variants
-   */
-  formatPriceRange(variants: Array<{
-    price: number;
-    billingPeriod: string;
-    customBillingPeriodMonths?: number | null;
-  }>): string {
-    if (variants.length === 0) return '';
-    if (variants.length === 1) {
-      const monthly = globalPricing.calculateMonthlyPrice(
-        variants[0].price, 
-        variants[0].billingPeriod, 
-        variants[0].customBillingPeriodMonths
-      );
-      return globalPricing.formatter.formatPrice(monthly);
-    }
-
-    const sorted = this.sortVariantsByMonthlyPrice(variants);
-    const lowest = globalPricing.calculateMonthlyPrice(
-      sorted[0].price, 
-      sorted[0].billingPeriod, 
-      sorted[0].customBillingPeriodMonths
-    );
-    const highest = globalPricing.calculateMonthlyPrice(
-      sorted[sorted.length - 1].price, 
-      sorted[sorted.length - 1].billingPeriod, 
-      sorted[sorted.length - 1].customBillingPeriodMonths
-    );
-
-    return `${globalPricing.formatter.formatPrice(lowest)} - ${globalPricing.formatter.formatPrice(highest)}`;
   }
-};
+}
 
-// Export default instance for convenience
 export default globalPricing;

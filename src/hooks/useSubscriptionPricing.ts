@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { SubscriptionVariant } from '@/types/subscription-page';
 import { globalPricing } from '@/utils/pricing';
-import { Translations } from '@/types/subscriptionDetails';
 
 interface UsePricingReturn {
   effectivePrice: number;
@@ -21,7 +20,7 @@ export function useSubscriptionPricing(
   selectedVariant: SubscriptionVariant | null,
   selectedBase: boolean,
   discountedPrice: number | null,
-  currentLanguage: string  // Change from translations object to just language string
+  currentLanguage: string
 ): UsePricingReturn {
   const [pricing, setPricing] = useState<UsePricingReturn>({
     effectivePrice: 0,
@@ -48,37 +47,40 @@ export function useSubscriptionPricing(
     let price: number;
     let billingPeriod: string;
     let customBillingPeriodMonths: number | null | undefined;
+    let monthlyDisplayPrice: number | null | undefined;
 
     // Determine which pricing to use
     if (subscription.hasVariants && selectedVariant && !selectedBase) {
       price = selectedVariant.price;
       billingPeriod = selectedVariant.billingPeriod;
       customBillingPeriodMonths = selectedVariant.customBillingPeriodMonths;
+      monthlyDisplayPrice = selectedVariant.monthlyDisplayPrice;
     } else {
       price = subscription.price;
       billingPeriod = subscription.billingPeriod;
       customBillingPeriodMonths = subscription.customBillingPeriodMonths;
+      monthlyDisplayPrice = subscription.monthlyDisplayPrice;
     }
 
     const originalPrice = price;
     const effectivePrice = discountedPrice !== null ? discountedPrice : price;
 
-    // Calculate monthly equivalent using the pricing calculator
-    const monthlyPrice = globalPricing.calculateMonthlyPrice(
+    // Use monthlyDisplayPrice if available, otherwise calculate
+    const monthlyPrice = monthlyDisplayPrice || globalPricing.calculateMonthlyPrice(
       effectivePrice, 
       billingPeriod, 
       customBillingPeriodMonths
     );
 
-    // Format prices with decimal support
+    // Format the monthly equivalent
     const formattedMonthlyPrice = globalPricing.formatter.formatPrice(monthlyPrice);
-    const formattedTotalPrice = globalPricing.formatter.formatPrice(effectivePrice);
-
-    // Build monthly equivalent display
     const monthlyEquivalent = `${formattedMonthlyPrice}${translations.month}`;
 
-    // Build total price text with proper translations
-    let totalPriceText: string;
+    // Format the total price
+    const formattedTotalPrice = globalPricing.formatter.formatPrice(effectivePrice);
+
+    // Build total price text based on billing period
+    let totalPriceText = '';
     switch (billingPeriod) {
       case 'monthly':
         totalPriceText = `${formattedTotalPrice} ${translations.totalPerMonth}`;
@@ -93,14 +95,11 @@ export function useSubscriptionPricing(
         totalPriceText = `${formattedTotalPrice} ${translations.totalFor1Year}`;
         break;
       case 'other':
-        if (customBillingPeriodMonths && customBillingPeriodMonths > 1) {
-          const monthsText = currentLanguage === 'es' 
-            ? `total por ${customBillingPeriodMonths} meses`
-            : `total for ${customBillingPeriodMonths} months`;
-          totalPriceText = `${formattedTotalPrice} ${monthsText}`;
-        } else {
-          totalPriceText = `${formattedTotalPrice} ${translations.totalPerMonth}`;
-        }
+        const months = customBillingPeriodMonths || 1;
+        const customText = currentLanguage === 'es' 
+          ? `${formattedTotalPrice} total por ${months} ${months === 1 ? 'mes' : 'meses'}`
+          : `${formattedTotalPrice} total for ${months} ${months === 1 ? 'month' : 'months'}`;
+        totalPriceText = customText;
         break;
       default:
         totalPriceText = `${formattedTotalPrice} ${translations.total}`;
@@ -117,7 +116,7 @@ export function useSubscriptionPricing(
       formattedMonthlyPrice,
       formattedTotalPrice
     });
-  }, [subscription, selectedVariant, selectedBase, discountedPrice, translations, currentLanguage]);
+  }, [subscription, selectedVariant, selectedBase, discountedPrice, translations]);
 
   return pricing;
 }

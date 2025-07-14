@@ -23,6 +23,7 @@ interface SubscriptionCardProps {
   price: number;
   billingPeriod: string;
   customBillingPeriodMonths?: number | null;
+  monthlyDisplayPrice?: number | null; // Added for Sanity field
   hasVariants?: boolean;
   variants?: SubscriptionVariant[];
   features: SubscriptionFeature[];
@@ -52,6 +53,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   price,
   billingPeriod,
   customBillingPeriodMonths,
+  monthlyDisplayPrice, // Added parameter
   hasVariants = false,
   variants = [],
   features = [],
@@ -98,81 +100,106 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   } => {
     // If has variants, get the best pricing from all options
     if (hasVariants && variants && variants.length > 0) {
-      // Include base subscription in comparison
-      const allOptions = [
-        {
-          price,
-          billingPeriod,
-          customBillingPeriodMonths,
-          title: 'Base Plan'
-        },
-        ...variants.map(v => ({
-          price: v.price,
-          billingPeriod: v.billingPeriod,
-          customBillingPeriodMonths: v.customBillingPeriodMonths,
-          title: v.title
-        }))
-      ];
-
-      const bestPricing = globalPricing.getBestPricing(allOptions);
-      
-      const monthText = currentLanguage === 'es' ? '/mes' : '/month';
-      const mainPrice = `${bestPricing.formattedMonthlyPrice}${monthText}`;
-      
-      // Determine subtitle based on best variant
-      let subtitle = '';
-      const bestVariant = bestPricing.bestVariant;
-      
-      if (bestVariant.billingPeriod === 'monthly') {
-        subtitle = currentLanguage === 'es' ? 'Plan mensual' : 'Monthly plan';
-      } else {
-        const formattedOriginal = globalPricing.formatter.formatPrice(bestVariant.price);
+      // Check for default variant first
+      const defaultVariant = variants.find(v => v.isDefault);
+      if (defaultVariant) {
+        // Use monthlyDisplayPrice from Sanity
+        const monthlyPrice = defaultVariant.monthlyDisplayPrice;
         
-        switch (bestVariant.billingPeriod) {
+        const formattedMonthly = globalPricing.formatter.formatPrice(monthlyPrice);
+        const monthText = currentLanguage === 'es' ? '/mes' : '/month';
+        const mainPrice = `${formattedMonthly}${monthText}`;
+        
+        const formattedTotal = globalPricing.formatter.formatPrice(defaultVariant.price);
+        let subtitle = '';
+        
+        switch (defaultVariant.billingPeriod) {
+          case 'monthly':
+            subtitle = currentLanguage === 'es' ? 'Plan mensual' : 'Monthly plan';
+            break;
           case 'three_month':
             subtitle = currentLanguage === 'es' 
-              ? `${formattedOriginal} cada 3 meses` 
-              : `${formattedOriginal} every 3 months`;
+              ? `${formattedTotal} cada 3 meses` 
+              : `${formattedTotal} every 3 months`;
             break;
           case 'six_month':
             subtitle = currentLanguage === 'es' 
-              ? `${formattedOriginal} cada 6 meses` 
-              : `${formattedOriginal} every 6 months`;
+              ? `${formattedTotal} cada 6 meses` 
+              : `${formattedTotal} every 6 months`;
             break;
           case 'annually':
             subtitle = currentLanguage === 'es' 
-              ? `${formattedOriginal} por año` 
-              : `${formattedOriginal} per year`;
+              ? `${formattedTotal} por año` 
+              : `${formattedTotal} per year`;
             break;
           case 'other':
-            const months = bestVariant.customBillingPeriodMonths || 1;
+            const months = defaultVariant.customBillingPeriodMonths || 1;
             subtitle = currentLanguage === 'es' 
-              ? `${formattedOriginal} cada ${months} mes${months > 1 ? 'es' : ''}`
-              : `${formattedOriginal} every ${months} month${months > 1 ? 's' : ''}`;
+              ? `${formattedTotal} cada ${months} mes${months > 1 ? 'es' : ''}`
+              : `${formattedTotal} every ${months} month${months > 1 ? 's' : ''}`;
             break;
         }
+
+        return {
+          mainPrice,
+          subtitle
+        };
       }
 
-      // Add savings text if applicable
-      let savingsText: string | undefined;
-      if (bestPricing.savingsPercentage && bestPricing.savingsPercentage > 0) {
-        savingsText = currentLanguage === 'es' 
-          ? `Ahorra ${bestPricing.savingsPercentage}%`
-          : `Save ${bestPricing.savingsPercentage}%`;
+      // If no default variant, find the one with lowest monthly price
+      let bestVariant = variants[0];
+      let lowestMonthlyPrice = Infinity;
+      
+      for (const variant of variants) {
+        const monthlyPrice = variant.monthlyDisplayPrice;
+        
+        if (monthlyPrice < lowestMonthlyPrice) {
+          lowestMonthlyPrice = monthlyPrice;
+          bestVariant = variant;
+        }
+      }
+      
+      const formattedMonthly = globalPricing.formatter.formatPrice(lowestMonthlyPrice);
+      const monthText = currentLanguage === 'es' ? '/mes' : '/month';
+      const mainPrice = `${formattedMonthly}${monthText}`;
+      
+      const formattedTotal = globalPricing.formatter.formatPrice(bestVariant.price);
+      let subtitle = '';
+      
+      switch (bestVariant.billingPeriod) {
+        case 'monthly':
+          subtitle = currentLanguage === 'es' ? 'Plan mensual' : 'Monthly plan';
+          break;
+        case 'three_month':
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} cada 3 meses` 
+            : `${formattedTotal} every 3 months`;
+          break;
+        case 'six_month':
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} cada 6 meses` 
+            : `${formattedTotal} every 6 months`;
+          break;
+        case 'annually':
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} por año` 
+            : `${formattedTotal} per year`;
+          break;
+        case 'other':
+          const months = bestVariant.customBillingPeriodMonths || 1;
+          subtitle = currentLanguage === 'es' 
+            ? `${formattedTotal} cada ${months} mes${months > 1 ? 'es' : ''}`
+            : `${formattedTotal} every ${months} month${months > 1 ? 's' : ''}`;
+          break;
       }
 
       return {
         mainPrice,
-        subtitle,
-        savingsText
+        subtitle
       };
     } else {
-      // Single pricing option
-      const monthlyPrice = globalPricing.calculateMonthlyPrice(
-        price, 
-        billingPeriod, 
-        customBillingPeriodMonths
-      );
+      // Single pricing option - use monthlyDisplayPrice from Sanity
+      const monthlyPrice = monthlyDisplayPrice;
       
       const formattedMonthly = globalPricing.formatter.formatPrice(monthlyPrice);
       const monthText = currentLanguage === 'es' ? '/mes' : '/month';
@@ -297,9 +324,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               <span className="text-lg font-bold text-[#e63946]">
                 {pricingDisplay.mainPrice}
               </span>
-              <span className="text-sm text-gray-600">
-                {pricingDisplay.subtitle}
-              </span>
+              {/* REMOVED: Subtitle showing whole price */}
             </div>
           </div>
         </div>

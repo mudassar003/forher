@@ -25,6 +25,7 @@ export async function getSubscriptionBySlug(slug: string): Promise<Subscription 
           answerEs
         },
         price,
+        monthlyDisplayPrice,
         compareAtPrice,
         billingPeriod,
         customBillingPeriodMonths,
@@ -38,6 +39,7 @@ export async function getSubscriptionBySlug(slug: string): Promise<Subscription 
           dosageAmount,
           dosageUnit,
           price,
+          monthlyDisplayPrice,
           compareAtPrice,
           billingPeriod,
           customBillingPeriodMonths,
@@ -75,6 +77,181 @@ export async function getSubscriptionBySlug(slug: string): Promise<Subscription 
   } catch (error) {
     console.error("Error fetching subscription by slug:", error);
     return null;
+  }
+}
+
+/**
+ * Gets all subscriptions for listing pages
+ */
+export async function getAllSubscriptions(): Promise<Subscription[]> {
+  try {
+    const subscriptions = await client.fetch(
+      groq`*[_type == "subscription" && isActive == true && isDeleted != true] | order(displayOrder asc, _createdAt desc) {
+        _id,
+        title,
+        titleEs,
+        slug,
+        description,
+        descriptionEs,
+        price,
+        monthlyDisplayPrice,
+        compareAtPrice,
+        billingPeriod,
+        customBillingPeriodMonths,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          titleEs,
+          price,
+          monthlyDisplayPrice,
+          compareAtPrice,
+          billingPeriod,
+          customBillingPeriodMonths,
+          isDefault,
+          isPopular
+        },
+        features[]{
+          featureText,
+          _key
+        },
+        featuresEs[]{
+          featureText,
+          _key
+        },
+        image,
+        featuredImage,
+        isFeatured,
+        "categories": categories[]->{ 
+          _id, 
+          title, 
+          titleEs,
+          slug
+        }
+      }`
+    );
+    
+    return subscriptions || [];
+  } catch (error) {
+    console.error("Error fetching all subscriptions:", error);
+    return [];
+  }
+}
+
+/**
+ * Gets featured subscriptions
+ */
+export async function getFeaturedSubscriptions(): Promise<Subscription[]> {
+  try {
+    const subscriptions = await client.fetch(
+      groq`*[_type == "subscription" && isFeatured == true && isActive == true && isDeleted != true] | order(displayOrder asc, _createdAt desc) {
+        _id,
+        title,
+        titleEs,
+        slug,
+        description,
+        descriptionEs,
+        price,
+        monthlyDisplayPrice,
+        compareAtPrice,
+        billingPeriod,
+        customBillingPeriodMonths,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          titleEs,
+          price,
+          monthlyDisplayPrice,
+          compareAtPrice,
+          billingPeriod,
+          customBillingPeriodMonths,
+          isDefault,
+          isPopular
+        },
+        features[]{
+          featureText,
+          _key
+        },
+        featuresEs[]{
+          featureText,
+          _key
+        },
+        image,
+        featuredImage,
+        isFeatured,
+        "categories": categories[]->{ 
+          _id, 
+          title, 
+          titleEs,
+          slug
+        }
+      }`
+    );
+    
+    return subscriptions || [];
+  } catch (error) {
+    console.error("Error fetching featured subscriptions:", error);
+    return [];
+  }
+}
+
+/**
+ * Gets subscriptions by category
+ */
+export async function getSubscriptionsByCategory(categorySlug: string): Promise<Subscription[]> {
+  try {
+    const subscriptions = await client.fetch(
+      groq`*[_type == "subscription" && isActive == true && isDeleted != true && count(categories[@->slug.current == $categorySlug]) > 0] | order(displayOrder asc, _createdAt desc) {
+        _id,
+        title,
+        titleEs,
+        slug,
+        description,
+        descriptionEs,
+        price,
+        monthlyDisplayPrice,
+        compareAtPrice,
+        billingPeriod,
+        customBillingPeriodMonths,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          titleEs,
+          price,
+          monthlyDisplayPrice,
+          compareAtPrice,
+          billingPeriod,
+          customBillingPeriodMonths,
+          isDefault,
+          isPopular
+        },
+        features[]{
+          featureText,
+          _key
+        },
+        featuresEs[]{
+          featureText,
+          _key
+        },
+        image,
+        featuredImage,
+        isFeatured,
+        "categories": categories[]->{ 
+          _id, 
+          title, 
+          titleEs,
+          slug
+        }
+      }`,
+      { categorySlug }
+    );
+    
+    return subscriptions || [];
+  } catch (error) {
+    console.error("Error fetching subscriptions by category:", error);
+    return [];
   }
 }
 
@@ -120,90 +297,10 @@ export function getPlainTextDescription(
     
     // Trim and limit to maxLength
     return text.length > maxLength
-      ? `${text.substring(0, maxLength)}...`
-      : text;
+      ? text.substring(0, maxLength).trim() + '...'
+      : text.trim();
   } catch (error) {
-    console.error("Error extracting plain text from blocks:", error);
+    console.error('Error extracting plain text from blocks:', error);
     return '';
-  }
-}
-
-/**
- * Gets related subscriptions for a given subscription
- */
-export async function getRelatedSubscriptions(subscription: Subscription): Promise<Subscription[]> {
-  try {
-    // Get categories from the current subscription
-    const categoryIds = subscription.categories ? 
-      subscription.categories.map(category => category._id) : [];
-    
-    if (categoryIds.length === 0) {
-      return [];
-    }
-    
-    // Fetch subscriptions from the same categories, excluding the current one
-    const relatedSubscriptions = await client.fetch(
-      groq`*[
-        _type == "subscription" && 
-        references($categoryIds) && 
-        _id != $currentId && 
-        isActive == true && 
-        isDeleted != true
-      ] | order(isFeatured desc) [0...3] {
-        _id,
-        title,
-        titleEs,
-        slug,
-        description,
-        descriptionEs,
-        price,
-        billingPeriod,
-        customBillingPeriodMonths,
-        hasVariants,
-        variants[]{
-          _key,
-          title,
-          titleEs,
-          description,
-          descriptionEs,
-          dosageAmount,
-          dosageUnit,
-          price,
-          compareAtPrice,
-          billingPeriod,
-          customBillingPeriodMonths,
-          stripePriceId,
-          isDefault,
-          isPopular
-        },
-        features[]{
-          featureText,
-          _key
-        },
-        featuresEs[]{
-          featureText,
-          _key
-        },
-        image,
-        featuredImage,
-        isActive,
-        isFeatured,
-        "categories": categories[]->{ 
-          _id, 
-          title, 
-          titleEs,
-          slug
-        }
-      }`,
-      { 
-        categoryIds: categoryIds,
-        currentId: subscription._id
-      }
-    );
-    
-    return relatedSubscriptions;
-  } catch (error) {
-    console.error("Error fetching related subscriptions:", error);
-    return [];
   }
 }

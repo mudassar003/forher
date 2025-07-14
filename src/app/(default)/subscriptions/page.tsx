@@ -31,6 +31,7 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
           answerEs
         },
         price,
+        monthlyDisplayPrice,
         compareAtPrice,
         billingPeriod,
         customBillingPeriodMonths,
@@ -44,6 +45,7 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
           dosageAmount,
           dosageUnit,
           price,
+          monthlyDisplayPrice,
           compareAtPrice,
           billingPeriod,
           customBillingPeriodMonths,
@@ -96,26 +98,19 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
     });
     
     // Add subscriptions to their respective categories
+    const uncategorizedSubscriptions: Subscription[] = [];
+    
     subscriptions.forEach(subscription => {
       if (subscription.categories && subscription.categories.length > 0) {
         subscription.categories.forEach(category => {
-          if (category && subscriptionsByCategory[category._id]) {
+          if (subscriptionsByCategory[category._id]) {
             subscriptionsByCategory[category._id].push(subscription);
           }
         });
+      } else {
+        // Add to uncategorized if no categories
+        uncategorizedSubscriptions.push(subscription);
       }
-    });
-    
-    // Handle uncategorized subscriptions
-    const uncategorizedSubscriptions = subscriptions.filter(subscription => 
-      !subscription.categories || subscription.categories.length === 0
-    );
-    
-    console.log('Fetched subscriptions:', {
-      total: subscriptions.length,
-      withVariants: subscriptions.filter(s => s.hasVariants).length,
-      featured: featuredSubscriptions.length,
-      withFAQ: subscriptions.filter(s => s.faqItems && s.faqItems.length > 0).length
     });
     
     return {
@@ -123,18 +118,19 @@ async function getCategoriesWithSubscriptions(): Promise<SubscriptionsData> {
       subscriptionsByCategory,
       uncategorizedSubscriptions,
       featuredSubscriptions,
-      allSubscriptions: subscriptions,
+      allSubscriptions: subscriptions
     };
-  } catch (error: unknown) {
+    
+  } catch (error) {
     console.error("Error fetching subscription data:", error);
-    // Return empty data rather than failing completely
     return {
       categories: [],
       subscriptionsByCategory: {},
       uncategorizedSubscriptions: [],
       featuredSubscriptions: [],
-      allSubscriptions: [], 
-      error: error instanceof Error ? error.message : String(error)
+      allSubscriptions: [],
+      error: error instanceof Error ? 
+        error.message : String(error)
     };
   }
 }

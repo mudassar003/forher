@@ -20,23 +20,22 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   currentLanguage,
   onVariantSelection
 }) => {
+  
   const getMonthlyPriceDisplay = (
     price: number,
     billingPeriod: string,
-    customBillingPeriodMonths?: number | null
+    customBillingPeriodMonths?: number | null,
+    monthlyDisplayPrice?: number | null
   ): string => {
-    const monthlyPrice = globalPricing.calculateMonthlyPrice(
+    // Use monthlyDisplayPrice if available, otherwise calculate
+    const displayPrice = monthlyDisplayPrice || globalPricing.calculateMonthlyPrice(
       price, 
       billingPeriod, 
       customBillingPeriodMonths
     );
-    const formattedPrice = globalPricing.formatter.formatPrice(monthlyPrice);
+    
+    const formattedPrice = globalPricing.formatter.formatPrice(displayPrice);
     return `${formattedPrice}${translations.month}`;
-  };
-
-  const getTotalPriceDisplay = (price: number): string => {
-    const formattedPrice = globalPricing.formatter.formatPrice(price);
-    return `${formattedPrice} ${translations.total}`;
   };
 
   const getDiscountPercentage = (compareAtPrice: number | undefined, price: number): number | null => {
@@ -65,7 +64,6 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   };
 
   const getLocalizedVariantTitle = (variant: SubscriptionVariant): string => {
-    // Fix: Properly check language and fallback logic
     if (currentLanguage === 'es' && variant.titleEs && variant.titleEs.trim() !== '') {
       return variant.titleEs;
     }
@@ -73,7 +71,6 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   };
 
   const getLocalizedVariantDescription = (variant: SubscriptionVariant): string => {
-    // Fix: Properly check language and fallback logic
     if (currentLanguage === 'es' && variant.descriptionEs && variant.descriptionEs.trim() !== '') {
       return variant.descriptionEs;
     }
@@ -83,33 +80,25 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   // Clean title function to remove unwanted characters
   const cleanTitle = (title: string): string => {
     if (!title) return '';
-    
-    // Remove dashes, underscores, and clean up spacing
-    return title
-      .replace(/[-_]/g, ' ')           // Replace dashes and underscores with spaces
-      .replace(/\s+/g, ' ')            // Replace multiple spaces with single space
-      .replace(/^\s+|\s+$/g, '')       // Trim whitespace
-      .split(' ')                      // Split into words
-      .map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-      )                                // Capitalize each word
-      .join(' ');                      // Join back together
+    return title.replace(/[-_]/g, ' ').trim();
   };
 
+  // Don't render if no variants
   if (!subscription.hasVariants || !subscription.variants || subscription.variants.length === 0) {
     return null;
   }
 
   return (
     <div className="mb-8">
-      <h3 className="text-lg font-medium text-gray-900 mb-3">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
         {translations.selectVariant}
       </h3>
+      
       <div className="space-y-3">
         {/* Base Subscription Option */}
         <div 
           className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-[#e63946] 
-            ${selectedBase 
+            ${selectedBase && !selectedVariant
               ? 'border-[#e63946] bg-[#fff8f8]' 
               : 'border-gray-200'}`}
           onClick={() => onVariantSelection(null, true)}
@@ -126,11 +115,9 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                   {getMonthlyPriceDisplay(
                     subscription.price, 
                     subscription.billingPeriod, 
-                    subscription.customBillingPeriodMonths
+                    subscription.customBillingPeriodMonths,
+                    subscription.monthlyDisplayPrice
                   )}
-                </p>
-                <p className="text-xs text-gray-700">
-                  {getTotalPriceDisplay(subscription.price)}
                 </p>
               </div>
               {subscription.compareAtPrice && subscription.compareAtPrice > subscription.price && (
@@ -178,11 +165,9 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                       {getMonthlyPriceDisplay(
                         variant.price, 
                         variant.billingPeriod, 
-                        variant.customBillingPeriodMonths
+                        variant.customBillingPeriodMonths,
+                        variant.monthlyDisplayPrice
                       )}
-                    </p>
-                    <p className="text-xs text-gray-700">
-                      {getTotalPriceDisplay(variant.price)}
                     </p>
                   </div>
                   {getVariantBadge(variant)}

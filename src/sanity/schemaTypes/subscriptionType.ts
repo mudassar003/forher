@@ -1,24 +1,13 @@
 // src/sanity/schemaTypes/subscriptionType.ts
-import { CreditCardIcon } from '@sanity/icons'
-import {defineField, defineType, defineArrayMember} from 'sanity'
+import { defineField, defineType } from 'sanity'
+import { CreditCardIcon, CalendarIcon } from '@heroicons/react/24/solid'
 
-// Define the document context type for validation
-interface SubscriptionDocument {
-  hasVariants?: boolean;
-  billingPeriod?: string;
-  customBillingPeriodMonths?: number;
-}
-
-// Define the parent context type for variants
-interface VariantParent {
-  billingPeriod?: string;
-  customBillingPeriodMonths?: number;
-}
-
-// Define the validation context type
 interface ValidationContext {
-  document?: SubscriptionDocument;
-  parent?: VariantParent;
+  document?: {
+    hasVariants?: boolean;
+    billingPeriod?: string;
+    customBillingPeriodMonths?: number;
+  };
 }
 
 export const subscriptionType = defineType({
@@ -26,112 +15,72 @@ export const subscriptionType = defineType({
   title: 'Subscription',
   type: 'document',
   icon: CreditCardIcon,
+  groups: [
+    {
+      name: 'content',
+      title: 'Content',
+    },
+    {
+      name: 'pricing',
+      title: 'Pricing',
+    },
+    {
+      name: 'variants',
+      title: 'Variants',
+    },
+    {
+      name: 'seo',
+      title: 'SEO',
+    },
+    {
+      name: 'settings',
+      title: 'Settings',
+    },
+  ],
   fields: [
+    // Basic Information
     defineField({
       name: 'title',
       title: 'Title (English)',
       type: 'string',
+      description: 'The name of the subscription plan',
       validation: (Rule) => Rule.required(),
+      group: 'content',
     }),
     defineField({
       name: 'titleEs',
       title: 'Title (Spanish)',
       type: 'string',
-      description: 'Spanish translation of the subscription title',
+      description: 'Spanish translation of the subscription plan name',
+      group: 'content',
     }),
     defineField({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
+      description: 'URL-friendly version of the title',
       options: {
         source: 'title',
         maxLength: 96,
       },
       validation: (Rule) => Rule.required(),
+      group: 'seo',
     }),
     defineField({
       name: 'description',
       title: 'Description (English)',
-      type: 'array', 
-      of: [
-        defineArrayMember({
-          type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
-          lists: [
-            {title: 'Bullet', value: 'bullet'},
-            {title: 'Numbered', value: 'number'}
-          ],
-          marks: {
-            decorators: [
-              {title: 'Strong', value: 'strong'},
-              {title: 'Emphasis', value: 'em'},
-            ],
-            annotations: [
-              {
-                title: 'URL',
-                name: 'link',
-                type: 'object',
-                fields: [
-                  {
-                    title: 'URL',
-                    name: 'href',
-                    type: 'url',
-                  },
-                ],
-              },
-            ],
-          },
-        }),
-      ],
-      description: 'Rich text description for this subscription plan (English)',
+      type: 'array',
+      of: [{ type: 'block' }],
+      description: 'Detailed description of the subscription plan',
+      group: 'content',
     }),
     defineField({
       name: 'descriptionEs',
       title: 'Description (Spanish)',
       type: 'array',
-      of: [
-        defineArrayMember({
-          type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
-          lists: [
-            {title: 'Bullet', value: 'bullet'},
-            {title: 'Numbered', value: 'number'}
-          ],
-          marks: {
-            decorators: [
-              {title: 'Strong', value: 'strong'},
-              {title: 'Emphasis', value: 'em'},
-            ],
-            annotations: [
-              {
-                title: 'URL',
-                name: 'link',
-                type: 'object',
-                fields: [
-                  {
-                    title: 'URL',
-                    name: 'href',
-                    type: 'url',
-                  },
-                ],
-              },
-            ],
-          },
-        }),
-      ],
-      description: 'Rich text description for this subscription plan (Spanish)',
+      of: [{ type: 'block' }],
+      description: 'Spanish translation of the subscription plan description',
+      group: 'content',
     }),
     defineField({
       name: 'categories',
@@ -140,11 +89,14 @@ export const subscriptionType = defineType({
       of: [
         {
           type: 'reference',
-          to: [{type: 'subscriptionCategory'}],
+          to: [{ type: 'subscriptionCategory' }],
         },
       ],
+      description: 'Categories this subscription belongs to',
+      group: 'content',
     }),
-    // FAQ Items for subscription-specific FAQs
+
+    // FAQ Items
     defineField({
       name: 'faqItems',
       title: 'FAQ Items',
@@ -158,28 +110,26 @@ export const subscriptionType = defineType({
             {
               name: 'question',
               title: 'Question (English)',
-              type: 'text',
-              validation: (Rule) => Rule.required(),
-              description: 'The question for this FAQ item'
+              type: 'string',
+              validation: (Rule) => Rule.required()
             },
             {
               name: 'questionEs',
               title: 'Question (Spanish)',
-              type: 'text',
-              description: 'Spanish translation of the question'
+              type: 'string'
             },
             {
               name: 'answer',
               title: 'Answer (English)',
               type: 'text',
-              validation: (Rule) => Rule.required(),
-              description: 'The answer for this FAQ item'
+              rows: 4,
+              validation: (Rule) => Rule.required()
             },
             {
               name: 'answerEs',
               title: 'Answer (Spanish)',
               type: 'text',
-              description: 'Spanish translation of the answer'
+              rows: 4
             }
           ],
           preview: {
@@ -189,7 +139,7 @@ export const subscriptionType = defineType({
             },
             prepare({ title, subtitle }) {
               return {
-                title: title || 'Untitled Question',
+                title: title || 'No question provided',
                 subtitle: subtitle ? `${subtitle.substring(0, 60)}...` : 'No answer provided'
               };
             }
@@ -197,7 +147,10 @@ export const subscriptionType = defineType({
         }
       ],
       description: 'Frequently asked questions specific to this subscription plan',
+      group: 'content',
     }),
+
+    // Features
     defineField({
       name: 'features',
       title: 'Features (English)',
@@ -221,6 +174,7 @@ export const subscriptionType = defineType({
         }
       ],
       description: 'List of features included in this subscription (English)',
+      group: 'content',
     }),
     defineField({
       name: 'featuresEs',
@@ -245,14 +199,17 @@ export const subscriptionType = defineType({
         }
       ],
       description: 'List of features included in this subscription (Spanish)',
+      group: 'content',
     }),
-    // Variants for different dosages and pricing options
+
+    // Variants Support
     defineField({
       name: 'hasVariants',
       title: 'Has Variants',
       type: 'boolean',
       description: 'Enable if this subscription has multiple variants (e.g., different dosages)',
       initialValue: false,
+      group: 'variants',
     }),
     defineField({
       name: 'variants',
@@ -281,7 +238,7 @@ export const subscriptionType = defineType({
               name: 'description',
               title: 'Variant Description (English)',
               type: 'text',
-              description: 'Brief description of this variant (e.g., "3 month supply with 1 dosage per month")',
+              description: 'Brief description of this variant',
             },
             {
               name: 'descriptionEs',
@@ -307,8 +264,15 @@ export const subscriptionType = defineType({
               name: 'price',
               title: 'Variant Price',
               type: 'number',
-              description: 'The price for this specific variant',
+              description: 'The actual price used for Stripe and calculations',
               validation: (Rule) => Rule.required().positive()
+            },
+            // NEW: Monthly Display Price for Variants
+            {
+              name: 'monthlyDisplayPrice',
+              title: 'Monthly Display Price',
+              type: 'number',
+              description: 'Price to display as monthly equivalent (display only, not used for billing)',
             },
             {
               name: 'compareAtPrice',
@@ -329,18 +293,17 @@ export const subscriptionType = defineType({
                   {title: 'Other', value: 'other'}
                 ],
               },
-              validation: (Rule) => Rule.required(),
+              validation: (Rule) => Rule.required()
             },
             {
               name: 'customBillingPeriodMonths',
               title: 'Custom Billing Period (in months)',
               type: 'number',
-              description: 'If billing period is set to "Other", specify the number of months here',
+              description: 'If billing period is "Other", specify the number of months',
               validation: (Rule) => 
                 Rule.custom((currentValue, context) => {
-                  const typedContext = context as ValidationContext;
-                  const billingPeriod = typedContext.parent?.billingPeriod;
-                  if (billingPeriod === 'other' && !currentValue) {
+                  const parent = context.parent as any;
+                  if (parent?.billingPeriod === 'other' && !currentValue) {
                     return 'Required when billing period is set to "Other"';
                   }
                   return true;
@@ -350,49 +313,47 @@ export const subscriptionType = defineType({
               name: 'stripePriceId',
               title: 'Stripe Price ID',
               type: 'string',
-              description: 'The ID of the corresponding price in Stripe for this variant',
+              description: 'The ID of the corresponding price in Stripe',
             },
             {
               name: 'isDefault',
               title: 'Default Variant',
               type: 'boolean',
-              description: 'Set as the default selected variant',
-              initialValue: false,
+              description: 'Mark this as the default selected variant',
+              initialValue: false
             },
             {
               name: 'isPopular',
-              title: 'Popular Choice',
+              title: 'Popular Variant',
               type: 'boolean',
-              description: 'Mark this variant as the popular choice',
-              initialValue: false,
-            },
+              description: 'Mark this variant as popular (shows badge)',
+              initialValue: false
+            }
           ],
           preview: {
             select: {
               title: 'title',
-              dosage: 'dosageAmount',
-              unit: 'dosageUnit',
               price: 'price',
+              monthlyDisplayPrice: 'monthlyDisplayPrice',
               period: 'billingPeriod',
               isDefault: 'isDefault',
               isPopular: 'isPopular'
             },
-            prepare({ title, dosage, unit, price, period, isDefault, isPopular }) {
-              let subtitle = '';
+            prepare({ title, price, monthlyDisplayPrice, period, isDefault, isPopular }) {
+              let subtitle = `$${price}`;
               
-              if (dosage && unit) {
-                subtitle += `${dosage} ${unit} · `;
+              // Show monthly display price if different from calculated
+              if (monthlyDisplayPrice) {
+                subtitle += ` (Display: $${monthlyDisplayPrice}/month)`;
               }
               
-              subtitle += `$${price} / `;
-              
               switch (period) {
-                case 'monthly': subtitle += 'month'; break;
-                case 'three_month': subtitle += '3 months'; break;
-                case 'six_month': subtitle += '6 months'; break;
-                case 'annually': subtitle += 'year'; break;
-                case 'other': subtitle += 'custom period'; break;
-                default: subtitle += period || 'month';
+                case 'monthly': subtitle += ' monthly'; break;
+                case 'three_month': subtitle += ' 3 months'; break;
+                case 'six_month': subtitle += ' 6 months'; break;
+                case 'annually': subtitle += ' year'; break;
+                case 'other': subtitle += ' custom period'; break;
+                default: subtitle += period || ' month';
               }
               
               let badgeText = '';
@@ -410,6 +371,7 @@ export const subscriptionType = defineType({
         }
       ],
       description: 'Different variants of this subscription (dosages, pricing options)',
+      group: 'variants',
       validation: (Rule) => Rule.custom((variants, context) => {
         const typedContext = context as ValidationContext;
         const hasVariants = typedContext.document?.hasVariants;
@@ -418,7 +380,6 @@ export const subscriptionType = defineType({
           return 'At least one variant is required when "Has Variants" is enabled';
         }
         
-        // Check that only one variant is marked as default
         if (variants && variants.length > 0) {
           const defaultVariants = variants.filter((v: any) => v.isDefault);
           if (defaultVariants.length > 1) {
@@ -429,12 +390,14 @@ export const subscriptionType = defineType({
         return true;
       })
     }),
-    // Default pricing for non-variant plans
+
+    // Base Pricing (for non-variant subscriptions)
     defineField({
       name: 'price',
       title: 'Price',
       type: 'number',
-      description: 'The price for this subscription (if no variants)',
+      description: 'The actual price used for Stripe and calculations (if no variants)',
+      group: 'pricing',
       validation: (Rule) => Rule.custom((price, context) => {
         const typedContext = context as ValidationContext;
         const hasVariants = typedContext.document?.hasVariants;
@@ -446,11 +409,20 @@ export const subscriptionType = defineType({
         return true;
       })
     }),
+    // NEW: Monthly Display Price for Base Subscription
+    defineField({
+      name: 'monthlyDisplayPrice',
+      title: 'Monthly Display Price',
+      type: 'number',
+      description: 'Price to display as monthly equivalent (display only, not used for billing)',
+      group: 'pricing',
+    }),
     defineField({
       name: 'compareAtPrice',
       title: 'Compare At Price',
       type: 'number',
       description: 'Original price to show a discount (if applicable)',
+      group: 'pricing',
     }),
     defineField({
       name: 'billingPeriod',
@@ -466,6 +438,7 @@ export const subscriptionType = defineType({
           {title: 'Other', value: 'other'}
         ],
       },
+      group: 'pricing',
       validation: (Rule) => Rule.custom((billingPeriod, context) => {
         const typedContext = context as ValidationContext;
         const hasVariants = typedContext.document?.hasVariants;
@@ -482,6 +455,7 @@ export const subscriptionType = defineType({
       title: 'Custom Billing Period (in months)',
       type: 'number',
       description: 'If billing period is set to "Other", specify the number of months here',
+      group: 'pricing',
       validation: (Rule) => 
         Rule.custom((currentValue, context) => {
           const typedContext = context as ValidationContext;
@@ -494,24 +468,31 @@ export const subscriptionType = defineType({
           return true;
         })
     }),
+
+    // Stripe Integration
     defineField({
       name: 'stripePriceId',
       title: 'Stripe Price ID',
       type: 'string',
       description: 'The ID of the corresponding price in Stripe (if no variants)',
+      group: 'settings',
     }),
     defineField({
       name: 'stripeProductId',
       title: 'Stripe Product ID',
       type: 'string',
       description: 'The ID of the corresponding product in Stripe',
+      group: 'settings',
     }),
+
+    // Status and Display Settings
     defineField({
       name: 'isFeatured',
       title: 'Featured Subscription',
       type: 'boolean',
       description: 'Whether to show this subscription in the featured section',
       initialValue: false,
+      group: 'settings',
     }),
     defineField({
       name: 'isActive',
@@ -519,8 +500,10 @@ export const subscriptionType = defineType({
       type: 'boolean',
       description: 'Whether this subscription is currently available for purchase',
       initialValue: true,
+      group: 'settings',
     }),
-    // Standard main image field
+
+    // Images
     defineField({
       name: 'image',
       title: 'Main Image',
@@ -528,9 +511,9 @@ export const subscriptionType = defineType({
       options: {
         hotspot: true,
       },
-      description: 'The main product image used on detail pages and throughout the site'
+      description: 'The main product image used on detail pages and throughout the site',
+      group: 'content',
     }),
-    // Field for featured image specifically for catalog/grid display
     defineField({
       name: 'featuredImage',
       title: 'Featured Catalog Image',
@@ -538,24 +521,29 @@ export const subscriptionType = defineType({
       options: {
         hotspot: true,
       },
-      description: 'Optimized image for display in subscription catalog cards (if different from main image)'
+      description: 'Optimized image for display in subscription catalog cards (if different from main image)',
+      group: 'content',
     }),
+
+    // Soft Deletion
     defineField({
       name: 'isDeleted',
       title: 'Deleted',
       type: 'boolean',
       description: 'Soft deletion flag',
       initialValue: false,
-      hidden: true, // Hide in the UI by default
+      hidden: true,
+      group: 'settings',
     }),
 
-    // === NEW FIELDS ===
+    // Coupon Settings
     defineField({
       name: 'allowCoupons',
       title: 'Allow Coupons',
       type: 'boolean',
       description: 'Enable coupon codes for this subscription plan',
       initialValue: true,
+      group: 'settings',
     }),
     defineField({
       name: 'excludedCoupons',
@@ -569,6 +557,7 @@ export const subscriptionType = defineType({
       ],
       description: 'Specific coupons that should NOT work with this subscription',
       hidden: ({ document }) => !document?.allowCoupons,
+      group: 'settings',
     }),
   ],
   preview: {
@@ -577,17 +566,17 @@ export const subscriptionType = defineType({
       subtitle: 'billingPeriod',
       media: 'image',
       price: 'price',
+      monthlyDisplayPrice: 'monthlyDisplayPrice',
       isDeleted: 'isDeleted',
       isFeatured: 'isFeatured',
       customPeriod: 'customBillingPeriodMonths',
       hasVariants: 'hasVariants',
       variants: 'variants'
     },
-    prepare({title, subtitle, media, price, isDeleted, isFeatured, customPeriod, hasVariants, variants}) {
+    prepare({title, subtitle, media, price, monthlyDisplayPrice, isDeleted, isFeatured, customPeriod, hasVariants, variants}) {
       let displayPeriod = subtitle;
       let displayPrice = price;
       
-      // If has variants, show variant count instead of price/period
       if (hasVariants && variants && variants.length > 0) {
         const variantCount = variants.length;
         return {
@@ -597,18 +586,23 @@ export const subscriptionType = defineType({
         };
       }
       
-      // Format the subtitle based on billing period for non-variant subscriptions
+      // Format subtitle for non-variant subscriptions
       if (subtitle === 'monthly') displayPeriod = 'monthly';
       else if (subtitle === 'three_month') displayPeriod = '3 months';
       else if (subtitle === 'six_month') displayPeriod = '6 months';
       else if (subtitle === 'annually') displayPeriod = 'annual';
       else if (subtitle === 'other' && customPeriod) displayPeriod = `${customPeriod} months`;
       
+      let priceDisplay = `$${displayPrice}`;
+      if (monthlyDisplayPrice) {
+        priceDisplay += ` (Display: $${monthlyDisplayPrice}/month)`;
+      }
+      
       return {
         title: `${isDeleted ? `${title} (Deleted)` : title}${isFeatured ? ' ⭐' : ''}`,
-        subtitle: `$${displayPrice} / ${displayPeriod}`,
+        subtitle: `${priceDisplay} ${displayPeriod}`,
         media,
-      }
+      };
     },
   },
 });

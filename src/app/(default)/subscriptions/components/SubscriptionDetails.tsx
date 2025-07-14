@@ -296,7 +296,7 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
     >
       {/* Breadcrumb */}
       <SubscriptionBreadcrumb 
-        subscriptionTitle={getLocalizedTitle()}
+        title={getLocalizedTitle()}
         translations={translations}
       />
 

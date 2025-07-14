@@ -4,6 +4,7 @@ import type {
   SanityVariant, 
   SanitySubscription 
 } from '@/types/admin-price-sync';
+import { formatPriceDisplay } from './subscriptionHelpers';
 
 /**
  * Convert Sanity billing period to Stripe interval configuration
@@ -70,19 +71,18 @@ export function isValidPrice(price: unknown): price is number {
 }
 
 /**
- * Format price for display
+ * Format price for display using consistent smart formatting
+ * @param price The price to format
+ * @param currency The currency code
+ * @returns Formatted price string
  */
 export function formatPrice(price: number, currency: string = 'USD'): string {
   try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
+    return formatPriceDisplay(price, currency, 'en-US');
   } catch (error) {
     console.warn('Error formatting price:', error);
-    return `$${price.toFixed(2)}`;
+    const hasDecimals = price % 1 !== 0;
+    return hasDecimals ? `$${price.toFixed(2)}` : `$${Math.round(price)}`;
   }
 }
 

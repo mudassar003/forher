@@ -38,6 +38,16 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
     return `${formattedPrice}${translations.month}`;
   };
 
+  const getTotalPriceDisplay = (
+    price: number,
+    billingPeriod: string,
+    customBillingPeriodMonths?: number | null
+  ): string => {
+    const formattedPrice = globalPricing.formatter.formatPrice(price);
+    const totalText = currentLanguage === 'es' ? 'total' : 'total';
+    return `${formattedPrice} ${totalText}`;
+  };
+
   const getDiscountPercentage = (compareAtPrice: number | undefined, price: number): number | null => {
     if (!compareAtPrice || compareAtPrice <= price) return null;
     return globalPricing.calculateDiscountPercentage(compareAtPrice, price);
@@ -119,6 +129,13 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                     subscription.monthlyDisplayPrice
                   )}
                 </p>
+                <p className="text-sm text-gray-600">
+                  {getTotalPriceDisplay(
+                    subscription.price,
+                    subscription.billingPeriod,
+                    subscription.customBillingPeriodMonths
+                  )}
+                </p>
               </div>
               {subscription.compareAtPrice && subscription.compareAtPrice > subscription.price && (
                 <div className="mt-1">
@@ -167,6 +184,13 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                         variant.billingPeriod, 
                         variant.customBillingPeriodMonths,
                         variant.monthlyDisplayPrice
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {getTotalPriceDisplay(
+                        variant.price,
+                        variant.billingPeriod,
+                        variant.customBillingPeriodMonths
                       )}
                     </p>
                   </div>

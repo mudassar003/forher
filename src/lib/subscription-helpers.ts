@@ -256,6 +256,74 @@ export async function getSubscriptionsByCategory(categorySlug: string): Promise<
 }
 
 /**
+ * Gets related subscriptions (same category, excluding current)
+ */
+export async function getRelatedSubscriptions(subscription: Subscription): Promise<Subscription[]> {
+  try {
+    if (!subscription.categories || subscription.categories.length === 0) {
+      return [];
+    }
+
+    const categoryIds = subscription.categories.map(cat => cat._id);
+
+    const relatedSubscriptions = await client.fetch(
+      groq`*[_type == "subscription" && isActive == true && isDeleted != true && _id != $currentId && count(categories[@._ref in $categoryIds]) > 0] | order(displayOrder asc, _createdAt desc) [0...4] {
+        _id,
+        title,
+        titleEs,
+        slug,
+        description,
+        descriptionEs,
+        price,
+        monthlyDisplayPrice,
+        compareAtPrice,
+        billingPeriod,
+        customBillingPeriodMonths,
+        hasVariants,
+        variants[]{
+          _key,
+          title,
+          titleEs,
+          price,
+          monthlyDisplayPrice,
+          compareAtPrice,
+          billingPeriod,
+          customBillingPeriodMonths,
+          isDefault,
+          isPopular
+        },
+        features[]{
+          featureText,
+          _key
+        },
+        featuresEs[]{
+          featureText,
+          _key
+        },
+        image,
+        featuredImage,
+        isFeatured,
+        "categories": categories[]->{ 
+          _id, 
+          title, 
+          titleEs,
+          slug
+        }
+      }`,
+      { 
+        currentId: subscription._id,
+        categoryIds: categoryIds
+      }
+    );
+    
+    return relatedSubscriptions || [];
+  } catch (error) {
+    console.error("Error fetching related subscriptions:", error);
+    return [];
+  }
+}
+
+/**
  * Gets all subscription slugs for static generation
  */
 export async function getAllSubscriptionSlugs(): Promise<string[]> {

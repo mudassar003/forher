@@ -187,46 +187,103 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
   }, []);
 
   const handlePurchase = useCallback(async () => {
+    if (isProcessing || isLoading) return;
+    
+    // Clear previous errors
+    setPurchaseError('');
+    clearError();
+    
+    // Store current path in sessionStorage
+    const currentPath = window.location.pathname;
+    try {
+      sessionStorage.setItem('subscriptionReturnPath', currentPath);
+    } catch (storageError) {
+      // Session storage not available, continue without storing
+    }
+    
+    // If not authenticated, redirect to login with return URL
     if (!isAuthenticated) {
-      setPurchaseError(currentLanguage === 'es' ? 'Por favor inicie sesión para continuar' : 'Please sign in to continue');
+      try {
+        // Save intended subscription ID to purchase after login
+        sessionStorage.setItem('pendingSubscriptionId', subscription._id);
+        
+        // If a variant is selected, store that too
+        if (subscription.hasVariants && selectedVariant && selectedVariant._key && !selectedBase) {
+          sessionStorage.setItem('pendingVariantKey', selectedVariant._key);
+        }
+        
+        // Store coupon code if applied
+        if (appliedCouponCode) {
+          sessionStorage.setItem('pendingCouponCode', appliedCouponCode);
+        }
+      } catch (storageError) {
+        // Session storage not available, continue without storing
+      }
+      
+      const returnUrl = encodeURIComponent(currentPath);
+      window.location.href = `/login?returnUrl=${returnUrl}`;
       return;
     }
-
+    
     setIsProcessing(true);
-    setPurchaseError('');
-
+    
     try {
-      const currentPrice = pricing.effectivePrice;
-      const currentVariant = selectedVariant;
-      const isBaseSubscription = selectedBase;
-
-      await purchaseSubscription({
-        subscriptionId: subscription._id,
-        variant: currentVariant,
-        isBase: isBaseSubscription,
-        price: currentPrice,
-        couponCode: appliedCouponCode || undefined,
-        discountAmount: discountAmount
-      });
-
-      // Success handled by the hook
+      // Store appointment page as the return URL after successful purchase
+      try {
+        sessionStorage.setItem('loginReturnUrl', '/appointment');
+      } catch (storageError) {
+        // Session storage not available, continue without storing
+      }
+      
+      // Include coupon code in the subscription purchase
+      // Only pass variant key if a variant is selected (not base)
+      const result = await purchaseSubscription(
+        subscription._id,
+        selectedBase ? undefined : selectedVariant?._key,
+        appliedCouponCode || undefined
+      );
+      
+      if (result.success && result.url) {
+        // Redirect to Stripe checkout
+        window.location.href = result.url;
+      } else if (result.error) {
+        setPurchaseError(result.error);
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during purchase';
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setPurchaseError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
   }, [
+    isProcessing,
+    isLoading,
     isAuthenticated,
-    pricing.effectivePrice,
+    subscription._id,
     selectedVariant,
     selectedBase,
-    subscription._id,
     appliedCouponCode,
-    discountAmount,
     purchaseSubscription,
-    currentLanguage
+    clearError
   ]);
+
+  // Helper functions for PurchaseSection
+  const getCurrentPrice = useCallback((): number => {
+    return pricing.effectivePrice;
+  }, [pricing.effectivePrice]);
+
+  const getCurrentVariantKey = useCallback((): string | undefined => {
+    return selectedVariant?._key;
+  }, [selectedVariant]);
+
+  const getSubscribeButtonText = useCallback((): string => {
+    if (isProcessing || isLoading) {
+      return translations.processing;
+    }
+    return translations.buyNow;
+  }, [isProcessing, isLoading, translations.processing, translations.buyNow]);
+
+  const isSomethingSelected = selectedVariant !== null || selectedBase;
 
   return (
     <motion.div 
@@ -287,7 +344,11 @@ export default function SubscriptionDetails({ subscription }: SubscriptionDetail
             appliedCouponCode={appliedCouponCode}
             discountedPrice={discountedPrice}
             discountAmount={discountAmount}
-            onPurchase={handlePurchase}
+            isSomethingSelected={isSomethingSelected}
+            onSubscribe={handlePurchase}
+            getCurrentPrice={getCurrentPrice}
+            getCurrentVariantKey={getCurrentVariantKey}
+            getSubscribeButtonText={getSubscribeButtonText}
             onCouponApplied={(code, discountedPrice, discountAmount) => {
               setAppliedCouponCode(code);
               setDiscountedPrice(discountedPrice);

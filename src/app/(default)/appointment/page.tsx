@@ -38,8 +38,7 @@ const AppointmentContent: React.FC = () => {
         const success = searchParams?.get('subscription_success') === 'true';
         const sessionId = searchParams?.get('session_id');
         
-        console.log("URL params:", { success, sessionId });
-        console.log("Auth state:", { isAuthenticated, user: !!user });
+        // Processing subscription redirect parameters
         
         // If we have a successful subscription payment & user
         if (success && sessionId && user?.id) {
@@ -48,7 +47,7 @@ const AppointmentContent: React.FC = () => {
           // Verify the session is still valid
           const hasValidSession = await verifySession();
           if (!hasValidSession) {
-            console.log("Session invalid, refreshing...");
+            // Session invalid, refreshing...
             await refreshSession();
             await checkSession();
           }

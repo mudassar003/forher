@@ -49,7 +49,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     
     try {
       setSuccessMessage("Verifying subscription status...");
-      console.log("Checking subscription status for user:", user.id);
+      // Checking subscription status for authenticated user
       
       await syncSubscriptionStatuses(user.id);
       await fetchUserSubscriptions(user.id, true);
@@ -74,7 +74,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     
     setAccessCheckLoading(true);
     try {
-      console.log("🔒 Checking appointment access for user:", user.id);
+      // Checking appointment access for authenticated user
       
       const response = await fetch('/api/appointment-access', {
         method: 'POST',
@@ -86,7 +86,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
       });
       
       const result: AppointmentAccessStatus = await response.json();
-      console.log("📋 Appointment access result:", result);
+      // Appointment access result processed
       
       setAppointmentAccess(result);
       
@@ -131,8 +131,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
   // Effect to check access when component mounts (existing logic enhanced)
   useEffect(() => {
     const checkAccess = async () => {
-      console.log("Checking access, auth state:", { isAuthenticated, authLoading });
-      console.log("Subscription state:", { hasActiveSubscription, subscriptionLoading });
+      // Checking access and subscription state
       
       if (authLoading) return;
 
@@ -233,11 +232,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
     sub.is_active === true
   );
 
-  console.log("Subscription check:", { 
-    hasActiveSubscription, 
-    manualActiveCheck, 
-    subscriptionsCount: subscriptions.length 
-  });
+  // Subscription check completed
 
   // No valid subscription access (existing logic)
   if (!hasActiveSubscription && !manualActiveCheck) {

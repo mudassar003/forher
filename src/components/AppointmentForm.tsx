@@ -176,7 +176,7 @@ const AppointmentForm: React.FC = () => {
       }
 
       try {
-        console.log('Checking user data for:', user.email);
+        // Checking user data for authenticated user
 
         // Use the existing API endpoint to fetch user data
         const response = await fetch('/api/user-data/fetch', {
@@ -195,7 +195,7 @@ const AppointmentForm: React.FC = () => {
         }
 
         const result = await response.json();
-        console.log('User data result:', result);
+        // User data fetched successfully
         
         if (result.success && result.data) {
           // Auto-fill all existing data
@@ -210,13 +210,12 @@ const AppointmentForm: React.FC = () => {
           }));
 
           // Check submission count properly
-          console.log('Submission count:', result.data.submission_count);
           if (result.data.submission_count && result.data.submission_count >= 1) {
-            console.log('User has already submitted, hiding form');
+            // User has already submitted, hiding form
             setHasSubmitted(true);
             if (result.data.meeting_url) {
               setMeetingUrl(result.data.meeting_url);
-              console.log('Meeting URL found:', result.data.meeting_url);
+              // Meeting URL found and set
             }
           }
         } else {

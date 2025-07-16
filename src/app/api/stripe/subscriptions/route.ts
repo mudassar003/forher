@@ -6,7 +6,7 @@ import { groq } from "next-sanity";
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from 'uuid';
 import { getAuthenticatedUser } from "@/utils/apiAuth";
-import { purchaseRateLimit, createRateLimitResponse } from "@/utils/rateLimit";
+import { purchaseRateLimit } from "@/utils/rateLimit";
 import { subscriptionPurchaseSchema, validateRequest, createSafeErrorMessage } from "@/utils/validation";
 
 // Initialize Stripe
@@ -233,7 +233,20 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     const rateLimitResult = await purchaseRateLimit(req, userId);
     if (!rateLimitResult.success) {
       console.log('❌ Rate limit exceeded for user:', userId);
-      return createRateLimitResponse(rateLimitResult);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded. Please try again later.',
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
+          }
+        }
+      );
     }
 
     // 🔧 FIXED: Correct variant selection logic

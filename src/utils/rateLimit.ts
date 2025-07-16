@@ -35,17 +35,22 @@ async function initRedis() {
     }
     
     // Dynamic import to avoid bundle issues if Redis is not available
-    const { Redis } = await import('@upstash/redis');
-    
-    redisClient = new Redis({
-      url: redisUrl,
-      token: redisToken,
-    });
-    
-    // Test connection
-    await redisClient.ping();
-    console.log('✅ Redis connected successfully');
-    return redisClient;
+    try {
+      const { Redis } = await import('@upstash/redis');
+      
+      redisClient = new Redis({
+        url: redisUrl,
+        token: redisToken,
+      });
+      
+      // Test connection
+      await redisClient.ping();
+      console.log('✅ Redis connected successfully');
+      return redisClient;
+    } catch (importError) {
+      console.warn('❌ Redis package not installed, using in-memory fallback');
+      return null;
+    }
   } catch (error) {
     console.warn('❌ Redis connection failed, using fallback:', error);
     return null;

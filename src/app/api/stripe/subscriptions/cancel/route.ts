@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 import Stripe from "stripe";
-import { subscriptionRateLimit, createRateLimitResponse } from "@/utils/rateLimit";
+import { subscriptionRateLimit } from "@/utils/rateLimit";
 import { subscriptionCancelSchema, validateRequest, createSafeErrorMessage } from "@/utils/validation";
 import { getAuthenticatedUser } from "@/utils/apiAuth";
 
@@ -50,7 +50,20 @@ export async function POST(req: NextRequest) {
     // Check rate limit
     const rateLimitResult = await subscriptionRateLimit(req, user.id);
     if (!rateLimitResult.success) {
-      return createRateLimitResponse(rateLimitResult);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded. Please try again later.',
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
+          }
+        }
+      );
     }
 
     // Set immediate cancellation as default

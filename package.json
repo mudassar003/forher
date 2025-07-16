@@ -19,6 +19,7 @@
     "@stripe/stripe-js": "^6.1.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.4",
+    "@upstash/redis": "^1.35.1",
     "@zxcvbn-ts/core": "^3.0.4",
     "accept-language": "^3.0.20",
     "countries-list": "^3.1.1",
@@ -45,7 +46,7 @@
     "stripe": "^17.7.0",
     "styled-components": "^6.1.15",
     "uuid": "^11.1.0",
-    "zod": "^3.25.75",
+    "zod": "^3.25.76",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

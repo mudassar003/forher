@@ -43,30 +43,48 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [accessCheckLoading, setAccessCheckLoading] = useState<boolean>(false);
   
-  // Function to check subscription status with Stripe (existing)
-  const checkSubscriptionStatus = useCallback(async () => {
-    if (!user?.id) return false;
+  // Enterprise-level subscription status check with proper error handling
+  const checkSubscriptionStatus = useCallback(async (): Promise<boolean> => {
+    if (!user?.id) {
+      console.warn('No user ID available for subscription status check');
+      return false;
+    }
     
     try {
       setSuccessMessage("Verifying subscription status...");
-      // Checking subscription status for authenticated user
       
-      await syncSubscriptionStatuses(user.id);
-      await fetchUserSubscriptions(user.id, true);
+      // First sync with Stripe (this already calls fetchUserSubscriptions internally)
+      const syncResult = await syncSubscriptionStatuses(user.id);
+      
+      if (!syncResult.success) {
+        throw new Error(syncResult.error || 'Sync failed');
+      }
+      
+      // Only fetch if sync didn't already update the data
+      if (syncResult.syncedCount === 0) {
+        const fetchResult = await fetchUserSubscriptions(user.id, true);
+        if (!fetchResult.success) {
+          throw new Error(fetchResult.error || 'Fetch failed');
+        }
+      }
       
       setStatusChecked(true);
       setSuccessMessage("Subscription status verified");
       
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
       
-      return true;
-    } catch (err) {
-      console.error("Error checking subscription:", err);
+      // Cleanup timeout on unmount
+      return () => clearTimeout(timeoutId);
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("Error checking subscription:", error);
+      setError(`Failed to verify subscription: ${errorMessage}`);
       return false;
     }
-  }, [user, syncSubscriptionStatuses, fetchUserSubscriptions]);
+  }, [user?.id, syncSubscriptionStatuses, fetchUserSubscriptions]); // Remove user object, only use user.id
 
   // NEW: Core business logic - Check appointment access
   const checkAppointmentAccess = useCallback(async () => {

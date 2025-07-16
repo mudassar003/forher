@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { checkAdminStatus } from '@/utils/adminAuth';
 
 export default function AdminLayout({
   children,
@@ -22,27 +23,28 @@ export default function AdminLayout({
     }
     
     // Check if user has admin access
-    const checkAdminAccess = () => {
+    const checkAdminAccess = async () => {
       if (!isAuthenticated) {
         setCheckingAccess(false);
         return;
       }
       
-      // Get admin emails from environment variable
-      const adminEmailsVar = process.env.NEXT_PUBLIC_ADMIN_EMAILS || '';
-      const adminEmails = adminEmailsVar.split(',').map(email => email.trim());
-      
-      // Check if current user's email is in the admin list
-      const userEmail = user?.email || '';
-      const isAdmin = adminEmails.includes(userEmail);
-      
-      setHasAccess(isAdmin);
-      setCheckingAccess(false);
-      
-      // Redirect if not admin
-      if (!isAdmin && !window.localStorage.getItem('adminRedirectAttempted')) {
-        window.localStorage.setItem('adminRedirectAttempted', 'true');
-        router.push('/unauthorized');
+      try {
+        // Use secure server-side admin check
+        const { isAdmin } = await checkAdminStatus();
+        
+        setHasAccess(isAdmin);
+        setCheckingAccess(false);
+        
+        // Redirect if not admin
+        if (!isAdmin && !window.localStorage.getItem('adminRedirectAttempted')) {
+          window.localStorage.setItem('adminRedirectAttempted', 'true');
+          router.push('/unauthorized');
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setHasAccess(false);
+        setCheckingAccess(false);
       }
     };
     

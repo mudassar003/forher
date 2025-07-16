@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { verifySession, refreshSession } from '@/lib/auth';
+import { subscriptionPurchaseSchema, validateRequest, createSafeErrorMessage } from '@/utils/validation';
 
 interface SubscriptionPurchaseResult {
   success: boolean;
@@ -58,14 +59,16 @@ export function useSubscriptionPurchase() {
       // First, verify that the session is valid (cookie check)
       let hasValidSession = await verifySession();
       
-      // If session is invalid but we think we're authenticated, try to refresh
+      // If session is invalid but we think we're authenticated, try to refresh (with limit)
       if (!hasValidSession && isAuthenticated) {
         try {
           const refreshed = await refreshSession();
           if (refreshed) {
             hasValidSession = true;
           } else {
+            // Single attempt to check session, then fail
             await checkSession();
+            hasValidSession = false;
           }
         } catch (refreshError) {
           // Session refresh failed, user needs to login again
@@ -106,6 +109,12 @@ export function useSubscriptionPurchase() {
         // Add coupon code if provided
         if (couponCode && typeof couponCode === 'string' && couponCode.trim() !== '') {
           requestData.couponCode = couponCode.trim();
+        }
+        
+        // Validate request data
+        const validation = validateRequest(subscriptionPurchaseSchema, requestData);
+        if (!validation.success) {
+          throw new Error(validation.error);
         }
         
         // Make API request to create subscription purchase with retry logic
@@ -206,9 +215,7 @@ export function useSubscriptionPurchase() {
           metadata: result.metadata
         };
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error 
-          ? error.message 
-          : 'An unexpected error occurred during subscription purchase';
+        const errorMessage = createSafeErrorMessage(error);
         
         setError(errorMessage);
         return { success: false, error: errorMessage };

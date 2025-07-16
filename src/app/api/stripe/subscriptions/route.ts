@@ -6,6 +6,8 @@ import { groq } from "next-sanity";
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from 'uuid';
 import { getAuthenticatedUser } from "@/utils/apiAuth";
+import { purchaseRateLimit, createRateLimitResponse } from "@/utils/rateLimit";
+import { subscriptionPurchaseSchema, validateRequest, createSafeErrorMessage } from "@/utils/validation";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -145,14 +147,17 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
       couponCode: data.couponCode || 'none'
     });
 
-    // Validate request data with improved error messages
-    if (!data.subscriptionId || typeof data.subscriptionId !== 'string') {
-      console.log('❌ Invalid subscription ID');
+    // Validate request data
+    const validation = validateRequest(subscriptionPurchaseSchema, data);
+    if (!validation.success) {
+      console.log('❌ Validation failed:', validation.error);
       return NextResponse.json(
-        { success: false, error: 'Valid subscription ID is required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+    
+    const validatedData = validation.data;
 
     // Parallel auth and subscription fetch for better performance
     const [user, subscription] = await Promise.all([
@@ -187,7 +192,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
           allowCoupons,
           "excludedCoupons": excludedCoupons[]->{ _id }
         }`,
-        { id: data.subscriptionId }
+        { id: validatedData.subscriptionId }
       )
     ]);
 
@@ -214,7 +219,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     console.log('✅ User authenticated and subscription found:', subscription.title);
 
     const userId = user.id;
-    const userEmail = user.email || data.userEmail;
+    const userEmail = user.email || validatedData.userEmail;
     
     if (!userEmail) {
       console.log('❌ Missing user email');
@@ -223,14 +228,21 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
         { status: 400 }
       );
     }
+    
+    // Check rate limit
+    const rateLimitResult = await purchaseRateLimit(req, userId);
+    if (!rateLimitResult.success) {
+      console.log('❌ Rate limit exceeded for user:', userId);
+      return createRateLimitResponse(rateLimitResult);
+    }
 
     // 🔧 FIXED: Correct variant selection logic
     let selectedVariant: SanitySubscriptionVariant | null = null;
     
     if (subscription.hasVariants && subscription.variants && subscription.variants.length > 0) {
-      if (data.variantKey) {
+      if (validatedData.variantKey) {
         // User explicitly selected a variant
-        selectedVariant = subscription.variants.find(v => v._key === data.variantKey) || null;
+        selectedVariant = subscription.variants.find(v => v._key === validatedData.variantKey) || null;
         if (!selectedVariant) {
           console.log('❌ Selected variant not found');
           return NextResponse.json(
@@ -270,10 +282,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     let appliedCoupon: SanityCoupon | null = null;
 
     // Handle coupon validation if provided
-    if (data.couponCode && subscription.allowCoupons) {
-      console.log('🎫 Validating coupon:', data.couponCode);
+    if (validatedData.couponCode && subscription.allowCoupons) {
+      console.log('🎫 Validating coupon:', validatedData.couponCode);
       const couponResult = await validateAndApplyCoupon(
-        data.couponCode, 
+        validatedData.couponCode, 
         subscription, 
         selectedVariant?._key, 
         effectivePrice
@@ -574,7 +586,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<SubscriptionP
     });
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = createSafeErrorMessage(error);
     console.error("💥 Error creating subscription:", error);
     
     // Log the full error for debugging

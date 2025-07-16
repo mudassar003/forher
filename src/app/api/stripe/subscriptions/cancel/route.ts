@@ -1,8 +1,11 @@
 // src/app/api/stripe/subscriptions/cancel/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { client as sanityClient } from "@/sanity/lib/client";
 import Stripe from "stripe";
+import { subscriptionRateLimit, createRateLimitResponse } from "@/utils/rateLimit";
+import { subscriptionCancelSchema, validateRequest, createSafeErrorMessage } from "@/utils/validation";
+import { getAuthenticatedUser } from "@/utils/apiAuth";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -19,26 +22,45 @@ interface CancelSubscriptionRequest {
   immediate?: boolean; // Whether to cancel immediately or at period end
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     // Extract and validate request body
     const data: CancelSubscriptionRequest = await req.json();
     
-    if (!data.subscriptionId) {
+    // Validate request data
+    const validation = validateRequest(subscriptionCancelSchema, data);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: "Subscription ID is required" },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+    
+    const validatedData = validation.data;
+    
+    // Check authentication
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+    
+    // Check rate limit
+    const rateLimitResult = await subscriptionRateLimit(req, user.id);
+    if (!rateLimitResult.success) {
+      return createRateLimitResponse(rateLimitResult);
+    }
 
     // Set immediate cancellation as default
-    const isImmediateCancel = data.immediate !== false;
+    const isImmediateCancel = validatedData.immediate !== false;
     
-    console.log(`${isImmediateCancel ? 'Immediately cancelling' : 'Scheduling cancellation for'} subscription: ${data.subscriptionId}`);
+    console.log(`${isImmediateCancel ? 'Immediately cancelling' : 'Scheduling cancellation for'} subscription: ${validatedData.subscriptionId}`);
     
     // First, try to find the subscription in our database using the subscriptionId
     // Check if it's a Supabase ID (UUID format) or Stripe ID
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.subscriptionId);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(validatedData.subscriptionId);
     
     let userSubscriptionData;
     let stripeSubscriptionId;
@@ -47,8 +69,8 @@ export async function POST(req: Request) {
       // It's a Supabase UUID, fetch by ID
       const { data: subData, error: fetchError } = await supabase
         .from('user_subscriptions')
-        .select('id, stripe_subscription_id, sanity_id, status')
-        .eq('id', data.subscriptionId)
+        .select('id, stripe_subscription_id, sanity_id, status, user_id')
+        .eq('id', validatedData.subscriptionId)
         .single();
       
       if (fetchError || !subData) {
@@ -64,8 +86,8 @@ export async function POST(req: Request) {
       // It's a Stripe ID, fetch by Stripe subscription ID
       const { data: subData, error: fetchError } = await supabase
         .from('user_subscriptions')
-        .select('id, stripe_subscription_id, sanity_id, status')
-        .eq('stripe_subscription_id', data.subscriptionId)
+        .select('id, stripe_subscription_id, sanity_id, status, user_id')
+        .eq('stripe_subscription_id', validatedData.subscriptionId)
         .single();
       
       if (fetchError || !subData) {
@@ -76,7 +98,15 @@ export async function POST(req: Request) {
       }
       
       userSubscriptionData = subData;
-      stripeSubscriptionId = data.subscriptionId;
+      stripeSubscriptionId = validatedData.subscriptionId;
+    }
+    
+    // Verify user owns this subscription
+    if (userSubscriptionData.user_id !== user.id) {
+      return NextResponse.json(
+        { success: false, error: "Access denied: You can only cancel your own subscriptions" },
+        { status: 403 }
+      );
     }
 
     // Check if already cancelled
@@ -186,7 +216,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : "Failed to cancel subscription"
+        error: createSafeErrorMessage(error)
       }, 
       { status: 500 }
     );

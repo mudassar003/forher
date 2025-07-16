@@ -109,6 +109,7 @@ export const useSubscriptionStore = create<UserSubscriptionState>()(
       syncingSubscriptions: false,
       isFetched: false,
       lastSyncTime: null,
+      syncInProgress: false,
       
       fetchUserSubscriptions: async (userId: string, forceRefresh: boolean = false) => {
         // Prevent duplicate calls unless forcing refresh

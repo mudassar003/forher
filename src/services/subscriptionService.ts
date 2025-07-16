@@ -1,5 +1,6 @@
 // src/services/subscriptionService.ts
 import { supabase } from '@/lib/supabase';
+import { sanitizeSubscriptionId, sanitizeUserId, createSafeErrorMessage } from '@/utils/validation';
 
 // Broadcast Channel for cross-tab communication
 const BROADCAST_CHANNEL_NAME = 'subscription_status';
@@ -46,6 +47,9 @@ function broadcastSubscriptionChange(action: 'cancelled' | 'reactivated' | 'stat
  */
 export async function cancelSubscription(subscriptionId: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
+    // Input validation
+    subscriptionId = sanitizeSubscriptionId(subscriptionId);
+    
     console.log('Starting immediate cancellation for subscription:', subscriptionId);
     
     // First, fetch the user subscription to get the Stripe subscription ID
@@ -57,7 +61,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
 
     if (fetchError || !userSubscription) {
       console.error('Subscription fetch error:', fetchError);
-      throw new Error(fetchError?.message || 'Subscription not found');
+      throw new Error('Subscription not found');
     }
 
     console.log('Found subscription:', userSubscription);
@@ -131,7 +135,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
     console.error('Error in cancelSubscription service:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: createSafeErrorMessage(error)
     };
   }
 }
@@ -143,6 +147,9 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
  */
 export async function getUserSubscriptions(userId: string): Promise<{ success: boolean; subscriptions?: any[]; error?: string }> {
   try {
+    // Input validation
+    userId = sanitizeUserId(userId);
+    
     // Fetch from Supabase - removed appointment-related columns
     const { data, error } = await supabase
       .from('user_subscriptions')
@@ -169,7 +176,7 @@ export async function getUserSubscriptions(userId: string): Promise<{ success: b
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch subscriptions: ${error.message}`);
+      throw new Error('Failed to fetch subscriptions');
     }
 
     return {
@@ -180,7 +187,7 @@ export async function getUserSubscriptions(userId: string): Promise<{ success: b
     console.error('Error fetching user subscriptions:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: createSafeErrorMessage(error)
     };
   }
 }
@@ -199,6 +206,11 @@ export async function forceUpdateSubscriptionStatus(
   isActive: boolean
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
+    // Input validation
+    subscriptionId = sanitizeSubscriptionId(subscriptionId);
+    
+    // Note: Admin verification should be done by the API route calling this function
+    
     // Update subscription status in Supabase
     const { error: updateError } = await supabase
       .from('user_subscriptions')
@@ -210,7 +222,7 @@ export async function forceUpdateSubscriptionStatus(
       .eq('id', subscriptionId);
 
     if (updateError) {
-      throw new Error(`Failed to update subscription status: ${updateError.message}`);
+      throw new Error('Failed to update subscription status');
     }
 
     // 🚀 Broadcast status change to other tabs
@@ -224,7 +236,7 @@ export async function forceUpdateSubscriptionStatus(
     console.error('Error updating subscription status:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: createSafeErrorMessage(error)
     };
   }
 }

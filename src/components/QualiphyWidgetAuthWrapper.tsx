@@ -56,17 +56,12 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
       // First sync with Stripe (this already calls fetchUserSubscriptions internally)
       const syncResult = await syncSubscriptionStatuses(user.id);
       
-      if (!syncResult.success) {
-        throw new Error(syncResult.error || 'Sync failed');
+      if (!syncResult) {
+        throw new Error('Sync failed');
       }
       
-      // Only fetch if sync didn't already update the data
-      if (syncResult.syncedCount === 0) {
-        const fetchResult = await fetchUserSubscriptions(user.id, true);
-        if (!fetchResult.success) {
-          throw new Error(fetchResult.error || 'Fetch failed');
-        }
-      }
+      // Sync was successful, data is now up to date
+      // No need to fetch again as syncSubscriptionStatuses already calls fetchUserSubscriptions
       
       setStatusChecked(true);
       setSuccessMessage("Subscription status verified");

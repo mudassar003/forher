@@ -66,12 +66,12 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
       setStatusChecked(true);
       setSuccessMessage("Subscription status verified");
       
-      const timeoutId = setTimeout(() => {
+      // Clear success message after 3 seconds
+      setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
       
-      // Cleanup timeout on unmount
-      return () => clearTimeout(timeoutId);
+      return true;
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -79,7 +79,7 @@ export const QualiphyWidgetAuthWrapper: React.FC<QualiphyWidgetAuthWrapperProps>
       setError(`Failed to verify subscription: ${errorMessage}`);
       return false;
     }
-  }, [user?.id, syncSubscriptionStatuses, fetchUserSubscriptions]); // Remove user object, only use user.id
+  }, [user?.id, syncSubscriptionStatuses]); // Remove user object, only use user.id
 
   // NEW: Core business logic - Check appointment access
   const checkAppointmentAccess = useCallback(async () => {

@@ -142,9 +142,9 @@ async function checkRateLimit(
  * Default key generator - uses IP address and user agent
  */
 function defaultKeyGenerator(req: NextRequest): string {
-  const ip = req.ip || 
-    req.headers.get('x-forwarded-for') || 
+  const ip = req.headers.get('x-forwarded-for') || 
     req.headers.get('x-real-ip') || 
+    req.headers.get('cf-connecting-ip') || 
     'unknown';
   const userAgent = req.headers.get('user-agent') || 'unknown';
   return `${ip}:${userAgent.slice(0, 50)}`;

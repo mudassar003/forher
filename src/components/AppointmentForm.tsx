@@ -50,12 +50,13 @@ const US_STATES = [
   'Wisconsin', 'West Virginia'
 ];
 
-// Only 4 exams total (2 existing + 2 new)
+// Only 5 exams total (2 existing + 3 new)
 const EXAM_OPTIONS = [
   { id: 918, title: 'GLP-1 (No Labwork Required) Weight Loss Initial Consult' },
   { id: 1324, title: 'GLP-1 (Labwork Required) Weight Loss Initial Consult' },
   { id: 1148, title: 'Compounded Semaglutide with Medication Shipping (No Labwork Required)' },
-  { id: 1693, title: 'Compounded Semaglutide with Medication Shipping (With Lab-work Upload)' }
+  { id: 1693, title: 'Compounded Semaglutide with Medication Shipping (With Lab-work Upload)' },
+  { id: 2413, title: 'Custom Pharmacy: Compounded Semaglutide (No Labwork Required) - Rx Only' }
 ];
 
 const AppointmentForm: React.FC = () => {

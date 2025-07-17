@@ -64,7 +64,7 @@ const getPharmacyConfig = (stateAbbr: string) => {
   }
 
   return {
-    pharmacy_id: "12",
+    pharmacy_id: 12,
     ncpdpid: "4844824",
     pharmacy_name: "Akina Pharmacy",
     pharmacy_address_line_1: "23475 Rock Haven Way",
@@ -72,12 +72,12 @@ const getPharmacyConfig = (stateAbbr: string) => {
     pharmacy_zip_code: "20166",
     pharmacy_city: "Sterling",
     pharmacy_state: "VA",
-    pharmacy_phone: "(703) 555-0199",
+    pharmacy_phone: "+17035550199",
     pharmacy_type: "MailOrder",
     provider_pos_selection: 2,
     custom_pharmacy_patient_billing: 1,
     custom_pharmacy_delivery_method: 2,
-    custom_pharmacy: 1,
+    custom_pharmacy: 2,
     custom_pharmacy_patient_choice: 1,
     custom_pharmacy_clinic_billing: "Lilys Womens"
   };

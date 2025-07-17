@@ -42,3 +42,4 @@ next-env.d.ts
 
 # claude context
 CLAUDE.md
+enable_rls_policies.sql

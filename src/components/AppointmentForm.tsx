@@ -93,12 +93,11 @@ const AppointmentForm: React.FC = () => {
     
     for (const subscription of activeSubscriptions) {
       const planName = subscription.plan_name?.toLowerCase() || '';
-      const subscriptionName = subscription.subscription_name?.toLowerCase() || '';
       
-      if (planName.includes('tirzepatide') || subscriptionName.includes('tirzepatide')) {
+      if (planName.includes('tirzepatide')) {
         return EXAM_OPTIONS.tirzepatide;
       }
-      if (planName.includes('semaglutide') || subscriptionName.includes('semaglutide')) {
+      if (planName.includes('semaglutide')) {
         return EXAM_OPTIONS.semaglutide;
       }
     }

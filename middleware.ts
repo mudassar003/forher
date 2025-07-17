@@ -169,6 +169,10 @@ export async function middleware(req: NextRequest) {
   // Create a response that we'll modify and return
   let res = NextResponse.next();
   
+  // Get the pathname and full URL first
+  const path = req.nextUrl.pathname;
+  const url = req.nextUrl;
+  
   // Add enhanced security headers to all responses
   setSecurityHeaders(res);
   
@@ -203,10 +207,6 @@ export async function middleware(req: NextRequest) {
   
   // Create a Supabase client for auth with cookie support
   const supabase = createMiddlewareClient({ req, res });
-
-  // Get the pathname and full URL
-  const path = req.nextUrl.pathname;
-  const url = req.nextUrl;
   
   // Handle language detection and setting
   // We're not redirecting to language-specific URLs to keep the implementation simple

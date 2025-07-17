@@ -24,8 +24,28 @@ export async function getAuthenticatedAdmin() {
     
     return user;
   } catch (error) {
-    console.error('Error getting authenticated admin:', error);
     return null;
+  }
+}
+
+/**
+ * Check if user is admin (server-side only)
+ */
+export async function isAdminUser(req: Request) {
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user || !user.email) {
+      return { isAdmin: false, user: null };
+    }
+    
+    const isAdmin = isAdminEmail(user.email);
+    return { isAdmin, user };
+  } catch (error) {
+    return { isAdmin: false, user: null };
   }
 }
 
@@ -65,7 +85,6 @@ export async function verifyAdminRequest(req: NextRequest) {
     
     return { user, isAdmin: true, errorResponse: null };
   } catch (error) {
-    console.error('Error verifying admin request:', error);
     return {
       user: null,
       isAdmin: false,

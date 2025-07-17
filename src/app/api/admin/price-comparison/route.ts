@@ -74,7 +74,7 @@ async function getStripePrice(priceId: string): Promise<StripePrice | null> {
       active: price.active,
     };
   } catch (error) {
-    console.error(`Error fetching Stripe price ${priceId}:`, error);
+    // Error fetching Stripe price
     return null;
   }
 }
@@ -170,7 +170,6 @@ function createComparisonRow(
 
 export async function GET(): Promise<NextResponse<PriceComparisonResponse>> {
   try {
-    console.log('Starting price comparison...');
 
     // Fetch all active subscriptions from Sanity
     const subscriptions = await sanityClient.fetch<SanitySubscription[]>(
@@ -194,7 +193,6 @@ export async function GET(): Promise<NextResponse<PriceComparisonResponse>> {
       }`
     );
 
-    console.log(`Found ${subscriptions.length} subscriptions`);
 
     const rows: PriceComparisonRow[] = [];
 
@@ -248,7 +246,7 @@ export async function GET(): Promise<NextResponse<PriceComparisonResponse>> {
           }
         }
       } catch (subscriptionError) {
-        console.error(`Error processing subscription ${subscription._id}:`, subscriptionError);
+        // Error processing subscription
         const errorRow = createComparisonRow(
           subscription,
           undefined,
@@ -259,7 +257,6 @@ export async function GET(): Promise<NextResponse<PriceComparisonResponse>> {
       }
     }
 
-    console.log(`Generated ${rows.length} comparison rows`);
 
     return NextResponse.json({
       success: true,
@@ -267,7 +264,6 @@ export async function GET(): Promise<NextResponse<PriceComparisonResponse>> {
     });
 
   } catch (error) {
-    console.error('Error in price comparison:', error);
     return NextResponse.json(
       {
         success: false,

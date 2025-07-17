@@ -36,7 +36,6 @@ export default function PriceSyncPage(): React.ReactElement {
         setError(data.error || 'Failed to fetch price comparison');
       }
     } catch (err) {
-      console.error('Error fetching comparison:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
@@ -82,7 +81,6 @@ export default function PriceSyncPage(): React.ReactElement {
         alert(`Error: ${result.error || result.message}`);
       }
     } catch (err) {
-      console.error('Error syncing price:', err);
       alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setSyncingItems(prev => {

@@ -1,20 +1,30 @@
 // src/app/api/admin/subscriptions/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdminUser } from "@/utils/adminAuthServer";
 
-// Initialize Supabase admin client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(req: Request) {
   try {
-    // Get query parameters
+    // Check admin authorization
+    const authResult = await isAdminUser(req);
+    if (!authResult.isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
     
-    // Build query - UPDATED to include appointment fields
+    const offset = (page - 1) * limit;
+
+    // Build query
     let query = supabaseAdmin
       .from('user_subscriptions')
       .select(`
@@ -34,32 +44,34 @@ export async function GET(req: Request) {
         is_active,
         stripe_subscription_id,
         stripe_customer_id,
-        appointment_accessed_at,
-        appointment_access_expired,
-        appointment_access_duration,
+        cancellation_date,
         created_at,
         updated_at
       `)
       .order('created_at', { ascending: false });
-    
-    // Add filters if provided
-    if (userId) {
-      query = query.eq('user_id', userId);
+
+    // Add search filter
+    if (search) {
+      query = query.or(`user_email.ilike.%${search}%,plan_name.ilike.%${search}%`);
     }
-    
+
+    // Add status filter
     if (status) {
       query = query.eq('status', status);
     }
-    
-    // Execute query
-    const { data, error } = await query;
-    
+
+    // Get total count for pagination
+    const { count } = await supabaseAdmin
+      .from('user_subscriptions')
+      .select('*', { count: 'exact', head: true });
+
+    // Apply pagination
+    const { data, error } = await query.range(offset, offset + limit - 1);
+
     if (error) {
-      console.error("Supabase query error:", error);
       throw new Error(`Failed to fetch subscriptions: ${error.message}`);
     }
-    
-    // Process the data to format for frontend - UPDATED with appointment fields
+
     const subscriptions = (data || []).map(sub => ({
       id: sub.id,
       user_id: sub.user_id,
@@ -76,20 +88,23 @@ export async function GET(req: Request) {
       next_billing_date: sub.next_billing_date || sub.end_date,
       billing_amount: sub.billing_amount,
       billing_period: sub.billing_period,
-      // Add appointment fields with defaults
-      appointment_accessed_at: sub.appointment_accessed_at || null,
-      appointment_access_expired: sub.appointment_access_expired || false,
-      appointment_access_duration: sub.appointment_access_duration || 600, // 10 minutes default
+      cancellation_date: sub.cancellation_date,
       created_at: sub.created_at,
       updated_at: sub.updated_at
     }));
-    
+
     return NextResponse.json({
       success: true,
-      subscriptions
+      subscriptions,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
     });
+
   } catch (error) {
-    console.error("Error fetching subscriptions:", error);
     return NextResponse.json(
       { 
         success: false, 

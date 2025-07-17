@@ -83,7 +83,7 @@ function getStripeIntervalConfig(
           interval = 'year';
           intervalCount = intervalCount / 12;
         } else {
-          console.warn(`Billing period of ${intervalCount} months exceeds Stripe's limit. Capping at 12 months.`);
+          // Billing period capped at 12 months for Stripe compatibility
           intervalCount = 12;
         }
       }
@@ -122,7 +122,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
       );
     }
 
-    console.log(`Syncing price for subscription ${subscriptionId}, variant ${variantKey || 'base'}, action: ${action}`);
 
     // Fetch subscription from Sanity
     const subscription = await sanityClient.fetch<SanitySubscription>(
@@ -191,7 +190,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
     // Get or create Stripe product
     let stripeProductId = subscription.stripeProductId;
     if (!stripeProductId) {
-      console.log('Creating new Stripe product...');
       const product = await stripe.products.create({
         name: subscription.title,
         description: `${subscription.title} subscription`,
@@ -203,16 +201,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
 
       // Update Sanity with product ID
       await sanityClient.patch(subscription._id).set({ stripeProductId }).commit();
-      console.log(`Created new product: ${stripeProductId}`);
     }
 
     // Archive old price if it exists and action is sync
     if (action === 'sync' && currentPriceId) {
       try {
         await stripe.prices.update(currentPriceId, { active: false });
-        console.log(`Archived old price: ${currentPriceId}`);
+        // Old price archived successfully
       } catch (archiveError) {
-        console.warn(`Failed to archive old price ${currentPriceId}:`, archiveError);
+        // Failed to archive old price
         // Continue anyway - old price might already be archived or deleted
       }
     }
@@ -220,12 +217,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
     // Create new Stripe price
     const { interval, intervalCount } = getStripeIntervalConfig(targetBillingPeriod, targetCustomMonths);
 
-    console.log('Creating new Stripe price with:', {
-      price: targetPrice,
-      interval,
-      intervalCount,
-      product: stripeProductId,
-    });
 
     const newPrice = await stripe.prices.create({
       product: stripeProductId,
@@ -243,7 +234,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
       },
     });
 
-    console.log(`Created new price: ${newPrice.id}`);
 
     // Update Sanity with new price ID
     if (variantKey) {
@@ -253,11 +243,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
         .setIfMissing({ variants: [] })
         .set({ [`variants[_key=="${variantKey}"].stripePriceId`]: newPrice.id })
         .commit();
-      console.log(`Updated variant ${variantKey} with new price ID`);
     } else {
       // Update base subscription
       await sanityClient.patch(subscription._id).set({ stripePriceId: newPrice.id }).commit();
-      console.log('Updated base subscription with new price ID');
     }
 
     const actionText = action === 'sync' ? 'synced' : 'created';
@@ -270,7 +258,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<SyncPriceResp
     });
 
   } catch (error) {
-    console.error('Error syncing price:', error);
     
     // Handle specific Stripe errors r
     if (error instanceof Stripe.errors.StripeError) {

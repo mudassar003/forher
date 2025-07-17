@@ -42,7 +42,6 @@ export default function AdminLayout({
           router.push('/unauthorized');
         }
       } catch (error) {
-        console.error('Error checking admin status:', error);
         setHasAccess(false);
         setCheckingAccess(false);
       }

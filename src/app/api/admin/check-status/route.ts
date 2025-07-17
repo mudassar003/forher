@@ -12,7 +12,6 @@ export async function GET() {
       email: admin?.email || null
     });
   } catch (error) {
-    console.error('Error checking admin status:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to check admin status' },
       { status: 500 }

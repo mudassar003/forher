@@ -134,8 +134,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Check submission limit
     if (existingUserData && (existingUserData.submission_count || 0) >= 1) {
-      console.log('User has already submitted. Submission count:', existingUserData.submission_count);
-      
       return NextResponse.json(
         { 
           success: false, 
@@ -170,10 +168,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ...pharmacyConfig
     };
 
-    console.log('Calling Qualiphy API with payload (API key hidden):', {
-      ...qualiphyPayload,
-      api_key: '[HIDDEN]'
-    });
 
     // Call Qualiphy API
     const qualiphyResponse = await fetch('https://api.qualiphy.me/api/exam_invite', {
@@ -186,7 +180,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       body: JSON.stringify(qualiphyPayload)
     });
 
-    console.log('Qualiphy API response status:', qualiphyResponse.status);
 
     // FIXED: Better error handling for non-JSON responses
     let qualiphyData: QualiphyApiResponse;
@@ -197,7 +190,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Check if response looks like JSON
       if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
         qualiphyData = JSON.parse(responseText);
-        console.log('Qualiphy API response data:', qualiphyData);
       } else {
         console.error('Non-JSON response from Qualiphy:', responseText);
         return NextResponse.json(
@@ -217,13 +209,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const isSuccess = qualiphyData.http_code === 200 && qualiphyData.meeting_url;
     
     if (isSuccess) {
-      console.log('Qualiphy appointment created successfully');
-      
       // Save or update user data
       const now = new Date().toISOString();
       
       if (existingUserData) {
-        console.log('Updating existing user data with submission count...');
         const { data: updatedData, error: updateError } = await supabaseAdmin
           .from('user_data')
           .update({
@@ -243,11 +232,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         if (updateError) {
           console.error('Failed to update user data:', updateError);
-        } else {
-          console.log('Updated user data successfully. New submission count:', updatedData?.submission_count);
         }
       } else {
-        console.log('Inserting new user data...');
         const { data: insertData, error: insertError } = await supabaseAdmin
           .from('user_data')
           .insert({
@@ -268,8 +254,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         if (insertError) {
           console.error('Failed to insert user data:', insertError);
-        } else {
-          console.log('Inserted user data successfully with ID:', insertData?.id);
         }
       }
 

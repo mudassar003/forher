@@ -186,8 +186,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/' }) => {
         router.push(storedReturnUrl);
       }, 1500);
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Signup error:", err);
+      setError("Registration service temporarily unavailable. Please try again.");
       setLoading(false);
     }
   };
@@ -212,8 +211,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ returnUrl = '/' }) => {
       }
       // For OAuth, the redirect happens automatically
     } catch (err) {
-      setError("An unexpected error occurred with Google login. Please try again.");
-      console.error("Google signup error:", err);
+      setError("Google registration service temporarily unavailable. Please try again.");
       setLoading(false);
     }
   };

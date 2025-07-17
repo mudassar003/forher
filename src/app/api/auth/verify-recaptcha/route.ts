@@ -17,10 +17,9 @@ export async function POST(request: NextRequest) {
     // Get secret key from environment
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
     if (!secretKey) {
-      console.error('RECAPTCHA_SECRET_KEY not configured');
       return NextResponse.json(
-        { success: false, error: 'reCAPTCHA not configured' },
-        { status: 500 }
+        { success: false, error: 'Security verification temporarily unavailable' },
+        { status: 503 }
       );
     }
 
@@ -40,9 +39,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Security verification failed' },
       { status: 500 }
     );
   }

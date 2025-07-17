@@ -1,6 +1,7 @@
 // src/lib/auth.ts
 import { supabase } from "./supabase";
 import { Session, User } from "@supabase/supabase-js";
+import { validateEmail, validatePassword, sanitizeString } from "@/utils/inputValidation";
 
 // Define response type for better type safety
 export interface AuthResponse<T = unknown> {
@@ -33,14 +34,12 @@ export const signInWithGoogle = async (returnUrl?: string): Promise<AuthResponse
     });
 
     if (error) {
-      console.error("Google Sign-In Error:", error.message);
-      return { data: null, error: "Failed to sign in with Google" };
+      return { data: null, error: "Failed to sign in with Google. Please try again." };
     }
 
     return { data, error: null, session: null };
   } catch (err) {
-    console.error("Unexpected error during Google Sign-in:", err);
-    return { data: null, error: "An unexpected error occurred" };
+    return { data: null, error: "Authentication service temporarily unavailable. Please try again." };
   }
 };
 
@@ -56,14 +55,19 @@ export const signUpWithEmail = async (
   recaptchaToken?: string
 ): Promise<AuthResponse> => {
   try {
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeString(email);
+    
     // Validate email format
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return { data: null, error: "Invalid email address" };
+    const emailValidation = validateEmail(sanitizedEmail);
+    if (!emailValidation.valid) {
+      return { data: null, error: emailValidation.error || "Invalid email address" };
     }
 
-    // Validate password (basic check - more comprehensive check in store)
-    if (!password || password.length < 8) {
-      return { data: null, error: "Password must be at least 8 characters" };
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return { data: null, error: passwordValidation.error || "Invalid password" };
     }
 
     // If reCAPTCHA is enabled, verify the token on the server
@@ -90,14 +94,13 @@ export const signUpWithEmail = async (
           return { data: null, error: "Security verification failed. Please try again." };
         }
       } catch (recaptchaError) {
-        console.error("reCAPTCHA verification error:", recaptchaError);
         return { data: null, error: "Security verification failed. Please try again." };
       }
     }
 
     // Sign up the user with cookie-based sessions
     const { data, error } = await supabase.auth.signUp({ 
-      email, 
+      email: sanitizedEmail, 
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
@@ -109,18 +112,19 @@ export const signUpWithEmail = async (
     });
 
     if (error) {
-      console.error("Sign-Up Error:", error.message);
       // Use generic error messages to avoid leaking information
-      if (error.message.includes("email")) {
-        return { data: null, error: "Email address is invalid or already in use" };
+      if (error.message.includes("email") || error.message.includes("already")) {
+        return { data: null, error: "An account with this email already exists. Please try logging in instead." };
       }
-      return { data: null, error: "Failed to create account" };
+      if (error.message.includes("password")) {
+        return { data: null, error: "Password does not meet security requirements. Please try a stronger password." };
+      }
+      return { data: null, error: "Unable to create account. Please try again or contact support." };
     }
 
     return { data, error: null, session: data.session };
   } catch (err) {
-    console.error("Unexpected error during Sign up:", err);
-    return { data: null, error: "An unexpected error occurred" };
+    return { data: null, error: "Registration service temporarily unavailable. Please try again." };
   }
 };
 
@@ -136,8 +140,17 @@ export const signInWithEmail = async (
   recaptchaToken?: string
 ): Promise<AuthResponse> => {
   try {
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeString(email);
+    
+    // Validate email format
+    const emailValidation = validateEmail(sanitizedEmail);
+    if (!emailValidation.valid) {
+      return { data: null, error: emailValidation.error || "Invalid email address" };
+    }
+
     // Implement attempt tracking for rate limiting (could use session storage)
-    const attemptKey = `login_attempts_${email.toLowerCase()}`;
+    const attemptKey = `login_attempts_${sanitizedEmail.toLowerCase()}`;
     const attemptData = sessionStorage.getItem(attemptKey);
     const attempts = attemptData ? JSON.parse(attemptData) : { count: 0, timestamp: Date.now() };
     
@@ -155,11 +168,6 @@ export const signInWithEmail = async (
         data: null, 
         error: `Too many failed attempts. Please try again in ${timeLeft} minutes.` 
       };
-    }
-    
-    // Validate email format
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return { data: null, error: "Invalid email address" };
     }
 
     // If reCAPTCHA is enabled, verify the token on the server
@@ -186,14 +194,13 @@ export const signInWithEmail = async (
           return { data: null, error: "Security verification failed. Please try again." };
         }
       } catch (recaptchaError) {
-        console.error("reCAPTCHA verification error:", recaptchaError);
         return { data: null, error: "Security verification failed. Please try again." };
       }
     }
 
     // Sign in the user - using the auth-helpers client ensures cookies are used
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: sanitizedEmail,
       password,
     });
 
@@ -204,11 +211,9 @@ export const signInWithEmail = async (
       attempts.timestamp = Date.now();
       sessionStorage.setItem(attemptKey, JSON.stringify(attempts));
       
-      console.error("Sign-In Error:", error.message);
-      
       // Use consistent error message regardless of whether email or password is wrong
       // to prevent user enumeration
-      return { data: null, error: "Invalid email or password" };
+      return { data: null, error: "Invalid email or password. Please check your credentials and try again." };
     } else {
       // Clear login attempts on success
       sessionStorage.removeItem(attemptKey);
@@ -216,8 +221,7 @@ export const signInWithEmail = async (
 
     return { data, error: null, session: data.session };
   } catch (err) {
-    console.error("Unexpected error during Sign in:", err);
-    return { data: null, error: "An unexpected error occurred" };
+    return { data: null, error: "Login service temporarily unavailable. Please try again." };
   }
 };
 
@@ -230,8 +234,7 @@ export const signOut = async (): Promise<AuthResponse> => {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error("Sign-Out Error:", error.message);
-      return { data: null, error: "Failed to sign out" };
+      return { data: null, error: "Sign out failed. Please try again." };
     }
     
     // Clear any auth-related data from sessionStorage
@@ -239,8 +242,7 @@ export const signOut = async (): Promise<AuthResponse> => {
     
     return { data: null, error: null };
   } catch (err) {
-    console.error("Unexpected error during Sign out:", err);
-    return { data: null, error: "An unexpected error occurred" };
+    return { data: null, error: "Sign out service temporarily unavailable. Please try again." };
   }
 };
 
@@ -250,17 +252,18 @@ export const signOut = async (): Promise<AuthResponse> => {
  */
 export const sendPasswordResetEmail = async (email: string): Promise<AuthResponse> => {
   try {
-    // Validate email format
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return { data: null, error: "Invalid email address" };
+    // Sanitize and validate email
+    const sanitizedEmail = sanitizeString(email);
+    const emailValidation = validateEmail(sanitizedEmail);
+    if (!emailValidation.valid) {
+      return { data: null, error: emailValidation.error || "Invalid email address" };
     }
     
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(sanitizedEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {
-      console.error("Password Reset Error:", error.message);
       // Don't reveal if the email exists or not for security
       return { data: null, error: "If your email exists in our system, you will receive a password reset link" };
     }
@@ -272,8 +275,7 @@ export const sendPasswordResetEmail = async (email: string): Promise<AuthRespons
       session: null
     };
   } catch (err) {
-    console.error("Unexpected error during password reset:", err);
-    return { data: null, error: "An unexpected error occurred" };
+    return { data: null, error: "Password reset service temporarily unavailable. Please try again." };
   }
 };
 
@@ -283,22 +285,21 @@ export const sendPasswordResetEmail = async (email: string): Promise<AuthRespons
  */
 export const updatePassword = async (newPassword: string): Promise<AuthResponse> => {
   try {
-    // Basic password validation
-    if (!newPassword || newPassword.length < 8) {
-      return { data: null, error: "Password must be at least 8 characters" };
+    // Validate password
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      return { data: null, error: passwordValidation.error || "Invalid password" };
     }
 
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
-      console.error("Update Password Error:", error.message);
-      return { data: null, error: "Failed to update password" };
+      return { data: null, error: "Failed to update password. Please ensure your new password meets security requirements." };
     }
 
     return { data: null, error: null };
   } catch (err) {
-    console.error("Unexpected error during password update:", err);
-    return { data: null, error: "An unexpected error occurred" };
+    return { data: null, error: "Password update service temporarily unavailable. Please try again." };
   }
 };
 
@@ -316,8 +317,7 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error: Erro
     
     return { user, error: null };
   } catch (error) {
-    console.error("Error getting current user:", error);
-    return { user: null, error: error as Error };
+    return { user: null, error: new Error("Unable to verify user session") };
   }
 };
 
@@ -331,14 +331,12 @@ export const verifySession = async (): Promise<boolean> => {
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error) {
-      console.error("Session verification error:", error);
       return false;
     }
     
     // If we have a user, then the session is valid
     return !!user;
   } catch (error) {
-    console.error("Unexpected error verifying session:", error);
     return false;
   }
 };
@@ -352,13 +350,11 @@ export const refreshSession = async (): Promise<boolean> => {
     const { data, error } = await supabase.auth.refreshSession();
     
     if (error) {
-      console.error("Session refresh error:", error);
       return false;
     }
     
     return !!data.session;
   } catch (error) {
-    console.error("Unexpected error refreshing session:", error);
     return false;
   }
 };

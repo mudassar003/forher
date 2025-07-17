@@ -162,8 +162,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/' }) => {
         }
       }, 1000);
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Login error:", err);
+      setError("Login service temporarily unavailable. Please try again.");
       setLoading(false);
     }
   };
@@ -190,8 +189,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ returnUrl = '/' }) => {
       // For OAuth, the redirect will happen automatically after auth completion
       // The returnUrl is already saved in sessionStorage
     } catch (err) {
-      setError("An unexpected error occurred with Google login. Please try again.");
-      console.error("Google login error:", err);
+      setError("Google login service temporarily unavailable. Please try again.");
       setLoading(false);
     }
   };

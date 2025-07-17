@@ -2,6 +2,83 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes in milliseconds
+const MAX_REQUESTS_PER_WINDOW = 100; // Max requests per window
+const AUTH_MAX_REQUESTS = 20; // Stricter limit for auth endpoints
+
+// Simple in-memory store for rate limiting (use Redis in production)
+const rateLimit = new Map<string, { count: number; resetTime: number }>();
+
+// Clean up expired entries
+const cleanupExpiredEntries = () => {
+  const now = Date.now();
+  for (const [key, value] of rateLimit.entries()) {
+    if (now > value.resetTime) {
+      rateLimit.delete(key);
+    }
+  }
+};
+
+// Check rate limit
+const checkRateLimit = (ip: string, isAuthRequest: boolean = false): { allowed: boolean; remaining: number; resetTime: number } => {
+  cleanupExpiredEntries();
+  
+  const maxRequests = isAuthRequest ? AUTH_MAX_REQUESTS : MAX_REQUESTS_PER_WINDOW;
+  const now = Date.now();
+  const record = rateLimit.get(ip);
+  
+  if (!record) {
+    rateLimit.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return { allowed: true, remaining: maxRequests - 1, resetTime: now + RATE_LIMIT_WINDOW };
+  }
+  
+  if (now > record.resetTime) {
+    rateLimit.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return { allowed: true, remaining: maxRequests - 1, resetTime: now + RATE_LIMIT_WINDOW };
+  }
+  
+  record.count++;
+  const remaining = Math.max(0, maxRequests - record.count);
+  
+  return {
+    allowed: record.count <= maxRequests,
+    remaining,
+    resetTime: record.resetTime
+  };
+};
+
+// Input sanitization
+const sanitizeInput = (input: string): string => {
+  return input.replace(/[<>"'&]/g, '');
+};
+
+// Enhanced security headers
+const setSecurityHeaders = (res: NextResponse) => {
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('X-XSS-Protection', '1; mode=block');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // Enhanced CSP header
+  const cspHeader = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://js.stripe.com https://widget.qualiphy.com https://cdn.sanity.io https://www.recaptcha.net",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' https://fonts.gstatic.com",
+    "connect-src 'self' https://api.stripe.com https://cdnjs.cloudflare.com https://api.qualiphy.com https://cdn.sanity.io wss://*.supabase.co https://*.supabase.co https://www.google.com https://www.recaptcha.net",
+    "frame-src 'self' https://js.stripe.com https://widget.qualiphy.com https://www.google.com https://www.recaptcha.net",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "upgrade-insecure-requests"
+  ].join('; ');
+  
+  res.headers.set('Content-Security-Policy', cspHeader);
+};
+
 // Define supported languages
 const supportedLanguages = ['en', 'es'];
 const defaultLanguage = 'en';
@@ -92,12 +169,37 @@ export async function middleware(req: NextRequest) {
   // Create a response that we'll modify and return
   let res = NextResponse.next();
   
-  // Add security headers to all responses
-  res.headers.set('X-Content-Type-Options', 'nosniff');
-  res.headers.set('X-Frame-Options', 'DENY');
-  res.headers.set('X-XSS-Protection', '1; mode=block');
-  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Add enhanced security headers to all responses
+  setSecurityHeaders(res);
+  
+  // Get IP address for rate limiting
+  const ip = req.ip || req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+  
+  // Apply rate limiting
+  const isAuthRequest = path.startsWith('/api/auth/') || matchesPatterns(path, AUTH_ROUTES);
+  const { allowed, remaining, resetTime } = checkRateLimit(ip, isAuthRequest);
+  
+  // Set rate limit headers
+  const maxRequests = isAuthRequest ? AUTH_MAX_REQUESTS : MAX_REQUESTS_PER_WINDOW;
+  res.headers.set('X-RateLimit-Limit', maxRequests.toString());
+  res.headers.set('X-RateLimit-Remaining', remaining.toString());
+  res.headers.set('X-RateLimit-Reset', Math.ceil(resetTime / 1000).toString());
+  
+  if (!allowed) {
+    return new NextResponse(
+      JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RateLimit-Limit': maxRequests.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': Math.ceil(resetTime / 1000).toString(),
+          'Retry-After': Math.ceil((resetTime - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
   
   // Create a Supabase client for auth with cookie support
   const supabase = createMiddlewareClient({ req, res });
@@ -122,23 +224,7 @@ export async function middleware(req: NextRequest) {
     return res;
   }
   
-  // For protection against brute force login attempts - implement rate limiting
-  // This is a simple version - real implementation should use Redis or similar
-  if (path === '/login' && req.method === 'POST') {
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
-    const rateLimitKey = `ratelimit_login_${ip}`;
-    
-    // This is just pseudocode, real implementation would store in Redis
-    // const attempts = await redis.get(rateLimitKey) || 0;
-    // if (attempts > 5) {
-    //   res.headers.set('Retry-After', '1800'); // 30 minutes
-    //   return NextResponse.json(
-    //     { error: 'Too many login attempts. Please try again later.' },
-    //     { status: 429 }
-    //   );
-    // }
-    // await redis.setex(rateLimitKey, 1800, attempts + 1);
-  }
+  // Enhanced brute force protection is now handled by the rate limiting above
   
   // Get the current session from cookies
   const { data: { session } } = await supabase.auth.getSession();
@@ -230,6 +316,7 @@ export const config = {
     '/api/user-subscriptions/:path*',
     '/api/orders/:path*',
     '/api/stripe/subscriptions/:path*',
+    '/api/auth/:path*',
     
     // All routes (for language handling)
     '/(.*)',

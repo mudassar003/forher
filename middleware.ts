@@ -173,7 +173,7 @@ export async function middleware(req: NextRequest) {
   setSecurityHeaders(res);
   
   // Get IP address for rate limiting
-  const ip = req.ip || req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || req.headers.get('remote-addr') || 'unknown';
   
   // Apply rate limiting
   const isAuthRequest = path.startsWith('/api/auth/') || matchesPatterns(path, AUTH_ROUTES);

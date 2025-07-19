@@ -344,30 +344,43 @@ const AppointmentForm: React.FC = () => {
         )}
 
         {/* Pharmacy Information */}
-        <div className="bg-green-50 border border-green-200 rounded-md p-4">
-          <h3 className="font-semibold text-green-900 mb-3">Pharmacy Information</h3>
-          <div className="space-y-2">
-            <div>
-              <span className="font-medium text-green-800">Pharmacy:</span>
-              <span className="text-green-700 ml-2">Akina Pharmacy</span>
+        {selectedExam && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4">
+            <h3 className="font-semibold text-green-900 mb-3">Pharmacy Information</h3>
+            <div className="space-y-2">
+              <div>
+                <span className="font-medium text-green-800">Pharmacy:</span>
+                <span className="text-green-700 ml-2">
+                  {selectedExam.id === 2413 ? 'BELMAR PHARMACY' : 'Revive Rx'}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium text-green-800">Address:</span>
+                <span className="text-green-700 ml-2">
+                  {selectedExam.id === 2413 
+                    ? '231 VIOLET STRE 140, GOLDEN, CO 80401'
+                    : '3831 Golf Dr. A, Houston, TX 77018'
+                  }
+                </span>
+              </div>
+              <div>
+                <span className="font-medium text-green-800">Phone:</span>
+                <span className="text-green-700 ml-2">
+                  {selectedExam.id === 2413 ? '(800) 525-9473' : '(888) 689-2271'}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium text-green-800">Type:</span>
+                <span className="text-green-700 ml-2">
+                  {selectedExam.id === 2413 ? 'Retail' : 'Retail Compounding Pharmacy'}
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="font-medium text-green-800">Address:</span>
-              <span className="text-green-700 ml-2">23475 Rock Haven Way, Sterling, VA 20166</span>
-            </div>
-            <div>
-              <span className="font-medium text-green-800">Phone:</span>
-              <span className="text-green-700 ml-2">(703) 555-0199</span>
-            </div>
-            <div>
-              <span className="font-medium text-green-800">Type:</span>
-              <span className="text-green-700 ml-2">Mail Order Pharmacy</span>
-            </div>
+            <p className="text-sm text-green-600 mt-3">
+              Your prescription will be processed through our partner pharmacy and shipped directly to you.
+            </p>
           </div>
-          <p className="text-sm text-green-600 mt-3">
-            Your prescription will be processed through our partner pharmacy and shipped directly to you.
-          </p>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>

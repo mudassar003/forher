@@ -8,12 +8,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Akina Pharmacy supported states (abbreviations)
-const AKINA_PHARMACY_STATES = [
-  'AZ', 'CO', 'CT', 'DC', 'DE', 'GA', 'ID', 'IL', 'IN', 'KY', 
-  'MA', 'MD', 'NJ', 'NV', 'NY', 'MO', 'MT', 'ND', 'OH', 'OK', 
-  'OR', 'PA', 'SD', 'TN', 'UT', 'VA', 'WA', 'WI', 'WV'
-];
+// Pharmacy configurations are now based on exam type (subscription-specific)
 
 // State name to abbreviation mapping
 const STATE_TO_ABBREVIATION: Record<string, string> = {
@@ -57,23 +52,41 @@ interface UserData {
   updated_at: string;
 }
 
-// Pharmacy configuration for Akina Pharmacy
-const getPharmacyConfig = (stateAbbr: string) => {
-  if (!AKINA_PHARMACY_STATES.includes(stateAbbr)) {
-    return null;
+// Pharmacy configurations based on medication type
+const PHARMACY_DETAILS = {
+  semaglutide: {
+    ncpdpid: "0604923",
+    pharmacy_name: "BELMAR PHARMACY",
+    pharmacy_address_line_1: "231 VIOLET STRE 140",
+    pharmacy_address_line_2: "",
+    pharmacy_zip_code: "80401",
+    pharmacy_city: "GOLDEN",
+    pharmacy_state: "CO",
+    pharmacy_phone: "(800) 525-9473",
+    pharmacy_type: "Retail"
+  },
+  tirzepatide: {
+    ncpdpid: "5920740",
+    pharmacy_name: "Revive Rx",
+    pharmacy_address_line_1: "3831 Golf Dr. A",
+    pharmacy_address_line_2: "",
+    pharmacy_zip_code: "77018",
+    pharmacy_city: "Houston",
+    pharmacy_state: "TX",
+    pharmacy_phone: "(888) 689-2271",
+    pharmacy_type: "Retail~SupportsDigitalSignature~Compounding~D..."
   }
+} as const;
+
+// Get pharmacy config based on exam ID
+const getPharmacyConfig = (examId: number) => {
+  // Exam ID 2413 = Semaglutide, 2414 = Tirzepatide
+  const medicationType = examId === 2413 ? 'semaglutide' : 'tirzepatide';
+  const pharmacyDetails = PHARMACY_DETAILS[medicationType];
 
   return {
     pharmacy_id: 12,
-    ncpdpid: "4844824",
-    pharmacy_name: "Akina Pharmacy",
-    pharmacy_address_line_1: "23475 Rock Haven Way",
-    pharmacy_address_line_2: "",
-    pharmacy_zip_code: "20166",
-    pharmacy_city: "Sterling",
-    pharmacy_state: "VA",
-    pharmacy_phone: "+17035550199",
-    pharmacy_type: "MailOrder",
+    ...pharmacyDetails,
     provider_pos_selection: 2,
     custom_pharmacy_patient_billing: 1,
     custom_pharmacy_delivery_method: 2,
@@ -105,17 +118,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check if pharmacy is available in this state
-    const pharmacyConfig = getPharmacyConfig(stateAbbreviation);
-    if (!pharmacyConfig) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: `Sorry, our pharmacy services are not yet available in ${state}. We currently serve: AZ, CO, CT, DC, DE, GA, ID, IL, IN, KY, MA, MD, NJ, NV, NY, MO, MT, ND, OH, OK, OR, PA, SD, TN, UT, VA, WA, WI, WV.` 
-        },
-        { status: 400 }
-      );
-    }
+    // Get pharmacy configuration based on exam type
+    const pharmacyConfig = getPharmacyConfig(examId);
 
     // Check if user already exists and has submitted
     const { data: existingUserData, error: fetchError } = await supabaseAdmin
